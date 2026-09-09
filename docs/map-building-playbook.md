@@ -107,6 +107,27 @@ from at-grade sidewalk junction registration; do not extend supplied deck strips
 Both cases have focused regressions in [roads.test.ts](../web/src/roads.test.ts) and saved diagnostic
 locations in [review-geometry.mjs](../web/tools/review-geometry.mjs).
 
+### Preserve road access and pedestrian subtypes
+
+Broad Street/I-95 still had duplicate beige edges because `sidewalk:left=no` and
+`sidewalk:right=separate` were discarded. Preserve per-side values; generate sidewalks only where
+appropriate and keep explicitly mapped footways. Null retains the fallback for incomplete data.
+`footway=crossing` describes a pedestrian connection across pavement, not a solid sidewalk across
+traffic lanes. Keep its walking path and crossing markings, but omit a solid fill. Service drives
+and living streets use asphalt instead of pedestrian paving.
+
+Retain bus access and bus-lane count separately. Bus-only ways have distinct muted-red paving;
+partial bus lanes require a known side. Richmond's downtown Broad Street uses curbside lanes, per
+[the city's red-lane project description](https://www.rva.gov/press-releases-and-announcements-public-works/news/pulse-brt-red-lane-painting-broad-street).
+This region-specific placement is assigned in the pipeline, not inferred globally by the renderer.
+These tags do not model operating hours or enforce bus restrictions in simulated traffic.
+Bus-lane color partitions the same road mesh rather than using a separately draped overlay, which
+otherwise develops gaps on slopes. Bridge railings are omitted where a neighboring road occupies the
+same height and horizontal space; crossings on a different level do not suppress railings. Branching
+bridge decks also use exposed concrete edge strips rather than overlapping full-width underlays;
+otherwise different branch grades can expose large concrete wedges over the asphalt.
+Regressions: `pipeline/tests/test_road_attributes.py`, `web/src/roads.test.ts`.
+
 ## 4. Elevation sources must be replaced as a dependency chain
 
 A finer DEM is not a drop-in cosmetic asset. LiDAR normalization, building ground elevations, canopy
@@ -261,3 +282,6 @@ capturing a diagnostic view. A passing shader test cannot establish geographic a
 For each future fix, append: **symptom → root cause → reusable rule → code/test links → applicability
 and limits**. Update region-specific notes separately. Preserve this knowledge with the implementation
 so the next map starts with the fixes, not just the final screenshots.
+
+Future architecture work: see [shared asset definitions](IMPROVEMENTS.md#deferred-shared-asset-definitions-requested-2026-09-09)
+for the requested registry linking appearance, placement, detail levels and data requirements.

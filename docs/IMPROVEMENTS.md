@@ -92,3 +92,50 @@ Weak spots, roughly in the order a viewer notices them:
   failed build.
 - For each art change, screenshot the same four views (`tools/snap.mjs`) before and after and keep the pair
   in the PR.
+
+
+## Deferred: shared asset definitions (requested 2026-09-09)
+
+Add one reusable asset definition that connects **appearance, placement, detail levels, and data
+requirements**. Build it on top of the existing systems rather than replacing them.
+
+Current pieces to connect:
+- `web/src/props.ts`: reusable meshes and asset kinds.
+- `web/src/scatter.ts`: deterministic placement and exclusion rules.
+- `web/src/propPool.ts`: instancing, capacity and tile ownership.
+- Building/road/land geometry builders and the landmark model registry.
+- `web/src/styles/`: the existing visual-style definition and registry.
+
+A definition should identify its geometry/model provider, supported style/material behavior, placement
+rules, required/optional source fields and fallback policy, visibility/geometry at each detail level,
+and resource ownership/capacity/cleanup. Keep source provenance and measured versus illustrative
+properties explicit. This should coordinate these systems through adapters, not force every kind of
+asset into the same mesh or placement algorithm.
+
+Motivating regression: reduced-detail tiles omitted all props, accidentally removing trees; fixed
+instance limits also silently dropped trees. An asset's detail policy and capacity behavior should be
+explicit and testable rather than consequences of unrelated tile-level branches.
+
+Start incrementally with trees and one contrasting asset such as a bench or aircraft. Verify stable
+placement across detail transitions, no missing instances, correct unload/reload cleanup and style
+switching. This is a **future task, not implemented** as part of the current road/bus-lane fixes.
+
+
+## Deferred: faster local rendering and iteration (requested 2026-09-09)
+
+Investigate ways to shorten the edit → rebuild → render → inspect loop. Profile before choosing changes:
+measure cold startup, data fetch/cache time, worker geometry construction, GPU upload, frame time,
+landmark loading, and automated screenshot time separately. Distinguish software-rendered browser QA
+from the interactive GPU-backed viewer; improvements to one may not improve the other.
+
+Candidates to evaluate:
+- Rebuild only changed layers/tiles instead of rerunning unrelated building/LiDAR processing.
+- Cache derived geometry using input and implementation fingerprints, with correct invalidation.
+- Add saved focused preview views and a small local tile set for a single asset/intersection.
+- Offer an explicit draft preview quality preset for shadows, postprocessing and distant detail;
+  keep full-quality verification before shipping.
+- Reuse browser sessions and loaded assets during visual iteration; measure hot-reload behavior.
+- Track representative timing/memory baselines so faster iteration does not hide missing assets or
+  change the final rendering semantics.
+
+This is a future investigation, not an implemented performance feature.

@@ -26,7 +26,7 @@ function lines(g: LineGeom): V2[][] {
  * a ground lookup so the ribbon never sinks under terrain that slopes across it (cut walls beside a sunken
  * freeway); decks leave it out and stay level.
  */
-function ribbon(mb: MeshBuilder, pts: THREE.Vector3[], halfW: number, color: THREE.Color, shade = 1, edgeY?: (x: number, z: number, y: number) => number) {
+function ribbon(mb: MeshBuilder, pts: THREE.Vector3[], halfW: number, color: THREE.Color, shade = 1, edgeY?: (x: number, z: number, y: number) => number, stripe?: { fraction: number; side: "left" | "right"; color: THREE.Color }) {
   const n = pts.length;
   if (n < 2) return;
   const left: THREE.Vector3[] = [], right: THREE.Vector3[] = [];
@@ -49,10 +49,23 @@ function ribbon(mb: MeshBuilder, pts: THREE.Vector3[], halfW: number, color: THR
   }
   for (let i = 0; i < n - 1; i++) {
     const a = left[i], b = right[i], c = right[i + 1], d = left[i + 1];
-    const cr = new THREE.Vector3().subVectors(b, a).cross(new THREE.Vector3().subVectors(c, a));
-    const emit = (a: THREE.Vector3,b: THREE.Vector3,c: THREE.Vector3) => mb.tri(a,b,c,color,UP,shade);
-    const tri = (a: THREE.Vector3,b: THREE.Vector3,c: THREE.Vector3) => edgeY ? conformTriangle(a,b,c,edgeY,emit) : emit(a,b,c);
-    if (cr.y >= 0) { tri(a,b,c); tri(a,c,d); } else { tri(a,c,b); tri(a,d,c); }
+    const quads = [{a,b,c,d,color}];
+    if (stripe) {
+      // Share one road surface, split by material. A separately draped overlay
+      // can disappear into the asphalt on slopes even when lifted slightly.
+      // Local Z is negative north: the array named left is the geographic right.
+      const t = stripe.side === 'right' ? stripe.fraction : 1-stripe.fraction;
+      const start = a.clone().lerp(b,t), end = d.clone().lerp(c,t);
+      quads.splice(0,1,{a,b:start,c:end,d,color:stripe.side === 'right' ? stripe.color : color},
+        {a:start,b,c,d:end,color:stripe.side === 'left' ? stripe.color : color});
+    }
+    for (const q of quads) {
+      const {a,b,c,d} = q;
+      const cr = new THREE.Vector3().subVectors(b, a).cross(new THREE.Vector3().subVectors(c, a));
+      const emit = (a: THREE.Vector3,b: THREE.Vector3,c: THREE.Vector3) => mb.tri(a,b,c,q.color,UP,shade);
+      const tri = (a: THREE.Vector3,b: THREE.Vector3,c: THREE.Vector3) => edgeY ? conformTriangle(a,b,c,edgeY,emit) : emit(a,b,c);
+      if (cr.y >= 0) { tri(a,b,c); tri(a,c,d); } else { tri(a,c,b); tri(a,d,c); }
+    }
   }
 }
 
@@ -85,12 +98,13 @@ function offsetPath(pts: THREE.Vector3[], off: number): THREE.Vector3[] {
 }
 
 /** Bridge furniture: railings on both edges and box piers to the ground every ~25 m. */
-function bridgeFurniture(mb: MeshBuilder, path: THREE.Vector3[], halfW: number, groundY: (v: THREE.Vector3) => number, color: THREE.Color) {
+function bridgeFurniture(mb: MeshBuilder, path: THREE.Vector3[], halfW: number, groundY: (v: THREE.Vector3) => number, color: THREE.Color, occupied?: (v: THREE.Vector3) => boolean) {
   for (const side of [1, -1]) {
     const rail = offsetPath(path, side * (halfW - 0.3));
     for (let i = 0; i < rail.length - 1; i++) {
       const a = rail[i], b = rail[i + 1];
       if (a.y - groundY(a) < 1.5 && b.y - groundY(b) < 1.5) continue; // at grade: no railing
+      if (occupied?.(a.clone().lerp(b,0.5))) continue; // a connecting road occupies this edge
       const a2 = a.clone().setY(a.y + 1.0), b2 = b.clone().setY(b.y + 1.0);
       const n = new THREE.Vector3().subVectors(b, a).cross(UP).normalize().multiplyScalar(side);
       mb.tri(a, b, b2, color, n, 0.9); mb.tri(a, b2, a2, color, n, 0.9);
@@ -195,6 +209,7 @@ export function buildRoads(
   // recover the projected origin from toLocal so bridge piers can sample terrain from local coords
   const [ox0, oz0] = toLocal(0, 0);
   const originX = -ox0, originY = oz0;
+  const busColor = hex('bus_lane');
   const asphalt = hex('asphalt'), paint = hex('lane_paint'), sidewalk = hex('sidewalk'), railC = hex('rail'), concrete = hex('concrete'), dirt = hex('sand');
   const groundLocal = (lx: number, lz: number) => groundAt(lx + originX, -lz + originY);
   /** edge re-heighting for draped strips: never below the ground under the edge plus the strip's lift */
@@ -203,6 +218,20 @@ export function buildRoads(
   const carMeta: CarPathMeta[] = [];
   const walkPaths: THREE.Vector3[][] = [];
   const roadPaths: { path: THREE.Vector3[]; width: number }[] = [];
+  const bridgeNeighbors = opts.bridges === false ? [] : feats.filter(f=>!f.properties.tunnel && !MINOR.has(f.properties.highway))
+    .flatMap(f=>lines(f.geometry).map(line=>({id:f.properties.id,width:f.properties.width,
+      path:toPath(line,toLocal,groundAt,ROAD_Y+(f.properties.bridge ? bridgeLift(f.properties.layer) : 0),SEG,
+        parseDeck(f.properties.deck),!!f.properties.ramp && !f.properties.bridge)})));
+  const occupiedRoad = (id: string) => (v: THREE.Vector3) => bridgeNeighbors.some(other=>{
+    if(other.id===id) return false;
+    for(let i=1;i<other.path.length;i++) {
+      const a=other.path[i-1],b=other.path[i],dx=b.x-a.x,dz=b.z-a.z,len=dx*dx+dz*dz;
+      if(len<1e-6) continue;
+      const t=Math.max(0,Math.min(1,((v.x-a.x)*dx+(v.z-a.z)*dz)/len));
+      if(Math.hypot(v.x-a.x-t*dx,v.z-a.z-t*dz)<other.width/2+0.2 && Math.abs(v.y-a.y-t*(b.y-a.y))<1.5) return true;
+    }
+    return false;
+  });
 
   // junctions: endpoints shared by >= 2 road polylines get a disc at the widest half width
   // Junctions: every polyline endpoint shared by two or more ways. Asphalt ends are extended into the node by
@@ -224,7 +253,7 @@ export function buildRoads(
         const k = key(end[0], end[1]);
         const [lx, lz] = toLocal(end[0], end[1]);
         const j = junctions.get(k) ?? { pt: new THREE.Vector3(lx, groundAt(end[0], end[1]), lz), ends: [] };
-        j.ends.push({ dir: new THREE.Vector2(next[0] - end[0], next[1] - end[1]).normalize(), halfW: p.width / 2, walk: !NO_WALK.has(p.highway) });
+        j.ends.push({ dir: new THREE.Vector2(next[0] - end[0], next[1] - end[1]).normalize(), halfW: p.width / 2, walk: !NO_WALK.has(p.highway) && (p.sidewalk_left !== false || p.sidewalk_right !== false) });
         junctions.set(k, j);
       }
     }
@@ -261,6 +290,7 @@ export function buildRoads(
     move(out[out.length - 1], out[out.length - 2], d1);
     return out;
   };
+  const sidewalkSides = (p: RoadProps) => [-1, 1].filter(side => (side === -1 ? p.sidewalk_left : p.sidewalk_right) !== false);
   const CURB = 0.15, WALK_W = 2.2, WALK_Y = ROAD_Y + CURB, DECK_EDGE = 0.5;
 
   // sidewalks: raised strips either side with a curb face; bridges keep a wide concrete deck instead
@@ -272,17 +302,21 @@ export function buildRoads(
     for (const l of lines(f.geometry)) {
       const c = cleanRing(l);
       if (c.length < 2) continue;
-      const walk = !NO_WALK.has(p.highway);
+      const walk = !NO_WALK.has(p.highway) && !p.bus_only && p.highway !== 'busway';
       if (p.bridge || p.ramp) {
         const rdeck = p.bridge ? deck : parseDeck(p.deck);
         const base = toPath(l, toLocal, groundAt, ROAD_Y - 0.06 + lift, SEG, rdeck, !!p.ramp && !p.bridge);
-        const edge = walk ? WALK_W : DECK_EDGE;
-        if (p.bridge) ribbon(mb, base, p.width / 2 + edge, concrete, 0.98);
-        else for (const side of [-1, 1]) {
-          // A full-width concrete underlay bows across a cut differently from the
-          // narrower asphalt and can cover it. Grounded approaches need edges only.
-          ribbon(mb, offsetPath(base, side * (p.width / 2 + edge / 2)), edge / 2,
-            concrete, 0.98, draped(ROAD_Y - 0.06 + lift));
+        const edge = walk && sidewalkSides(p).length ? WALK_W : DECK_EDGE;
+        for (const side of [-1, 1]) {
+          // Pavement supplies the deck surface. A wider concrete underlay can
+          // cover it at slopes and branching spans; emit only exposed edges.
+          const strip = offsetPath(base, side * (p.width / 2 + edge / 2));
+          const occupied = occupiedRoad(p.id);
+          for (let i=1;i<strip.length;i++) {
+            if (occupied(strip[i-1].clone().lerp(strip[i],0.5))) continue;
+            ribbon(mb, [strip[i-1],strip[i]], edge / 2, concrete, 0.98,
+              p.bridge ? undefined : draped(ROAD_Y - 0.06 + lift));
+          }
         }
         continue;
       }
@@ -292,7 +326,7 @@ export function buildRoads(
       const base = toPath(l, toLocal, groundAt, WALK_Y);
       const path = adjustEnds(base, -(o0 ? o0 + WALK_W : 0), -(o1 ? o1 + WALK_W : 0));
       if (path.length < 2) continue;
-      for (const side of [1, -1]) {
+      for (const side of sidewalkSides(p)) {
         const strip = offsetPath(path, side * (p.width / 2 + WALK_W / 2));
         ribbon(mb, strip, WALK_W / 2, sidewalk, 0.98, draped(WALK_Y));
         walkPaths.push(strip);
@@ -327,7 +361,7 @@ export function buildRoads(
   for (const f of feats) {
     const p = f.properties;
     if (p.tunnel) continue;
-    const minor = MINOR.has(p.highway);
+    const minor = MINOR.has(p.highway) && !p.bus_only;
     const lift = p.bridge ? bridgeLift(p.layer) : 0;
     const deck = p.bridge || p.ramp ? parseDeck(p.deck) : null;
     for (const l of lines(f.geometry)) {
@@ -339,14 +373,16 @@ export function buildRoads(
         const [d0, d1] = endDirs(c);
         path = adjustEnds(path, otherHalfW(c[0], p.width / 2, d0), otherHalfW(c[c.length - 1], p.width / 2, d1));
       }
-      ribbon(mb, path, p.width / 2, minor ? (TRAIL.has(p.highway) ? dirt : sidewalk) : asphalt, minor ? 0.94 : 1, deck && p.bridge ? undefined : draped((minor ? ROAD_Y - 0.04 : ROAD_Y) + lift));
+      const busStripe = p.bus_lanes && p.oneway && p.bus_lane_side && p.lanes && !p.bus_only
+        ? {fraction: Math.min(p.bus_lanes/p.lanes,1),side:p.bus_lane_side,color:busColor} : undefined;
+      if (p.footway !== 'crossing') ribbon(mb, path, p.width / 2, p.bus_only || p.highway === 'busway' ? busColor : minor && p.highway !== 'service' && p.highway !== 'living_street' ? (TRAIL.has(p.highway) ? dirt : sidewalk) : asphalt, minor ? 0.94 : 1, deck && p.bridge ? undefined : draped((minor ? ROAD_Y - 0.04 : ROAD_Y) + lift), busStripe);
       if (!minor) roadPaths.push({ path, width: p.width });
       if (!minor && p.highway !== 'service') {
         carPaths.push(carPath);
         carMeta.push({ oneway: !!p.oneway, width: p.width, highway: p.highway, lanes: p.lanes ?? (p.oneway ? 1 : 2), bridge: !!p.bridge, ramp: !!p.ramp, wayId: p.id });
       }
       if (minor && FOOT_MINOR.has(p.highway)) walkPaths.push(path);
-      if ((p.bridge || p.ramp) && !minor && opts.bridges !== false) bridgeFurniture(mb, path, p.width / 2 + 2.2, (v) => groundAt(v.x + originX, -v.z + originY), concrete);
+      if ((p.bridge || p.ramp) && !minor && opts.bridges !== false) bridgeFurniture(mb, path, p.width / 2 + 2.2, (v) => groundAt(v.x + originX, -v.z + originY), concrete, occupiedRoad(p.id));
     }
   }
 

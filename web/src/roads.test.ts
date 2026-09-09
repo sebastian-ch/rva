@@ -53,3 +53,55 @@ it('keeps ground-supported approaches and traffic above terrain while preserving
  const positions=result.roads.getAttribute('position');
  for(let i=0;i<positions.count;i++) expect(positions.getY(i)).toBeGreaterThan(ground(positions.getX(i))+0.18);
 });
+
+it('does not generate duplicate sidewalks when both sides are separately mapped',async()=>{
+ const {buildRoads}=await import('./roads');
+ const road={type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,0],[100,0]] as [number,number][]},properties:{id:'road',name:null,highway:'primary',lanes:2,width:8,oneway:true,surface:'asphalt',sidewalk:false,sidewalk_left:false,sidewalk_right:false,bridge:false,tunnel:false,layer:0}};
+ const result=buildRoads([road],[],[],(x,y)=>[x,-y],()=>0,{markings:false,bridges:false});
+ expect(result.walkPaths).toHaveLength(0);
+ const positions=result.roads.getAttribute('position');
+ for(let i=0;i<positions.count;i++) expect(Math.abs(positions.getZ(i))).toBeLessThanOrEqual(4);
+});
+
+it('retains pedestrian crossing connectivity without a solid sidewalk across the road',async()=>{
+ const {buildRoads}=await import('./roads');
+ const road={type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,0],[10,0]] as [number,number][]},properties:{id:'crossing',name:null,highway:'footway',footway:'crossing',lanes:null,width:2,oneway:false,surface:'asphalt',sidewalk:false,bridge:false,tunnel:false,layer:0}};
+ const result=buildRoads([road],[],[],(x,y)=>[x,-y],()=>0,{markings:false});
+ expect(result.walkPaths).toHaveLength(1);
+ expect(result.roads.getAttribute('position').count).toBe(0);
+});
+
+it('paints a known right-side bus lane distinctly without moving the roadway',async()=>{
+ const {buildRoads}=await import('./roads');
+ const {hex}=await import('./props');
+ const road={type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,0],[100,0]] as [number,number][]},properties:{id:'bus-road',name:'East Broad Street',highway:'primary',lanes:2,width:8,oneway:true,bus_lanes:1,bus_lane_side:'right' as const,surface:'asphalt',sidewalk:false,sidewalk_left:false,sidewalk_right:false,bridge:false,tunnel:false,layer:0}};
+ const result=buildRoads([road],[],[],(x,y)=>[x,-y],()=>0,{markings:false});
+ const color=result.roads.getAttribute('color'),pos=result.roads.getAttribute('position'),bus=hex('bus_lane');
+ let painted=0;
+ for(let i=0;i<color.count;i++) if(Math.abs(color.getX(i)-bus.r)<1e-6 && Math.abs(color.getY(i)-bus.g)<1e-6){
+  painted++;expect(pos.getZ(i)).toBeGreaterThanOrEqual(-1e-6);expect(pos.getZ(i)).toBeLessThanOrEqual(4+1e-6);
+ }
+ expect(painted).toBeGreaterThan(0);
+ expect(result.paths[0].every(p=>p.z===0)).toBe(true);
+});
+
+it('opens bridge railings at same-level junctions but keeps them over an underpass',async()=>{
+ const {buildRoads}=await import('./roads');
+ const countBlockedRails=(crossHeight:number)=>{
+  const features=[{coords:[[0,0],[100,0]],height:20},{coords:[[50,-30],[50,30]],height:crossHeight}].map(({coords,height},i)=>({
+   type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:coords as [number,number][]},
+   properties:{id:`way-${i}`,name:null,highway:'primary',lanes:2,width:8,oneway:false,surface:'asphalt',sidewalk:false,sidewalk_left:false,sidewalk_right:false,bridge:true,tunnel:false,layer:1,deck:[...coords[0],height,...coords[1],height]},
+  }));
+  const g=buildRoads(features,[],[],(x,y)=>[x,-y],()=>0,{markings:false}).roads;
+  const p=g.getAttribute('position'),n=g.getAttribute('normal');let found=0;
+  for(let i=0;i<p.count;i+=3){
+   const x=(p.getX(i)+p.getX(i+1)+p.getX(i+2))/3;
+   const y=(p.getY(i)+p.getY(i+1)+p.getY(i+2))/3;
+   const z=(p.getZ(i)+p.getZ(i+1)+p.getZ(i+2))/3;
+   if(Math.abs(x-50)<4.2 && Math.abs(z)<7 && y>20.88 && y<22 && Math.abs(n.getY(i))<0.1) found++;
+  }
+  return found;
+ };
+ expect(countBlockedRails(20)).toBe(0);
+ expect(countBlockedRails(0)).toBeGreaterThan(0);
+});
