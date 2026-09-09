@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+data/raw/
+data/tiles/
+!data/tiles/.gitkeep
+web/node_modules/
+web/dist/
+*.blend1
+*.laz
+*.tif
+.DS_Store
