@@ -13,7 +13,7 @@ import { exaggerateLayers } from './elevation';
 import { scatterTile, type Placement } from './scatter';
 import type { V2 } from './geomutil';
 
-export type Lod = 0 | 1; // 0 = full, 1 = reduced (no props, no roof details/facades, no markings)
+export type Lod = 0 | 1; // 0 = full, 1 = reduced (trees only, no roof details/facades, no markings)
 
 export interface GeomArrays { position: Float32Array; normal: Float32Array; color: Float32Array; uv?: Float32Array; facade?: Float32Array }
 
@@ -62,7 +62,7 @@ export async function fetchTileLayers(meta: TileMeta, baseUrl: string, lod: Lod)
     has('rail') ? getJSON<FC<LineGeom, RailProps>>(u('rail.geojson')) : null,
     has('landuse') ? getJSON<FC<PolyGeom, AreaProps>>(u('landuse.geojson')) : null,
     has('water') ? getJSON<FC<PolyGeom, AreaProps>>(u('water.geojson')) : null,
-    has('pois') && lod === 0 ? getJSON<FC<PointGeom, PoiProps>>(u('pois.geojson')) : null,
+    has('pois') ? getJSON<FC<PointGeom, PoiProps>>(u('pois.geojson')) : null,
   ]);
   return exaggerateLayers({ terrain, buildings, roads, crossings, rail, landuse, water, pois });
 }
@@ -127,10 +127,8 @@ export function buildTilePayload(meta: TileMeta, layers: TileLayers, origin: [nu
     geoms.land = arrays(a.land);
     geoms.water = arrays(a.water);
   }
-  const placements = lod === 0
-    ? scatterTile(meta.id, layers.pois?.features ?? [], layers.landuse?.features ?? [], layers.roads?.features ?? [], layers.buildings?.features ?? [], meta.bbox, toLocal, groundAt,
-      { surveyedTrees: meta.surveyed_trees, water: layers.water?.features ?? [] })
-    : [];
+  const placements = scatterTile(meta.id, layers.pois?.features ?? [], layers.landuse?.features ?? [], layers.roads?.features ?? [], layers.buildings?.features ?? [], meta.bbox, toLocal, groundAt,
+      { treesOnly: lod === 1, surveyedTrees: meta.surveyed_trees, water: layers.water?.features ?? [] });
   return { meta, lod, terrain: layers.terrain, geoms, ranges, placements, carPaths, carMeta, walkPaths, buildingFeatures: layers.buildings?.features ?? [], buildMs: performance.now() - t0 };
 }
 

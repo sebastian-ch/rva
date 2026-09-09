@@ -74,3 +74,11 @@ describe('scatterTile', () => {
     expect(out.filter((p) => p.kind === 'fountain')).toHaveLength(0);
   });
 });
+
+it('preserves identical tree placement in reduced detail while omitting small props',()=>{
+ const pois=[poi('tree',10,10),poi('bench',20,20),poi('tree',30,30)];
+ const full=scatterTile('lod-test',pois,[],[],[],bbox,identity,flatGround);
+ const reduced=scatterTile('lod-test',pois,[],[],[],bbox,identity,flatGround,{treesOnly:true});
+ expect(reduced).toEqual(full.filter(p=>p.kind.startsWith('tree')));
+ expect(reduced).toHaveLength(2);
+});

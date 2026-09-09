@@ -40,7 +40,7 @@ export function scatterTile(
   bbox: [number, number, number, number],
   toLocal: (x: number, y: number) => V2,
   groundAt: (x: number, y: number) => number,
-  options: { surveyedTrees?: boolean; water?: Feature<PolyGeom, AreaProps>[] } = {},
+  options: { treesOnly?: boolean; surveyedTrees?: boolean; water?: Feature<PolyGeom, AreaProps>[] } = {},
 ): Placement[] {
   const rand = rng(hashStr(tileId));
   const out: Placement[] = [];
@@ -58,6 +58,7 @@ export function scatterTile(
   };
   const inTile = (x: number, y: number) => x >= bbox[0] && x < bbox[2] && y >= bbox[1] && y < bbox[3];
   const place = (kind: PropKind, x: number, y: number, rot = rand() * Math.PI * 2, scale = 1, scaleY?: number) => {
+    if (options.treesOnly && !kind.startsWith('tree')) return;
     if (!inTile(x, y) || inBuilding(x, y) || inWater(x, y)) return;
     const [lx, lz] = toLocal(x, y);
     out.push({ kind, x: lx, y: groundAt(x, y), z: lz, rot, scale, ...(scaleY === undefined ? {} : { scaleY }) });

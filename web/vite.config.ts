@@ -1,5 +1,6 @@
 import { defineConfig, type Plugin } from 'vite';
-import { createReadStream, existsSync, statSync, cpSync } from 'node:fs';
+import { createReadStream, existsSync, statSync, cpSync, readdirSync, readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { resolve, join, normalize, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import regions from '../regions.json' with { type: 'json' };
@@ -10,6 +11,12 @@ if (!(region in regions)) throw new Error(`Unknown ISO_REGION: ${region}`);
 const profile = regions[region as keyof typeof regions];
 const TILES_DIR = resolve(__dirname, '..', profile.data, 'tiles');
 const ASSETS_DIR = resolve(__dirname, '..', profile.assets);
+// Stable asset names are copied outside Vite's hashed module graph. Change their
+// request URL when their bytes change, including model-only deployments.
+const landmarkDir = join(ASSETS_DIR, 'landmarks');
+const landmarkVersions = Object.fromEntries((existsSync(landmarkDir) ? readdirSync(landmarkDir) : [])
+  .filter(name => name.endsWith('.glb'))
+  .map(name => [`landmarks/${name}`, createHash('sha256').update(readFileSync(join(landmarkDir, name))).digest('hex').slice(0, 16)]));
 
 /** Serve ../data/tiles at /tiles/* in dev; copy it into dist/tiles on build. */
 function tilesPlugin(): Plugin {
@@ -40,7 +47,7 @@ function tilesPlugin(): Plugin {
 }
 
 export default defineConfig({
-  define: { 'import.meta.env.VITE_REGION': JSON.stringify(region) },
+  define: { 'import.meta.env.VITE_REGION': JSON.stringify(region), 'import.meta.env.VITE_LANDMARK_VERSIONS': JSON.stringify(landmarkVersions) },
   base: process.env.BASE_PATH ?? '/',
   plugins: [tilesPlugin()],
   server: { fs: { allow: ['..'] } },

@@ -468,6 +468,14 @@ def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True
 # ---------------------------------------------------------------- roads / rail
 
 
+def _sidewalk_side(row: pd.Series, side: str) -> bool | None:
+    """None retains the renderer fallback; separate means use the mapped footway."""
+    value = next((_nn(row.get(k)) for k in (f"sidewalk:{side}", "sidewalk:both", "sidewalk") if _nn(row.get(k)) is not None), None)
+    if value is None:
+        return None
+    return value in ("yes", "both", side)
+
+
 def _road_width(row: pd.Series) -> float:
     hw = str(row.get("highway"))
     w = ROAD_WIDTH.get(hw, 6.0)
@@ -739,6 +747,16 @@ def process_roads(raw_path: Path, terrain=None) -> tuple[gpd.GeoDataFrame, gpd.G
         "width": lines.apply(_road_width, axis=1),
         "oneway": (lines["oneway"].fillna("no") == "yes") if "oneway" in lines else False,
         "surface": lines["surface"].map(_nn) if "surface" in lines else None,
+        "footway": lines["footway"].map(_nn) if "footway" in lines else None,
+        "sidewalk_left": lines.apply(lambda row: _sidewalk_side(row, "left"), axis=1),
+        "sidewalk_right": lines.apply(lambda row: _sidewalk_side(row, "right"), axis=1),
+        "bus_lanes": lines["lanes:bus"].map(parse_levels) if "lanes:bus" in lines else None,
+        "bus_lane_side": lines.apply(lambda row: "right" if REGION == "richmond" and
+            row.get("name") in ("East Broad Street", "West Broad Street") and
+            row.get("oneway") == "yes" and parse_levels(row.get("lanes:bus")) else None, axis=1),
+        "bus_only": lines.apply(lambda row: row.get("highway") == "busway" or
+            (row.get("bus") in ("yes", "designated") and
+             (row.get("access") in ("no", "private") or row.get("motor_vehicle") == "no")), axis=1),
         "sidewalk": (~lines["sidewalk"].fillna("no").isin(["no", "none"])) if "sidewalk" in lines else False,
         "bridge": bridge_flag,
         "ramp": ramp_flag,
