@@ -23,6 +23,10 @@ import { applyHeightsMode, setHeightsMode, setHeightsRange, HEIGHT_STOPS } from 
 import { Z_SCALE, realElev } from './elevation';
 import { LandmarkLabels } from './labels';
 import { fetchWikiSummary } from './wiki';
+import { BuildingEffects } from './buildingEffects';
+import { MAP_STYLES } from './styles';
+import { TrafficTrails } from './trafficTrails';
+import { createNavigation, decodeView, type MapStyle, type SearchPlace, type ViewState } from './navigation';
 import type { Landmark, TileIndex } from './types';
 
 const landmarks = (regionId === 'richmond' ? landmarksJson : []) as Landmark[];
@@ -102,9 +106,12 @@ setHeightsRange(heightsRange.min, heightsRange.max, 5 * Z_SCALE);
 const propMaterial = flat();
 const props = new PropPool(propMaterial);
 const traffic = new TrafficClient();
+const trails = new TrafficTrails();
+scene.add(trails.lines);
 props.group.traverse((o) => { if ((o as THREE.Mesh).isMesh) { o.castShadow = true; o.receiveShadow = true; } });
 scene.add(props.group);
 let landmarkModels: LandmarkModels | null = null;
+let buildingEffects: BuildingEffects | null = null;
 
 const iso = new IsoCamera(canvas, window.innerWidth / window.innerHeight);
 const postfx = createPostFX(renderer, scene, iso.camera);
@@ -115,38 +122,106 @@ const rangesByMesh = new Map<THREE.Mesh, BuildingRange[]>();
 const landmarkTargets = new Map<string, THREE.Vector3>();
 const landmarkTileOf = new Map<string, string>();
 const labels = new LandmarkLabels();
-scene.add(labels.group);
+const labelScene = new THREE.Scene();
+labelScene.add(labels.group);
 
 let night = false, paused = false, heightsOn = false;
+let mapStyle: MapStyle = 'classic';
+let pendingSelection: string | null = null;
+let tileIndex: TileIndex | null = null;
 const ui = createUI(document.getElementById('ui')!, {
   onToggleNight(on) { setNight(on); },
   onTogglePause(on) { paused = on; props.paused = on; traffic.setPaused(on); },
   onToggleMap(on) { iso.setMapMode(on); },
   onTour() { nextTourStop(); },
   onToggleHeights(on) {
+    if (on && mapStyle !== 'classic') setMapStyle('classic');
     heightsOn = on;
     setHeightsMode(on);
     ui.setHeights(on);
     ui.setHeightsLegend(on ? { minElev: realElev(heightsRange.min), maxElev: realElev(heightsRange.max), contour: 5, stops: HEIGHT_STOPS } : null);
   },
   onCloseInfo() { clearSelection(); },
+  onStyle(style) { setMapStyle(style); },
+});
+
+function setMapStyle(style: MapStyle) {
+  mapStyle = style; postfx.setStyle(style); postfx.enabled = true; ui.setStyle(style);
+  const definition = MAP_STYLES[style];
+  buildingEffects?.setStyle(definition, tiles);
+  for (const material of [materials.terrain, materials.land, materials.roads, materials.water, propMaterial] as THREE.MeshStandardMaterial[]) {
+    if (material.vertexColors === definition.xray) {
+      material.vertexColors = !definition.xray; material.color.set(definition.xray ? '#0a2230' : '#ffffff'); material.needsUpdate = true;
+    }
+  }
+  if (landmarkModels) landmarkModels.group.visible = !definition.xray;
+  facade.setMidnight(definition.neonLighting);
+  trails.setEnabled(definition.trafficTrails);
+  props.setMidnight(definition.neonLighting);
+  (materials.roads as THREE.MeshStandardMaterial).roughness = definition.roadRoughness;
+  setNight(night);
+  if (style !== 'classic' && heightsOn) {
+    heightsOn = false; setHeightsMode(false); ui.setHeights(false); ui.setHeightsLegend(null);
+  }
+}
+
+function currentView(): ViewState {
+  const t = iso.controls.target, origin = tileIndex?.origin ?? [0, 0];
+  return { region: regionId, x: t.x + origin[0], y: origin[1] - t.z, z: t.y,
+    zoom: iso.camera.zoom, az: iso.controls.getAzimuthalAngle(), distance: iso.camera.position.distanceTo(t),
+    night, map: iso.isMap, style: mapStyle, building: selectedId ?? pendingSelection ?? undefined };
+}
+
+function tryPendingSelection() {
+  if (!pendingSelection) return;
+  for (const t of tiles) {
+    const feature = t.buildingFeatures.get(pendingSelection);
+    const range = t.ranges.find((r) => r.props.id === pendingSelection) ?? (feature ? { props: feature.properties, start: 0, count: 0 } : undefined);
+    if (range) { pendingSelection = null; select(range, t); return; }
+  }
+}
+
+function restoreView(state: ViewState) {
+  if (!world || !tileIndex) return;
+  const [w, s, e, n] = tileIndex.bbox_proj;
+  if (state.x < w - 500 || state.x > e + 500 || state.y < s - 500 || state.y > n + 500) return;
+  const [x, z] = world.toLocal(state.x, state.y);
+  clearSelection(); ui.hideInfo();
+  iso.restore(new THREE.Vector3(x, state.z, z), state.zoom, state.az, state.distance, state.map);
+  ui.setMap(state.map); setNight(state.night); setMapStyle(state.style);
+  pendingSelection = state.building ?? null;
+  manager?.update(iso.camera, iso.camera.zoom, true);
+  tryPendingSelection();
+}
+
+const navigation = createNavigation(document.getElementById('ui')!, (place: SearchPlace) => {
+  if (!world) return;
+  clearSelection(); ui.hideInfo();
+  const [x, z] = world.toLocal(place.x, place.y);
+  iso.flyTo(new THREE.Vector3(x, place.ground_z * Z_SCALE + 8, z), 2.6);
+  pendingSelection = place.id.startsWith('landmark:') ? null : place.id;
+  tryPendingSelection();
+}, currentView);
+window.addEventListener('hashchange', () => {
+  const state = decodeView(location.hash, regionId); if (state) restoreView(state);
 });
 
 function setNight(on: boolean) {
   night = on;
-  const t = on ? NIGHT : DAY;
+  const effectiveNight = on || MAP_STYLES[mapStyle].nightLighting;
+  const t = effectiveNight ? NIGHT : DAY;
   (scene.background as THREE.Color).copy(t.sky);
   scene.fog!.color.copy(t.fog);
   hemi.intensity = t.hemi;
   if (tropicalSky) {
-    tropicalSky.visible = !on;
+    tropicalSky.visible = !effectiveNight;
     hemi.color.copy(t.sky);
   }
   sun.intensity = t.dir;
   sun.color.copy(t.sun);
-  facade.setNight(on);
-  water.setNight(on);
-  postfx.setNight(on);
+  facade.setNight(effectiveNight);
+  water.setNight(effectiveNight);
+  postfx.setNight(effectiveNight);
   ui.setNight(on);
 }
 
@@ -158,6 +233,8 @@ const selMaterial = new THREE.MeshStandardMaterial({ color: hex('landmark_accent
 function clearSelection() {
   if (selection) { scene.remove(selection); selection.geometry.dispose(); selection = null; }
   selectedId = null;
+  pendingSelection = null;
+  selectionSeq++;
 }
 function select(range: BuildingRange, tile: LoadedTile) {
   clearSelection();
@@ -282,9 +359,14 @@ let loggedFirst = false;
 async function boot() {
   ui.setLoading(true, 'Loading index…');
   const index = (await (await fetch(`${import.meta.env.BASE_URL}tiles/index.json`)).json()) as TileIndex;
+  tileIndex = index;
   world = new TileWorld(index, materials);
   landmarkModels = new LandmarkModels(world.toLocal, materials.buildings);
   scene.add(landmarkModels.group);
+  buildingEffects = new BuildingEffects(world.toLocal);
+  scene.add(buildingEffects.group);
+  buildingEffects.setStyle(MAP_STYLES[mapStyle], tiles);
+  landmarkModels.group.visible = !MAP_STYLES[mapStyle].xray;
   // Region targets use projected easting/northing and a world-space camera target height.
   const center = world.center();
   if (regionId === 'richmond') center.z -= 400; // local z = -north
@@ -301,6 +383,12 @@ async function boot() {
   iso.lookAt(center, region.cameraDistance);
   iso.camera.zoom = region.initialZoom;
   iso.camera.updateProjectionMatrix();
+  const shared = decodeView(location.hash, regionId);
+  if (shared) restoreView(shared);
+  void fetch(`${import.meta.env.BASE_URL}tiles/search.json`).then(async (r) => {
+    if (!r.ok) throw new Error('Search index unavailable');
+    navigation.setPlaces(await r.json() as SearchPlace[]);
+  }).catch(() => navigation.unavailable());
 
   const rand = rng(hashStr('cars'));
   manager = new TileManager(index, materials, {
@@ -319,6 +407,8 @@ async function boot() {
         if (heightsOn) ui.setHeightsLegend({ minElev: realElev(heightsRange.min), maxElev: realElev(heightsRange.max), contour: 5, stops: HEIGHT_STOPS });
       }
       tiles.push(t);
+      buildingEffects?.add(t);
+      tryPendingSelection();
       if (t.buildings) { buildingMeshes.push(t.buildings); rangesByMesh.set(t.buildings, t.ranges); }
       props.beginTile(t.meta.id);
       props.add(t.placements);
@@ -339,9 +429,11 @@ async function boot() {
         if (i >= 0) buildingMeshes.splice(i, 1);
         rangesByMesh.delete(oldMesh);
         if (newMesh) { buildingMeshes.push(newMesh); rangesByMesh.set(newMesh, ranges); }
+        buildingEffects?.refresh(t);
       });
     },
     onRemoved(t) {
+      buildingEffects?.remove(t);
       landmarkModels?.detachTile(t);
       const i = tiles.indexOf(t);
       if (i >= 0) tiles.splice(i, 1);
@@ -401,18 +493,26 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
-window.addEventListener('keydown', (e) => { if (e.key === 'o' && !(e.target instanceof HTMLInputElement)) postfx.enabled = !postfx.enabled; });
+window.addEventListener('keydown', (e) => {
+  const editing = e.target instanceof HTMLElement && e.target.closest('input, textarea, select, [contenteditable="true"]');
+  if (e.key === 'o' && !editing) postfx.enabled = !postfx.enabled;
+});
 const clock = new THREE.Clock();
 let waterTime = 0;
 function frame() {
   const dt = Math.min(0.1, clock.getDelta());
   iso.update(dt);
   if (tropicalSky) tropicalSky.position.copy(iso.camera.position);
-  if (!paused) { props.update(dt); traffic.apply(props); waterTime += dt; water.update(waterTime); }
+  if (!paused) { props.update(dt); traffic.apply(props); trails.update(dt); traffic.apply(trails); waterTime += dt; water.update(waterTime); }
   updateSunShadow();
   manager?.update(iso.camera, iso.camera.zoom);
-  labels.update(iso.camera.zoom, night);
+  labels.update(iso.camera.zoom, night || MAP_STYLES[mapStyle].nightLighting);
   if (postfx.enabled) { postfx.update(iso.camera, window.innerHeight); postfx.composer.render(); } else renderer.render(scene, iso.camera);
+  // Place names are UI: draw them after the ink pass so lettering stays readable.
+  if (labels.group.visible) {
+    const autoClear = renderer.autoClear;
+    renderer.autoClear = false; renderer.clearDepth(); renderer.render(labelScene, iso.camera); renderer.autoClear = autoClear;
+  }
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);

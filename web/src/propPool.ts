@@ -8,6 +8,9 @@ export { laneOffset } from './traffic/graph';
 const CAPACITY: Record<PropKind, number> = {
   tree: 6000,
   tree_round: 8000,
+  tree_oval: 8000,
+  tree_spreading: 8000,
+  tree_small: 8000,
   streetlight: 5000,
   car: 6000,
   suv: 2500,
@@ -66,11 +69,25 @@ export class PropPool implements PoseSink {
   private currentTile = '';
   private tmp = new THREE.Object3D();
   paused = false;
+  private midnight = { value: 0 };
 
   constructor(material: THREE.Material) {
+    const lampMaterial = material.clone();
+    lampMaterial.onBeforeCompile = (shader) => {
+      shader.uniforms.uMidnightLamp = this.midnight;
+      shader.uniforms.uLampColor = { value: hex('window_lit') };
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nuniform float uMidnightLamp;\nuniform vec3 uLampColor;')
+        .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+          #ifdef USE_COLOR
+          float lamp = 1.0 - step(0.02, distance(vColor.rgb, uLampColor));
+          totalEmissiveRadiance += vec3(0.035, 0.78, 1.0) * lamp * uMidnightLamp * 2.0;
+          #endif`);
+    };
+    lampMaterial.customProgramCacheKey = () => 'iso-neon-lamp';
     for (const k of PROP_KINDS) {
       const geom = VEHICLE_KINDS.includes(k) ? buildPropGeometry(k, undefined, true) : buildPropGeometry(k);
-      const im = new THREE.InstancedMesh(geom, material, CAPACITY[k]);
+      const im = new THREE.InstancedMesh(geom, k === 'streetlight' ? lampMaterial : material, CAPACITY[k]);
       im.count = 0;
       im.frustumCulled = false;
       im.name = `props:${k}`;
@@ -80,6 +97,8 @@ export class PropPool implements PoseSink {
       this.group.add(im);
     }
   }
+
+  setMidnight(on: boolean) { this.midnight.value = on ? 1 : 0; }
 
   /** Tag everything added until the next call with this tile id (for removeTile). */
   beginTile(tileId: string) { this.currentTile = tileId; }
@@ -91,7 +110,7 @@ export class PropPool implements PoseSink {
       if (i >= CAPACITY[p.kind]) continue;
       this.tmp.position.set(p.x, p.y, p.z);
       this.tmp.rotation.set(0, p.rot, 0);
-      this.tmp.scale.setScalar(p.scale);
+      this.tmp.scale.set(p.scale, p.scaleY ?? p.scale, p.scale);
       this.tmp.updateMatrix();
       im.setMatrixAt(i, this.tmp.matrix);
       this.counts.set(p.kind, i + 1);

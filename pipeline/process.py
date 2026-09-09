@@ -600,6 +600,28 @@ def _deck_endpoints(lines: gpd.GeoDataFrame, terrain) -> tuple[pd.Series, list]:
             for n, row in zip(an, sz):
                 if zmap[n] > WATER_REL_Z:
                     zmap[n] = float(min(max(zmap[n], row.max()), zmap[n] + ABUTMENT_MAX_RAISE_M))
+    # A bridge end can sit over a road beneath it: the bare-earth DEM then
+    # reads the underpass, not the deck. Fit the connected approach beyond that
+    # cut, only when its grade is consistent and it continues the same road class.
+    if terrain is not None:
+        member_set = set(members_idx)
+        for n in nodes:
+            bridge_classes = {lines.at[i, "highway"] for i in members_idx if n in ends[i]} if "highway" in lines else set()
+            for approach, (a, b) in ends.items():
+                if approach in member_set or n not in (a, b):
+                    continue
+                if bridge_classes and lines.at[approach, "highway"] not in bridge_classes:
+                    continue
+                line = lines.at[approach, "geometry"]
+                if line.length < 28:
+                    continue
+                distances = np.array([20., 24., 28.])
+                points = [line.interpolate(float(d if n == a else line.length-d)) for d in distances]
+                elevations = terrain.sample(np.array([p.x for p in points]), np.array([p.y for p in points]))
+                slope, intercept = np.polyfit(distances, elevations, 1)
+                residual = np.max(np.abs(elevations-(slope*distances+intercept)))
+                if abs(slope) <= 0.15 and residual <= 0.6 and 1.0 < intercept-zmap[n] <= 12.0:
+                    zmap[n] = float(intercept)
     comps = {}
     for n in nodes:
         comps.setdefault(find(n), []).append(n)
@@ -861,6 +883,8 @@ def process_water(raw_path: Path, terrain=None) -> gpd.GeoDataFrame:
         return "pond"
 
     polys["kind"] = polys.apply(kind, axis=1)
+    if "name" in polys:
+        polys = polys[~polys["name"].fillna("").str.contains("dry bed", case=False)].copy()
     polys["geometry"] = polys.geometry.simplify(1.0, preserve_topology=True).buffer(0)
     return gpd.GeoDataFrame({
         "id": polys.apply(_osm_id, axis=1),

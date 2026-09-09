@@ -40,6 +40,7 @@ varying vec4 vFacade;
 
 const GLSL_FRAG = /* glsl */ `
 uniform float uNight;
+uniform float uMidnight;
 uniform vec3 uWindowLit;
 uniform vec3 uGlass;
 uniform float uWeathering;
@@ -96,27 +97,29 @@ const GLSL_WINDOWS = /* glsl */ `
       diffuseColor.rgb *= mix(1.0, 0.9, sill);
     }
     vec3 glass = mix(uGlass, diffuseColor.rgb * 0.45, 0.35);
-    float isLit = step(0.62, lit) * uNight;
+    float isLit = mix(step(0.62, lit), 1.0, uMidnight) * uNight;
+    vec3 windowLight = mix(uWindowLit, mix(vec3(0.035, 0.78, 1.0), vec3(1.0, 0.045, 0.32), step(0.5, fhash(vec2(seed, 3.0)))), uMidnight);
     diffuseColor.rgb = mix(diffuseColor.rgb, glass, win * (1.0 - isLit));
-    diffuseColor.rgb = mix(diffuseColor.rgb, uWindowLit, win * isLit);
+    diffuseColor.rgb = mix(diffuseColor.rgb, windowLight, win * isLit);
     // night: darken unlit walls a touch
     diffuseColor.rgb *= mix(1.0, 0.85, uNight * (1.0 - win));
     #ifdef ISO_EMISSIVE
-    totalEmissiveRadiance += uWindowLit * win * isLit * 0.9;
+    totalEmissiveRadiance += windowLight * win * isLit * mix(0.9, 1.8, uMidnight);
     #endif
   }
 }
 `;
 
-export interface FacadeMaterial { material: THREE.MeshStandardMaterial; setNight(on: boolean): void }
+export interface FacadeMaterial { material: THREE.MeshStandardMaterial; setNight(on: boolean): void; setMidnight(on: boolean): void }
 
 export function createFacadeMaterial(): FacadeMaterial {
   const material = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.95, metalness: 0 });
   let uniforms: { [k: string]: THREE.IUniform } | null = null;
-  let night = 0;
+  let night = 0, midnight = 0;
   material.customProgramCacheKey = () => 'iso-facade';
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uNight = { value: night };
+    shader.uniforms.uMidnight = { value: midnight };
     shader.uniforms.uWindowLit = { value: hex('window_lit') };
     shader.uniforms.uGlass = { value: hex('glass') };
     shader.uniforms.uWeathering = { value: regionId === 'honolulu' ? 0.5 : 0 };
@@ -134,6 +137,7 @@ export function createFacadeMaterial(): FacadeMaterial {
   material.defines = { USE_UV: '', ISO_EMISSIVE: '' };
   return {
     material,
+    setMidnight(on) { midnight = on ? 1 : 0; if (uniforms) uniforms.uMidnight.value = midnight; },
     setNight(on) { night = on ? 1 : 0; if (uniforms) uniforms.uNight.value = night; },
   };
 }

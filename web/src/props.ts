@@ -6,6 +6,9 @@ import { regionId } from './region';
 export type PropKind =
   | 'tree'
   | 'tree_round'
+  | 'tree_oval'
+  | 'tree_spreading'
+  | 'tree_small'
   | 'streetlight'
   | 'car'
   | 'suv'
@@ -20,6 +23,9 @@ export type PropKind =
 export const PROP_KINDS: PropKind[] = [
   'tree',
   'tree_round',
+  'tree_oval',
+  'tree_spreading',
+  'tree_small',
   'streetlight',
   'car',
   'suv',
@@ -60,7 +66,7 @@ export interface ColoredPart {
 
 export function mergeColored(parts: ColoredPart[]): THREE.BufferGeometry {
   const prepared: THREE.BufferGeometry[] = parts.map((part) => {
-    let g = part.geom.toNonIndexed();
+    let g = part.geom.getIndex() ? part.geom.toNonIndexed() : part.geom.clone();
     // Drop non-position/normal attributes (e.g. uv) for a consistent attribute set.
     for (const name of Object.keys(g.attributes)) {
       if (name !== 'position' && name !== 'normal') {
@@ -151,6 +157,23 @@ function buildTree(round: boolean): THREE.BufferGeometry {
     { geom: trunk, color: hex('trunk'), position: [0, 0.6, 0] },
     { geom: canopy, color: hex('canopy'), position: [0, canopyY, 0] },
   ]);
+}
+
+/** Multi-lobed deciduous silhouettes, normalized to a 4.4 m height and 1.6 m crown radius. */
+function buildDeciduous(kind: 'tree_oval' | 'tree_spreading' | 'tree_small'): THREE.BufferGeometry {
+  const spread = kind === 'tree_spreading', small = kind === 'tree_small';
+  const parts: ColoredPart[] = [{ geom: new THREE.CylinderGeometry(0.09, 0.18, 2.4, 6), color: hex('trunk'), position: [0, 1.2, 0] }];
+  const lobes = spread ? [[-0.65, 2.7, 0.15], [0.65, 2.8, 0], [0, 3.4, -0.25]]
+    : small ? [[-0.6, 2.7, 0], [0.55, 3.0, 0.3], [0, 3.4, -0.3]] : [[0, 2.4, 0], [-0.3, 3.1, 0.2], [0.2, 3.5, -0.1]];
+  for (const [i, pos] of lobes.entries()) parts.push({ geom: new THREE.IcosahedronGeometry(1, 0),
+    color: hex('canopy').multiplyScalar(0.86 + i * 0.09), position: pos as [number, number, number],
+    scale: spread ? [1.2, 0.9, 1.05] : small ? [0.95, 0.9, 1.0] : [0.9, 1.15, 0.85] });
+  const geom = mergeColored(parts);
+  geom.computeBoundingBox();
+  const bounds = geom.boundingBox!;
+  const radius = Math.max(Math.abs(bounds.min.x), Math.abs(bounds.max.x), Math.abs(bounds.min.z), Math.abs(bounds.max.z));
+  geom.scale(1.6 / radius, 4.4 / bounds.max.y, 1.6 / radius);
+  return geom;
 }
 
 /** Two low-poly palms share the existing instanced tree pools and placement rules. */
@@ -567,6 +590,11 @@ export function buildPropGeometry(
       break;
     case 'tree_round':
       geom = buildTree(true);
+      break;
+    case 'tree_oval':
+    case 'tree_spreading':
+    case 'tree_small':
+      geom = buildDeciduous(kind);
       break;
     case 'streetlight':
       geom = buildStreetlight();

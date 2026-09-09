@@ -6,4 +6,7 @@ pyproj>=3.6
 pyarrow>=15
 requests>=2.31
 numpy>=1.26
+scipy>=1.14
+laspy>=2.5
+lazrs>=0.6
 pytest>=8

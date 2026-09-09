@@ -1,3 +1,4 @@
+import { conformTriangle } from './drape';
 import * as THREE from 'three';
 import { hex } from './props';
 import { MeshBuilder, cleanRing, minAreaOBB, pointInRing, polygons, signedArea, triangulate, type V2 } from './geomutil';
@@ -32,7 +33,11 @@ function drape(mb: MeshBuilder, feat: Feature<PolyGeom, AreaProps>, color: THREE
         let va = V(a), vb = V(b), vc = V(c);
         const cr = new THREE.Vector3().subVectors(vb, va).cross(new THREE.Vector3().subVectors(vc, va));
         if (cr.y < 0) [vb, vc] = [vc, vb];
-        mb.tri(va, vb, vc, color, UP, shade);
+        if (flatY === null) {
+          const [ox, oz] = toLocal(0, 0);
+          conformTriangle(va, vb, vc, (x,z) => groundAt(x-ox, oz-z)+lift,
+            (a,b,c) => mb.tri(a,b,c,color,UP,shade));
+        } else mb.tri(va, vb, vc, color, UP, shade);
       });
     }
   }
@@ -55,6 +60,7 @@ export function buildAreas(
   toLocal: (x: number, y: number) => V2,
   groundAt: (x: number, y: number) => number,
   baseWaterY: number,
+  waterAt?: (x: number, y: number) => number,
 ): { land: THREE.BufferGeometry; water: THREE.BufferGeometry } {
   const land = new MeshBuilder(), wat = new MeshBuilder();
   for (const f of landuse) {
@@ -83,7 +89,8 @@ export function buildAreas(
       }
       lift = 0;
     }
-    drape(wat, f, hex((WATER_COLOR[kind] ?? 'water') as never), lift, toLocal, groundAt, y);
+    const surveyed = f.properties.source === 'noaa2025' && waterAt;
+    drape(wat, f, hex((WATER_COLOR[kind] ?? 'water') as never), surveyed ? 0.12 : lift, toLocal, surveyed || groundAt, y);
   }
   return { land: land.build(), water: wat.build() };
 }

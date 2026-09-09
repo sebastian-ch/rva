@@ -101,6 +101,7 @@ export function buildTilePayload(meta: TileMeta, layers: TileLayers, origin: [nu
   const toLocal = (x: number, y: number): V2 => [x - origin[0], -(y - origin[1])];
   const field = layers.terrain ? new HeightField(layers.terrain) : FLAT_FIELD(0);
   const groundAt = (x: number, y: number) => field.at(x, y);
+  const hydroField = layers.terrain?.water_elev ? new HeightField({ ...layers.terrain, elev: layers.terrain.water_elev }) : null;
   const geoms: TilePayload['geoms'] = {};
   let ranges: BuildingRange[] = [];
   let carPaths: Float32Array[] = [];
@@ -121,12 +122,14 @@ export function buildTilePayload(meta: TileMeta, layers: TileLayers, origin: [nu
     walkPaths = flattenPaths(r.walkPaths);
   }
   if (layers.landuse?.features.length || layers.water?.features.length) {
-    const a = buildAreas(layers.landuse?.features ?? [], layers.water?.features ?? [], toLocal, groundAt, 0);
+    const a = buildAreas(layers.landuse?.features ?? [], layers.water?.features ?? [], toLocal, groundAt, 0,
+      hydroField ? (x, y) => hydroField.at(x, y) : undefined);
     geoms.land = arrays(a.land);
     geoms.water = arrays(a.water);
   }
   const placements = lod === 0
-    ? scatterTile(meta.id, layers.pois?.features ?? [], layers.landuse?.features ?? [], layers.roads?.features ?? [], layers.buildings?.features ?? [], meta.bbox, toLocal, groundAt)
+    ? scatterTile(meta.id, layers.pois?.features ?? [], layers.landuse?.features ?? [], layers.roads?.features ?? [], layers.buildings?.features ?? [], meta.bbox, toLocal, groundAt,
+      { surveyedTrees: meta.surveyed_trees, water: layers.water?.features ?? [] })
     : [];
   return { meta, lod, terrain: layers.terrain, geoms, ranges, placements, carPaths, carMeta, walkPaths, buildingFeatures: layers.buildings?.features ?? [], buildMs: performance.now() - t0 };
 }

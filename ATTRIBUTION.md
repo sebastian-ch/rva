@@ -55,6 +55,22 @@ Update this file whenever a new data source is added.
 
 **Used for:** `Addresses` (address points → building `addr`) and `ZoningDistricts` (height defaults) from the city's ArcGIS Hub feature services at `services1.arcgis.com/k3vhq11XkBNeeOfM`. The Esri basemap tiles are not used.
 
+**Tree inventory (2026-09-09):** `TreeInventoryLive_ViewUFWebPage/FeatureServer/0`, linked from the
+[city Urban Forestry page](https://www.rva.gov/public-works/urban-forestry). Used for tree stem positions,
+species and in-service status. Vacant sites, stumps, retired and out-of-service records are excluded.
+The city describes the original inventory as collected in 2013–2015; live layer edits do not establish
+the survey date of every tree. This is a public informational layer without a named standard license
+in its service metadata; preserve City of Richmond credit.
+
+**NOAA hydro and terrain (2026-09-09):** `Virginia_Lidar_2025_Richmond_Breaklines.gpkg`, Rivers and
+Waterbodies layers, from [NOAA InPort 80312](https://www.fisheries.noaa.gov/inport/item/80312).
+Geometry and shoreline Z values are converted from NAD83(HARN) Virginia South / NAVD88 US survey feet
+to the pipeline's metre frame. Islands remain polygon holes; river elevations are interpolated from
+shoreline vertices, not live water gauges. Bridge and Temporal layers are not interpreted as water.
+The original one-foot DEM tiles are available directly via the STAC index in
+[NOAA dataset 14836](https://www.fisheries.noaa.gov/inport/item/80311), resampled to 1 m.
+These NOAA sources carry CC0. Credit: City of Richmond, Sanborn Map Company, NOAA Office for Coastal Management.
+
 ## City and County of Honolulu / Hawaiʻi State GIS
 
 - **Building footprints and heights:** [Building Footprints (CCH)](https://honolulu-cchnl.opendata.arcgis.com/datasets/building-footprints-cch/about), service `Structures_Facilities/FeatureServer/0`. The city describes mixed 2004 aerial, 2005/2009 NGA LiDAR, 2010 Pictometry, and ongoing plan-based updates. We use city outlines and `maxht_m` for height in metres, with OSM attributes and Overture fallbacks. Other elevation/height fields are retained in raw data but not interpreted as building heights.

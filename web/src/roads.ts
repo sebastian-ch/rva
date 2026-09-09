@@ -1,3 +1,4 @@
+import { conformTriangle } from './drape';
 import * as THREE from 'three';
 import { hex } from './props';
 import { MeshBuilder, cleanRing, type V2 } from './geomutil';
@@ -49,8 +50,9 @@ function ribbon(mb: MeshBuilder, pts: THREE.Vector3[], halfW: number, color: THR
   for (let i = 0; i < n - 1; i++) {
     const a = left[i], b = right[i], c = right[i + 1], d = left[i + 1];
     const cr = new THREE.Vector3().subVectors(b, a).cross(new THREE.Vector3().subVectors(c, a));
-    if (cr.y >= 0) { mb.tri(a, b, c, color, UP, shade); mb.tri(a, c, d, color, UP, shade); }
-    else { mb.tri(a, c, b, color, UP, shade); mb.tri(a, d, c, color, UP, shade); }
+    const emit = (a: THREE.Vector3,b: THREE.Vector3,c: THREE.Vector3) => mb.tri(a,b,c,color,UP,shade);
+    const tri = (a: THREE.Vector3,b: THREE.Vector3,c: THREE.Vector3) => edgeY ? conformTriangle(a,b,c,edgeY,emit) : emit(a,b,c);
+    if (cr.y >= 0) { tri(a,b,c); tri(a,c,d); } else { tri(a,c,b); tri(a,d,c); }
   }
 }
 
@@ -153,11 +155,14 @@ export function deckHeight(d: Deck, x: number, y: number): number {
 export function bridgeLift(_layer: number): number { return 0.6; }
 
 /** Resample a polyline so long segments follow terrain (or a bridge deck); returns local 3D points. */
-function toPath(coords: V2[], toLocal: (x: number, y: number) => V2, groundAt: (x: number, y: number) => number, lift: number, maxSeg = 12, deck: Deck | null = null): THREE.Vector3[] {
+function toPath(coords: V2[], toLocal: (x: number, y: number) => V2, groundAt: (x: number, y: number) => number, lift: number, maxSeg = 12, deck: Deck | null = null, groundedApproach = false): THREE.Vector3[] {
   const c = cleanRing(coords);
   if (c.length < 2) return [];
   const out: THREE.Vector3[] = [];
-  const heightAt = deck ? (x: number, y: number) => Math.max(deckHeight(deck, x, y), groundAt(x, y) - 1) : groundAt;
+  // A bridge follows its deck profile. Sampling the bare-earth surface here
+  // pulled spans up into false humps at embankments and beneath crossing roads.
+  const heightAt = deck ? (x: number, y: number) => groundedApproach
+    ? Math.max(deckHeight(deck, x, y), groundAt(x, y)) : deckHeight(deck, x, y) : groundAt;
   const push = (x: number, y: number) => { const [lx, lz] = toLocal(x, y); out.push(new THREE.Vector3(lx, heightAt(x, y) + lift, lz)); };
   for (let i = 0; i < c.length - 1; i++) {
     const [x0, y0] = c[i], [x1, y1] = c[i + 1];
@@ -207,7 +212,7 @@ export function buildRoads(
   const key = (x: number, y: number) => `${x.toFixed(1)}|${y.toFixed(1)}`;
   for (const f of feats) {
     const p = f.properties;
-    if (p.tunnel || MINOR.has(p.highway)) continue;
+    if (p.tunnel || p.bridge || p.ramp || NO_WALK.has(p.highway) || MINOR.has(p.highway)) continue;
     for (const l of lines(f.geometry)) {
       const c = cleanRing(l);
       if (c.length < 2) continue;
@@ -270,7 +275,15 @@ export function buildRoads(
       const walk = !NO_WALK.has(p.highway);
       if (p.bridge || p.ramp) {
         const rdeck = p.bridge ? deck : parseDeck(p.deck);
-        ribbon(mb, toPath(l, toLocal, groundAt, ROAD_Y - 0.06 + lift, SEG, rdeck), p.width / 2 + (walk ? WALK_W : DECK_EDGE), concrete, 0.98);
+        const base = toPath(l, toLocal, groundAt, ROAD_Y - 0.06 + lift, SEG, rdeck, !!p.ramp && !p.bridge);
+        const edge = walk ? WALK_W : DECK_EDGE;
+        if (p.bridge) ribbon(mb, base, p.width / 2 + edge, concrete, 0.98);
+        else for (const side of [-1, 1]) {
+          // A full-width concrete underlay bows across a cut differently from the
+          // narrower asphalt and can cover it. Grounded approaches need edges only.
+          ribbon(mb, offsetPath(base, side * (p.width / 2 + edge / 2)), edge / 2,
+            concrete, 0.98, draped(ROAD_Y - 0.06 + lift));
+        }
         continue;
       }
       if (!walk) continue;
@@ -318,15 +331,15 @@ export function buildRoads(
     const lift = p.bridge ? bridgeLift(p.layer) : 0;
     const deck = p.bridge || p.ramp ? parseDeck(p.deck) : null;
     for (const l of lines(f.geometry)) {
-      let path = toPath(l, toLocal, groundAt, (minor ? ROAD_Y - 0.04 : ROAD_Y) + lift, SEG, deck);
+      let path = toPath(l, toLocal, groundAt, (minor ? ROAD_Y - 0.04 : ROAD_Y) + lift, SEG, deck, !!p.ramp && !p.bridge);
       if (path.length < 2) continue;
       const carPath = path; // un-extended: endpoints sit on the OSM node so the traffic graph can join ways
-      if (!minor) {
+      if (!minor && !deck) {
         const c = cleanRing(l);
         const [d0, d1] = endDirs(c);
         path = adjustEnds(path, otherHalfW(c[0], p.width / 2, d0), otherHalfW(c[c.length - 1], p.width / 2, d1));
       }
-      ribbon(mb, path, p.width / 2, minor ? (TRAIL.has(p.highway) ? dirt : sidewalk) : asphalt, minor ? 0.94 : 1, deck ? undefined : draped((minor ? ROAD_Y - 0.04 : ROAD_Y) + lift));
+      ribbon(mb, path, p.width / 2, minor ? (TRAIL.has(p.highway) ? dirt : sidewalk) : asphalt, minor ? 0.94 : 1, deck && p.bridge ? undefined : draped((minor ? ROAD_Y - 0.04 : ROAD_Y) + lift));
       if (!minor) roadPaths.push({ path, width: p.width });
       if (!minor && p.highway !== 'service') {
         carPaths.push(carPath);
@@ -344,7 +357,7 @@ export function buildRoads(
     const lift = p.bridge ? bridgeLift(p.layer) : 0;
     const deck = p.bridge || p.ramp ? parseDeck(p.deck) : null;
     for (const l of lines(f.geometry)) {
-      const path = toPath(l, toLocal, groundAt, ROAD_Y + 0.02 + lift, SEG, deck);
+      const path = toPath(l, toLocal, groundAt, ROAD_Y + 0.02 + lift, SEG, deck, !!p.ramp && !p.bridge);
       if (path.length < 2) continue;
       const lanes = p.lanes ?? (p.oneway ? 1 : 2);
       if (!p.oneway && lanes >= 2) dashes(mb, path, 0.12, paint, 3, 6);
@@ -363,7 +376,7 @@ export function buildRoads(
     const lift = p.bridge ? bridgeLift(p.layer) : 0;
     const deck = p.bridge || p.ramp ? parseDeck(p.deck) : null;
     for (const l of lines(f.geometry)) {
-      const path = toPath(l, toLocal, groundAt, ROAD_Y + 0.02 + lift, SEG, deck);
+      const path = toPath(l, toLocal, groundAt, ROAD_Y + 0.02 + lift, SEG, deck, !!p.ramp && !p.bridge);
       if ((p.bridge || p.ramp) && opts.bridges !== false) {
         // rail bridge: concrete deck under the track plus railings and piers
         ribbon(mb, path.map((v) => new THREE.Vector3(v.x, v.y - 0.3, v.z)), 3.2, concrete, 0.9);

@@ -135,7 +135,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--skip-dem", action="store_true")
     ap.add_argument("--skip-osm", action="store_true")
+    ap.add_argument("--overpass-url", help="optional public Overpass API base URL for an unavailable default server")
     a = ap.parse_args(argv)
+    if a.overpass_url:
+        ox.settings.overpass_url = a.overpass_url.rstrip("/")
     bbox = tuple(a.bbox)
     slug = bbox_slug(bbox)
     print(f"bbox {bbox} slug {slug}")

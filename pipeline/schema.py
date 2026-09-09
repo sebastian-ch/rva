@@ -27,7 +27,7 @@ POI_KINDS: set[str] = {
     "fountain", "monument", "shop", "restaurant", "museum",
 }
 
-LANDUSE_KINDS: set[str] = {"park", "grass", "parking", "cemetery", "plaza", "industrial", "forest", "beach", "groyne", "breakwater", "seawall", "pier"}
+LANDUSE_KINDS: set[str] = {"park", "grass", "parking", "cemetery", "plaza", "industrial", "forest", "beach", "groyne", "breakwater", "seawall", "pier", "canal_bank"}
 
 WATER_KINDS: set[str] = {"river", "canal", "pond", "ocean"}
 

@@ -83,6 +83,37 @@ def build(bbox, merge_rowhouses=True, clean=False) -> Path:
         "water": process_water(raw_dir / "water.parquet", terrain),
         "pois": process_pois(raw_dir / "pois.parquet"),
     }
+    hydro = None
+    surveyed_trees = False
+    if REGION == "richmond":
+        hydro_path = DATA_RAW / "richmond_hydro_2025.gpkg"
+        if hydro_path.exists() and terrain:
+            from hydro import load_hydro, merge_water
+            hydro = load_hydro(hydro_path, bbox, terrain.base)
+            layers["water"] = merge_water(layers["water"], hydro)
+            # Land polygons must stop at the surveyed shoreline, including island holes.
+            layers["landuse"].geometry = layers["landuse"].geometry.difference(hydro.mask)
+        from riverfront import canal_banks
+        banks = canal_banks(layers["water"])
+        if len(banks):
+            layers["landuse"] = gpd.GeoDataFrame(pd.concat([layers["landuse"], banks], ignore_index=True), crs=CRS_PROJ)
+        inventory_path = DATA_RAW / f"richmond_{slug}" / "trees.parquet"
+        lidar_path = DATA_RAW / f"lidar_{slug}.npz"
+        if inventory_path.exists():
+            from vegetation import inventory_trees, lidar_canopies, merge_trees
+            inventory = inventory_trees(gpd.read_parquet(inventory_path))
+            crowns = gpd.GeoDataFrame(geometry=[], crs=CRS_PROJ)
+            if lidar_path.exists() and terrain:
+                crown_path = DATA_RAW / f"canopies_{slug}.parquet"
+                inputs = [lidar_path, dem_path, Path(__file__).with_name("vegetation.py")]
+                if crown_path.exists() and crown_path.stat().st_mtime > max(p.stat().st_mtime for p in inputs):
+                    crowns = gpd.read_parquet(crown_path)
+                else:
+                    crowns = lidar_canopies(lidar_path, terrain)
+                    crowns.to_parquet(crown_path)
+                surveyed_trees = len(crowns) > 0
+            layers["pois"] = merge_trees(layers["pois"], inventory, crowns, layers["buildings"], layers["water"])
+            print(f"  vegetation: {len(inventory)} active inventory trees, {len(crowns)} LiDAR crowns")
     if REGION == "honolulu":
         from honolulu import ocean_layer, coastal_green_spaces, coastal_structures
         coast = gpd.read_parquet(DATA_RAW / f"coast_{slug}.parquet")
@@ -161,14 +192,18 @@ def build(bbox, merge_rowhouses=True, clean=False) -> Path:
                 # Resolve land/water edges at 2.5 m instead of the normal 10 m grid.
                 # Entirely underwater tiles keep the inexpensive normal grid.
                 shore = REGION == "honolulu" and flats and any(not g.covers(tile_box) for g, _ in flats)
-                (tdir / "terrain.json").write_text(json.dumps(terrain.tile_grid(tminx, tminy, TILE_SIZE,
+                hydro_here = hydro is not None and hydro.mask.intersects(tile_box)
+                grid = terrain.tile_grid(tminx, tminy, TILE_SIZE,
                                                                                n=101 if shore else 26, flatten=flats,
-                                                                               beach_profile=beach_profile if beach_profile and beach_profile[0].buffer(8).intersects(tile_box) else None)))
+                                                                               beach_profile=beach_profile if beach_profile and beach_profile[0].buffer(8).intersects(tile_box) else None)
+                if hydro_here:
+                    grid = hydro.apply_grid(grid)
+                (tdir / "terrain.json").write_text(json.dumps(grid))
                 written.append("terrain")
             if written:
                 tiles_meta.append({"id": tid, "x": tx, "y": ty,
                                    "bbox": [tminx, tminy, tminx + TILE_SIZE, tminy + TILE_SIZE],
-                                   "layers": written, "counts": counts})
+                                   "layers": written, "counts": counts, "surveyed_trees": surveyed_trees})
     index = {
         "region": REGION,
         "title": PROFILE["title"],
@@ -184,6 +219,31 @@ def build(bbox, merge_rowhouses=True, clean=False) -> Path:
     (DATA_TILES / "index.json").write_text(json.dumps(index, indent=1))
     lms = resolve_landmarks(raw_dir, layers["buildings"], terrain)
     (DATA_TILES / "landmarks.json").write_text(json.dumps(lms, indent=1))
+    # One compact index makes search independent of the currently streamed tiles.
+    search = []
+    seen = set()
+    seen_landmarks = set()
+    for _, row in layers["buildings"].iterrows():
+        name, addr = row.get("name"), row.get("addr")
+        landmark = row.get("landmark")
+        landmark = landmark if isinstance(landmark, str) else None
+        name = name if isinstance(name, str) else None
+        addr = addr if isinstance(addr, str) else None
+        if landmark in lms:
+            name = lms[landmark]["name"]
+        if (not name and not addr) or (row.get("hidden") and not landmark) or row["id"] in seen or (landmark and landmark in seen_landmarks):
+            continue
+        c = row.geometry.representative_point()
+        search.append(dict(id=row["id"], name=name, addr=addr, x=round(c.x, 2), y=round(c.y, 2),
+                           ground_z=float(row.get("ground_z", 0)), landmark=landmark))
+        seen.add(row["id"])
+        if landmark:
+            seen_landmarks.add(landmark)
+    for slug, lm in lms.items():
+        if lm["in_first_slice"] and lm["how"] and not any(r.get("landmark") == slug for r in search):
+            search.append(dict(id=f"landmark:{slug}", name=lm["name"], addr=None, x=lm["x"], y=lm["y"],
+                               ground_z=lm.get("ground_z", 0), landmark=slug))
+    (DATA_TILES / "search.json").write_text(json.dumps(search, separators=(",", ":"), allow_nan=False))
     unmatched = [k for k, v in lms.items() if v["in_first_slice"] and v["how"] is None]
     print(f"  landmarks resolved: {sum(v['how'] is not None for v in lms.values())}/{len(lms)}; unmatched in slice: {unmatched}")
     if terrain:

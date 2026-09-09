@@ -36,6 +36,7 @@ export class IsoCamera {
     c.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE };
     c.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_ROTATE };
     this.savedPolar = polar;
+    c.addEventListener('start', () => { this.anim = null; });
   }
 
   lookAt(target: THREE.Vector3, distance = 1500) {
@@ -63,6 +64,7 @@ export class IsoCamera {
 
   /** Smoothly move the target (and zoom) — used by the tour. */
   flyTo(target: THREE.Vector3, zoom: number, dur = 1.6) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) dur = 0.001;
     this.anim = { from: this.controls.target.clone(), to: target.clone(), fromZoom: this.camera.zoom, toZoom: zoom, t: 0, dur };
   }
 
@@ -74,6 +76,21 @@ export class IsoCamera {
     c.update();
   }
   get isMap() { return this.mapMode; }
+  get isAnimating() { return this.anim !== null; }
+
+  restore(target: THREE.Vector3, zoom: number, azimuth: number, distance: number, map: boolean) {
+    this.anim = null;
+    this.controls.enableDamping = false;
+    this.controls.update();
+    this.controls.target.copy(target);
+    const polar = map ? 0.00001 : this.savedPolar;
+    this.camera.position.copy(target).add(new THREE.Vector3().setFromSphericalCoords(distance, polar, azimuth));
+    this.camera.zoom = zoom;
+    this.camera.updateProjectionMatrix();
+    this.setMapMode(map);
+    this.controls.update();
+    this.controls.enableDamping = true;
+  }
 
   update(dt: number) {
     if (this.anim) {

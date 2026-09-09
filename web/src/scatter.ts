@@ -8,7 +8,7 @@ function vehicleKind(rand: () => number): PropKind {
   return r < 0.6 ? 'car' : r < 0.82 ? 'suv' : r < 0.92 ? 'pickup' : 'van';
 }
 
-export interface Placement { kind: PropKind; x: number; y: number; z: number; rot: number; scale: number }
+export interface Placement { kind: PropKind; x: number; y: number; z: number; rot: number; scale: number; scaleY?: number }
 
 const STREETLIGHT_SPACING = 38;
 const PARK_SPACING = 7.5;  // parallel parking pitch along the curb
@@ -40,10 +40,13 @@ export function scatterTile(
   bbox: [number, number, number, number],
   toLocal: (x: number, y: number) => V2,
   groundAt: (x: number, y: number) => number,
+  options: { surveyedTrees?: boolean; water?: Feature<PolyGeom, AreaProps>[] } = {},
 ): Placement[] {
   const rand = rng(hashStr(tileId));
   const out: Placement[] = [];
   const footprints = buildings.flatMap((b) => polygons(b.geometry).map((p) => cleanRing(p[0])));
+  const waterPolys = (options.water ?? []).flatMap((f) => polygons(f.geometry).map((p) => p.map(cleanRing)));
+  const inWater = (x: number, y: number) => waterPolys.some((p) => pointInRing([x, y], p[0]) && !p.slice(1).some((h) => pointInRing([x, y], h)));
   const fpBounds = footprints.map(ringBounds);
   const inBuilding = (x: number, y: number) => {
     for (let i = 0; i < footprints.length; i++) {
@@ -54,10 +57,10 @@ export function scatterTile(
     return false;
   };
   const inTile = (x: number, y: number) => x >= bbox[0] && x < bbox[2] && y >= bbox[1] && y < bbox[3];
-  const place = (kind: PropKind, x: number, y: number, rot = rand() * Math.PI * 2, scale = 1) => {
-    if (!inTile(x, y) || inBuilding(x, y)) return;
+  const place = (kind: PropKind, x: number, y: number, rot = rand() * Math.PI * 2, scale = 1, scaleY?: number) => {
+    if (!inTile(x, y) || inBuilding(x, y) || inWater(x, y)) return;
     const [lx, lz] = toLocal(x, y);
-    out.push({ kind, x: lx, y: groundAt(x, y), z: lz, rot, scale });
+    out.push({ kind, x: lx, y: groundAt(x, y), z: lz, rot, scale, ...(scaleY === undefined ? {} : { scaleY }) });
   };
 
   // Cheap "nearest road direction" lookup for orienting POI-placed props (e.g. traffic lights).
@@ -105,7 +108,16 @@ export function scatterTile(
     const k = p.properties.kind;
     if (k === 'tree') {
       osmTreeCount++;
-      place(rand() < 0.5 ? 'tree' : 'tree_round', x, y, undefined, 0.85 + rand() * 0.5);
+      const tree = p.properties;
+      if (tree.tree_height && tree.crown_radius) {
+        const species = (tree.species ?? '').toLowerCase();
+        const kind: PropKind = /pinus|cedrus|juniperus|taxodium/.test(species) ? 'tree'
+          : /quercus|platanus|ulmus/.test(species) ? 'tree_spreading'
+          : /lagerstroemia|cercis|prunus|cornus/.test(species) ? 'tree_small'
+          : /zelkova|liquidambar|ginkgo/.test(species) ? 'tree_oval' : 'tree_round';
+        // Surveyed trees use normalized meshes: height and crown width are independent.
+        place(kind, x, y, undefined, Math.max(0.5, tree.crown_radius) / 1.6, Math.max(2, tree.tree_height) / 4.4);
+      } else place(rand() < 0.5 ? 'tree' : 'tree_round', x, y, undefined, 0.85 + rand() * 0.5);
     } else if (k === 'streetlight') place('streetlight', x, y);
     else if (k === 'bench') place('bench', x, y);
     else if (k === 'bus_stop') place('person', x, y);
@@ -115,6 +127,7 @@ export function scatterTile(
 
   // 2. trees in parks/cemeteries/forests
   for (const f of landuse) {
+    if (options.surveyedTrees) break;
     const kind = f.properties.kind;
     if (!['park', 'cemetery', 'forest', 'grass'].includes(kind)) continue;
     for (const poly of polygons(f.geometry)) {
@@ -165,7 +178,7 @@ export function scatterTile(
 
   // 3. along roads: streetlights on the sidewalk edge, parked cars at the curb, a few pedestrians,
   //    and (when tree POIs are sparse) extra street trees on residential streets
-  const addStreetTrees = osmTreeCount < residentialLen / STREET_TREE_ROAD_LENGTH_PER_TREE;
+  const addStreetTrees = !options.surveyedTrees && osmTreeCount < residentialLen / STREET_TREE_ROAD_LENGTH_PER_TREE;
   for (const f of roads) {
     const p = f.properties;
     if (p.tunnel || p.bridge) continue;

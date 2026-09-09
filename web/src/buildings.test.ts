@@ -118,3 +118,15 @@ describe('buildBuildingsMesh', () => {
     });
   }
 });
+
+it.each(['gable','skillion'] as const)('keeps %s roof triangles inside a concave footprint',shape=>{
+ const f=makeFeature(shape);
+ f.geometry={type:'Polygon',coordinates:[[[0,0],[20,0],[20,6],[6,6],[6,20],[0,20],[0,0]]]};
+ f.properties.roof_azimuth=37;
+ const {mesh}=buildBuildingsMesh([f],(x,y)=>[x,y],()=>5,new THREE.MeshBasicMaterial(),{details:false});
+ const pos=mesh.geometry.getAttribute('position');
+ for(let i=0;i<pos.count;i+=3){
+  const x=(pos.getX(i)+pos.getX(i+1)+pos.getX(i+2))/3,z=(pos.getZ(i)+pos.getZ(i+1)+pos.getZ(i+2))/3;
+  if(Math.max(pos.getY(i),pos.getY(i+1),pos.getY(i+2))>15.001) expect(x>6.001&&z>6.001).toBe(false);
+ }
+});

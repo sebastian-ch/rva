@@ -1,4 +1,5 @@
 import { region, regionId } from './region';
+import { MAP_STYLES, STYLE_IDS, parseStyle, type MapStyle } from './styles';
 
 export interface BuildingInfo {
   id: string;
@@ -23,6 +24,7 @@ export interface UICallbacks {
   onTour(): void; // starts/advances a guided tour
   onCloseInfo(): void;
   onToggleHeights?(on: boolean): void;
+  onStyle?(style: MapStyle): void;
 }
 
 export interface HeightsLegendSpec {
@@ -41,6 +43,8 @@ export interface UI {
   setHeights(on: boolean): void; // sync button state + body.heights
   setHeightsLegend(spec: HeightsLegendSpec | null): void;
   setReadout(text: string | null): void;
+  setMap(on: boolean): void;
+  setStyle(style: MapStyle): void;
 }
 
 /**
@@ -138,6 +142,36 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
   const mapBtn = makeButton("\u{1F5FA}", "Map");
   const tourBtn = makeButton("\u{1F3DB}", "Tour");
   const heightsBtn = makeButton("\u{1F4D0}", "Heights");
+  const stylePicker = document.createElement('label');
+  stylePicker.className = 'style-picker';
+  stylePicker.textContent = 'Style';
+  const styleSelect = document.createElement('select');
+  styleSelect.setAttribute('aria-label', 'Map style');
+  for (const id of STYLE_IDS) {
+    const option = document.createElement('option'); option.value = id; option.textContent = MAP_STYLES[id].label;
+    styleSelect.appendChild(option);
+  }
+  stylePicker.appendChild(styleSelect);
+  let style: MapStyle = 'classic';
+  const setStyle = (value: MapStyle) => {
+    style = value;
+    const definition = MAP_STYLES[value];
+    subtitle.textContent = definition.note ?? region.subtitle;
+    styleSelect.value = value;
+    for (const id of STYLE_IDS) document.body.classList.toggle(id, value === id);
+    document.body.dataset.mapStyle = value;
+    const theme = definition.theme;
+    for (const key of ['bg', 'alt', 'border', 'text', 'muted'] as const) {
+      const cssKey = { bg: 'bg', alt: 'bg-alt', border: 'border', text: 'text', muted: 'text-muted' }[key];
+      if (theme) document.body.style.setProperty(`--ui-${cssKey}`, theme[key]);
+      else document.body.style.removeProperty(`--ui-${cssKey}`);
+    }
+    document.body.style.colorScheme = theme?.scheme ?? '';
+    nightBtn.disabled = definition.nightLighting;
+    nightBtn.title = definition.nightLighting ? `${definition.label} includes night lighting` : 'Toggle night lighting';
+    styleSelect.title = definition.note ?? `Map style: ${definition.label}`;
+  };
+  styleSelect.addEventListener('change', () => { setStyle(parseStyle(styleSelect.value)); cb.onStyle?.(style); });
 
   nightBtn.addEventListener("click", () => {
     nightOn = !nightOn;
@@ -172,6 +206,7 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
   toolbar.appendChild(mapBtn);
   // toolbar.appendChild(tourBtn); // Tour hidden for now (button still wired; re-add to show it)
   toolbar.appendChild(heightsBtn);
+  toolbar.appendChild(stylePicker);
 
   root.appendChild(toolbar);
 
@@ -328,6 +363,13 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
   }
 
   root.appendChild(attribution);
+  if (regionId === 'richmond') {
+    for (const [title, url] of [['City of Richmond trees', 'https://www.rva.gov/public-works/urban-forestry'],
+      ['NOAA 2025 LiDAR & hydro', 'https://www.fisheries.noaa.gov/inport/item/80312']]) {
+      attribution.append(document.createTextNode(' · ')); const link = document.createElement('a');
+      link.textContent = title; link.href = url; link.target = '_blank'; link.rel = 'noopener noreferrer'; attribution.append(link);
+    }
+  }
 
   function applyNightState(on: boolean): void {
     document.body.classList.toggle("night", on);
@@ -527,5 +569,7 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
     setHeights,
     setHeightsLegend,
     setReadout,
+    setStyle,
+    setMap(on) { mapOn = on; mapBtn.classList.toggle('active', on); },
   };
 }

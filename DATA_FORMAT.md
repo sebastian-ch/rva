@@ -98,3 +98,22 @@ Every entry of `assets/landmarks/landmarks.json` resolved to a position by `pipe
 Region profiles select the projected CRS and output path. Honolulu IDs use `cch:<objectid>` for city footprints. Its `cch_height` is a maximum roof height: the rendered wall height plus roof rise fits inside that total. Ocean `water_z` is `-base_elevation`, corresponding to zero in the DEM elevation reference.
 
 Honolulu coastal structures use landuse kinds `groyne`, `breakwater`, `seawall`, and `pier`. Optional `base_z` and `top_z` are elevations relative to the regional DEM base; both scale with terrain exaggeration. Their polygons render as solid extrusions. `source` identifies OSM or imagery tracing; `dimensions_source` marks estimated dimensions.
+# Richmond vegetation, hydro, and navigation additions
+
+- `index.json` tile entries may contain `surveyed_trees: true`: complete regional LiDAR canopy processing
+  was available, so the renderer suppresses procedural park/street tree scatter. Existing OSM trees remain
+  where they do not duplicate inventory/canopy points.
+- Tree POIs retain `kind: "tree"` and add optional `species`, `source` (`city_inventory` or `lidar2025`),
+  `tree_height` (metres), `crown_radius` (metres), and `height_source` (`estimated` or `lidar2025`).
+  Heights/crown widths are independent of terrain exaggeration. Unmatched inventory trees use explicit
+  estimated sizes; LiDAR peaks and crown envelopes are approximate.
+- Water features may have `source: "noaa2025"`. `water_z` is numeric or null, never a string.
+  River elevations use optional `terrain.json.water_elev`, a finite array aligned with `elev` in the same
+  unexaggerated, base-relative metre frame. The viewer scales both once. Ground beneath water is lowered
+  while island holes remain untouched.
+- `landuse.kind: "canal_bank"` uses `base_z` and `top_z` for stylized masonry beside mapped downtown canals.
+  Its source is `osm_stylized`; the coping height is an artistic estimate, not a measured wall survey.
+- `search.json` is an array of `{id,name,addr,x,y,ground_z,landmark}`. Positions use the index's projected
+  CRS; `ground_z` is base-relative metres. Landmark names are canonical and deduplicated across parts.
+- Shared URL state is versioned (`view=1`) and region-scoped, with projected target XY, displayed target
+  height Z, zoom, azimuth in radians, camera distance, night/map flags, style and optional building ID.

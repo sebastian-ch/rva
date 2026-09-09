@@ -135,15 +135,58 @@ class Builder:
                 self.box(x, y, z0 + h, r * 2.6, r * 2.6, r * 0.8, key, shade=0.95)
 
     def pediment(self, cx, cy, z0, width, depth, h, key, rot=0.0, shade=1.0):
-        """Triangular prism: ridge along local x of length `width`, spanning `depth` in y."""
+        """Temple pediment: triangular front across width, ridge running back through depth."""
         ux, uy = math.cos(rot), math.sin(rot)
         vx, vy = -uy, ux
         def P(u, v, z):
             return (cx + ux * u + vx * v, cy + uy * u + vy * v, z)
         verts = [P(-width / 2, -depth / 2, z0), P(width / 2, -depth / 2, z0), P(width / 2, depth / 2, z0), P(-width / 2, depth / 2, z0),
-                 P(-width / 2, 0, z0 + h), P(width / 2, 0, z0 + h)]
-        faces = [(0, 1, 5, 4), (2, 3, 4, 5), (1, 2, 5), (3, 0, 4), (0, 3, 2, 1)]
+                 P(0, -depth / 2, z0 + h), P(0, depth / 2, z0 + h)]
+        faces = [(0, 1, 4), (2, 3, 5), (1, 2, 5, 4), (3, 0, 4, 5), (0, 3, 2, 1)]
         return self.add(verts, faces, key, shade)
+
+    def window_bays(self, ring, z, height=3.0, width=1.6, pitch=5.0, trim="cream", arched=False):
+        """Windows and stone surrounds on each real footprint edge, with no floating OBB facades."""
+        area = sum(ring[i][0] * ring[(i + 1) % len(ring)][1] - ring[(i + 1) % len(ring)][0] * ring[i][1] for i in range(len(ring)))
+        for i, (ax, ay) in enumerate(ring):
+            bx, by = ring[(i + 1) % len(ring)]
+            length = math.hypot(bx - ax, by - ay)
+            count = int(length / pitch)
+            if count < 1:
+                continue
+            ux, uy = (bx - ax) / length, (by - ay) / length
+            nx, ny = (uy, -ux) if area > 0 else (-uy, ux)
+            rot = math.atan2(uy, ux)
+            for j in range(count):
+                t = (j + 0.5) / count
+                x, y = ax + (bx - ax) * t + nx * 0.13, ay + (by - ay) * t + ny * 0.13
+                self.box(x, y, z - 0.15, width + 0.4, 0.22, height + 0.3, trim, rot=rot, name="window-surround")
+                x, y = x + nx * 0.13, y + ny * 0.13
+                outline = [(-width / 2, 0), (width / 2, 0)]
+                if arched:
+                    outline += [(width / 2 * math.cos(a), height - width / 2 + width / 2 * math.sin(a)) for a in [k * math.pi / 8 for k in range(9)]]
+                else:
+                    outline += [(width / 2, height), (-width / 2, height)]
+                verts = [(x + ux * u, y + uy * u, z + v) for u, v in outline]
+                self.add(verts, [tuple(range(len(verts)))], "roof_dark", name="window-glass")
+                self.box(x + nx * 0.01, y + ny * 0.01, z, 0.10, 0.06, height - (width / 2 if arched else 0), trim, rot=rot)
+                self.box(x + nx * 0.01, y + ny * 0.01, z + height * 0.48, width, 0.06, 0.10, trim, rot=rot)
+
+    def clock_face(self, x, y, z, radius, angle):
+        """Vertical clock dial with hour marks and two hands, facing outward along angle."""
+        nx, ny = math.cos(angle), math.sin(angle)
+        ux, uy = -ny, nx
+        def p(u, v, depth=0):
+            return (x + ux * u + nx * depth, y + uy * u + ny * depth, z + v)
+        circle = [p(radius * math.cos(a), radius * math.sin(a)) for a in [i * math.tau / 32 for i in range(32)]]
+        self.add(circle, [tuple(range(32))], "cream", name="clock-dial")
+        for i in range(12):
+            a = math.tau * i / 12
+            u, v = radius * 0.83 * math.sin(a), radius * 0.83 * math.cos(a)
+            self.add([p(u - 0.055, v - 0.11, 0.02), p(u + 0.055, v - 0.11, 0.02), p(u + 0.055, v + 0.11, 0.02), p(u - 0.055, v + 0.11, 0.02)], [(0, 1, 2, 3)], "roof_dark", name="clock-mark")
+        for angle, length in ((0, radius * 0.72), (math.pi / 3, radius * 0.50)):
+            u, v = math.sin(angle) * length, math.cos(angle) * length
+            self.add([p(-0.065, 0, 0.04), p(0.065, 0, 0.04), p(u + 0.045, v, 0.04), p(u - 0.045, v, 0.04)], [(0, 1, 2, 3)], "roof_dark", name="clock-hand")
 
     def band(self, ring, z0, thick, height, key, shade=0.9):
         """Cornice: a thin ledge that runs around the ring, protruding outward by `thick`."""
