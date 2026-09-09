@@ -1,5 +1,11 @@
 # Graph-based IDM traffic in a worker — implementation plan
 
+> **Status (2026-09-09): implemented** in `web/src/traffic/{graph,sim,protocol}.ts`, `trafficWorker.ts`,
+> `trafficClient.ts`, `propPool.applyPoses`. Deviations from the plan below: ways are also split at any vertex two
+> ways share (OSM crossroads), not only at endpoints; merge gap acceptance is folded into the priority yield rule;
+> buses run in the worker from day one; the junction virtual leader stops 1 m short of the node. Phase 4 items
+> (MOBIL lane changes, signals, stop signs) are still open.
+
 ## Why
 
 Today (`web/src/propPool.ts`) cars are spawned per road polyline *as clipped to the tile*. Each polyline is a

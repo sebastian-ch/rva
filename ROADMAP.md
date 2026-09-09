@@ -228,5 +228,25 @@ Fifth pass (cars and new buildings):
   name match, optional footprint). First entries: the 26-storey CoStar tower at 600 Tredegar (footprint from the
   VGIN 2026 layer, 155 m) and the Allianz Amphitheater (22 m canopy). Both are newer than the 2014 LiDAR.
 
-Still to look at: prop placement on steep banks, tunnel portals, the odd clipped pond piece at tile edges,
-junction areas as polygons with curb radii, lane arrows, medians on divided roads, bus lanes.
+Sixth pass (2025 LiDAR, terrain, traffic, publishing; 2026-09-09):
+- Data: the 2025 City of Richmond LiDAR (NOAA Digital Coast EPT, flown Feb 2025) replaces the 2014 USGS cloud
+  for heights and roof fits; the nDSM excludes vegetation; the terrain DEM is the NOAA 1 ft bare earth resampled
+  to 1 m (`dem_noaa.py`). LiDAR now outranks Overture heights (Overture ran ~1.5x low on houses); footprints
+  whose LiDAR surface is at ground are dropped as stale (130); shed-sized footprints are capped; roof fits use
+  the top surface per 1 m cell. CoStar Tower moved to its real site (footprint from the 2025 DSM); the Allianz
+  Amphitheater bowl was traced from VGIN Spring 2025 imagery.
+- Roads: cross-street sag over sunken freeways fixed (connectors must be collinear and same class; abutments
+  sampled a few metres up the approach); sidewalks/corner fills only on walkable classes; junctions recognise
+  interior vertices, so T-junction sidewalks stop at the kerb; ribbon edges never sink under cross-sloping
+  ground; `track`/`path` are dirt trails; a mainline never ramps up to a touching lower-class link bridge.
+- Water: canals and ponds carry `water_z` and the terrain grid is flattened beneath them, so the canal reads as
+  a filled basin. Terrain is vertically exaggerated 1.6x in the viewer (`web/src/elevation.ts`).
+- Traffic: replaced the per-polyline car loops with a road graph + IDM simulation in a dedicated worker
+  (`docs/traffic-idm-plan.md`): cars route across tiles and junctions, yield by priority, slow for turns, merge
+  on ramps, and spawn to per-class density targets. Buses ride along as a kind.
+- Publishing: base-relative assets and `npm run deploy` to GitHub Pages (https://sebastian-ch.github.io/rva/).
+
+Still to look at: prop placement on steep banks, tunnel portals (the Downtown Expressway just ends where it
+goes under 9th/10th Street), sidewalk strips overlapping where two walkable streets run within ~5 m, lane
+changes (MOBIL) and signals in the traffic sim, the odd clipped pond piece at tile edges, junction areas as
+polygons with curb radii, lane arrows, medians on divided roads, bus lanes.

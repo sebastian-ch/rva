@@ -37,7 +37,7 @@ Geometry is clipped to the tile bbox. All layers optional; missing = empty.
 | `height` | number | meters, roof-line height above ground |
 | `min_height` | number | meters, default 0 |
 | `levels` | int\|null | |
-| `height_source` | `"osm_height"\|"osm_levels"\|"overture_height"\|"overture_levels"\|"lidar"\|"zoning"\|"default"\|"landmark_hint"\|"override"` | resolution order as listed; `override` = supplements file |
+| `height_source` | `"osm_height"\|"osm_levels"\|"overture_height"\|"overture_levels"\|"lidar"\|"zoning"\|"default"\|"landmark_hint"\|"override"` | resolution order: OSM height, OSM levels, LiDAR (≥ 10 nDSM cells; eave for pitched roofs), Overture height, Overture levels, sparse LiDAR, zoning, type default; `override` = supplements file. Footprints whose LiDAR surface is at ground (p90 < 1.2 m, ≥ 8 cells) with no OSM height are dropped as stale; LiDAR heights on footprints < 80 m² are capped at 4·√area |
 | `zoning` | string\|null | City of Richmond zoning district at the footprint |
 | `roof_shape` | `"flat"\|"gable"\|"hip"\|"pyramidal"\|"skillion"\|"dome"` | |
 | `roof_height` | number | meters of roof above `height`, 0 for flat |
@@ -58,13 +58,15 @@ Geometry is clipped to the tile bbox. All layers optional; missing = empty.
 | `website` | string\|null | |
 
 ### roads (LineString)
-`id`, `name`, `highway`, `lanes` (int), `width` (m), `oneway` (bool), `surface`, `sidewalk` (bool), `bridge` (bool), `ramp` (bool: a non-bridge way whose end meets an elevated deck; carries a `deck` so it climbs to it), `tunnel` (bool), `layer` (int), `deck` (bridges only: `[x0,y0,z0,x1,y1,z1]`, the unclipped way's ends with deck elevations relative to `base_elevation`, computed per connected bridge chain from its land ends (chain nodes whose ground is at or above the interpolated deck become anchors too); the GeoJSON driver stores it as a real array)
+`id`, `name`, `highway`, `lanes` (int), `width` (m), `oneway` (bool), `surface`, `sidewalk` (bool), `bridge` (bool), `ramp` (bool: a non-bridge way whose end meets an elevated deck; carries a `deck` so it climbs to it), `tunnel` (bool), `layer` (int), `deck` (bridges and ramps: `[x0,y0,z0,x1,y1,z1]`, the unclipped way's ends with deck elevations relative to `base_elevation`, computed per connected bridge chain from its land ends (chain nodes whose ground is at or above the interpolated deck become anchors too); the GeoJSON driver stores it as a real array)
 
 ### rail (LineString)
 `id`, `name`, `railway`, `bridge`, `layer`, `deck` (as for roads)
 
 ### landuse (Polygon)
 `id`, `name`, `kind`: `"park"|"grass"|"parking"|"cemetery"|"plaza"|"industrial"|"forest"`
+
+Elevations in every layer are real metres above `base_elevation`; the viewer multiplies them by `Z_SCALE` (1.6, `web/src/elevation.ts`) when a tile is loaded and divides back for anything shown to the user.
 
 ### water (Polygon)
 `id`, `name`, `kind`: `"river"|"canal"|"pond"`, `water_z` (m above `base_elevation`; flat surface for canals and ponds,

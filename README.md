@@ -9,9 +9,15 @@ Set up the Python pipeline:
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install -r pipeline/requirements.txt
-.venv/bin/python pipeline/fetch.py
+.venv/bin/python pipeline/fetch.py              # OSM + fallback 3DEP DEM
+.venv/bin/python pipeline/fetch_overture.py     # Overture buildings
+.venv/bin/python pipeline/fetch_richmond.py     # City addresses + zoning
+.venv/bin/python pipeline/dem_noaa.py           # 1 m terrain from the NOAA 2025 DEM zip (optional, better)
+.venv/bin/python pipeline/fetch_lidar.py        # 2025 City of Richmond LiDAR -> heights + roofs
 .venv/bin/python pipeline/build_tiles.py
 ```
+
+The full command list, data conventions and layout notes live in `CLAUDE.md`.
 
 Set up and run the web viewer:
 
@@ -40,6 +46,15 @@ See `ATTRIBUTION.md` for full attribution details and license terms for all data
 
 **Licensing rule:** Automated data extraction occurs only from OpenStreetMap, Overture Maps, VGIN, USGS/USDA NAIP, and Mapillary. Google Photorealistic 3D Tiles, Street View, and Mapbox Satellite imagery are used only as visual reference for hand-modeling — their terms prohibit deriving datasets.
 
+## Deploying
+
+The viewer is a static site: `cd web && npm run deploy` builds it with the `/rva/` base path, copies the tiles and
+landmark models in, and force-pushes `dist/` to the `gh-pages` branch (see `web/tools/README.md`). Live at
+https://sebastian-ch.github.io/rva/.
+
 ## Status
 
-Currently developing the first slice: Downtown + Shockoe Bottom + Capitol Square (~2 sq mi). Procedural geometry generation is in progress; landmarks are hand-modeled in Blender. See `PLAN.md` for the full implementation roadmap.
+First slice (Downtown, Shockoe Bottom, Capitol Square, the riverfront and the foot of Church Hill, ~4.7 sq mi)
+is built end to end: procedural buildings with 2025 LiDAR heights and roofs, bridges and ramps, still water, a
+graph-based traffic simulation in a worker, and ten hand-modeled landmarks. `ROADMAP.md` records what each pass
+changed and what is still open; `PLAN.md` is the original plan.

@@ -1,6 +1,9 @@
 """Pure functions: building height, roof and color resolution. No I/O, easy to test.
 
-Height resolution order (CLAUDE.md): OSM height -> building:levels x 3.2 m -> LiDAR nDSM median -> type default.
+Height resolution order (CLAUDE.md): OSM height -> building:levels x 3.2 m -> LiDAR nDSM median (>= 10 cells) ->
+Overture height/levels -> sparse LiDAR -> zoning -> type default; `resolve_height` covers the OSM/LiDAR/default
+steps and `process.py` interleaves Overture and zoning. `looks_demolished` and `cap_small_footprint` are the
+cleanup rules applied after resolution; `resolve_roof` caps roof height at half the building height.
 """
 from __future__ import annotations
 

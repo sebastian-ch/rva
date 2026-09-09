@@ -43,6 +43,19 @@ non-benign console error appears, or clicking a toolbar button produces a new
 error. On success it writes `snapshots/default.png`, `snapshots/capitol.png`,
 and `snapshots/river.png`. `snapshots/` is gitignored.
 
+## deploy.mjs
+
+```
+npm run deploy -- [--remote <git url>] [--base /<repo>/] [--dry-run]
+```
+
+Typechecks, runs `vite build` with `BASE_PATH` set (default `/<repo name>/` from the remote, which the app reads
+as `import.meta.env.BASE_URL` for tiles, landmark models and workers), copies `data/tiles` and
+`assets/landmarks` into `dist/` (done by `vite.config.ts`), adds `.nojekyll`, and force-pushes `dist/` as the
+`gh-pages` branch. Pages must serve that branch from `/` (set once with
+`gh api -X PUT repos/<owner>/<repo>/pages -f "source[branch]=gh-pages" -f "source[path]=/"`). `--dry-run`
+builds without pushing. Run the pipeline first: the tiles in `dist/` are whatever `data/tiles` holds.
+
 ## lib/browser.mjs
 
 Shared helpers (`launchBrowser`, `openViewer`, `readStats`, `errorLogs`) used

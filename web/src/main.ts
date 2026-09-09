@@ -267,7 +267,9 @@ async function boot() {
   world = new TileWorld(index, materials);
   landmarkModels = new LandmarkModels(world.toLocal, materials.buildings);
   scene.add(landmarkModels.group);
+  // open on downtown rather than the geometric centre (which sits over the river): 400 m north of it
   const center = world.center();
+  center.z -= 400; // local z = -north
   iso.lookAt(center, 1800);
   iso.camera.zoom = 1.1;
   iso.camera.updateProjectionMatrix();
@@ -388,5 +390,5 @@ requestAnimationFrame(frame);
 boot().catch((e) => { console.error(e); ui.setLoading(true, 'Failed to load tiles. Run the pipeline first.'); });
 
 // expose for debugging
-const debug = createDebug({ iso, tiles, manager: () => manager, landmarkTargets, propCounts: () => props.counts_() });
-Object.assign(window, { __iso: { scene, tiles, iso, props, traffic, trafficStats: () => ({ ...traffic.stats, drawn: props.trafficCount() }), palette, night: () => night, stats: () => manager?.summary(), manager: () => manager, postfx, ...debug } });
+const debug = createDebug({ iso, tiles, manager: () => manager, landmarkTargets, propCounts: () => props.counts_(), traffic: () => ({ ...traffic.stats, drawn: props.trafficCount() }) });
+Object.assign(window, { __iso: { scene, tiles, iso, props, traffic, palette, night: () => night, stats: () => manager?.summary(), manager: () => manager, postfx, ...debug } });

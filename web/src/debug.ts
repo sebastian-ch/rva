@@ -17,6 +17,8 @@ export interface DebugDeps {
   manager: () => TileManager | null;
   landmarkTargets: Map<string, THREE.Vector3>;
   propCounts: () => Record<string, number>;
+  /** traffic worker stats plus how many vehicles the pool is drawing */
+  traffic?: () => Record<string, number | string>;
 }
 
 export function createDebug(d: DebugDeps) {
@@ -68,7 +70,7 @@ export function createDebug(d: DebugDeps) {
     return null;
   };
 
-  const counts = () => ({ ...(d.manager()?.summary() ?? {}), props: d.propCounts() });
+  const counts = () => ({ ...(d.manager()?.summary() ?? {}), props: d.propCounts(), traffic: d.traffic?.() ?? null });
 
   return { where, find, goto, building, counts };
 }
