@@ -54,7 +54,9 @@ export class LandmarkModels {
       const c = centroid(cleanRing(polygons(feat.geometry)[0][0]));
       const [lx, lz] = this.toLocal(c[0], c[1]);
       try {
-        const gltf = await this.loader.loadAsync(`${import.meta.env.BASE_URL}assets/${lm.model}`);
+        const version = (import.meta.env.VITE_LANDMARK_VERSIONS as Record<string, string>)[lm.model!];
+        const url = `${import.meta.env.BASE_URL}assets/${lm.model}${version ? `?v=${version}` : ''}`;
+        const gltf = await this.loader.loadAsync(url);
         if (this.detached.has(tile)) continue;
         const obj = gltf.scene;
         obj.position.set(lx, feat.properties.ground_z, lz);

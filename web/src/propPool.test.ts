@@ -60,3 +60,19 @@ describe('PropPool.addWalkers', () => {
     expect(pool.counts_().person).toBe(before);
   });
 });
+
+it('grows a full tree buffer without losing instances or tile ownership',()=>{
+ const pool=new PropPool(new THREE.MeshBasicMaterial());
+ const first=pool.group.getObjectByName('props:tree_round') as THREE.InstancedMesh;
+ const capacity=first.instanceMatrix.count;
+ const tree=(x:number)=>({kind:'tree_round' as const,x,y:0,z:0,rot:0,scale:1});
+ pool.beginTile('first');pool.add(Array.from({length:capacity},(_,i)=>tree(i)));
+ pool.beginTile('second');pool.add([tree(capacity)]);
+ const grown=pool.group.getObjectByName('props:tree_round') as THREE.InstancedMesh;
+ expect(grown.count).toBe(capacity+1);
+ expect(translationX(grown,0)).toBe(0);
+ expect(translationX(grown,capacity)).toBe(capacity);
+ pool.removeTile('first');
+ expect(grown.count).toBe(1);
+ expect(translationX(grown,0)).toBe(capacity);
+});

@@ -168,6 +168,18 @@ canopy products when their DEM/point-cloud inputs change.
 [props.ts](../web/src/props.ts), [propPool.ts](../web/src/propPool.ts).
 **Regression:** [test_vegetation.py](../pipeline/tests/test_vegetation.py).
 
+### Trees must survive detail transitions and capacity limits
+
+Reduced-detail tiles formerly omitted all POIs and placements, so their trees vanished. They now fetch
+POIs and retain tree placements while omitting small props. `treesOnly` filtering preserves the random
+sequence so trees keep the same locations across detail changes. Regression: `scatter.test.ts`.
+
+Fixed tree instance pools silently dropped placements beyond their limit (8,000 round trees). Tree
+buffers now grow geometrically, retaining matrices and tile ownership; removing a tile still compacts
+the grown buffer correctly. Regression: `propPool.test.ts`. Check expected placement counts against
+rendered instances at a wide zoom; `tools/review-tree-loading.mjs` does this and verifies model URLs.
+This fixes rendering omissions, not missing source observations or the intentional building/water filters.
+
 ## 7. Downloads and caches: missing is not empty
 
 A failed Overpass request does not mean there are no benches, lamps or fountains. Preserve completed
@@ -182,6 +194,12 @@ rebuild: obtaining raw data alone does not update the viewer.
 Treat `index.json` as the manifest for active tiles. Old unreferenced tile files can survive an
 incremental rebuild; globbing every directory can produce misleading counts or stale feature values.
 Only clean generated caches deliberately, and do not delete another region's data.
+
+Landmark GLBs copied to stable public paths can remain in browser caches after a deployment, even
+when a fresh server download is correct. Compare local/live file hashes before blaming geometry.
+`vite.config.ts` now fingerprints each region's GLB bytes and embeds a version map; `landmarkModels.ts`
+appends the fingerprint to model requests. A changed model therefore also changes the application
+bundle. Existing open sessions still need a refresh. This covers landmark assets, not tile-cache invalidation.
 
 ## 8. Landmarks: correctness and draw calls both matter
 

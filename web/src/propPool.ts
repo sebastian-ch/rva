@@ -105,9 +105,24 @@ export class PropPool implements PoseSink {
 
   add(placements: Placement[]) {
     for (const p of placements) {
-      const im = this.meshes.get(p.kind)!;
+      let im = this.meshes.get(p.kind)!;
       const i = this.counts.get(p.kind)!;
-      if (i >= CAPACITY[p.kind]) continue;
+      if (i >= im.instanceMatrix.count) {
+        if (!p.kind.startsWith('tree')) continue;
+        const larger = new THREE.InstancedMesh(im.geometry, im.material, im.instanceMatrix.count * 2);
+        larger.instanceMatrix.array.set(im.instanceMatrix.array);
+        larger.count = im.count;
+        larger.name = im.name;
+        larger.frustumCulled = false;
+        larger.visible = im.visible;
+        larger.castShadow = im.castShadow;
+        larger.receiveShadow = im.receiveShadow;
+        this.group.remove(im);
+        this.group.add(larger);
+        im.dispose(); // release instance buffers; geometry/material remain shared
+        this.meshes.set(p.kind, larger);
+        im = larger;
+      }
       this.tmp.position.set(p.x, p.y, p.z);
       this.tmp.rotation.set(0, p.rot, 0);
       this.tmp.scale.set(p.scale, p.scaleY ?? p.scale, p.scale);
