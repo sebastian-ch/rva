@@ -622,6 +622,12 @@ def _deck_endpoints(lines: gpd.GeoDataFrame, terrain) -> tuple[pd.Series, list]:
 
 RAMP_TOUCH_M = 0.6
 RAMP_MIN_GAP_M = 1.0
+_CLASS_RANK = {"motorway": 6, "trunk": 5, "primary": 4, "secondary": 3, "tertiary": 2, "motorway_link": 3, "trunk_link": 2,
+               "primary_link": 2, "secondary_link": 1, "tertiary_link": 1}
+
+
+def _rank(hw) -> int:
+    return _CLASS_RANK.get(str(hw), 0)
 
 
 def _ramp_decks(lines: gpd.GeoDataFrame, deck: pd.Series, bridge_flag: pd.Series, terrain) -> tuple[pd.Series, pd.Series]:
@@ -655,6 +661,10 @@ def _ramp_decks(lines: gpd.GeoDataFrame, deck: pd.Series, bridge_flag: pd.Series
             best = None
             for k in tree.query(pt.buffer(RAMP_TOUCH_M)):
                 if geoms[k].distance(pt) <= RAMP_TOUCH_M:
+                    # a mainline never ramps up to a lower-class bridge that merely touches it (a link flyover
+                    # landing beside a sunken expressway would otherwise hump the expressway)
+                    if "highway" in lines and _rank(lines.at[idxs[k], "highway"]) < _rank(lines.at[idx, "highway"]):
+                        continue
                     z = deck_at(deck.at[idxs[k]], x, y)
                     best = z if best is None else max(best, z)
             tz = float(terrain.sample(np.array([x]), np.array([y]))[0]) if terrain is not None else 0.0

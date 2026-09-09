@@ -20,7 +20,12 @@ function lines(g: LineGeom): V2[][] {
 }
 
 /** Emit a flat ribbon along a polyline with mitered joins. Points are local (x, z) + per-point y. */
-function ribbon(mb: MeshBuilder, pts: THREE.Vector3[], halfW: number, color: THREE.Color, shade = 1) {
+/**
+ * Flat strip along a 3D path. `edgeY(x, z, yCentre)` optionally re-heights each edge vertex: draped roads pass
+ * a ground lookup so the ribbon never sinks under terrain that slopes across it (cut walls beside a sunken
+ * freeway); decks leave it out and stay level.
+ */
+function ribbon(mb: MeshBuilder, pts: THREE.Vector3[], halfW: number, color: THREE.Color, shade = 1, edgeY?: (x: number, z: number, y: number) => number) {
   const n = pts.length;
   if (n < 2) return;
   const left: THREE.Vector3[] = [], right: THREE.Vector3[] = [];
@@ -37,8 +42,9 @@ function ribbon(mb: MeshBuilder, pts: THREE.Vector3[], halfW: number, color: THR
       const cos = m.dot(d0);
       w = halfW / Math.max(0.5, cos);
     }
-    left.push(new THREE.Vector3(pts[i].x + nx * w, pts[i].y, pts[i].z + nz * w));
-    right.push(new THREE.Vector3(pts[i].x - nx * w, pts[i].y, pts[i].z - nz * w));
+    const lx = pts[i].x + nx * w, lz = pts[i].z + nz * w, rx = pts[i].x - nx * w, rz = pts[i].z - nz * w;
+    left.push(new THREE.Vector3(lx, edgeY ? edgeY(lx, lz, pts[i].y) : pts[i].y, lz));
+    right.push(new THREE.Vector3(rx, edgeY ? edgeY(rx, rz, pts[i].y) : pts[i].y, rz));
   }
   for (let i = 0; i < n - 1; i++) {
     const a = left[i], b = right[i], c = right[i + 1], d = left[i + 1];
@@ -185,6 +191,9 @@ export function buildRoads(
   const [ox0, oz0] = toLocal(0, 0);
   const originX = -ox0, originY = oz0;
   const asphalt = hex('asphalt'), paint = hex('lane_paint'), sidewalk = hex('sidewalk'), railC = hex('rail'), concrete = hex('concrete'), dirt = hex('sand');
+  const groundLocal = (lx: number, lz: number) => groundAt(lx + originX, -lz + originY);
+  /** edge re-heighting for draped strips: never below the ground under the edge plus the strip's lift */
+  const draped = (lift: number) => (x: number, z: number, y: number) => Math.max(y, groundLocal(x, z) + lift);
   const carPaths: THREE.Vector3[][] = [];
   const carMeta: CarPathMeta[] = [];
   const walkPaths: THREE.Vector3[][] = [];
@@ -272,7 +281,7 @@ export function buildRoads(
       if (path.length < 2) continue;
       for (const side of [1, -1]) {
         const strip = offsetPath(path, side * (p.width / 2 + WALK_W / 2));
-        ribbon(mb, strip, WALK_W / 2, sidewalk, 0.98);
+        ribbon(mb, strip, WALK_W / 2, sidewalk, 0.98, draped(WALK_Y));
         walkPaths.push(strip);
         const inner = offsetPath(path, side * (p.width / 2));
         for (let i = 0; i < inner.length - 1; i++) {
@@ -317,7 +326,7 @@ export function buildRoads(
         const [d0, d1] = endDirs(c);
         path = adjustEnds(path, otherHalfW(c[0], p.width / 2, d0), otherHalfW(c[c.length - 1], p.width / 2, d1));
       }
-      ribbon(mb, path, p.width / 2, minor ? (TRAIL.has(p.highway) ? dirt : sidewalk) : asphalt, minor ? 0.94 : 1);
+      ribbon(mb, path, p.width / 2, minor ? (TRAIL.has(p.highway) ? dirt : sidewalk) : asphalt, minor ? 0.94 : 1, deck ? undefined : draped((minor ? ROAD_Y - 0.04 : ROAD_Y) + lift));
       if (!minor) roadPaths.push({ path, width: p.width });
       if (!minor && p.highway !== 'service') {
         carPaths.push(carPath);
