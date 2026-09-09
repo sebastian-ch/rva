@@ -267,9 +267,14 @@ async function boot() {
   world = new TileWorld(index, materials);
   landmarkModels = new LandmarkModels(world.toLocal, materials.buildings);
   scene.add(landmarkModels.group);
-  // open on downtown rather than the geometric centre (which sits over the river): 400 m north of it
+  // open on the State Capitol (pipeline-resolved position in tiles/landmarks.json); fall back to downtown
   const center = world.center();
   center.z -= 400; // local z = -north
+  try {
+    const lm = (await (await fetch(`${import.meta.env.BASE_URL}tiles/landmarks.json`)).json()) as Record<string, { x: number; y: number }>;
+    const cap = lm['virginia-state-capitol'];
+    if (cap) { const [lx, lz] = world.toLocal(cap.x, cap.y); center.set(lx, 0, lz); }
+  } catch { /* keep the fallback */ }
   iso.lookAt(center, 1800);
   iso.camera.zoom = 1.1;
   iso.camera.updateProjectionMatrix();
