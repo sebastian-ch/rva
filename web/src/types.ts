@@ -47,21 +47,29 @@ export interface BuildingProps {
   height_source: string;
   roof_shape: RoofShape;
   roof_height: number;
+  roof_azimuth?: number | null;
+  roof_source?: string;
   roof_color: string;
   wall_color: string;
   type: string;
   landmark: string | null;
+  footprint_source?: string;
+  is_part?: boolean;
+  parent?: string | null;
+  hidden?: boolean;
   addr: string | null;
   wikidata: string | null;
   website: string | null;
   ground_z: number;
+  lidar_p90?: number | null;
 }
 export interface RoadProps {
   id: string; name: string | null; highway: string; lanes: number | null; width: number;
-  oneway: boolean; surface: string | null; sidewalk: boolean; bridge: boolean; tunnel: boolean; layer: number;
+  oneway: boolean; surface: string | null; sidewalk: boolean; bridge: boolean; ramp?: boolean; tunnel: boolean; layer: number;
+  deck?: string | number[] | null;
 }
-export interface RailProps { id: string; name: string | null; railway: string; bridge: boolean; layer: number }
-export interface AreaProps { id: string; name: string | null; kind: string }
+export interface RailProps { id: string; name: string | null; railway: string; bridge: boolean; ramp?: boolean; layer: number; deck?: string | number[] | null }
+export interface AreaProps { id: string; name: string | null; kind: string; water_z?: number | null }
 export interface PoiProps { id: string; name: string | null; kind: string }
 export interface CrossingProps { id: string; crossing: string }
 

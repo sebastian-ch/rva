@@ -12,10 +12,14 @@ import numpy as np
 import pandas as pd
 from shapely.geometry import MultiPolygon, Polygon
 from shapely.ops import unary_union
+from shapely.geometry import Point
+from pyproj import Transformer
 
-from config import CRS_PROJ, LANDMARKS_PATH, LANE_WIDTH, ROAD_WIDTH
-from heights import parse_levels, resolve_colors, resolve_height, resolve_min_height, resolve_roof
-from lidar import sample_ndsm_median
+from config import ASSETS, CRS_PROJ, DATA_RAW, LANDMARKS_PATH, LANE_WIDTH, LEVEL_HEIGHT, ROAD_WIDTH
+from heights import cap_small_footprint, looks_demolished, parse_levels, resolve_colors, resolve_height, resolve_min_height, resolve_roof
+from lidar import classify_roofs, sample_ndsm_stats
+from overture import load_overture, match_overture
+from richmond import _read as _read_rva, join_addresses, join_zoning, zoning_height
 
 SIMPLIFY_TOL = 0.4  # meters, Douglas-Peucker on footprints
 MIN_FOOTPRINT_AREA = 12.0  # m^2
@@ -30,12 +34,19 @@ def _nn(v: Any):
     return v
 
 
+def _is_nan_str(v: Any) -> bool:
+    return _nn(v) is None
+
+
 def _tags(row: pd.Series) -> dict[str, Any]:
     return {k: v for k, v in row.items() if k != "geometry" and _nn(v) is not None}
 
 
 def _osm_id(row: pd.Series) -> str:
-    return f"osm:{row.get('element', 'way')}/{row.get('id')}"
+    el = row.get("element", "way")
+    if el == "vgin":
+        return f"vgin:{row.get('id')}"
+    return f"osm:{el}/{row.get('id')}"
 
 
 def _read(path: Path) -> gpd.GeoDataFrame:
@@ -94,7 +105,7 @@ def match_landmarks(buildings: gpd.GeoDataFrame, landmarks: list[dict], max_dist
 def _merge_rowhouses(b: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """Merge touching small residential footprints of similar height into blocks (PLAN §3)."""
     small = b[(b["levels"].fillna(3) <= 3) & (b["type"].isin(["house", "residential", "terrace", "detached", "yes"]))
-              & (b.geometry.area < 350) & b["landmark"].isna() & b["name"].isna()]
+              & (b.geometry.area < 350) & b["landmark"].isna() & b["name"].isna() & ~b["is_part"] & ~b["hidden"]]
     if len(small) < 2:
         return b
     sidx = small.sindex
@@ -134,6 +145,13 @@ def _merge_rowhouses(b: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         first["height"] = float(sub["height"].mean())
         first["levels"] = int(sub["levels"].dropna().median()) if sub["levels"].notna().any() else None
         first["merged_count"] = len(members)
+        first["ground_z"] = round(float(sub["ground_z"].mean()), 2)
+        # keep a shared ridge azimuth only if the members agree (rowhouse blocks usually do)
+        az = pd.to_numeric(sub["roof_azimuth"], errors="coerce").dropna().to_numpy()
+        if len(az) and (np.ptp(np.where(az > 90, az - 180, az)) < 15 or np.ptp(az) < 15):
+            first["roof_azimuth"] = round(float(np.median(az)), 1)
+        else:
+            first["roof_azimuth"] = None
         merged_rows.append(first)
         drop.extend(members)
         n += 1
@@ -143,32 +161,233 @@ def _merge_rowhouses(b: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return gpd.GeoDataFrame(out, geometry="geometry", crs=b.crs)
 
 
-def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True) -> gpd.GeoDataFrame:
+PART_COVER = 0.6  # parts covering this share of the outline hide the outline (rendered as a plinth)
+VGIN_MIN_AREA = 20.0  # m^2; smaller VGIN footprints are sheds/steps and add noise
+
+
+def _add_vgin_footprints(raw: gpd.GeoDataFrame, is_part: pd.Series, path: Path) -> tuple[gpd.GeoDataFrame, pd.Series]:
+    """Append VGIN footprints that overlap no OSM footprint (gap-fill: garages, alley buildings, unmapped blocks)."""
+    v = gpd.read_parquet(path)
+    if len(v) == 0:
+        return raw, is_part
+    v = v.to_crs(raw.crs)
+    v = v[v.geometry.geom_type.isin(["Polygon", "MultiPolygon"])]
+    v = v[v.geometry.area >= VGIN_MIN_AREA].copy()
+    if len(v) == 0:
+        return raw, is_part
+    hit = gpd.sjoin(v[["geometry"]], raw[["geometry"]], how="left", predicate="intersects")
+    covered = set(hit.index[hit["index_right"].notna()])
+    add = v[~v.index.isin(covered)].copy()
+    if len(add) == 0:
+        return raw, is_part
+    add = add.reset_index(drop=True)
+    add["element"] = "vgin"
+    add["id"] = add["OBJECTID"].astype(str) if "OBJECTID" in add else [str(i) for i in add.index]
+    add["building"] = "yes"
+    add["footprint_source"] = "vgin"
+    add["geometry"] = add.geometry.simplify(SIMPLIFY_TOL, preserve_topology=True).buffer(0)
+    add = add[~add.geometry.is_empty]
+    add.index = range(raw.index.max() + 1, raw.index.max() + 1 + len(add))
+    out = gpd.GeoDataFrame(pd.concat([raw, add[[c for c in add.columns if c in raw.columns or c in ("geometry",)]]]), geometry="geometry", crs=raw.crs)
+    for col in ("building:part",):
+        if col not in out:
+            out[col] = None
+    parts = pd.concat([is_part, pd.Series(False, index=add.index)])
+    print(f"  VGIN footprints added: {len(add)} (of {len(v)} >= {VGIN_MIN_AREA} m2 in bbox)")
+    return out, parts
+
+
+def _assign_parts(raw: gpd.GeoDataFrame, is_part: pd.Series) -> tuple[dict, dict]:
+    """Map each part to the outline containing its representative point; flag outlines covered by their parts."""
+    parent_of: dict = {}
+    hidden: dict = {}
+    parts = raw[is_part]
+    outlines = raw[~is_part]
+    if len(parts) == 0 or len(outlines) == 0:
+        return parent_of, hidden
+    # parent = the outline with the largest overlap (parts often poke past the outline, e.g. porticos, spires)
+    j = gpd.sjoin(parts[["geometry"]], outlines[["geometry"]], how="inner", predicate="intersects")
+    if len(j) == 0:
+        return parent_of, hidden
+    j["_ov"] = [parts.at[pi, "geometry"].intersection(outlines.at[oi, "geometry"]).area
+                for pi, oi in zip(j.index, j["index_right"])]
+    j = j[j["_ov"] > 0].sort_values("_ov", ascending=False)
+    j = j[~j.index.duplicated(keep="first")]
+    ids = raw.apply(_osm_id, axis=1)
+    for pi, oi in zip(j.index, j["index_right"]):
+        parent_of[pi] = ids.at[oi]
+    for oi in set(j["index_right"]):
+        members = [pi for pi, o in zip(j.index, j["index_right"]) if o == oi]
+        cover = unary_union(parts.loc[members].geometry.values).intersection(outlines.at[oi, "geometry"]).area
+        hidden[oi] = cover >= PART_COVER * outlines.at[oi, "geometry"].area
+    return parent_of, hidden
+
+
+OVERRIDES_PATH = ASSETS / "supplements" / "overrides.json"
+OVERRIDE_FIELDS = ("name", "height", "levels", "type", "roof_shape", "roof_height", "wall_color", "roof_color", "wikidata", "website")
+
+
+def apply_overrides(b: gpd.GeoDataFrame, terrain=None, path: Path = OVERRIDES_PATH) -> gpd.GeoDataFrame:
+    """Hand-maintained corrections (assets/supplements/overrides.json); see the README there."""
+    if not path.exists() or len(b) == 0:
+        return b
+    from shapely.geometry import shape
+
+    entries = json.loads(path.read_text())
+    tr = Transformer.from_crs("EPSG:4326", CRS_PROJ, always_xy=True)
+    b = b.copy()
+    applied = 0
+    for e in entries:
+        x, y = tr.transform(e["lon"], e["lat"])
+        pt = Point(x, y)
+        target = None
+        if e.get("footprint"):
+            geom = gpd.GeoSeries([shape(e["footprint"])], crs="EPSG:4326").to_crs(CRS_PROJ).iloc[0]
+            overlapped = b[b.geometry.intersects(geom)]
+            drop = [i for i in overlapped.index if overlapped.at[i, "geometry"].intersection(geom).area > 0.5 * overlapped.at[i, "geometry"].area]
+            b = b.drop(index=drop)
+            gz = float(terrain.sample(np.array([geom.centroid.x]), np.array([geom.centroid.y]))[0]) if terrain is not None else 0.0
+            row = {c: None for c in b.columns}
+            row.update({"id": f"override:{e.get('name', len(b))}", "height": 10.0, "min_height": 0.0, "height_source": "override",
+                        "roof_shape": "flat", "roof_height": 0.0, "roof_source": "override", "roof_color": "roof_flat", "wall_color": "concrete",
+                        "type": "yes", "footprint_source": "override", "is_part": False, "hidden": False, "ground_z": round(gz, 2), "geometry": geom})
+            new_idx = int(b.index.max()) + 1
+            b = gpd.GeoDataFrame(pd.concat([b, gpd.GeoDataFrame([row], index=[new_idx], crs=b.crs)]), geometry="geometry", crs=b.crs)
+            target = new_idx
+        elif e.get("match_name"):
+            hit = b[b["name"].fillna("").str.lower().str.contains(str(e["match_name"]).lower(), regex=False) & ~b["is_part"]]
+            if len(hit):
+                target = hit.geometry.area.idxmax()
+        else:
+            inside = b[b.geometry.contains(pt) & ~b["is_part"]]
+            if len(inside):
+                target = inside.geometry.area.idxmax()
+            else:
+                near = b[(b.geometry.distance(pt) <= float(e.get("radius_m", 40))) & ~b["is_part"]]
+                if len(near):
+                    target = near.geometry.area.idxmax()
+        if target is None:
+            print(f"  [warn] override '{e.get('name')}' matched no footprint")
+            continue
+        for k in OVERRIDE_FIELDS:
+            if k in e and e[k] is not None:
+                b.at[target, k] = e[k]
+        if "height" in e:
+            b.at[target, "height_source"] = "override"
+        if "roof_shape" in e:
+            b.at[target, "roof_source"] = "override"
+            if e["roof_shape"] == "flat":
+                b.at[target, "roof_height"] = 0.0
+        applied += 1
+    if applied:
+        print(f"  overrides applied: {applied}/{len(entries)}")
+    return b
+
+
+def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True,
+                      overture_path: Path | None = None, lidar_npz: Path | None = None,
+                      richmond_dir: Path | None = None, vgin_path: Path | None = None) -> gpd.GeoDataFrame:
     raw = _read(raw_path)
     if len(raw) == 0:
         return gpd.GeoDataFrame(geometry=[], crs=CRS_PROJ)
     raw = raw[raw.geometry.geom_type.isin(["Polygon", "MultiPolygon"])].copy()
-    # building:part without building tag are parts of another footprint; keep only whole buildings
-    if "building" in raw:
-        raw = raw[raw["building"].notna()]
+    # Simple 3D Buildings: keep building:part polygons as their own rows (setbacks, towers on podiums) and
+    # remember which outline they belong to; the outline is hidden when its parts cover it.
+    if "building:part" not in raw:
+        raw["building:part"] = None
+    if "building" not in raw:
+        raw["building"] = None
+    is_part = raw["building:part"].notna() & raw["building"].isna()
+    raw = raw[raw["building"].notna() | is_part]
+    # underground structures (parking decks, the Capitol extension) never rise above ground
+    below = pd.Series(False, index=raw.index)
+    if "location" in raw:
+        below |= raw["location"].fillna("") == "underground"
+    for col in ("layer", "level"):
+        if col in raw:
+            below |= pd.to_numeric(raw[col], errors="coerce").fillna(0) < 0
+    raw = raw[~below]
+    is_part = is_part.loc[raw.index]
+    raw["footprint_source"] = "osm"
+    if vgin_path is not None and Path(vgin_path).exists():
+        raw, is_part = _add_vgin_footprints(raw, is_part, Path(vgin_path))
     raw = raw[raw.geometry.area >= MIN_FOOTPRINT_AREA]
+    is_part = is_part.loc[raw.index]
     raw["geometry"] = raw.geometry.simplify(SIMPLIFY_TOL, preserve_topology=True).buffer(0)
     raw = raw[~raw.geometry.is_empty]
+    is_part = is_part.loc[raw.index]
+    parent_of, hidden = _assign_parts(raw, is_part)
 
-    lidar = sample_ndsm_median(raw)
+    # ground under each footprint first: LiDAR roof fits are relative to it
+    cent = raw.geometry.centroid
+    ground = terrain.sample(cent.x.values, cent.y.values) if terrain is not None else np.zeros(len(raw))
+    ground_abs = ground + (terrain.base if terrain is not None else 0.0)
+
+    ovt = match_overture(raw, load_overture(overture_path)) if overture_path else None
+    rva_addr = join_addresses(raw, _read_rva(richmond_dir / "addresses.parquet") if richmond_dir else None)
+    rva_zone = join_zoning(raw, _read_rva(richmond_dir / "zoning.parquet") if richmond_dir else None)
+    ndsm_med, ndsm_p90, ndsm_n = sample_ndsm_stats(raw)
+    fits = classify_roofs(raw, ground_abs, lidar_npz)
+
     rows = []
+    phantoms = 0
     for k, (idx, row) in enumerate(raw.iterrows()):
         tags = _tags(row)
         area = row.geometry.area
-        lid = lidar[k] if np.isfinite(lidar[k]) else None
-        h, levels, src = resolve_height(tags, lid)
+        fit = fits[k]
+        lid = float(ndsm_med[k]) if np.isfinite(ndsm_med[k]) else None
+        p90 = float(ndsm_p90[k]) if np.isfinite(ndsm_p90[k]) else None
+        h, levels, src = resolve_height(tags)
+        if looks_demolished(src, int(ndsm_n[k]), p90):
+            phantoms += 1
+            continue
+        if src == "default" and lid is not None and lid > 2.0 and ndsm_n[k] >= LIDAR_TRUST_SAMPLES:
+            # 2025 LiDAR beats Overture's modelled heights (which run ~1.5x low on Richmond houses)
+            h, src = (fit.eave_z - ground_abs[k]) if fit and fit.shape != "flat" else lid, "lidar"
+            h = max(2.5, h)
+        if src == "default" and ovt is not None:
+            oh, ol = ovt.at[idx, "ovt_height"], ovt.at[idx, "ovt_levels"]
+            if np.isfinite(oh) and oh > 2:
+                h, src = float(oh), "overture_height"
+            elif np.isfinite(ol) and ol >= 1:
+                h, levels, src = float(ol) * LEVEL_HEIGHT, int(ol), "overture_levels"
+        if src == "default" and lid is not None and lid > 2.0:
+            # eave height when a pitched roof was fitted, else the median roof surface
+            h, src = (fit.eave_z - ground_abs[k]) if fit and fit.shape != "flat" else lid, "lidar"
+            h = max(2.5, h)
+        if src == "default":
+            zh = zoning_height(rva_zone.at[idx])
+            if zh is not None:
+                h, src = zh, "zoning"
+        if src == "lidar":
+            h = cap_small_footprint(h, area, tags.get("building"))
         h = max(2.5, min(h, 260.0))
+        # roof: OSM tag -> Overture tag -> LiDAR fit -> heuristic
         roof_shape, roof_h = resolve_roof(tags, h, area)
+        roof_src = "osm" if not _is_nan_str(tags.get("roof:shape")) else "heuristic"
+        roof_az = None
+        if roof_src == "heuristic" and ovt is not None and ovt.at[idx, "ovt_roof_shape"]:
+            roof_shape = ovt.at[idx, "ovt_roof_shape"]
+            _, roof_h = resolve_roof({**tags, "roof:shape": roof_shape}, h, area)
+            roof_src = "overture"
+        if roof_src == "heuristic" and fit is not None:
+            roof_shape, roof_src = fit.shape, "lidar"
+            roof_h = round(fit.roof_height, 2) if fit.shape != "flat" else 0.0
+            roof_az = round(fit.azimuth, 1) if fit.shape != "flat" else None
+            if src not in ("osm_height", "landmark_hint") and fit.shape != "flat":
+                # trust the fitted eave over levels x 3.2 when they disagree by more than one storey
+                eave = fit.eave_z - ground_abs[k]
+                if eave > 2.5 and abs(eave - h) > LEVEL_HEIGHT:
+                    h, src = max(2.5, eave), "lidar"
+        if roof_shape == "flat":
+            roof_h = 0.0
         seed = zlib.crc32(str(row.get("id")).encode()) % 1000
         wall, roof = resolve_colors(tags, h, roof_shape, seed)
         addr = None
         if tags.get("addr:housenumber") and tags.get("addr:street"):
             addr = f"{tags['addr:housenumber']} {tags['addr:street']}"
+        elif isinstance(rva_addr.at[idx], str):
+            addr = rva_addr.at[idx]
         rows.append({
             "id": _osm_id(row),
             "name": tags.get("name"),
@@ -178,18 +397,39 @@ def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True
             "height_source": src,
             "roof_shape": roof_shape,
             "roof_height": round(roof_h, 2),
+            "roof_azimuth": roof_az,
+            "roof_source": roof_src,
             "roof_color": roof,
             "wall_color": wall,
-            "type": str(tags.get("building", "yes")),
+            "type": str(tags.get("building") or tags.get("building:part") or "yes"),
             "landmark": None,
+            "footprint_source": str(row.get("footprint_source") or "osm"),
+            "is_part": bool(is_part.at[idx]),
+            "parent": parent_of.get(idx),
+            "hidden": bool(hidden.get(idx, False)),
             "addr": addr,
             "wikidata": tags.get("wikidata"),
             "website": tags.get("website") or tags.get("contact:website"),
+            "zoning": rva_zone.at[idx] if isinstance(rva_zone.at[idx], str) else None,
+            "lidar_p90": round(float(ndsm_p90[k]), 2) if np.isfinite(ndsm_p90[k]) else None,
+            "ground_z": round(float(ground[k]), 2),
             "geometry": row.geometry,
         })
     b = gpd.GeoDataFrame(rows, geometry="geometry", crs=CRS_PROJ)
     landmarks = load_landmarks()
-    b["landmark"] = match_landmarks(b, landmarks)
+    outlines = b[~b["is_part"]]
+    b["landmark"] = None
+    b.loc[outlines.index, "landmark"] = match_landmarks(outlines, landmarks)
+    # parts inherit identity from their outline (info card, landmark swap, facade style)
+    by_id = b.set_index("id")
+    for i in b.index[b["is_part"] & b["parent"].notna()]:
+        pid = b.at[i, "parent"]
+        if pid in by_id.index:
+            for col in ("name", "addr", "landmark", "wikidata", "website"):
+                if b.at[i, col] is None:
+                    b.at[i, col] = by_id.at[pid, col]
+            if b.at[i, "type"] in ("yes", "True", "true"):
+                b.at[i, "type"] = by_id.at[pid, "type"]
     # Landmarks: stylized treatment. Height hint from the registry wins over levels/defaults (OSM height still wins),
     # and walls go cream so they read as "designed" until the hand-modeled glTF replaces them.
     hints = {lm["slug"]: lm.get("height_hint_m") for lm in landmarks}
@@ -201,13 +441,14 @@ def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True
         b.at[i, "wall_color"] = "cream"
         if b.at[i, "roof_shape"] == "flat":
             b.at[i, "roof_color"] = "roof_flat"
+    if phantoms:
+        print(f"  dropped {phantoms} stale footprints (LiDAR surface at ground, no OSM height)")
+    b = apply_overrides(b, terrain)
     if merge_rowhouses:
         b = _merge_rowhouses(b)
-    if terrain is not None:
-        c = b.geometry.centroid
-        b["ground_z"] = np.round(terrain.sample(c.x.values, c.y.values), 2)
-    else:
-        b["ground_z"] = 0.0
+    # mixed None/float object columns would be written as strings by the GeoJSON driver
+    for col in ("roof_azimuth", "lidar_p90", "levels"):
+        b[col] = pd.to_numeric(b[col], errors="coerce")
     return b
 
 
@@ -223,7 +464,212 @@ def _road_width(row: pd.Series) -> float:
     return round(w, 1)
 
 
-def process_roads(raw_path: Path) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+WATER_REL_Z = 2.0        # endpoints lower than this (m above base) are over the river, not on a bank
+LIDAR_TRUST_SAMPLES = 10  # nDSM cells inside the footprint before LiDAR outranks Overture
+CONNECTOR_MAX_M = 450.0  # non-bridge stretch between two bridge chains (an island, a pier) treated as deck
+CONNECTOR_MAX_TURN_DEG = 35.0  # connector ways must continue the bridge's line (not a cross street between two overpasses)
+ABUTMENT_REACH_M = (2.0, 4.0, 6.0, 8.0)  # look this far back up the approach for the abutment top
+ABUTMENT_MAX_RAISE_M = 3.0
+
+
+def _dir_at(coords, at_start: bool) -> tuple[float, float]:
+    """Unit vector pointing from the way's end node into the way."""
+    (x0, y0), (x1, y1) = (coords[0], coords[1]) if at_start else (coords[-1], coords[-2])
+    d = math.hypot(x1 - x0, y1 - y0) or 1.0
+    return (x1 - x0) / d, (y1 - y0) / d
+
+
+def _deck_endpoints(lines: gpd.GeoDataFrame, terrain) -> tuple[pd.Series, list]:
+    """For bridge ways: [x0, y0, z0, x1, y1, z1] with deck elevations at the way's ends.
+
+    Bridges are chains of OSM ways whose joints often sit over water, so per-way bank sampling reads the river.
+    Ways sharing endpoints are grouped into chains; short non-bridge stretches that link two chains (the road
+    across Mayo's Island) are absorbed as connectors so the deck is continuous bank to bank. Each chain is
+    anchored on its land ends (degree-1 nodes above WATER_REL_Z) and every joint gets the inverse-distance
+    weighted mean of the anchors: linear along a simple span, smooth on branching viaducts.
+    Returns (deck series, list of connector indices that should be drawn as bridge).
+    """
+    out = pd.Series([None] * len(lines), index=lines.index, dtype=object)
+    if "bridge" not in lines:
+        return out, []
+    is_bridge = (lines["bridge"].fillna("no") != "no").to_dict()
+    if not any(is_bridge.values()):
+        return out, []
+    key = lambda x, y: (round(x, 1), round(y, 1))
+    ends, length, dirs = {}, {}, {}
+    hw = lines["highway"].astype(str).to_dict() if "highway" in lines else {}
+    for idx, g in zip(lines.index, lines.geometry):
+        (x0, y0), (x1, y1) = g.coords[0], g.coords[-1]
+        ends[idx] = (key(x0, y0), key(x1, y1))
+        length[idx] = float(g.length)
+        dirs[idx] = {ends[idx][0]: _dir_at(g.coords, True), ends[idx][1]: _dir_at(g.coords, False)}
+    cos_turn = math.cos(math.radians(CONNECTOR_MAX_TURN_DEG))
+
+    def straight(n, idx_in, idx_out) -> bool:
+        """Leaving node n from way idx_in into way idx_out keeps heading (both dirs point away from n)."""
+        a, b = dirs[idx_in][n], dirs[idx_out][n]
+        return -(a[0] * b[0] + a[1] * b[1]) >= cos_turn
+
+    parent = {}
+    def find(a):
+        parent.setdefault(a, a)
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+    def union(a, b):
+        parent[find(a)] = find(b)
+    for idx, (a, b) in ends.items():
+        if is_bridge[idx]:
+            union(a, b)
+    chain_nodes = {n for idx, (a, b) in ends.items() if is_bridge[idx] for n in (a, b)}
+
+    # connectors: BFS over non-bridge ways from every chain node, at most CONNECTOR_MAX_M, reaching another chain
+    adj = {}
+    for idx, (a, b) in ends.items():
+        if is_bridge[idx]:
+            continue
+        adj.setdefault(a, []).append((b, idx)); adj.setdefault(b, []).append((a, idx))
+    # A connector must continue the bridge's line with the same highway class at every joint, so a cross
+    # street running between two overpasses is not mistaken for the road across an island.
+    bridge_at = {}
+    for idx, (a, b) in ends.items():
+        if is_bridge[idx]:
+            bridge_at.setdefault(a, []).append(idx); bridge_at.setdefault(b, []).append(idx)
+    connectors = set()
+    for start in chain_nodes:
+        if start not in adj:
+            continue
+        best = {start: (0.0, [])}
+        frontier = [start]
+        while frontier:
+            n = frontier.pop()
+            dist, path = best[n]
+            prev = [path[-1]] if path else bridge_at.get(n, [])
+            for m, idx in adj.get(n, []):
+                nd = dist + length[idx]
+                if nd > CONNECTOR_MAX_M or (m in best and best[m][0] <= nd):
+                    continue
+                if not any(hw.get(w) == hw.get(idx) and straight(n, w, idx) for w in prev):
+                    continue
+                best[m] = (nd, path + [idx])
+                if m in chain_nodes and find(m) != find(start):
+                    if not any(hw.get(w) == hw.get(idx) and straight(m, idx, w) for w in bridge_at.get(m, [])):
+                        continue
+                    connectors.update(path + [idx])
+                    for w in path + [idx]:
+                        union(ends[w][0], ends[w][1])
+                else:
+                    frontier.append(m)
+    members_idx = [idx for idx in ends if is_bridge[idx] or idx in connectors]
+    degree = {}
+    for idx in members_idx:
+        for n in ends[idx]:
+            degree[n] = degree.get(n, 0) + 1
+    nodes = list(degree)
+    xs = np.array([n[0] for n in nodes]); ys = np.array([n[1] for n in nodes])
+    z = terrain.sample(xs, ys) if terrain is not None else np.zeros(len(nodes))
+    zmap = dict(zip(nodes, z))
+    # Abutments: the DEM cell under a span's end node often lies on the cut/bank slope, so look a few metres
+    # back up the approach and take the highest ground (capped) as the deck anchor.
+    if terrain is not None:
+        away = {}
+        for idx in members_idx:
+            for n in ends[idx]:
+                if degree[n] == 1:
+                    dx, dy = dirs[idx][n]
+                    away[n] = (-dx, -dy)
+        if away:
+            an = list(away)
+            sx = np.array([n[0] + away[n][0] * r for n in an for r in ABUTMENT_REACH_M])
+            sy = np.array([n[1] + away[n][1] * r for n in an for r in ABUTMENT_REACH_M])
+            sz = terrain.sample(sx, sy).reshape(len(an), len(ABUTMENT_REACH_M))
+            for n, row in zip(an, sz):
+                if zmap[n] > WATER_REL_Z:
+                    zmap[n] = float(min(max(zmap[n], row.max()), zmap[n] + ABUTMENT_MAX_RAISE_M))
+    comps = {}
+    for n in nodes:
+        comps.setdefault(find(n), []).append(n)
+    deck_z = {}
+    for members in comps.values():
+        anchors = [n for n in members if degree[n] == 1 and zmap[n] > WATER_REL_Z]
+        if not anchors:
+            top = max(zmap[n] for n in members)
+            for n in members:
+                deck_z[n] = top
+            continue
+        # nodes whose ground is at/above the interpolated deck are on land (a bridge touching down mid-chain,
+        # a street crossing at grade): promote them to anchors and re-interpolate until stable
+        anchors = list(anchors)
+        for _ in range(5):
+            for n in members:
+                if n in anchors:
+                    deck_z[n] = zmap[n]
+                    continue
+                w = np.array([1.0 / (math.hypot(n[0] - a[0], n[1] - a[1]) + 1.0) for a in anchors])
+                deck_z[n] = float(np.dot(w, [zmap[a] for a in anchors]) / w.sum())
+            promote = [n for n in members if n not in anchors and zmap[n] > WATER_REL_Z and zmap[n] >= deck_z[n] - 1.0]
+            if not promote:
+                break
+            anchors.extend(promote)
+    vals = {}
+    for idx in members_idx:
+        a, b = ends[idx]
+        vals[idx] = [round(a[0], 2), round(a[1], 2), round(float(deck_z[a]), 2), round(b[0], 2), round(b[1], 2), round(float(deck_z[b]), 2)]
+    out.loc[list(vals)] = list(vals.values())
+    return out, sorted(connectors)
+
+
+RAMP_TOUCH_M = 0.6
+RAMP_MIN_GAP_M = 1.0
+
+
+def _ramp_decks(lines: gpd.GeoDataFrame, deck: pd.Series, bridge_flag: pd.Series, terrain) -> tuple[pd.Series, pd.Series]:
+    """Non-bridge ways (ramps, approaches) whose end touches an elevated deck get their own deck so they climb
+    from terrain to the deck instead of stopping short. Returns (deck, ramp_flag)."""
+    ramp = pd.Series(False, index=lines.index)
+    bridges = lines[bridge_flag & deck.notna()]
+    if len(bridges) == 0:
+        return deck, ramp
+    from shapely.strtree import STRtree
+    from shapely.geometry import Point
+
+    geoms = list(bridges.geometry)
+    idxs = list(bridges.index)
+    tree = STRtree(geoms)
+
+    def deck_at(d, x, y):
+        dx, dy = d[3] - d[0], d[4] - d[1]
+        L = dx * dx + dy * dy
+        t = max(0.0, min(1.0, ((x - d[0]) * dx + (y - d[1]) * dy) / L)) if L > 1e-6 else 0.0
+        return d[2] + (d[5] - d[2]) * t
+
+    deck = deck.copy()
+    for idx in lines.index[~bridge_flag]:
+        g = lines.at[idx, "geometry"]
+        ends = [g.coords[0], g.coords[-1]]
+        zs = []
+        touched = False
+        for x, y in ends:
+            pt = Point(x, y)
+            best = None
+            for k in tree.query(pt.buffer(RAMP_TOUCH_M)):
+                if geoms[k].distance(pt) <= RAMP_TOUCH_M:
+                    z = deck_at(deck.at[idxs[k]], x, y)
+                    best = z if best is None else max(best, z)
+            tz = float(terrain.sample(np.array([x]), np.array([y]))[0]) if terrain is not None else 0.0
+            if best is not None and best - tz > RAMP_MIN_GAP_M:
+                zs.append(best); touched = True
+            else:
+                zs.append(tz)
+        if touched:
+            (x0, y0), (x1, y1) = ends
+            deck.at[idx] = [round(x0, 2), round(y0, 2), round(zs[0], 2), round(x1, 2), round(y1, 2), round(zs[1], 2)]
+            ramp.at[idx] = True
+    return deck, ramp
+
+
+def process_roads(raw_path: Path, terrain=None) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
     """Return (roads, crossings)."""
     raw = _read(raw_path)
     empty = gpd.GeoDataFrame(geometry=[], crs=CRS_PROJ)
@@ -234,6 +680,12 @@ def process_roads(raw_path: Path) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
     lines = lines.explode(index_parts=False)
     if "area" in lines:
         lines = lines[lines["area"].fillna("no") != "yes"]
+    deck, connectors = _deck_endpoints(lines, terrain)
+    bridge_flag = (lines["bridge"].fillna("no") != "no") if "bridge" in lines else pd.Series(False, index=lines.index)
+    if connectors:
+        bridge_flag = bridge_flag.copy()
+        bridge_flag.loc[connectors] = True
+    deck, ramp_flag = _ramp_decks(lines, deck, bridge_flag, terrain)
     roads = gpd.GeoDataFrame({
         "id": lines.apply(_osm_id, axis=1),
         "name": lines["name"].map(_nn) if "name" in lines else None,
@@ -243,9 +695,11 @@ def process_roads(raw_path: Path) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
         "oneway": (lines["oneway"].fillna("no") == "yes") if "oneway" in lines else False,
         "surface": lines["surface"].map(_nn) if "surface" in lines else None,
         "sidewalk": (~lines["sidewalk"].fillna("no").isin(["no", "none"])) if "sidewalk" in lines else False,
-        "bridge": (lines["bridge"].fillna("no") != "no") if "bridge" in lines else False,
+        "bridge": bridge_flag,
+        "ramp": ramp_flag,
         "tunnel": (lines["tunnel"].fillna("no") != "no") if "tunnel" in lines else False,
         "layer": lines["layer"].map(parse_levels).fillna(0).astype(int) if "layer" in lines else 0,
+        "deck": deck,
         "geometry": lines.geometry,
     }, crs=CRS_PROJ)
     pts = raw[(raw.geometry.geom_type == "Point")]
@@ -261,18 +715,26 @@ def process_roads(raw_path: Path) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
     return roads, crossings
 
 
-def process_rail(raw_path: Path) -> gpd.GeoDataFrame:
+def process_rail(raw_path: Path, terrain=None) -> gpd.GeoDataFrame:
     raw = _read(raw_path)
     if len(raw) == 0:
         return gpd.GeoDataFrame(geometry=[], crs=CRS_PROJ)
     lines = raw[raw.geometry.geom_type.isin(["LineString", "MultiLineString"])].explode(index_parts=False)
     lines = lines[lines["railway"].isin(["rail", "light_rail", "tram", "subway"])]
+    deck, connectors = _deck_endpoints(lines, terrain)
+    bridge_flag = (lines["bridge"].fillna("no") != "no") if "bridge" in lines else pd.Series(False, index=lines.index)
+    if connectors:
+        bridge_flag = bridge_flag.copy()
+        bridge_flag.loc[connectors] = True
+    deck, ramp_flag = _ramp_decks(lines, deck, bridge_flag, terrain)
     return gpd.GeoDataFrame({
         "id": lines.apply(_osm_id, axis=1),
         "name": lines["name"].map(_nn) if "name" in lines else None,
         "railway": lines["railway"],
-        "bridge": (lines["bridge"].fillna("no") != "no") if "bridge" in lines else False,
+        "bridge": bridge_flag,
+        "ramp": ramp_flag,
         "layer": lines["layer"].map(parse_levels).fillna(0).astype(int) if "layer" in lines else 0,
+        "deck": deck,
         "geometry": lines.geometry,
     }, crs=CRS_PROJ)
 
@@ -315,7 +777,37 @@ def process_landuse(raw_path: Path) -> gpd.GeoDataFrame:
     }, crs=CRS_PROJ)
 
 
-def process_water(raw_path: Path) -> gpd.GeoDataFrame:
+WATER_LEVEL_PCT = 40      # DEM percentile inside a canal/pond polygon taken as its surface
+WATER_LEVEL_LIFT_M = 0.3  # above that percentile (the polygon edges climb the banks)
+
+
+def water_levels(polys: gpd.GeoDataFrame, terrain, spacing: float = 2.0) -> list[float | None]:
+    """Flat surface height (m above base) per non-river polygon from the DEM inside it; None for rivers /
+    no terrain. Canals and ponds are still water: the DEM inside the outline is the bed plus bank slopes, so a
+    low percentile is the water and the terrain grid is flattened to it under the polygon (see Terrain.tile_grid)."""
+    out: list[float | None] = [None] * len(polys)
+    if terrain is None or len(polys) == 0:
+        return out
+    from shapely import contains_xy
+
+    for k, (kind, g) in enumerate(zip(polys["kind"], polys.geometry)):
+        if kind == "river" or g is None or g.is_empty:
+            continue
+        minx, miny, maxx, maxy = g.bounds
+        gx, gy = np.meshgrid(np.arange(minx, maxx + spacing, spacing), np.arange(miny, maxy + spacing, spacing))
+        gx, gy = gx.ravel(), gy.ravel()
+        inside = contains_xy(g, gx, gy)
+        if inside.sum() < 3:
+            ring = np.array(g.exterior.coords) if g.geom_type == "Polygon" else np.array(max(g.geoms, key=lambda p: p.area).exterior.coords)
+            gx, gy, inside = ring[:, 0], ring[:, 1], np.ones(len(ring), bool)
+        z = terrain.sample(gx[inside], gy[inside])
+        z = z[np.isfinite(z)]
+        if z.size:
+            out[k] = round(float(np.percentile(z, WATER_LEVEL_PCT)) + WATER_LEVEL_LIFT_M, 2)
+    return out
+
+
+def process_water(raw_path: Path, terrain=None) -> gpd.GeoDataFrame:
     raw = _read(raw_path)
     if len(raw) == 0:
         return gpd.GeoDataFrame(geometry=[], crs=CRS_PROJ)
@@ -346,6 +838,7 @@ def process_water(raw_path: Path) -> gpd.GeoDataFrame:
         "id": polys.apply(_osm_id, axis=1),
         "name": polys["name"].map(_nn) if "name" in polys else None,
         "kind": polys["kind"],
+        "water_z": water_levels(polys, terrain),
         "geometry": polys.geometry,
     }, crs=CRS_PROJ)
 
@@ -358,6 +851,10 @@ def _poi_kind(row: pd.Series) -> str | None:
         return "streetlight"
     if hw == "bus_stop":
         return "bus_stop"
+    if hw == "traffic_signals":
+        return "traffic_signals"
+    if am == "fountain":
+        return "fountain"
     if am == "bench":
         return "bench"
     if hi in ("monument", "memorial", "statue") or to == "artwork":

@@ -130,6 +130,29 @@ def resolve_height(tags: dict[str, Any], lidar_median: float | None = None) -> t
     return DEFAULT_HEIGHT_BY_TYPE.get(btype, DEFAULT_HEIGHT), None, "default"
 
 
+SMALL_FOOTPRINT_M2 = 80.0
+TALL_SMALL_TYPES = ("church", "cathedral", "chapel", "tower", "water_tower", "silo", "chimney", "industrial")
+PHANTOM_MIN_SAMPLES = 8
+PHANTOM_MAX_P90_M = 1.2
+ROOF_HEIGHT_MAX_FRAC = 0.5
+
+
+def cap_small_footprint(height: float, area_m2: float, btype: str | None) -> float:
+    """A shed-sized footprint cannot be a tower: LiDAR medians on tiny polygons pick up neighbours, so cap the
+    height at 4 x sqrt(area) unless the type is one that is legitimately small and tall."""
+    if area_m2 >= SMALL_FOOTPRINT_M2 or str(btype or "yes").lower() in TALL_SMALL_TYPES:
+        return height
+    return min(height, 4.0 * math.sqrt(max(area_m2, 1.0)))
+
+
+def looks_demolished(height_source: str, ndsm_samples: int, ndsm_p90: float | None) -> bool:
+    """True when the LiDAR surface inside the footprint is at ground level and nothing in OSM claims a height:
+    the footprint is stale (demolished or a vacant-lot polygon) and should not be extruded."""
+    if height_source in ("osm_height", "osm_levels", "override", "landmark_hint"):
+        return False
+    return ndsm_p90 is not None and ndsm_samples >= PHANTOM_MIN_SAMPLES and ndsm_p90 < PHANTOM_MAX_P90_M
+
+
 def resolve_min_height(tags: dict[str, Any]) -> float:
     mh = parse_length_m(tags.get("min_height"))
     if mh is not None:
@@ -164,6 +187,7 @@ def resolve_roof(tags: dict[str, Any], height: float, footprint_area: float) -> 
             rh = min(6.0, max(2.0, math.sqrt(footprint_area) * 0.3))
         else:  # dome
             rh = min(8.0, max(2.0, math.sqrt(footprint_area) * 0.35))
+        rh = min(rh, ROOF_HEIGHT_MAX_FRAC * height)  # a 3 m cottage does not carry a 4 m gable
     return shape, rh
 
 

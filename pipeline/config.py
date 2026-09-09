@@ -17,7 +17,7 @@ CRS_WGS84 = "EPSG:4326"
 CRS_PROJ = "EPSG:32618"
 
 # First slice: Downtown + Shockoe Bottom + Capitol Square. (west, south, east, north)
-DEFAULT_BBOX = (-77.4520, 37.5270, -77.4180, 37.5480)
+DEFAULT_BBOX = (-77.4560, 37.5170, -77.4180, 37.5480)
 
 TILE_SIZE = 250.0  # meters
 LEVEL_HEIGHT = 3.2  # meters per building level
@@ -64,6 +64,7 @@ ROAD_WIDTH = {
     "pedestrian": 4.0,
     "footway": 2.0,
     "path": 1.5,
+    "track": 2.5,
     "cycleway": 2.5,
     "steps": 2.0,
 }

@@ -21,6 +21,7 @@ from config import CRS_PROJ, DATA_RAW, DATA_TILES, DEFAULT_BBOX, TILE_SIZE, bbox
 from process import (process_buildings, process_landuse, process_pois, process_rail, process_roads,
                      process_water)
 from terrain import Terrain
+from landmarks import resolve_landmarks
 
 POINT_LAYERS = {"pois", "crossings"}
 
@@ -31,6 +32,8 @@ def _write_layer(gdf: gpd.GeoDataFrame, dst: Path) -> int:
         return 0
     # compact: 2 decimals (cm) is plenty at this scale
     gdf = gdf.copy()
+    if "deck" in gdf:
+        gdf["deck"] = gdf["deck"].map(lambda v: json.dumps(v) if isinstance(v, list) else None)
     gdf["geometry"] = gdf.geometry.set_precision(0.01)
     gdf = gdf[~gdf.geometry.is_empty]
     gdf.to_file(dst, driver="GeoJSON", COORDINATE_PRECISION=2, RFC7946="NO")
@@ -55,14 +58,18 @@ def build(bbox, merge_rowhouses=True, clean=False) -> Path:
 
     t0 = time.time()
     print("processing layers...")
-    roads, crossings = process_roads(raw_dir / "roads.parquet")
+    roads, crossings = process_roads(raw_dir / "roads.parquet", terrain)
     layers = {
-        "buildings": process_buildings(raw_dir / "buildings.parquet", terrain, merge_rowhouses),
+        "buildings": process_buildings(raw_dir / "buildings.parquet", terrain, merge_rowhouses,
+                                       overture_path=DATA_RAW / f"overture_{slug}.parquet",
+                                       lidar_npz=DATA_RAW / f"lidar_{slug}.npz",
+                                       richmond_dir=DATA_RAW / f"richmond_{slug}",
+                                       vgin_path=DATA_RAW / f"vgin_{slug}.parquet"),
         "roads": roads,
         "crossings": crossings,
-        "rail": process_rail(raw_dir / "rail.parquet"),
+        "rail": process_rail(raw_dir / "rail.parquet", terrain),
         "landuse": process_landuse(raw_dir / "landuse.parquet"),
-        "water": process_water(raw_dir / "water.parquet"),
+        "water": process_water(raw_dir / "water.parquet", terrain),
         "pois": process_pois(raw_dir / "pois.parquet"),
     }
     for k, v in layers.items():
@@ -70,6 +77,7 @@ def build(bbox, merge_rowhouses=True, clean=False) -> Path:
     b = layers["buildings"]
     if len(b):
         print("  height sources:", b["height_source"].value_counts().to_dict())
+        print("  roof sources:", b["roof_source"].value_counts().to_dict())
         print("  landmarks matched:", sorted(b["landmark"].dropna().tolist()))
     print(f"  {time.time() - t0:.1f}s")
 
@@ -85,6 +93,7 @@ def build(bbox, merge_rowhouses=True, clean=False) -> Path:
 
     # spatial indexes once
     sidx = {k: v.sindex for k, v in layers.items() if len(v)}
+    still = layers["water"][layers["water"]["water_z"].notna()] if "water_z" in layers["water"] else layers["water"].iloc[0:0]
     tiles_meta = []
     t0 = time.time()
     for tx in range(nx):
@@ -118,7 +127,8 @@ def build(bbox, merge_rowhouses=True, clean=False) -> Path:
                     counts[name] = n
             if terrain is not None and (written or True):
                 tdir.mkdir(exist_ok=True)
-                (tdir / "terrain.json").write_text(json.dumps(terrain.tile_grid(tminx, tminy, TILE_SIZE)))
+                flats = [(g, float(z)) for g, z in zip(still.geometry, still["water_z"]) if g.intersects(tile_box)] if len(still) else None
+                (tdir / "terrain.json").write_text(json.dumps(terrain.tile_grid(tminx, tminy, TILE_SIZE, flatten=flats)))
                 written.append("terrain")
             if written:
                 tiles_meta.append({"id": tid, "x": tx, "y": ty,
@@ -135,10 +145,19 @@ def build(bbox, merge_rowhouses=True, clean=False) -> Path:
         "tiles": tiles_meta,
     }
     (DATA_TILES / "index.json").write_text(json.dumps(index, indent=1))
+    lms = resolve_landmarks(raw_dir, layers["buildings"], terrain)
+    (DATA_TILES / "landmarks.json").write_text(json.dumps(lms, indent=1))
+    unmatched = [k for k, v in lms.items() if v["in_first_slice"] and v["how"] is None]
+    print(f"  landmarks resolved: {sum(v['how'] is not None for v in lms.values())}/{len(lms)}; unmatched in slice: {unmatched}")
     if terrain:
         terrain.close()
     total = sum(p.stat().st_size for p in DATA_TILES.rglob("*") if p.is_file())
     print(f"wrote {len(tiles_meta)} tiles, {total / 1e6:.1f} MB, {time.time() - t0:.1f}s -> {DATA_TILES}")
+    try:
+        from qa_report import write_report
+        write_report(DATA_TILES)
+    except Exception as exc:  # QA must never break a build
+        print(f"  [warn] QA report failed: {exc}")
     return DATA_TILES / "index.json"
 
 

@@ -133,26 +133,103 @@ export function hashStr(s: string): number {
   return h >>> 0;
 }
 
-/** Growable triangle soup with position/normal/color. */
+/** Growable triangle soup with position/normal/color, optionally uv + facade attributes for the facade shader. */
 export class MeshBuilder {
   pos: number[] = []; nrm: number[] = []; col: number[] = [];
+  uv: number[] = []; fac: number[] = [];
+  constructor(readonly withFacade = false) {}
   get triCount(): number { return this.pos.length / 9; }
+  private pad() {
+    if (!this.withFacade) return;
+    for (let i = 0; i < 6; i++) this.uv.push(0);
+    for (let i = 0; i < 12; i++) this.fac.push(0);
+  }
   tri(a: THREE.Vector3, b: THREE.Vector3, c: THREE.Vector3, color: THREE.Color, normal?: THREE.Vector3, shade = 1) {
     let n = normal;
     if (!n) n = new THREE.Vector3().subVectors(b, a).cross(new THREE.Vector3().subVectors(c, a)).normalize();
     for (const v of [a, b, c]) { this.pos.push(v.x, v.y, v.z); this.nrm.push(n.x, n.y, n.z); }
     for (let i = 0; i < 3; i++) this.col.push(color.r * shade, color.g * shade, color.b * shade);
+    this.pad();
   }
   /** Triangle with per-vertex shade (fake AO gradient). */
   triShaded(a: THREE.Vector3, b: THREE.Vector3, c: THREE.Vector3, color: THREE.Color, normal: THREE.Vector3, sa: number, sb: number, sc: number) {
     for (const v of [a, b, c]) { this.pos.push(v.x, v.y, v.z); this.nrm.push(normal.x, normal.y, normal.z); }
     for (const s of [sa, sb, sc]) this.col.push(color.r * s, color.g * s, color.b * s);
+    this.pad();
+  }
+  /** Facade wall triangle: per-vertex uv (meters along wall, meters up) and a shared facade vec4. */
+  triFacade(a: THREE.Vector3, b: THREE.Vector3, c: THREE.Vector3, color: THREE.Color, normal: THREE.Vector3,
+    shades: [number, number, number], uvs: [V2, V2, V2], facade: [number, number, number, number]) {
+    for (const v of [a, b, c]) { this.pos.push(v.x, v.y, v.z); this.nrm.push(normal.x, normal.y, normal.z); }
+    for (const s of shades) this.col.push(color.r * s, color.g * s, color.b * s);
+    if (this.withFacade) {
+      for (const u of uvs) this.uv.push(u[0], u[1]);
+      for (let i = 0; i < 3; i++) this.fac.push(facade[0], facade[1], facade[2], facade[3]);
+    }
   }
   build(): THREE.BufferGeometry {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(this.pos, 3));
     g.setAttribute('normal', new THREE.Float32BufferAttribute(this.nrm, 3));
     g.setAttribute('color', new THREE.Float32BufferAttribute(this.col, 3));
+    if (this.withFacade) {
+      g.setAttribute('uv', new THREE.Float32BufferAttribute(this.uv, 2));
+      g.setAttribute('facade', new THREE.Float32BufferAttribute(this.fac, 4));
+    }
     return g;
   }
+}
+
+/**
+ * Inset a simple ring by distance d with mitred joins. Returns null when the result is degenerate
+ * (self-intersecting, an edge flipped direction, or area not shrinking). Works in the (x, z) plane.
+ */
+export function insetRing(ring: V2[], d: number): V2[] | null {
+  const n = ring.length;
+  if (n < 3 || d <= 0) return null;
+  const area0 = signedArea(ring);
+  if (Math.abs(area0) < 1e-6) return null;
+  const sign = area0 > 0 ? 1 : -1; // inward normal side depends on orientation
+  const out: V2[] = [];
+  for (let i = 0; i < n; i++) {
+    const p0 = ring[(i - 1 + n) % n], p1 = ring[i], p2 = ring[(i + 1) % n];
+    const e0 = [p1[0] - p0[0], p1[1] - p0[1]], e1 = [p2[0] - p1[0], p2[1] - p1[1]];
+    const l0 = Math.hypot(e0[0], e0[1]), l1 = Math.hypot(e1[0], e1[1]);
+    if (l0 < 1e-9 || l1 < 1e-9) return null;
+    // inward normals (for positive-area ring the interior is to the left of the edge direction)
+    const n0: V2 = [-e0[1] / l0 * sign, e0[0] / l0 * sign];
+    const n1: V2 = [-e1[1] / l1 * sign, e1[0] / l1 * sign];
+    const bx = n0[0] + n1[0], bz = n0[1] + n1[1];
+    const bl = Math.hypot(bx, bz);
+    if (bl < 1e-6) return null; // 180° turn
+    const cosHalf = bl / 2; // |bisector| = 2 cos(theta/2)
+    const miter = d / Math.max(cosHalf, 0.2); // clamp very sharp corners
+    out.push([p1[0] + (bx / bl) * miter, p1[1] + (bz / bl) * miter]);
+  }
+  // validity: same orientation, smaller area, no edge reversed
+  const area1 = signedArea(out);
+  if (area1 * area0 <= 0 || Math.abs(area1) >= Math.abs(area0)) return null;
+  for (let i = 0; i < n; i++) {
+    const a = ring[i], b = ring[(i + 1) % n], a2 = out[i], b2 = out[(i + 1) % n];
+    if ((b[0] - a[0]) * (b2[0] - a2[0]) + (b[1] - a[1]) * (b2[1] - a2[1]) <= 0) return null;
+  }
+  if (selfIntersects(out)) return null;
+  return out;
+}
+
+function segIntersect(a: V2, b: V2, c: V2, d: V2): boolean {
+  const o = (p: V2, q: V2, r: V2) => Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]));
+  return o(a, b, c) !== o(a, b, d) && o(c, d, a) !== o(c, d, b);
+}
+
+export function selfIntersects(ring: V2[]): boolean {
+  const n = ring.length;
+  if (n > 60) return false; // skip the O(n^2) test on big rings
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 2; j < n; j++) {
+      if (i === 0 && j === n - 1) continue;
+      if (segIntersect(ring[i], ring[(i + 1) % n], ring[j], ring[(j + 1) % n])) return true;
+    }
+  }
+  return false;
 }

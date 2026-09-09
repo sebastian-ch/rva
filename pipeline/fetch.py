@@ -39,7 +39,7 @@ LAYER_TAGS: dict[str, dict] = {
     "water": {"natural": ["water"], "waterway": ["river", "canal", "riverbank", "stream"], "water": True},
     "pois": {
         "natural": ["tree"],
-        "highway": ["street_lamp", "bus_stop", "crossing"],
+        "highway": ["street_lamp", "bus_stop", "crossing", "traffic_signals"],
         "amenity": ["bench", "restaurant", "cafe", "bar", "pub", "fast_food", "theatre", "place_of_worship", "fountain"],
         "shop": True,
         "tourism": ["museum", "attraction", "artwork", "hotel", "information"],
@@ -112,10 +112,17 @@ def fetch_dem(bbox: tuple[float, float, float, float], dst: Path, resolution_m: 
         "f": "image",
     }
     print(f"  DEM {w}x{h} px @ {resolution_m} m ...")
-    r = requests.get(DEM_URL, params=params, timeout=180)
-    r.raise_for_status()
-    if not r.content.startswith(b"II") and not r.content.startswith(b"MM"):
-        raise RuntimeError(f"3DEP did not return a TIFF: {r.content[:200]!r}")
+    last = b""
+    for attempt in range(3):  # the 3DEP image server occasionally answers with a JSON error for large exports
+        r = requests.get(DEM_URL, params=params, timeout=300)
+        r.raise_for_status()
+        if r.content.startswith(b"II") or r.content.startswith(b"MM"):
+            break
+        last = r.content[:200]
+        print(f"  [retry {attempt + 1}] 3DEP returned non-TIFF: {last!r}")
+        time.sleep(3 * (attempt + 1))
+    else:
+        raise RuntimeError(f"3DEP did not return a TIFF after 3 attempts: {last!r}")
     dst.write_bytes(r.content)
     print(f"  DEM written {dst.name} ({len(r.content) / 1e6:.1f} MB)")
     return dst

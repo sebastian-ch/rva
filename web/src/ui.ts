@@ -9,6 +9,9 @@ export interface BuildingInfo {
   wikidata: string | null;
   website: string | null;
   description?: string | null;
+  summary?: string | null;
+  thumbnail?: string | null;
+  wikipediaUrl?: string | null;
 }
 
 export interface UICallbacks {
@@ -17,6 +20,14 @@ export interface UICallbacks {
   onToggleMap(on: boolean): void;
   onTour(): void; // starts/advances a guided tour
   onCloseInfo(): void;
+  onToggleHeights?(on: boolean): void;
+}
+
+export interface HeightsLegendSpec {
+  minElev: number;
+  maxElev: number;
+  contour: number;
+  stops: Array<{ t: number; color: string }>;
 }
 
 export interface UI {
@@ -25,6 +36,33 @@ export interface UI {
   setLoading(loading: boolean, label?: string): void;
   setTourLabel(label: string): void; // e.g. "Tour: Capitol (2/9)"
   setNight(on: boolean): void; // sync button state + body.night
+  setHeights(on: boolean): void; // sync button state + body.heights
+  setHeightsLegend(spec: HeightsLegendSpec | null): void;
+  setReadout(text: string | null): void;
+}
+
+/**
+ * Builds a CSS linear-gradient() string for the heights legend bar from a
+ * list of {t, color} stops. t is 0..1 from the bottom of the bar to the top;
+ * CSS gradients are expressed top-to-bottom, so stops are flipped here.
+ */
+export function legendGradient(stops: Array<{ t: number; color: string }>): string {
+  // CSS stop positions must be non-decreasing, so express the ramp bottom-up with t directly.
+  const parts = stops.slice().sort((a, b) => a.t - b.t).map(({ t, color }) => `${color} ${Math.round(t * 1000) / 10}%`);
+  return `linear-gradient(to top, ${parts.join(", ")})`;
+}
+
+/**
+ * Formats the bottom-left readout pill text, e.g. "Elev 42 m · Bldg 18 m".
+ * Elevation and building height are rounded to whole metres; when bldg is
+ * null, only the elevation part is shown.
+ */
+export function readoutText(elev: number, bldg: number | null): string {
+  const parts = [`Elev ${Math.round(elev)} m`];
+  if (bldg !== null && bldg !== undefined) {
+    parts.push(`Bldg ${Math.round(bldg)} m`);
+  }
+  return parts.join(" · ");
 }
 
 function capitalize(s: string): string {
@@ -55,6 +93,7 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
   let nightOn = false;
   let pauseOn = false;
   let mapOn = false;
+  let heightsOn = false;
 
   // ---- Title badge ----
   const titleBadge = document.createElement("div");
@@ -96,6 +135,7 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
   const pauseBtn = makeButton("⏸", "Pause");
   const mapBtn = makeButton("\u{1F5FA}", "Map");
   const tourBtn = makeButton("\u{1F3DB}", "Tour");
+  const heightsBtn = makeButton("\u{1F4D0}", "Heights");
 
   nightBtn.addEventListener("click", () => {
     nightOn = !nightOn;
@@ -119,10 +159,17 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
     cb.onTour();
   });
 
+  heightsBtn.addEventListener("click", () => {
+    heightsOn = !heightsOn;
+    applyHeightsState(heightsOn);
+    cb.onToggleHeights?.(heightsOn);
+  });
+
   toolbar.appendChild(nightBtn);
   toolbar.appendChild(pauseBtn);
   toolbar.appendChild(mapBtn);
   toolbar.appendChild(tourBtn);
+  toolbar.appendChild(heightsBtn);
 
   root.appendChild(toolbar);
 
@@ -144,6 +191,13 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
   const infoName = document.createElement("h2");
   infoCard.appendChild(infoName);
 
+  const infoThumb = document.createElement("img");
+  infoThumb.className = "info-thumb";
+  infoThumb.alt = "";
+  infoThumb.referrerPolicy = "no-referrer";
+  infoThumb.hidden = true;
+  infoCard.appendChild(infoThumb);
+
   const infoAddr = document.createElement("p");
   infoAddr.className = "info-addr";
   infoCard.appendChild(infoAddr);
@@ -156,9 +210,19 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
   infoDescription.className = "info-description";
   infoCard.appendChild(infoDescription);
 
+  const infoSummary = document.createElement("p");
+  infoSummary.className = "info-summary";
+  infoCard.appendChild(infoSummary);
+
   const infoLinks = document.createElement("div");
   infoLinks.className = "info-links";
   infoCard.appendChild(infoLinks);
+
+  const infoWikiAttr = document.createElement("p");
+  infoWikiAttr.className = "info-wiki-attr";
+  infoWikiAttr.textContent = "Text: Wikipedia, CC BY-SA 4.0";
+  infoWikiAttr.hidden = true;
+  infoCard.appendChild(infoWikiAttr);
 
   root.appendChild(infoCard);
 
@@ -175,6 +239,38 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
   loadingPill.appendChild(loadingLabel);
 
   root.appendChild(loadingPill);
+
+  // ---- Readout pill (bottom-left, next to loading pill) ----
+  const readoutPill = document.createElement("div");
+  readoutPill.className = "panel readout-pill hidden";
+  root.appendChild(readoutPill);
+
+  // ---- Heights legend (bottom-left, above loading pill) ----
+  const legendPanel = document.createElement("div");
+  legendPanel.className = "panel heights-legend hidden";
+
+  const legendMax = document.createElement("div");
+  legendMax.className = "heights-legend-label heights-legend-max";
+  legendPanel.appendChild(legendMax);
+
+  const legendBarWrap = document.createElement("div");
+  legendBarWrap.className = "heights-legend-bar-wrap";
+
+  const legendBar = document.createElement("div");
+  legendBar.className = "heights-legend-bar";
+  legendBarWrap.appendChild(legendBar);
+
+  legendPanel.appendChild(legendBarWrap);
+
+  const legendMin = document.createElement("div");
+  legendMin.className = "heights-legend-label heights-legend-min";
+  legendPanel.appendChild(legendMin);
+
+  const legendCaption = document.createElement("div");
+  legendCaption.className = "heights-legend-caption";
+  legendPanel.appendChild(legendCaption);
+
+  root.appendChild(legendPanel);
 
   // ---- Tour label ----
   const tourLabel = document.createElement("div");
@@ -227,6 +323,14 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
   function showInfo(info: BuildingInfo): void {
     infoName.textContent = info.name && info.name.length > 0 ? info.name : fallbackName(info.type);
 
+    if (info.thumbnail) {
+      infoThumb.src = info.thumbnail;
+      infoThumb.hidden = false;
+    } else {
+      infoThumb.removeAttribute("src");
+      infoThumb.hidden = true;
+    }
+
     if (info.addr) {
       infoAddr.textContent = info.addr;
       infoAddr.hidden = false;
@@ -247,7 +351,24 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
       infoDescription.hidden = true;
     }
 
+    if (info.summary) {
+      infoSummary.textContent = info.summary;
+      infoSummary.hidden = false;
+    } else {
+      infoSummary.textContent = "";
+      infoSummary.hidden = true;
+    }
+
     infoLinks.textContent = "";
+
+    if (info.wikipediaUrl) {
+      const link = document.createElement("a");
+      link.href = info.wikipediaUrl;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = "Wikipedia";
+      infoLinks.appendChild(link);
+    }
 
     if (info.wikidata) {
       const link = document.createElement("a");
@@ -266,6 +387,8 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
       link.textContent = "Website";
       infoLinks.appendChild(link);
     }
+
+    infoWikiAttr.hidden = !info.summary;
 
     infoCard.classList.remove("hidden");
   }
@@ -288,6 +411,41 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
   function setNight(on: boolean): void {
     nightOn = on;
     applyNightState(on);
+  }
+
+  function applyHeightsState(on: boolean): void {
+    document.body.classList.toggle("heights", on);
+    heightsBtn.classList.toggle("active", on);
+    legendPanel.classList.toggle("hidden", !on || !legendPanel.dataset.hasSpec);
+  }
+
+  function setHeights(on: boolean): void {
+    heightsOn = on;
+    applyHeightsState(on);
+  }
+
+  function setHeightsLegend(spec: HeightsLegendSpec | null): void {
+    if (spec === null) {
+      delete legendPanel.dataset.hasSpec;
+      legendPanel.classList.add("hidden");
+      return;
+    }
+    legendPanel.dataset.hasSpec = "1";
+    legendBar.style.background = legendGradient(spec.stops);
+    legendMax.textContent = `${Math.round(spec.maxElev)} m`;
+    legendMin.textContent = `${Math.round(spec.minElev)} m`;
+    legendCaption.textContent = `Elevation + building height (m), contours every ${spec.contour} m`;
+    legendPanel.classList.toggle("hidden", !heightsOn);
+  }
+
+  function setReadout(text: string | null): void {
+    if (text === null) {
+      readoutPill.classList.add("hidden");
+      readoutPill.textContent = "";
+      return;
+    }
+    readoutPill.textContent = text;
+    readoutPill.classList.remove("hidden");
   }
 
   function isTypingTarget(target: EventTarget | null): boolean {
@@ -331,6 +489,12 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
       case "T":
         cb.onTour();
         break;
+      case "h":
+      case "H":
+        heightsOn = !heightsOn;
+        applyHeightsState(heightsOn);
+        cb.onToggleHeights?.(heightsOn);
+        break;
       default:
         break;
     }
@@ -342,5 +506,8 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
     setLoading,
     setTourLabel,
     setNight,
+    setHeights,
+    setHeightsLegend,
+    setReadout,
   };
 }

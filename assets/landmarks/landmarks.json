@@ -14,7 +14,7 @@
     "description": "Neoclassical capitol building designed with Thomas Jefferson's input, completed in 1788; still houses the Virginia General Assembly.",
     "district": "Capitol Square",
     "in_first_slice": true,
-    "model": null,
+    "model": "landmarks/virginia-state-capitol.glb",
     "height_hint_m": 24
   },
   {
@@ -32,7 +32,7 @@
     "description": "1901 French Renaissance Revival railway station with a distinctive clock tower, in Shockoe Bottom; still an active Amtrak stop.",
     "district": "Shockoe Bottom",
     "in_first_slice": true,
-    "model": null,
+    "model": "landmarks/main-street-station.glb",
     "height_hint_m": 34
   },
   {
@@ -47,10 +47,10 @@
     "kind": "building",
     "wikidata": "Q6175505",
     "website": "https://www.jeffersonhotel.com/",
-    "description": "Opulent 1895 Beaux-Arts hotel designed by Carrère and Hastings, known for its grand staircase and rooftop palm court.",
+    "description": "Opulent 1895 Beaux-Arts hotel designed by Carr\u00e8re and Hastings, known for its grand staircase and rooftop palm court.",
     "district": "Downtown",
     "in_first_slice": true,
-    "model": null,
+    "model": "landmarks/the-jefferson-hotel.glb",
     "height_hint_m": 38
   },
   {
@@ -68,7 +68,7 @@
     "description": "High Victorian Gothic government building completed in 1894, adjacent to Capitol Square; now used as office space.",
     "district": "Capitol Square",
     "in_first_slice": true,
-    "model": null,
+    "model": "landmarks/old-city-hall.glb",
     "height_hint_m": 38
   },
   {
@@ -87,7 +87,7 @@
     "description": "1928 Loew's movie palace restored as the Carpenter Theatre, now the anchor venue of the Dominion Energy Center for the Performing Arts.",
     "district": "Downtown",
     "in_first_slice": true,
-    "model": null,
+    "model": "landmarks/carpenter-theatre-dominion-energy-center.glb",
     "height_hint_m": 26
   },
   {
@@ -105,7 +105,7 @@
     "description": "Aluminum-clad Fifth District Federal Reserve headquarters tower designed by Minoru Yamasaki, built 1975-1978 overlooking the James River.",
     "district": "Downtown",
     "in_first_slice": true,
-    "model": null,
+    "model": "landmarks/federal-reserve-bank-of-richmond.glb",
     "height_hint_m": 119
   },
   {
@@ -122,7 +122,7 @@
     "description": "State office tower on Capitol Square housing several Virginia state agencies, named for President James Monroe.",
     "district": "Capitol Square",
     "in_first_slice": true,
-    "model": null,
+    "model": "landmarks/james-monroe-building.glb",
     "height_hint_m": 137
   },
   {
@@ -141,7 +141,7 @@
     "description": "High-rise corporate headquarters of Dominion Energy at 600 Canal Place, one of the tallest buildings in downtown Richmond's skyline.",
     "district": "Downtown",
     "in_first_slice": true,
-    "model": null,
+    "model": "landmarks/dominion-energy-tower-600-canal-place.glb",
     "height_hint_m": 96
   },
   {
@@ -160,7 +160,7 @@
     "description": "1927 Shriners' Mosque-style auditorium later known as the Landmark Theater, now a major performing arts and concert venue near Monroe Park.",
     "district": "VCU",
     "in_first_slice": false,
-    "model": null,
+    "model": "landmarks/altria-theater.glb",
     "height_hint_m": 28
   },
   {
@@ -220,9 +220,8 @@
     "slug": "belle-isle-footbridge",
     "name": "Belle Isle footbridge",
     "osm_name_hints": [
-      "Belle Isle",
       "Belle Isle Footbridge",
-      "T. Tyler Potterfield Memorial Bridge"
+      "Belle Isle Pedestrian Bridge"
     ],
     "lat": 37.533,
     "lon": -77.446,
@@ -306,19 +305,20 @@
     "description": "Main library of Virginia Commonwealth University's Monroe Park campus, named for novelist James Branch Cabell.",
     "district": "VCU",
     "in_first_slice": false,
-    "model": null,
+    "model": "landmarks/vcu-cabell-library.glb",
     "height_hint_m": 22
   },
   {
     "slug": "maggie-l-walker-memorial",
     "name": "Maggie L. Walker memorial",
     "osm_name_hints": [
-      "Maggie L. Walker Memorial",
+      "Maggie Lena Walker Statue",
       "Maggie Walker Statue",
-      "Maggie Lena Walker Memorial Plaza"
+      "Maggie Lena Walker Memorial Plaza",
+      "Maggie L. Walker Memorial"
     ],
-    "lat": 37.5423,
-    "lon": -77.4368,
+    "lat": 37.54626,
+    "lon": -77.44255,
     "kind": "site",
     "wikidata": null,
     "website": null,

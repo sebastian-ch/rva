@@ -7,6 +7,7 @@ data/tiles/
 !data/tiles/.gitkeep
 web/node_modules/
 web/dist/
+web/snapshots/
 *.blend1
 *.laz
 *.tif

@@ -1,7 +1,10 @@
 import * as THREE from 'three';
 import palette from '../../assets/palette.json';
 import { hex } from './props';
-import { MeshBuilder, ccw, centroid, cleanRing, minAreaOBB, polygons, signedArea, triangulate, type V2 } from './geomutil';
+import { MeshBuilder, ccw, centroid, cleanRing, insetRing, minAreaOBB, polygons, signedArea, triangulate, type V2 } from './geomutil';
+import { facadeParams } from './facade';
+import { addRoofDetails } from './roofDetails';
+import { hashStr } from './geomutil';
 import type { BuildingProps, Feature, PolyGeom } from './types';
 
 type PaletteKey = keyof typeof palette;
@@ -17,13 +20,17 @@ const AO_HEIGHT = 6;     // meters over which the gradient fades
  * Extrude one footprint into `mb`. Coordinates are web-local (x east, z = -north). groundY is the terrain height.
  * Returns the number of triangles appended.
  */
-export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, BuildingProps>, toLocal: (x: number, y: number) => V2, groundY: number): number {
+export interface ExtrudeOptions { details?: boolean }
+
+export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, BuildingProps>, toLocal: (x: number, y: number) => V2, groundY: number, opts: ExtrudeOptions = {}): number {
   const p = feat.properties;
   const start = mb.triCount;
   const wall = pal(p.wall_color), roof = pal(p.roof_color);
+  // outlines covered by their building:parts become a low plinth: still pickable, no facade, no roof
+  const hidden = p.hidden === true;
   const base = groundY - 0.3 + p.min_height; // sink slightly so slopes don't show gaps
-  const top = groundY + p.height;
-  const roofH = p.roof_shape === 'flat' ? 0 : p.roof_height;
+  const top = groundY + (hidden ? 0.6 : p.height);
+  const roofH = hidden || p.roof_shape === 'flat' ? 0 : p.roof_height;
 
   for (const poly of polygons(feat.geometry)) {
     const rings = poly.map((r) => cleanRing(r).map(([x, y]) => toLocal(x, y))).filter((r) => r.length >= 3);
@@ -34,20 +41,20 @@ export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, Buildin
     const holes = rings.slice(1).map((r) => (signedArea(r) > 0 ? r.slice().reverse() : r));
 
     // walls
+    const fp = hidden ? { floor: 0, style: 0 } : facadeParams(p);
+    const seed = (hashStr(p.id) % 1000) / 1000;
     for (const ring of [outer, ...holes]) {
       const n = ring.length;
+      let uOff = 0;
       for (let i = 0; i < n; i++) {
         const [x0, z0] = ring[i], [x1, z1] = ring[(i + 1) % n];
         const dx = x1 - x0, dz = z1 - z0;
         const len = Math.hypot(dx, dz);
         if (len < 1e-6) continue;
-        // For outer ring with positive area in (x,z) space, interior lies to the right when looking along +y (screen)...
-        // just compute both candidate normals and pick the one pointing away from the ring centroid.
-        let nx = dz / len, nz = -dx / len;
-        const c = centroid(ring);
-        const mx = (x0 + x1) / 2 - c[0], mz = (z0 + z1) / 2 - c[1];
-        const isHole = ring !== outer;
-        if ((nx * mx + nz * mz < 0) !== isHole) { nx = -nx; nz = -nz; }
+        // Rings are oriented: outer has positive signed area in (x, z), holes negative. For both, the building
+        // mass lies to the LEFT of the edge direction, so the outward wall normal is the right-hand side.
+        // (A centroid-based test breaks on concave U/L footprints and culled courtyard walls.)
+        const nx = dz / len, nz = -dx / len;
         const nrm = new THREE.Vector3(nx, 0, nz);
         const a = new THREE.Vector3(x0, base, z0), b = new THREE.Vector3(x1, base, z1);
         const c2 = new THREE.Vector3(x1, top, z1), d = new THREE.Vector3(x0, top, z0);
@@ -56,13 +63,18 @@ export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, Buildin
         const sun = 0.92 + 0.08 * Math.max(0, nx * 0.6 + nz * 0.8);
         // winding: ensure normal matches cross
         const cross = new THREE.Vector3().subVectors(b, a).cross(new THREE.Vector3().subVectors(c2, a));
+        // facade uv: u along the wall (m), v above the roofline base (m); walls under 2.5 m get no windows
+        const wallH = top - base;
+        const fac: [number, number, number, number] = [len < 2.5 ? 0 : fp.floor, wallH - 0.3, fp.style, seed];
+        const ua: V2 = [uOff, 0], ub: V2 = [uOff + len, 0], uc: V2 = [uOff + len, wallH], ud: V2 = [uOff, wallH];
         if (cross.dot(nrm) < 0) {
-          mb.triShaded(a, c2, b, wall, nrm, sBot * sun, sTop * sun, sBot * sun);
-          mb.triShaded(a, d, c2, wall, nrm, sBot * sun, sTop * sun, sTop * sun);
+          mb.triFacade(a, c2, b, wall, nrm, [sBot * sun, sTop * sun, sBot * sun], [ua, uc, ub], fac);
+          mb.triFacade(a, d, c2, wall, nrm, [sBot * sun, sTop * sun, sTop * sun], [ua, ud, uc], fac);
         } else {
-          mb.triShaded(a, b, c2, wall, nrm, sBot * sun, sBot * sun, sTop * sun);
-          mb.triShaded(a, c2, d, wall, nrm, sBot * sun, sTop * sun, sTop * sun);
+          mb.triFacade(a, b, c2, wall, nrm, [sBot * sun, sBot * sun, sTop * sun], [ua, ub, uc], fac);
+          mb.triFacade(a, c2, d, wall, nrm, [sBot * sun, sTop * sun, sTop * sun], [ua, uc, ud], fac);
         }
+        uOff += len;
       }
     }
 
@@ -78,18 +90,98 @@ export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, Buildin
       mb.tri(a, b, c, capColor, UP, roofH > 0 ? 0.9 : 1);
     }
 
-    if (roofH > 0) addRoof(mb, outer, top, roofH, p.roof_shape, roof, wall);
+    if (roofH > 0) {
+      const done = (p.roof_shape === 'hip' || p.roof_shape === 'pyramidal') && addInsetRoof(mb, outer, top, roofH, roof, p.roof_shape === 'pyramidal');
+      if (!done) addRoof(mb, outer, top, roofH, p.roof_shape, roof, wall, p.roof_azimuth ?? null);
+    }
+    if (opts.details !== false && !hidden) addRoofDetails(mb, outer, top, p, wall, roof);
   }
   return mb.triCount - start;
 }
 
-function addRoof(mb: MeshBuilder, outer: V2[], top: number, roofH: number, shape: string, roof: THREE.Color, wall: THREE.Color) {
+/**
+ * Straight-skeleton-style roof from successive mitred insets. Each annulus between ring k and ring k+1 is
+ * triangulated with earcut; the last ring is capped flat (hip) or collapsed to the centroid (pyramidal).
+ * Returns false when the footprint cannot be inset (then the caller falls back to the prism).
+ */
+function addInsetRoof(mb: MeshBuilder, outer: V2[], top: number, roofH: number, roof: THREE.Color, pyramid: boolean): boolean {
   const obb = minAreaOBB(outer);
+  const maxInset = Math.max(0.5, obb.halfShort * 0.98);
+  const steps = 4;
+  const rings: V2[][] = [outer];
+  for (let k = 1; k <= steps; k++) {
+    const r = insetRing(outer, (maxInset * k) / steps);
+    if (!r) break;
+    rings.push(r);
+  }
+  if (rings.length < 2) return false;
+  const tri = (a: THREE.Vector3, b: THREE.Vector3, c: THREE.Vector3, shade: number) => {
+    const n = new THREE.Vector3().subVectors(b, a).cross(new THREE.Vector3().subVectors(c, a)).normalize();
+    if (n.y < 0) { n.negate(); mb.tri(a, c, b, roof, n, shade); } else mb.tri(a, b, c, roof, n, shade);
+  };
+  const yAt = (k: number) => top + (roofH * k) / (rings.length - 1);
+  for (let k = 0; k < rings.length - 1; k++) {
+    const a = rings[k], b = rings[k + 1];
+    const all = [...a, ...b];
+    let idx: number[];
+    try { idx = triangulate(a, [b]); } catch { return false; }
+    if (!idx.length) return false;
+    const y0 = yAt(k), y1 = yAt(k + 1);
+    for (let i = 0; i < idx.length; i += 3) {
+      const P = (j: number) => { const q = all[j]; return new THREE.Vector3(q[0], j < a.length ? y0 : y1, q[1]); };
+      // slope shading by facing: light from -x/+z-ish
+      const A = P(idx[i]), B = P(idx[i + 1]), C = P(idx[i + 2]);
+      const n = new THREE.Vector3().subVectors(B, A).cross(new THREE.Vector3().subVectors(C, A)).normalize();
+      const shade = 0.86 + 0.14 * Math.max(0, -n.x * 0.5 + n.z * 0.5 + 0.5);
+      tri(A, B, C, shade);
+    }
+  }
+  const last = rings[rings.length - 1];
+  const yTop = yAt(rings.length - 1);
+  if (pyramid || last.length < 3) {
+    const c = centroid(last);
+    const apex = new THREE.Vector3(c[0], top + roofH, c[1]);
+    for (let i = 0; i < last.length; i++) {
+      const p0 = last[i], p1 = last[(i + 1) % last.length];
+      tri(new THREE.Vector3(p0[0], yTop, p0[1]), new THREE.Vector3(p1[0], yTop, p1[1]), apex, 0.92);
+    }
+  } else {
+    const idx = triangulate(last, []);
+    for (let i = 0; i < idx.length; i += 3) {
+      const P = (j: number) => new THREE.Vector3(last[j][0], yTop, last[j][1]);
+      tri(P(idx[i]), P(idx[i + 1]), P(idx[i + 2]), 1);
+    }
+  }
+  return true;
+}
+
+/** Oriented box of `pts` along a fixed axis direction (unit vector in local x,z). */
+function boxAlongAxis(pts: V2[], ax: number, az: number): { center: V2; halfLong: number; halfShort: number } {
+  const px = -az, pz = ax;
+  let minU = Infinity, maxU = -Infinity, minV = Infinity, maxV = -Infinity;
+  for (const [x, z] of pts) {
+    const u = x * ax + z * az, v = x * px + z * pz;
+    if (u < minU) minU = u; if (u > maxU) maxU = u; if (v < minV) minV = v; if (v > maxV) maxV = v;
+  }
+  const cu = (minU + maxU) / 2, cv = (minV + maxV) / 2;
+  return { center: [cu * ax + cv * px, cu * az + cv * pz], halfLong: (maxU - minU) / 2, halfShort: (maxV - minV) / 2 };
+}
+
+function addRoof(mb: MeshBuilder, outer: V2[], top: number, roofH: number, shape: string, roof: THREE.Color, wall: THREE.Color, azimuthDeg: number | null) {
+  let ax: number, az: number, L: number, S: number, cx: number, cz: number;
   const inset = 0.97;
-  const [ax, az] = obb.axis;
+  if (azimuthDeg != null && Number.isFinite(azimuthDeg)) {
+    // LiDAR ridge azimuth: degrees clockwise from north. Local frame: x = east, z = -north.
+    const rad = THREE.MathUtils.degToRad(azimuthDeg);
+    ax = Math.sin(rad); az = -Math.cos(rad);
+    const b = boxAlongAxis(outer, ax, az);
+    L = b.halfLong * inset; S = b.halfShort * inset; [cx, cz] = b.center;
+  } else {
+    const obb = minAreaOBB(outer);
+    [ax, az] = obb.axis;
+    L = obb.halfLong * inset; S = obb.halfShort * inset; [cx, cz] = obb.center;
+  }
   const px = -az, pz = ax; // perpendicular (short axis)
-  const L = obb.halfLong * inset, S = obb.halfShort * inset;
-  const [cx, cz] = obb.center;
   const P = (u: number, v: number, y: number) => new THREE.Vector3(cx + ax * u + px * v, y, cz + az * u + pz * v);
   const quad = (a: THREE.Vector3, b: THREE.Vector3, c: THREE.Vector3, d: THREE.Vector3, col: THREE.Color, shade = 1) => {
     const n = new THREE.Vector3().subVectors(b, a).cross(new THREE.Vector3().subVectors(c, a)).normalize();
@@ -167,8 +259,9 @@ export function buildBuildingsMesh(
   toLocal: (x: number, y: number) => V2,
   groundAt: (x: number, y: number) => number,
   material: THREE.Material,
+  opts: { details?: boolean; facade?: boolean } = {},
 ): { mesh: THREE.Mesh; ranges: BuildingRange[] } {
-  const mb = new MeshBuilder();
+  const mb = new MeshBuilder(opts.facade !== false);
   const ranges: BuildingRange[] = [];
   for (const f of feats) {
     const outer = ccw(cleanRing(polygons(f.geometry)[0][0]));
@@ -176,7 +269,7 @@ export function buildBuildingsMesh(
     const c = centroid(outer);
     const g = Number.isFinite(f.properties.ground_z) ? f.properties.ground_z : groundAt(c[0], c[1]);
     const start = mb.triCount;
-    const count = extrudeBuilding(mb, f, toLocal, g);
+    const count = extrudeBuilding(mb, f, toLocal, g, { details: opts.details });
     if (count > 0) ranges.push({ start, count, props: f.properties });
   }
   const mesh = new THREE.Mesh(mb.build(), material);

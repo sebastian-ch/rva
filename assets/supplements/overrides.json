@@ -1,0 +1,158 @@
+[
+  {
+    "name": "CoStar Tower",
+    "lat": 37.53664,
+    "lon": -77.44247,
+    "radius_m": 60,
+    "height": 155,
+    "levels": 26,
+    "type": "office",
+    "roof_shape": "flat",
+    "wall_color": "glass",
+    "roof_color": "concrete",
+    "website": "https://www.costar.com",
+    "note": "26-storey, 510 ft CoStar HQ at 600 Tredegar St; topped out Feb 2025, completion 2026. Sits just NW of the existing CoStar Group building. Footprint is the oriented rectangle of the >60 m region in the VGIN/NOAA 2025 City of Richmond DSM (flown 2025-02-14..03-01, tower at ~147 m then); OSM/Overture/VGIN 2026-02 have no footprint for it. The earlier VGIN OBJECTID 1537705 footprint was the old Tredegar visitor-center block, 300 m west.",
+    "footprint": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [
+            -77.442293,
+            37.536307
+          ],
+          [
+            -77.442926,
+            37.536698
+          ],
+          [
+            -77.442659,
+            37.536973
+          ],
+          [
+            -77.442025,
+            37.536581
+          ],
+          [
+            -77.442293,
+            37.536307
+          ]
+        ]
+      ]
+    }
+  },
+  {
+    "name": "Allianz Amphitheater at Riverfront",
+    "lat": 37.5322,
+    "lon": -77.448,
+    "radius_m": 120,
+    "height": 22,
+    "type": "civic",
+    "roof_shape": "flat",
+    "wall_color": "steel",
+    "roof_color": "roof_dark",
+    "note": "7,500-capacity amphitheater west of the CoStar campus, opened 2025; stage house; height estimated. Applies to the OSM relation 'Allianz Amphitheater at Riverside'.",
+    "match_name": "Allianz Amphitheater"
+  },
+  {
+    "name": "Allianz Amphitheater seating bowl",
+    "lat": 37.53595,
+    "lon": -77.44631,
+    "height": 2.5,
+    "type": "civic",
+    "roof_shape": "flat",
+    "wall_color": "concrete",
+    "roof_color": "concrete",
+    "note": "Terraced seating fan and paved plaza around the Allianz Amphitheater stage house (opened June 2025); traced from VGIN VBMP Most Recent Imagery (Spring 2025 frame, under construction) on 2026-09-09. Ring hugs the stage house so the OSM relation keeps its 22 m block; lawn to the NW left as ground.",
+    "footprint": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [
+            -77.446877,
+            37.535547
+          ],
+          [
+            -77.447201,
+            37.535598
+          ],
+          [
+            -77.447331,
+            37.535752
+          ],
+          [
+            -77.447299,
+            37.535933
+          ],
+          [
+            -77.447152,
+            37.536074
+          ],
+          [
+            -77.446909,
+            37.53619
+          ],
+          [
+            -77.446584,
+            37.536254
+          ],
+          [
+            -77.446195,
+            37.536267
+          ],
+          [
+            -77.445805,
+            37.536254
+          ],
+          [
+            -77.445416,
+            37.536216
+          ],
+          [
+            -77.445156,
+            37.5361
+          ],
+          [
+            -77.445059,
+            37.535958
+          ],
+          [
+            -77.445253,
+            37.535855
+          ],
+          [
+            -77.445578,
+            37.53583
+          ],
+          [
+            -77.445886,
+            37.535752
+          ],
+          [
+            -77.446065,
+            37.535752
+          ],
+          [
+            -77.446325,
+            37.535886
+          ],
+          [
+            -77.446471,
+            37.535714
+          ],
+          [
+            -77.446454,
+            37.535598
+          ],
+          [
+            -77.446747,
+            37.535521
+          ],
+          [
+            -77.446877,
+            37.535547
+          ]
+        ]
+      ]
+    }
+  }
+]

@@ -78,3 +78,26 @@ Export contract the viewer relies on:
 git add assets/landmarks/<slug>.glb assets/landmarks/landmarks.json
 git commit -m "Add hand-modeled <slug> landmark"
 ```
+
+## Visual references (reference only, no derived data)
+
+- Google Maps 3D / satellite over downtown from the river:
+  https://www.google.com/maps/@37.5300159,-77.4349121,874a,35y,39.18t/data=!3m1!1e3
+- Google Street View for facades; own photos where possible.
+- Use these to judge massing, roof form and colour. Never trace geometry or extract data from them; the
+  automated pipeline uses only OSM, Overture, USGS 3DEP and NAIP (see `ATTRIBUTION.md`).
+
+## Without the Blender app: the `bpy` Python module
+
+Blender ships as a pip-installable Python module (`bpy`, ~230 MB, Python 3.11 on this machine). It runs the
+scripts here headless with no desktop app:
+
+```
+.venv/bin/pip install bpy                     # already installed in this repo's venv
+.venv/bin/python blender/import_tile.py -- --tile 13_8 --save blender/tile_13_8.blend
+.venv/bin/python blender/export_landmark.py -- --slug old-city-hall     # once a <slug> collection exists in the open file
+```
+
+What it gives you: tile import, procedural massing scripts, glTF export, batch re-exports in CI. What it does
+not give you: a viewport. Hand modelling still needs the desktop app (open the saved `.blend` there), or you
+model landmarks procedurally in Python against the imported footprint and export straight from `bpy`.

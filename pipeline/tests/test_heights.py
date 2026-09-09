@@ -220,3 +220,31 @@ def test_resolve_colors_keys_exist_in_palette():
                 wall, roof = resolve_colors({}, height=height, roof_shape=roof_shape, seed=seed)
                 assert wall in palette_keys
                 assert roof in palette_keys
+
+
+# --------------------------------------------------------------------- cleanup rules
+def test_cap_small_footprint_caps_sheds_not_steeples():
+    from heights import cap_small_footprint
+
+    assert cap_small_footprint(64.0, 42.0, "yes") == 4.0 * 42.0 ** 0.5
+    assert cap_small_footprint(64.0, 42.0, "church") == 64.0
+    assert cap_small_footprint(64.0, 120.0, "yes") == 64.0
+    assert cap_small_footprint(5.0, 42.0, None) == 5.0
+
+
+def test_looks_demolished_requires_ground_level_surface_and_no_osm_height():
+    from heights import looks_demolished
+
+    assert looks_demolished("default", 20, 0.3)
+    assert looks_demolished("overture_height", 8, 1.0)
+    assert not looks_demolished("osm_height", 20, 0.3)
+    assert not looks_demolished("default", 3, 0.3)
+    assert not looks_demolished("default", 20, 4.0)
+    assert not looks_demolished("default", 20, None)
+
+
+def test_roof_height_capped_to_half_building_height():
+    shape, rh = resolve_roof({"building": "house"}, 3.0, 200.0)
+    assert shape == "gable" and rh == 1.5
+    shape, rh = resolve_roof({"building": "house"}, 8.0, 200.0)
+    assert abs(rh - 200 ** 0.5 * 0.25) < 1e-9  # below the cap

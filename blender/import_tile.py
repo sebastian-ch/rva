@@ -2,7 +2,8 @@
 or as a base to model a landmark against.
 
 Usage:
-    blender --background --python blender/import_tile.py -- --tile 11_3 [--tiles-dir data/tiles]
+    blender --background --python blender/import_tile.py -- --tile 11_3 [--tiles-dir data/tiles] [--save out.blend]
+    .venv/bin/python blender/import_tile.py -- --tile 11_3 --save blender/tile_11_3.blend   # with the pip `bpy` module
 
 Reads:
     <tiles-dir>/index.json
@@ -48,7 +49,7 @@ def parse_args():
     else:
         argv = []
 
-    args = {"tile": None, "tiles_dir": str(ROOT / "data" / "tiles")}
+    args = {"tile": None, "tiles_dir": str(ROOT / "data" / "tiles"), "save": None}
     i = 0
     while i < len(argv):
         a = argv[i]
@@ -57,6 +58,9 @@ def parse_args():
             i += 2
         elif a == "--tiles-dir":
             args["tiles_dir"] = argv[i + 1]
+            i += 2
+        elif a == "--save":
+            args["save"] = argv[i + 1]
             i += 2
         else:
             i += 1
@@ -324,6 +328,9 @@ def main():
     import_roads(tile_dir, minx, miny, roads_coll)
 
     print(f"import_tile: imported tile {args['tile']} into collection '{tile_coll_name}'")
+    if args.get("save"):
+        bpy.ops.wm.save_as_mainfile(filepath=str(Path(args["save"]).resolve()))
+        print(f"import_tile: saved {args['save']}")
 
 
 if __name__ == "__main__":

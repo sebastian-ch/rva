@@ -110,6 +110,13 @@ def export_glb(out_path, use_selection=True):
         export_apply=True,
         export_yup=True,
     )
+    # Bake the active colour attribute into COLOR_0: the viewer's building material is vertex-coloured.
+    try:
+        bpy.ops.export_scene.gltf(**common_kwargs, export_vertex_color="ACTIVE", export_draco_mesh_compression_enable=True)
+        print(f"export_landmark: exported with Draco compression to {out_path}")
+        return
+    except (TypeError, RuntimeError) as exc:
+        print(f"export_landmark: Draco/vertex-colour export failed ({exc}), retrying")
     try:
         bpy.ops.export_scene.gltf(
             **common_kwargs,

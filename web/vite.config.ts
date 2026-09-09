@@ -36,6 +36,7 @@ function tilesPlugin(): Plugin {
 }
 
 export default defineConfig({
+  base: process.env.BASE_PATH ?? '/',
   plugins: [tilesPlugin()],
   server: { fs: { allow: ['..'] } },
   build: { target: 'es2022' },

@@ -84,7 +84,7 @@ describe('buildBuildingsMesh', () => {
 
     const ground = 5, height = 10, roofH = 3;
     const minY = ground - 0.3 - 0.01;
-    const maxY = ground + height + roofH + 0.01;
+    const maxY = ground + height + roofH + 0.8 + 0.01; // + chimney from roofDetails on gabled houses
     for (let i = 1; i < posAttr.array.length; i += 3) {
       const y = posAttr.array[i];
       expect(y).toBeGreaterThanOrEqual(minY);

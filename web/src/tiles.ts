@@ -1,31 +1,76 @@
 import * as THREE from 'three';
-import type { AreaProps, BuildingProps, Feature, CrossingProps, FC, LineGeom, PoiProps, PointGeom, PolyGeom, RailProps, RoadProps, TerrainGrid, TileIndex, TileMeta } from './types';
-import { HeightField, FLAT_FIELD, buildTerrainMesh } from './terrain';
-import { buildBuildingsMesh, type BuildingRange } from './buildings';
-import { buildRoads } from './roads';
-import { buildAreas } from './areas';
-import { scatterTile, type Placement } from './scatter';
+import type { CarPathMeta } from './traffic/graph';
+import type { BuildingProps, Feature, PolyGeom, TileIndex, TileMeta } from './types';
+import { HeightField, FLAT_FIELD } from './terrain';
+import type { BuildingRange } from './buildings';
+import type { Placement } from './scatter';
+import type { GeomArrays, Lod, TilePayload } from './tileBuild';
 import type { V2 } from './geomutil';
 
 export interface LoadedTile {
   meta: TileMeta;
+  lod: Lod;
   group: THREE.Group;
   buildings: THREE.Mesh | null;
   ranges: BuildingRange[];
   carPaths: THREE.Vector3[][];
+  carMeta: CarPathMeta[];
+  walkPaths: THREE.Vector3[][];
   placements: Placement[];
   field: HeightField;
   buildingFeatures: Map<string, Feature<PolyGeom, BuildingProps>>;
+  triangles: number;
 }
 
 export interface Materials {
   terrain: THREE.Material; buildings: THREE.Material; roads: THREE.Material; land: THREE.Material; water: THREE.Material;
 }
 
-async function getJSON<T>(url: string): Promise<T | null> {
-  const r = await fetch(url);
-  if (!r.ok) return null;
-  return (await r.json()) as T;
+export function geometryFromArrays(g: GeomArrays): THREE.BufferGeometry {
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.BufferAttribute(g.position, 3));
+  geom.setAttribute('normal', new THREE.BufferAttribute(g.normal, 3));
+  geom.setAttribute('color', new THREE.BufferAttribute(g.color, 3));
+  if (g.uv) geom.setAttribute('uv', new THREE.BufferAttribute(g.uv, 2));
+  if (g.facade) geom.setAttribute('facade', new THREE.BufferAttribute(g.facade, 4));
+  return geom;
+}
+
+/** Main-thread side: turn a worker payload into meshes. Cheap (no geometry math). */
+export function wrapTilePayload(p: TilePayload, materials: Materials): LoadedTile {
+  const group = new THREE.Group();
+  group.name = `tile:${p.meta.id}`;
+  let triangles = 0;
+  const add = (name: string, g: GeomArrays | undefined, mat: THREE.Material, shadows: 'cast' | 'receive'): THREE.Mesh | null => {
+    if (!g || g.position.length === 0) return null;
+    const mesh = new THREE.Mesh(geometryFromArrays(g), mat);
+    mesh.name = name;
+    mesh.matrixAutoUpdate = false;
+    mesh.receiveShadow = true;
+    if (shadows === 'cast') mesh.castShadow = true;
+    group.add(mesh);
+    triangles += g.position.length / 9;
+    return mesh;
+  };
+  add('terrain', p.geoms.terrain, materials.terrain, 'receive');
+  const buildings = add('buildings', p.geoms.buildings, materials.buildings, 'cast');
+  add('roads', p.geoms.roads, materials.roads, 'receive');
+  add('land', p.geoms.land, materials.land, 'receive');
+  add('water', p.geoms.water, materials.water, 'receive');
+  const toVec3Paths = (arrs: Float32Array[]) => arrs.map((a) => { const out: THREE.Vector3[] = []; for (let i = 0; i < a.length; i += 3) out.push(new THREE.Vector3(a[i], a[i + 1], a[i + 2])); return out; });
+  const carPaths = toVec3Paths(p.carPaths);
+  const walkPaths = toVec3Paths(p.walkPaths);
+  return {
+    meta: p.meta, lod: p.lod, group, buildings, ranges: p.ranges, carPaths, carMeta: p.carMeta ?? [], walkPaths, placements: p.placements,
+    field: p.terrain ? new HeightField(p.terrain) : FLAT_FIELD(0),
+    buildingFeatures: new Map(p.buildingFeatures.map((f) => [f.properties.id, f])),
+    triangles,
+  };
+}
+
+export function disposeTile(t: LoadedTile) {
+  t.group.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh) m.geometry.dispose(); });
+  t.group.parent?.remove(t.group);
 }
 
 export class TileWorld {
@@ -40,57 +85,5 @@ export class TileWorld {
     const [minx, miny, maxx, maxy] = this.index.bbox_proj;
     const [lx, lz] = this.toLocal((minx + maxx) / 2, (miny + maxy) / 2);
     return new THREE.Vector3(lx, 0, lz);
-  }
-
-  async load(meta: TileMeta): Promise<LoadedTile> {
-    const has = (l: string) => meta.layers.includes(l);
-    const u = (l: string) => `${this.baseUrl}/${meta.id}/${l}`;
-    const [terrain, buildings, roads, crossings, rail, landuse, water, pois] = await Promise.all([
-      has('terrain') ? getJSON<TerrainGrid>(u('terrain.json')) : null,
-      has('buildings') ? getJSON<FC<PolyGeom, BuildingProps>>(u('buildings.geojson')) : null,
-      has('roads') ? getJSON<FC<LineGeom, RoadProps>>(u('roads.geojson')) : null,
-      has('crossings') ? getJSON<FC<PointGeom, CrossingProps>>(u('crossings.geojson')) : null,
-      has('rail') ? getJSON<FC<LineGeom, RailProps>>(u('rail.geojson')) : null,
-      has('landuse') ? getJSON<FC<PolyGeom, AreaProps>>(u('landuse.geojson')) : null,
-      has('water') ? getJSON<FC<PolyGeom, AreaProps>>(u('water.geojson')) : null,
-      has('pois') ? getJSON<FC<PointGeom, PoiProps>>(u('pois.geojson')) : null,
-    ]);
-    const field = terrain ? new HeightField(terrain) : FLAT_FIELD(0);
-    const groundAt = (x: number, y: number) => field.at(x, y);
-    const group = new THREE.Group();
-    group.name = `tile:${meta.id}`;
-    const m = this.materials;
-
-    if (terrain) {
-      const g = buildTerrainMesh(terrain, this.toLocal);
-      const mesh = new THREE.Mesh(g, m.terrain);
-      mesh.name = 'terrain';
-      group.add(mesh);
-    }
-    let bmesh: THREE.Mesh | null = null;
-    let ranges: BuildingRange[] = [];
-    if (buildings?.features.length) {
-      const r = buildBuildingsMesh(buildings.features, this.toLocal, groundAt, m.buildings);
-      bmesh = r.mesh; ranges = r.ranges;
-      bmesh.name = 'buildings';
-      group.add(bmesh);
-    }
-    let carPaths: THREE.Vector3[][] = [];
-    if (roads?.features.length || rail?.features.length) {
-      const r = buildRoads(roads?.features ?? [], rail?.features ?? [], crossings?.features ?? [], this.toLocal, groundAt);
-      const mesh = new THREE.Mesh(r.roads, m.roads);
-      mesh.name = 'roads';
-      group.add(mesh);
-      carPaths = r.paths;
-    }
-    if (landuse?.features.length || water?.features.length) {
-      const a = buildAreas(landuse?.features ?? [], water?.features ?? [], this.toLocal, groundAt, 0);
-      if (a.land.getAttribute('position')?.count) group.add(Object.assign(new THREE.Mesh(a.land, m.land), { name: 'land' }));
-      if (a.water.getAttribute('position')?.count) group.add(Object.assign(new THREE.Mesh(a.water, m.water), { name: 'water' }));
-    }
-    const placements = scatterTile(meta.id, pois?.features ?? [], landuse?.features ?? [], roads?.features ?? [],
-      buildings?.features ?? [], meta.bbox, this.toLocal, groundAt);
-    const buildingFeatures = new Map((buildings?.features ?? []).map((f) => [f.properties.id, f]));
-    return { meta, group, buildings: bmesh, ranges, carPaths, placements, field, buildingFeatures };
   }
 }

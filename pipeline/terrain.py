@@ -1,4 +1,4 @@
-"""DEM helpers: open the 3DEP GeoTIFF, sample elevations, produce per-tile height grids."""
+"""DEM helpers: open the terrain GeoTIFF (dem_<slug>.tif from dem_noaa.py or fetch.py), sample elevations, produce per-tile height grids."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -8,6 +8,9 @@ import rasterio
 from rasterio.warp import transform as rio_transform
 
 from config import CRS_PROJ
+
+
+WATER_BED_M = 0.5  # terrain grid depth below a still-water surface
 
 
 class Terrain:
@@ -37,13 +40,25 @@ class Terrain:
             vals = np.where(vals == nodata, self._fill, vals)
         return vals - self.base
 
-    def tile_grid(self, minx: float, miny: float, size: float, n: int = 26) -> dict:
-        """n x n grid of elevations covering [minx, minx+size] x [miny, miny+size], south->north rows."""
+    def tile_grid(self, minx: float, miny: float, size: float, n: int = 26, flatten: list[tuple[object, float]] | None = None) -> dict:
+        """n x n grid of elevations covering [minx, minx+size] x [miny, miny+size], south->north rows.
+
+        `flatten`: (polygon, water_z) pairs; grid samples inside a polygon are pushed down to at least
+        WATER_BED_M below its surface so a canal/pond reads as a filled basin instead of hiding under the mesh."""
         step = size / (n - 1)
         gx, gy = np.meshgrid(minx + np.arange(n) * step, miny + np.arange(n) * step)
-        z = self.sample(gx.ravel(), gy.ravel())
+        gx, gy = gx.ravel(), gy.ravel()
+        z = self.sample(gx, gy)
         # light smoothing to hide 2 m DEM noise under the flat-shaded look
         zz = z.reshape(n, n)
         sm = zz.copy()
         sm[1:-1, 1:-1] = (zz[1:-1, 1:-1] * 4 + zz[:-2, 1:-1] + zz[2:, 1:-1] + zz[1:-1, :-2] + zz[1:-1, 2:]) / 8.0
-        return {"size": size, "n": n, "origin": [minx, miny], "elev": [round(float(v), 2) for v in sm.ravel()]}
+        flat = sm.ravel()
+        if flatten:
+            from shapely import contains_xy
+
+            for geom, wz in flatten:
+                m = contains_xy(geom, gx, gy)
+                if m.any():
+                    flat[m] = np.minimum(flat[m], wz - WATER_BED_M)
+        return {"size": size, "n": n, "origin": [minx, miny], "elev": [round(float(v), 2) for v in flat]}

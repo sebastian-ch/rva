@@ -30,5 +30,15 @@
   "sun": "#ffe6b8",
   "night_sky": "#1b2233",
   "night_fog": "#22293a",
-  "window_lit": "#ffd27a"
+  "window_lit": "#ffd27a",
+  "car_white": "#f2efe6",
+  "car_silver": "#c4c7cb",
+  "car_black": "#2b2d31",
+  "car_grey": "#7b7f86",
+  "car_red": "#b8362f",
+  "car_blue": "#3f6ea6",
+  "car_navy": "#2a3d5c",
+  "car_green": "#4c7a4f",
+  "car_tan": "#c9b58f",
+  "car_orange": "#d9782f"
 }
