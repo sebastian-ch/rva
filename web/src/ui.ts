@@ -1,3 +1,5 @@
+import { region, regionId } from './region';
+
 export interface BuildingInfo {
   id: string;
   name: string | null;
@@ -100,12 +102,12 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
   titleBadge.className = "panel title-badge";
 
   const title = document.createElement("h1");
-  title.textContent = "Isometric Richmond";
+  title.textContent = region.title;
   titleBadge.appendChild(title);
 
   const subtitle = document.createElement("p");
   subtitle.className = "subtitle";
-  subtitle.textContent = "Downtown · Shockoe Bottom · Capitol Square";
+  subtitle.textContent = region.subtitle;
   titleBadge.appendChild(subtitle);
 
   root.appendChild(titleBadge);
@@ -308,6 +310,22 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
   usgsLink.rel = "noopener noreferrer";
   usgsLink.textContent = "USGS 3DEP";
   attribution.appendChild(usgsLink);
+  if (regionId === 'honolulu') {
+    attribution.appendChild(document.createTextNode(" · "));
+    const cityLink = document.createElement("a");
+    cityLink.href = "https://honolulu-cchnl.opendata.arcgis.com/";
+    cityLink.target = "_blank";
+    cityLink.rel = "noopener noreferrer";
+    cityLink.textContent = "City & County of Honolulu · Hawaiʻi GIS";
+    attribution.appendChild(cityLink);
+    attribution.appendChild(document.createTextNode(" · "));
+    const imageryLink = document.createElement("a");
+    imageryLink.href = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer";
+    imageryLink.target = "_blank";
+    imageryLink.rel = "noopener noreferrer";
+    imageryLink.textContent = "Coastal traces: Esri, Vantor, Earthstar Geographics, GIS User Community";
+    attribution.appendChild(imageryLink);
+  }
 
   root.appendChild(attribution);
 

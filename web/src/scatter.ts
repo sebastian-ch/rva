@@ -61,7 +61,7 @@ export function scatterTile(
   };
 
   // Cheap "nearest road direction" lookup for orienting POI-placed props (e.g. traffic lights).
-  const roadSegments: { a: V2; b: V2; heading: number }[] = [];
+  const roadSegments: { a: V2; b: V2; heading: number; clearance: number }[] = [];
   for (const f of roads) {
     const coords = f.geometry.type === 'LineString' ? [f.geometry.coordinates] : f.geometry.coordinates;
     for (const line of coords) {
@@ -71,7 +71,7 @@ export function scatterTile(
         const len = Math.hypot(x1 - x0, y1 - y0);
         if (len < 1e-6) continue;
         const dx = (x1 - x0) / len, dy = (y1 - y0) / len;
-        roadSegments.push({ a: c[i], b: c[i + 1], heading: Math.atan2(dx, -dy) });
+        roadSegments.push({ a: c[i], b: c[i + 1], heading: Math.atan2(dx, -dy), clearance: f.properties.width / 2 + 2 });
       }
     }
   }
@@ -122,13 +122,15 @@ export function scatterTile(
       if (outer.length < 3) continue;
       const holes = poly.slice(1).map(cleanRing);
       const area = Math.abs(signedArea(outer));
-      const density = kind === 'forest' ? TREE_DENSITY_M2 / 3 : kind === 'grass' ? TREE_DENSITY_M2 * 3 : TREE_DENSITY_M2;
+      const density = f.properties.coastal ? 110
+        : kind === 'forest' ? TREE_DENSITY_M2 / 3 : kind === 'grass' ? TREE_DENSITY_M2 * 3 : TREE_DENSITY_M2;
       const n = Math.min(400, Math.floor(area / density));
       const [minx, miny, maxx, maxy] = ringBounds(outer);
       let tries = 0;
       for (let i = 0; i < n && tries < n * 8; tries++) {
         const x = minx + rand() * (maxx - minx), y = miny + rand() * (maxy - miny);
         if (!pointInRing([x, y], outer) || holes.some((h) => pointInRing([x, y], h))) continue;
+        if (f.properties.coastal && roadSegments.some((s) => distToSegment([x, y], s.a, s.b) < s.clearance)) continue;
         place(rand() < 0.6 ? 'tree_round' : 'tree', x, y, undefined, 0.8 + rand() * 0.7);
         i++;
       }

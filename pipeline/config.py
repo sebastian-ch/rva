@@ -3,21 +3,27 @@ from __future__ import annotations
 
 import json
 import math
+import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DATA_RAW = ROOT / "data" / "raw"
-DATA_TILES = ROOT / "data" / "tiles"
-ASSETS = ROOT / "assets"
-PALETTE_PATH = ASSETS / "palette.json"
+REGION = os.environ.get("ISO_REGION", "richmond")
+REGIONS = json.loads((ROOT / "regions.json").read_text())
+if REGION not in REGIONS:
+    raise ValueError(f"Unknown ISO_REGION {REGION!r}; choose from {list(REGIONS)}")
+PROFILE = REGIONS[REGION]
+DATA_RAW = ROOT / PROFILE["data"] / "raw"
+DATA_TILES = ROOT / PROFILE["data"] / "tiles"
+ASSETS = ROOT / PROFILE["assets"]
+PALETTE_PATH = ROOT / "assets" / "palette.json"
 LANDMARKS_PATH = ASSETS / "landmarks" / "landmarks.json"
 
 # Working CRS: UTM 18N, meters. Never do geometry math in EPSG:4326.
 CRS_WGS84 = "EPSG:4326"
-CRS_PROJ = "EPSG:32618"
+CRS_PROJ = PROFILE["crs"]
 
 # First slice: Downtown + Shockoe Bottom + Capitol Square. (west, south, east, north)
-DEFAULT_BBOX = (-77.4560, 37.5170, -77.4180, 37.5480)
+DEFAULT_BBOX = tuple(PROFILE["bbox"])
 
 TILE_SIZE = 250.0  # meters
 LEVEL_HEIGHT = 3.2  # meters per building level

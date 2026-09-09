@@ -8,7 +8,7 @@ import { mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { launchBrowser, openViewer, readStats, errorLogs } from './lib/browser.mjs';
-import { resolveView } from './snap.mjs';
+import { resolveView, regionId } from './snap.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SNAPSHOTS_DIR = join(__dirname, '..', 'snapshots');
@@ -65,16 +65,20 @@ async function main() {
 
     console.log('[smoke] taking snapshots/default.png ...');
     await page.screenshot({ path: join(SNAPSHOTS_DIR, 'default.png') });
+    if (regionId === 'honolulu') {
+      await page.setViewportSize({ width: 1000, height: 1300 });
+      await page.waitForTimeout(1000);
+      await page.waitForFunction(() => !window.__iso.manager().busy);
+      await page.screenshot({ path: join(SNAPSHOTS_DIR, 'honolulu-portrait.png') });
+      await page.setViewportSize({ width: 1600, height: 1000 });
+    }
 
-    console.log('[smoke] moving to capitol view ...');
-    const capitolTarget = resolveView('virginia-state-capitol', {});
-    await moveCamera(page, capitolTarget);
-    await page.screenshot({ path: join(SNAPSHOTS_DIR, 'capitol.png') });
-
-    console.log('[smoke] moving to river view ...');
-    const riverTarget = resolveView('river', {});
-    await moveCamera(page, riverTarget);
-    await page.screenshot({ path: join(SNAPSHOTS_DIR, 'river.png') });
+    const views = regionId === 'honolulu' ? ['crater', 'coast'] : ['virginia-state-capitol', 'river'];
+    for (const view of views) {
+      console.log(`[smoke] moving to ${view} view ...`);
+      await moveCamera(page, resolveView(view, {}));
+      await page.screenshot({ path: join(SNAPSHOTS_DIR, `${view}.png`) });
+    }
 
     let seen = errorLogs(logs).length;
     if (seen > baseline.length) {
@@ -92,6 +96,11 @@ async function main() {
         btn.click();
       }, label);
       await page.waitForTimeout(500);
+      if (label === 'Night' && regionId === 'honolulu') {
+        const skyVisible = await page.evaluate(() => window.__iso.scene.getObjectByName('tropical-sky')?.visible);
+        if (skyVisible !== false) fail('daytime sky must be hidden at night');
+        await page.screenshot({ path: join(SNAPSHOTS_DIR, 'honolulu-night.png') });
+      }
       const after = errorLogs(logs).length;
       if (after > before) {
         const fresh = errorLogs(logs).slice(before);

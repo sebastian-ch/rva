@@ -14,10 +14,11 @@ from pathlib import Path
 
 import geopandas as gpd
 import numpy as np
+import pandas as pd
 from pyproj import Transformer
 from shapely.geometry import box
 
-from config import CRS_PROJ, DATA_RAW, DATA_TILES, DEFAULT_BBOX, TILE_SIZE, bbox_slug, snap_down
+from config import CRS_PROJ, DATA_RAW, DATA_TILES, DEFAULT_BBOX, TILE_SIZE, REGION, PROFILE, bbox_slug, snap_down
 from process import (process_buildings, process_landuse, process_pois, process_rail, process_roads,
                      process_water)
 from terrain import Terrain
@@ -58,9 +59,19 @@ def build(bbox, merge_rowhouses=True, clean=False) -> Path:
 
     t0 = time.time()
     print("processing layers...")
+    buildings_path = raw_dir / "buildings.parquet"
+    if REGION == "honolulu":
+        from honolulu import enrich_buildings
+        city_path = DATA_RAW / f"cch_{slug}.parquet"
+        if not city_path.exists():
+            sys.exit("CCH data missing: run pipeline/fetch_honolulu.py with ISO_REGION=honolulu first")
+        enriched = enrich_buildings(gpd.read_parquet(city_path), gpd.read_parquet(buildings_path))
+        buildings_path = DATA_RAW / f"enriched_buildings_{slug}.parquet"
+        enriched.to_parquet(buildings_path)
     roads, crossings = process_roads(raw_dir / "roads.parquet", terrain)
+    beach_profile = None
     layers = {
-        "buildings": process_buildings(raw_dir / "buildings.parquet", terrain, merge_rowhouses,
+        "buildings": process_buildings(buildings_path, terrain, merge_rowhouses,
                                        overture_path=DATA_RAW / f"overture_{slug}.parquet",
                                        lidar_npz=DATA_RAW / f"lidar_{slug}.npz",
                                        richmond_dir=DATA_RAW / f"richmond_{slug}",
@@ -72,6 +83,25 @@ def build(bbox, merge_rowhouses=True, clean=False) -> Path:
         "water": process_water(raw_dir / "water.parquet", terrain),
         "pois": process_pois(raw_dir / "pois.parquet"),
     }
+    if REGION == "honolulu":
+        from honolulu import ocean_layer, coastal_green_spaces, coastal_structures
+        coast = gpd.read_parquet(DATA_RAW / f"coast_{slug}.parquet")
+        ocean = ocean_layer(coast, bbox, terrain.base if terrain else 0.0, coast_is_water=True)
+        beaches = layers["landuse"][layers["landuse"].kind == "beach"]
+        if len(beaches) and len(ocean):
+            beach_profile = (beaches.geometry.union_all(), ocean.geometry.union_all(), float(ocean.iloc[0].water_z))
+        layers["landuse"] = coastal_green_spaces(layers["landuse"], ocean)
+        structures_path = raw_dir / "coastal_structures.parquet"
+        structure_sources = []
+        if structures_path.exists():
+            structure_sources.append(gpd.read_parquet(structures_path).to_crs(CRS_PROJ))
+        supplement = Path(__file__).resolve().parents[1] / "assets/supplements/honolulu-coastal.geojson"
+        if supplement.exists():
+            structure_sources.append(gpd.read_file(supplement).to_crs(CRS_PROJ))
+        if structure_sources:
+            structures = coastal_structures(gpd.GeoDataFrame(pd.concat(structure_sources, ignore_index=True), crs=CRS_PROJ), terrain.base if terrain else 0.0)
+            layers["landuse"] = gpd.GeoDataFrame(pd.concat([layers["landuse"], structures], ignore_index=True), crs=CRS_PROJ)
+        layers["water"] = gpd.GeoDataFrame(pd.concat([layers["water"], ocean], ignore_index=True), crs=CRS_PROJ)
     for k, v in layers.items():
         print(f"  {k:10s} {len(v):6d}")
     b = layers["buildings"]
@@ -128,13 +158,20 @@ def build(bbox, merge_rowhouses=True, clean=False) -> Path:
             if terrain is not None and (written or True):
                 tdir.mkdir(exist_ok=True)
                 flats = [(g, float(z)) for g, z in zip(still.geometry, still["water_z"]) if g.intersects(tile_box)] if len(still) else None
-                (tdir / "terrain.json").write_text(json.dumps(terrain.tile_grid(tminx, tminy, TILE_SIZE, flatten=flats)))
+                # Resolve land/water edges at 2.5 m instead of the normal 10 m grid.
+                # Entirely underwater tiles keep the inexpensive normal grid.
+                shore = REGION == "honolulu" and flats and any(not g.covers(tile_box) for g, _ in flats)
+                (tdir / "terrain.json").write_text(json.dumps(terrain.tile_grid(tminx, tminy, TILE_SIZE,
+                                                                               n=101 if shore else 26, flatten=flats,
+                                                                               beach_profile=beach_profile if beach_profile and beach_profile[0].buffer(8).intersects(tile_box) else None)))
                 written.append("terrain")
             if written:
                 tiles_meta.append({"id": tid, "x": tx, "y": ty,
                                    "bbox": [tminx, tminy, tminx + TILE_SIZE, tminy + TILE_SIZE],
                                    "layers": written, "counts": counts})
     index = {
+        "region": REGION,
+        "title": PROFILE["title"],
         "crs": CRS_PROJ,
         "tile_size": TILE_SIZE,
         "origin": [ox, oy],

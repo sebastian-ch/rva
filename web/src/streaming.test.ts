@@ -6,6 +6,19 @@ import type { Lod } from './tileBuild';
 
 const ORIGIN: [number, number] = [1000, 2000];
 
+it('keeps a low perspective horizon footprint finite and in front of the camera', () => {
+  const camera = new THREE.PerspectiveCamera(44, 1, 1, 6000);
+  camera.position.set(0, 150, 1000);
+  camera.lookAt(0, 100, 0);
+  camera.updateMatrixWorld();
+  const fp = cameraFootprint(camera, 0);
+  expect(Object.values(fp).every(Number.isFinite)).toBe(true);
+  expect(fp.maxZ).toBeLessThan(camera.position.z);
+  expect(fp.minZ).toBeLessThan(-3000);
+  expect(fp.minX).toBeLessThan(0);
+  expect(fp.maxX).toBeGreaterThan(0);
+});
+
 function makeMeta(x: number, y: number): TileMeta {
   return {
     id: `${x}_${y}`,

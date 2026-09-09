@@ -8,8 +8,9 @@ const UP = new THREE.Vector3(0, 1, 0);
 const LANDUSE_COLOR: Record<string, [string, number]> = {
   park: ['grass', 0.08], grass: ['grass', 0.07], forest: ['canopy', 0.08], cemetery: ['grass', 0.07],
   parking: ['concrete', 0.06], plaza: ['sidewalk', 0.08], industrial: ['sand', 0.05],
+  beach: ['sand', 0.08],
 };
-const WATER_COLOR: Record<string, string> = { river: 'water', canal: 'water_deep', pond: 'water' };
+const WATER_COLOR: Record<string, string> = { river: 'water', canal: 'water_deep', pond: 'water', ocean: 'water' };
 
 /** Drape polygons onto terrain; interior is subdivided on a grid so big parks follow relief. */
 function drape(mb: MeshBuilder, feat: Feature<PolyGeom, AreaProps>, color: THREE.Color, lift: number,
@@ -27,7 +28,7 @@ function drape(mb: MeshBuilder, feat: Feature<PolyGeom, AreaProps>, color: THREE
     };
     for (let i = 0; i < idx.length; i += 3) {
       const A = all[idx[i]], B = all[idx[i + 1]], C = all[idx[i + 2]];
-      subdivideTri(A, B, C, flatY === null ? 8 : 60, (a, b, c) => {
+      subdivideTri(A, B, C, flatY === null ? (feat.properties.kind === 'beach' ? 2.5 : 8) : 60, (a, b, c) => {
         let va = V(a), vb = V(b), vc = V(c);
         const cr = new THREE.Vector3().subVectors(vb, va).cross(new THREE.Vector3().subVectors(vc, va));
         if (cr.y < 0) [vb, vc] = [vc, vb];
@@ -57,6 +58,10 @@ export function buildAreas(
 ): { land: THREE.BufferGeometry; water: THREE.BufferGeometry } {
   const land = new MeshBuilder(), wat = new MeshBuilder();
   for (const f of landuse) {
+    if (typeof f.properties.top_z === 'number' && typeof f.properties.base_z === 'number') {
+      coastalStructure(land, f, toLocal);
+      continue;
+    }
     const spec = LANDUSE_COLOR[f.properties.kind];
     if (!spec) continue;
     drape(land, f, hex(spec[0] as never), spec[1], toLocal, groundAt, null);
@@ -84,6 +89,25 @@ export function buildAreas(
 }
 
 const STALL = 2.7, AISLE = 6.0, ROW = 5.0 + AISLE; // stall pitch, aisle width, row pitch (two stall depths + aisle)
+
+/** Raised coastal decks with visible sides, independent of the coarse underwater DEM. */
+function coastalStructure(mb: MeshBuilder, f: Feature<PolyGeom, AreaProps>, toLocal: (x: number, y: number) => V2) {
+  const top = f.properties.top_z!, base = f.properties.base_z!;
+  const color = hex('concrete');
+  drape(mb, f, color, 0, toLocal, () => 0, top);
+  for (const poly of polygons(f.geometry)) for (const [index, raw] of poly.entries()) {
+    const ring = cleanRing(raw);
+    if ((signedArea(ring) > 0) !== (index === 0)) ring.reverse();
+    for (let i = 0; i < ring.length; i++) {
+      const [ax, az] = toLocal(...ring[i]), [bx, bz] = toLocal(...ring[(i + 1) % ring.length]);
+      const a = new THREE.Vector3(ax, base, az), b = new THREE.Vector3(bx, base, bz);
+      const c = new THREE.Vector3(bx, top, bz), d = new THREE.Vector3(ax, top, az);
+      const normal = new THREE.Vector3(-(bz - az), 0, bx - ax).normalize();
+      mb.tri(a, b, c, color, normal, 0.72);
+      mb.tri(a, c, d, color, normal, 0.72);
+    }
+  }
+}
 
 /** Painted stall lines on surface parking: rows along the lot's long axis, stalls perpendicular to it. */
 function parkingStripes(mb: MeshBuilder, feat: Feature<PolyGeom, AreaProps>, toLocal: (x: number, y: number) => V2, groundAt: (x: number, y: number) => number, lift: number) {

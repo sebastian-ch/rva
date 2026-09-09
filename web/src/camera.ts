@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
+import { region } from './region';
 
-export const ELEVATION_DEG = 35;
-export const AZIMUTH_DEG = 45;
+export const ELEVATION_DEG = region.cameraElevation;
+// 0 places the camera south of the target, looking north along local -Z.
+export const AZIMUTH_DEG = region.cameraAzimuth;
 
 export class IsoCamera {
-  readonly camera: THREE.OrthographicCamera;
+  readonly camera: THREE.OrthographicCamera | THREE.PerspectiveCamera;
   readonly controls: MapControls;
   private anim: { from: THREE.Vector3; to: THREE.Vector3; fromZoom: number; toZoom: number; t: number; dur: number } | null = null;
   private mapMode = false;
@@ -13,7 +15,9 @@ export class IsoCamera {
 
   constructor(canvas: HTMLCanvasElement, aspect: number) {
     const half = 400;
-    this.camera = new THREE.OrthographicCamera(-half * aspect, half * aspect, half, -half, 1, 6000);
+    this.camera = region.cameraProjection === 'perspective'
+      ? new THREE.PerspectiveCamera(44, aspect, 1, 6000)
+      : new THREE.OrthographicCamera(-half * aspect, half * aspect, half, -half, 1, 6000);
     this.camera.zoom = 1;
     this.controls = new MapControls(this.camera, canvas);
     const c = this.controls;
@@ -22,6 +26,8 @@ export class IsoCamera {
     c.screenSpacePanning = false;
     c.minZoom = 0.35;
     c.maxZoom = 12;
+    c.minDistance = 100;
+    c.maxDistance = 5500;
     c.zoomSpeed = 1.2;
     c.rotateSpeed = 0.5;
     const polar = THREE.MathUtils.degToRad(90 - ELEVATION_DEG);
@@ -46,8 +52,12 @@ export class IsoCamera {
 
   resize(w: number, h: number) {
     const aspect = w / h, half = 400;
-    this.camera.left = -half * aspect; this.camera.right = half * aspect;
-    this.camera.top = half; this.camera.bottom = -half;
+    if (this.camera instanceof THREE.PerspectiveCamera) {
+      this.camera.aspect = aspect;
+    } else {
+      this.camera.left = -half * aspect; this.camera.right = half * aspect;
+      this.camera.top = half; this.camera.bottom = -half;
+    }
     this.camera.updateProjectionMatrix();
   }
 

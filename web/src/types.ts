@@ -69,7 +69,7 @@ export interface RoadProps {
   deck?: string | number[] | null;
 }
 export interface RailProps { id: string; name: string | null; railway: string; bridge: boolean; ramp?: boolean; layer: number; deck?: string | number[] | null }
-export interface AreaProps { id: string; name: string | null; kind: string; water_z?: number | null }
+export interface AreaProps { id: string; name: string | null; kind: string; water_z?: number | null; coastal?: boolean; base_z?: number | null; top_z?: number | null }
 export interface PoiProps { id: string; name: string | null; kind: string }
 export interface CrossingProps { id: string; crossing: string }
 

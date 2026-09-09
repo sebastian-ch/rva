@@ -44,9 +44,33 @@ npm run dev
 
 See `ATTRIBUTION.md` for full attribution details and license terms for all data sources.
 
-**Licensing rule:** Automated data extraction occurs only from OpenStreetMap, Overture Maps, VGIN, USGS/USDA NAIP, and Mapillary. Google Photorealistic 3D Tiles, Street View, and Mapbox Satellite imagery are used only as visual reference for hand-modeling — their terms prohibit deriving datasets.
+**Data sources:** OpenStreetMap, Overture Maps, VGIN, USGS/USDA NAIP, NOAA, city open GIS data, and Mapillary; preserve the source terms and attribution documented in `ATTRIBUTION.md`. Google Photorealistic 3D Tiles, Street View, and Mapbox Satellite imagery are used only as visual reference for hand-modeling — their terms prohibit deriving datasets.
 
-## Deploying
+## Honolulu prototype (local)
+
+Region profiles in `regions.json` select projection, bounding box, data directories, and terrain scale.
+The default remains Richmond. Honolulu uses the requested Diamond Head box, UTM 4N, and
+isolated `data/honolulu/` output. The palette, geometry, traffic, and helper-layer processing are shared.
+
+```bash
+ISO_REGION=honolulu .venv/bin/python pipeline/fetch_honolulu.py
+ISO_REGION=honolulu .venv/bin/python pipeline/fetch.py
+ISO_REGION=honolulu .venv/bin/python pipeline/fetch_overture.py  # optional: pip install overturemaps
+ISO_REGION=honolulu .venv/bin/python pipeline/build_tiles.py --no-merge
+cd web
+ISO_REGION=honolulu npm run dev -- --port 5174
+# In another terminal, from web/:
+ISO_REGION=honolulu SMOKE_URL=http://localhost:5174/ npm run smoke
+```
+
+City footprints are enriched with strongly matching OSM names, building types, addresses, height/roof
+tags, plus non-overlapping OSM gap-fill buildings. CCH `maxht_m` fills missing OSM heights;
+the existing Overture matcher supplies remaining height/roof fallbacks. The city's coastal polygon
+defines a flat ocean surface. See [the assessment](docs/honolulu-feasibility.md) for source limitations.
+Do not use Richmond-specific `fetch_richmond.py`, `dem_noaa.py`, or `fetch_lidar.py` for Honolulu.
+The deployment command below publishes the Richmond site; this prototype is for local preview.
+
+## Deploying Richmond
 
 The viewer is a static site: `cd web && npm run deploy` builds it with the `/rva/` base path, copies the tiles and
 landmark models in, and force-pushes `dist/` to the `gh-pages` branch (see `web/tools/README.md`). Live at

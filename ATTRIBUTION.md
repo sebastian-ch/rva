@@ -18,7 +18,7 @@ Update this file whenever a new data source is added.
 
 ## USGS 3DEP Elevation
 
-- **What we use it for:** 2 m digital elevation model as the fallback terrain (`pipeline/fetch.py`) when the 2025 City of Richmond DEM is not available.
+- **What we use it for:** Terrain sampled on a 2 m export grid (`pipeline/fetch.py`), including the Honolulu prototype. Export pixel spacing is not a claim of native source resolution. It is the fallback when the 2025 City of Richmond DEM is not available.
 - **License:** Public domain
 - **Required attribution:** USGS 3D Elevation Program
 - **URL:** https://www.usgs.gov/3d-elevation-program
@@ -55,6 +55,14 @@ Update this file whenever a new data source is added.
 
 **Used for:** `Addresses` (address points → building `addr`) and `ZoningDistricts` (height defaults) from the city's ArcGIS Hub feature services at `services1.arcgis.com/k3vhq11XkBNeeOfM`. The Esri basemap tiles are not used.
 
+## City and County of Honolulu / Hawaiʻi State GIS
+
+- **Building footprints and heights:** [Building Footprints (CCH)](https://honolulu-cchnl.opendata.arcgis.com/datasets/building-footprints-cch/about), service `Structures_Facilities/FeatureServer/0`. The city describes mixed 2004 aerial, 2005/2009 NGA LiDAR, 2010 Pictometry, and ongoing plan-based updates. We use city outlines and `maxht_m` for height in metres, with OSM attributes and Overture fallbacks. Other elevation/height fields are retained in raw data but not interpreted as building heights.
+- **Coastal water mask:** [Coast_Poly](https://www.arcgis.com/home/item.html?id=e52658803ae2456d9aff09c50f695e89), service `Coast_Poly/FeatureServer/3`. Its geometry is an offshore rectangle with island holes. Provided by the Hawaiʻi State Office of Planning; derived from 1983 USGS 1:24,000 Digital Line Graphs. Used to derive ocean polygons, not a survey-accurate modern shoreline.
+- **Terms:** Publicly downloadable city open data. The building item's posted terms disclaim positional/thematic accuracy and warranties; they do not state a named standard license. Preserve source credit and check the linked current terms when redistributing data.
+- **Credit shown in viewer:** City & County of Honolulu · Hawaiʻi GIS.
+- **Accessed:** 2026-09-09. Service metadata is saved alongside downloaded subsets.
+
 ## Mapillary
 
 - **What we use it for:** Street-level imagery for machine extraction and visual reference.
@@ -77,3 +85,8 @@ The following sources are used solely as visual reference for hand-modeling land
 - **Mapbox Satellite:** Visual reference. Terms prohibit derived datasets.
 
 **Used for:** the Virginia building-footprint layer (`Richmond_Building_Footprints.shp`, jurisdiction-sourced, updated 2026-02) as a gap-fill footprint source behind OSM and Overture (`pipeline/fetch_vgin_footprints.py`). Its height and storey attributes are empty; heights come from LiDAR and zoning.
+
+## Honolulu coastal structure references
+
+- OpenStreetMap coastal structures: Kapahulu Groin outline and mapped breakwater centerlines; © OpenStreetMap contributors, ODbL.
+- [Esri World Imagery](https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer): approximate hand traces of four Kūhiō Beach basin wall segments in `assets/supplements/honolulu-coastal.geojson`, accessed 2026-09-09. Service credit: Esri, Vantor, Earthstar Geographics, and the GIS User Community. Trace coordinates are approximate; structure dimensions are visual estimates.

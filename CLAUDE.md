@@ -7,7 +7,7 @@ Stylized isometric 3D model of Richmond, VA. Procedurally generated from open ge
 - Data pipeline: Python 3.10+ — `osmnx`, `geopandas`, `shapely`, `rasterio`, `pyproj`, `osmium`
 - Authoring: Blender (Blosm / BlenderGIS import), glTF export with Draco or meshopt
 - Runtime: TypeScript + three.js, `OrthographicCamera`, Vite
-- CRS: EPSG:2284 (VA State Plane South) or EPSG:32618 (UTM 18N). Never do geometry math in EPSG:4326.
+- CRS: `regions.json` selects EPSG:32618 (Richmond, UTM 18N) or EPSG:32604 (Honolulu, UTM 4N). Never do geometry math in EPSG:4326.
 
 ## Layout
 
@@ -28,7 +28,7 @@ web/             three.js app
 - Roof resolution order: OSM `roof:shape` → Overture `roof_shape` → LiDAR two-plane fit (`pipeline/roofs.py`) → type heuristic.
 - Tiles are ~250 m squares, named by tile index (`x_y`).
 - Palette lives in one file (`assets/palette.json`); every material references it.
-- Automated extraction only from OSM, Overture, VGIN, NAIP, Mapillary. Google and Mapbox imagery are visual reference only — their terms forbid derived datasets.
+- Automated sources include OSM, Overture, VGIN, USGS/NAIP, NOAA, city open GIS data, and Mapillary; preserve their terms and attribution. Google and Mapbox imagery are visual reference only — their terms forbid derived datasets.
 - Keep `ATTRIBUTION.md` current whenever a new data source is added.
 
 ## Commands

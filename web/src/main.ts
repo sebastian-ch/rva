@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import palette from '../../assets/palette.json';
 import landmarksJson from '../../assets/landmarks/landmarks.json';
+import { region, regionId } from './region';
+import { createTropicalSky } from './sky';
 import { createUI, readoutText, type BuildingInfo } from './ui';
 import { IsoCamera } from './camera';
 import { TileWorld, type LoadedTile, type Materials } from './tiles';
@@ -23,7 +25,8 @@ import { LandmarkLabels } from './labels';
 import { fetchWikiSummary } from './wiki';
 import type { Landmark, TileIndex } from './types';
 
-const landmarks = landmarksJson as Landmark[];
+const landmarks = (regionId === 'richmond' ? landmarksJson : []) as Landmark[];
+document.title = region.title;
 const landmarkBySlug = new Map(landmarks.map((l) => [l.slug, l]));
 
 const canvas = document.getElementById('scene') as HTMLCanvasElement;
@@ -34,11 +37,19 @@ renderer.toneMapping = THREE.NoToneMapping;
 
 const scene = new THREE.Scene();
 const DAY = { sky: hex('sky'), fog: hex('fog'), sun: hex('sun'), hemi: 0.9, dir: 1.1 };
+if (regionId === 'honolulu') {
+  DAY.sky.set('#83c9ef');
+  DAY.fog.set('#c2e5ef');
+  DAY.sun.set('#fff5d8');
+  DAY.hemi = 1.05;
+}
 const NIGHT = { sky: hex('night_sky'), fog: hex('night_fog'), sun: new THREE.Color('#9fb3d9'), hemi: 0.35, dir: 0.45 };
 scene.background = DAY.sky.clone();
-scene.fog = new THREE.Fog(DAY.fog.clone(), 1800, 5200);
+scene.fog = new THREE.Fog(DAY.fog.clone(), region.cameraDistance, region.cameraDistance + 3400);
+const tropicalSky = regionId === 'honolulu' ? createTropicalSky() : null;
+if (tropicalSky) scene.add(tropicalSky);
 
-const hemi = new THREE.HemisphereLight(hex('sky'), hex('ground'), DAY.hemi);
+const hemi = new THREE.HemisphereLight(DAY.sky, hex('ground'), DAY.hemi);
 const sun = new THREE.DirectionalLight(DAY.sun, DAY.dir);
 const SUN_DIR = new THREE.Vector3(-0.5, 0.75, 0.42).normalize();
 sun.castShadow = true;
@@ -57,7 +68,10 @@ function updateSunShadow() {
   sun.target.position.copy(t);
   sun.position.copy(t).addScaledVector(SUN_DIR, 1500);
   const aspect = window.innerWidth / window.innerHeight;
-  const halfH = (400 / iso.camera.zoom) * 1.6, halfW = halfH * Math.max(1, aspect);
+  const visibleHalfHeight = iso.camera instanceof THREE.PerspectiveCamera
+    ? iso.camera.position.distanceTo(t) * Math.tan(THREE.MathUtils.degToRad(iso.camera.getEffectiveFOV() / 2))
+    : 400 / iso.camera.zoom;
+  const halfH = visibleHalfHeight * 1.6, halfW = halfH * Math.max(1, aspect);
   const cam = sun.shadow.camera;
   const r = Math.max(halfW, halfH);
   if (Math.abs(cam.right - r) > 1) {
@@ -72,15 +86,15 @@ const heightsRange = { min: 0, max: 120 };
 const facade = createFacadeMaterial();
 const water = createWaterMaterial();
 const materials: Materials = {
-  terrain: flat(), buildings: facade.material, roads: flat({ polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
+  terrain: flat({ flatShading: regionId !== 'honolulu' }), buildings: facade.material, roads: flat({ polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
   land: flat({ polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
   water: water.material,
 };
 // elevation cues: contour lines on the ground layers, hypsometric tint on everything in Heights mode
 applyGroundDetail(materials.terrain, 0.05);
 applyGroundDetail(materials.land, 0.09);
-applyHeightsMode(materials.terrain, { contours: true });
-applyHeightsMode(materials.land, { contours: true });
+applyHeightsMode(materials.terrain, { contours: true, contoursInNormalView: regionId !== 'honolulu' });
+applyHeightsMode(materials.land, { contours: true, contoursInNormalView: regionId !== 'honolulu' });
 applyHeightsMode(materials.roads);
 applyHeightsMode(materials.buildings);
 applyHeightsMode(materials.water);
@@ -124,6 +138,10 @@ function setNight(on: boolean) {
   (scene.background as THREE.Color).copy(t.sky);
   scene.fog!.color.copy(t.fog);
   hemi.intensity = t.hemi;
+  if (tropicalSky) {
+    tropicalSky.visible = !on;
+    hemi.color.copy(t.sky);
+  }
   sun.intensity = t.dir;
   sun.color.copy(t.sun);
   facade.setNight(on);
@@ -267,16 +285,21 @@ async function boot() {
   world = new TileWorld(index, materials);
   landmarkModels = new LandmarkModels(world.toLocal, materials.buildings);
   scene.add(landmarkModels.group);
-  // open on the State Capitol (pipeline-resolved position in tiles/landmarks.json); fall back to downtown
+  // Region targets use projected easting/northing and a world-space camera target height.
   const center = world.center();
-  center.z -= 400; // local z = -north
+  if (regionId === 'richmond') center.z -= 400; // local z = -north
   try {
     const lm = (await (await fetch(`${import.meta.env.BASE_URL}tiles/landmarks.json`)).json()) as Record<string, { x: number; y: number }>;
     const cap = lm['virginia-state-capitol'];
     if (cap) { const [lx, lz] = world.toLocal(cap.x, cap.y); center.set(lx, 0, lz); }
   } catch { /* keep the fallback */ }
-  iso.lookAt(center, 1800);
-  iso.camera.zoom = 1.1;
+  if (region.initialTarget) {
+    const [x, y, height] = region.initialTarget;
+    const [lx, lz] = world.toLocal(x, y);
+    center.set(lx, height, lz);
+  }
+  iso.lookAt(center, region.cameraDistance);
+  iso.camera.zoom = region.initialZoom;
   iso.camera.updateProjectionMatrix();
 
   const rand = rng(hashStr('cars'));
@@ -384,6 +407,7 @@ let waterTime = 0;
 function frame() {
   const dt = Math.min(0.1, clock.getDelta());
   iso.update(dt);
+  if (tropicalSky) tropicalSky.position.copy(iso.camera.position);
   if (!paused) { props.update(dt); traffic.apply(props); waterTime += dt; water.update(waterTime); }
   updateSunShadow();
   manager?.update(iso.camera, iso.camera.zoom);

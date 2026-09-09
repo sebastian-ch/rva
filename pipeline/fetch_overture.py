@@ -21,6 +21,7 @@ def overture_path(bbox) -> Path:
 
 def fetch_overture(bbox, force: bool = False) -> Path:
     dst = overture_path(bbox)
+    dst.parent.mkdir(parents=True, exist_ok=True)
     if dst.exists() and not force:
         print(f"  [skip] {dst.name} exists")
         return dst

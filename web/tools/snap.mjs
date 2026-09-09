@@ -19,10 +19,17 @@ import { dirname, join } from 'node:path';
 import { launchBrowser, openViewer, readStats, errorLogs } from './lib/browser.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = join(__dirname, '..', '..', 'data', 'tiles');
+const ROOT = join(__dirname, '..', '..');
+const regions = JSON.parse(readFileSync(join(ROOT, 'regions.json'), 'utf8'));
+export const regionId = process.env.ISO_REGION ?? 'richmond';
+if (!regions[regionId]) throw new Error(`Unknown ISO_REGION: ${regionId}`);
+const DATA_DIR = join(ROOT, regions[regionId].data, 'tiles');
 
 // Named spots given directly in local metres (x east, z = -north).
-const NAMED_SPOTS = {
+const NAMED_SPOTS = regionId === 'honolulu' ? {
+  crater: { lx: 2300, lz: -1350, zoom: 2.2 },
+  coast: { lx: 1150, lz: -700, zoom: 2.5 },
+} : {
   intersection: { lx: 2060, lz: -2560, zoom: 7 },
   'church-hill': { lx: 3300, lz: -2300, zoom: 3 },
   river: { lx: 2000, lz: -1550, zoom: 1.8 },

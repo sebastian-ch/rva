@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { scatterTile } from './scatter';
-import type { BuildingProps, Feature, PointGeom, PoiProps, PolyGeom } from './types';
+import type { AreaProps, BuildingProps, Feature, PointGeom, PoiProps, PolyGeom, RoadProps, LineGeom } from './types';
 import type { V2 } from './geomutil';
 
 const identity = (x: number, y: number): V2 => [x, y];
@@ -33,6 +33,23 @@ function squareBuilding(cx: number, cy: number, half: number): Feature<PolyGeom,
 }
 
 describe('scatterTile', () => {
+  it('adds more coastal palms while avoiding road corridors and buildings', () => {
+    const green: Feature<PolyGeom, AreaProps> = {
+      type: 'Feature', geometry: squareBuilding(50, 50, 50).geometry,
+      properties: { id: 'green', name: null, kind: 'park' },
+    };
+    const roads: Feature<LineGeom, RoadProps>[] = [{ type: 'Feature',
+      geometry: { type: 'LineString', coordinates: [[0,50],[100,50]] },
+      properties: { width: 10, highway: 'footway' } as RoadProps }];
+    const trees = (coastal: boolean) => scatterTile('coastal-test', [],
+      [{ ...green, properties: { ...green.properties, coastal } }], roads,
+      [squareBuilding(20,20,10)], bbox, identity, flatGround)
+      .filter((p) => p.kind === 'tree' || p.kind === 'tree_round');
+    const palms = trees(true);
+    expect(palms.length).toBeGreaterThan(trees(false).length * 2);
+    expect(palms.every((p) => Math.abs(p.z - 50) >= 7)).toBe(true);
+    expect(palms.every((p) => !(p.x > 10 && p.x < 30 && p.z > 10 && p.z < 30))).toBe(true);
+  });
   it('places a traffic_light at a traffic_signals POI and a fountain at a fountain POI', () => {
     const pois = [poi('traffic_signals', 20, 30), poi('fountain', 50, 60)];
     const out = scatterTile('tile-a', pois, [], [], [], bbox, identity, flatGround);

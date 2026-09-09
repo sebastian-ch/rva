@@ -1,0 +1,116 @@
+{
+  "type": "FeatureCollection",
+  "source_url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer",
+  "image_extent": {
+    "xmin": -157.8275,
+    "ymin": 21.270558333333334,
+    "xmax": -157.8225,
+    "ymax": 21.275141666666663,
+    "spatialReference": {
+      "wkid": 4326,
+      "latestWkid": 4326
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "kuhio-north-groin",
+        "name": "K\u016bhi\u014d Beach groin",
+        "man_made": "groyne",
+        "source": "Esri World Imagery, manually traced 2026-09-09",
+        "accuracy": "Approximate centerline; width and crest height estimated"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -157.825275,
+            21.27487917
+          ],
+          [
+            -157.825375,
+            21.274675
+          ],
+          [
+            -157.82525,
+            21.2744
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "kuhio-north-breakwater",
+        "name": "K\u016bhi\u014d Beach breakwater",
+        "man_made": "breakwater",
+        "source": "Esri World Imagery, manually traced 2026-09-09",
+        "accuracy": "Approximate centerline; width and crest height estimated"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -157.8250625,
+            21.27405833
+          ],
+          [
+            -157.8245625,
+            21.27304583
+          ],
+          [
+            -157.82430417,
+            21.27253333
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "kuhio-middle-groin",
+        "name": "K\u016bhi\u014d Beach groin",
+        "man_made": "groyne",
+        "source": "Esri World Imagery, manually traced 2026-09-09",
+        "accuracy": "Approximate centerline; width and crest height estimated"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -157.8245625,
+            21.27304583
+          ],
+          [
+            -157.82412083,
+            21.27325417
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "kuhio-south-breakwater",
+        "name": "K\u016bhi\u014d Beach breakwater",
+        "man_made": "breakwater",
+        "source": "Esri World Imagery, manually traced 2026-09-09",
+        "accuracy": "Approximate centerline; width and crest height estimated"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -157.82420833,
+            21.27232083
+          ],
+          [
+            -157.82371667,
+            21.27117083
+          ]
+        ]
+      }
+    }
+  ]
+}

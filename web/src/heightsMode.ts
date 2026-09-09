@@ -7,7 +7,7 @@ import { hex } from './props';
  *  - heights mode (uHeights = 1): hypsometric tint by world y over [uMinY, uMaxY] on everything, windows off
  * Chains with a material's existing onBeforeCompile (facade, water).
  */
-export interface HeightsOptions { contours?: boolean; contour?: number }
+export interface HeightsOptions { contours?: boolean; contour?: number; contoursInNormalView?: boolean }
 
 export const HEIGHT_STOPS: { t: number; color: string }[] = [
   { t: 0.0, color: '#4f86a8' }, { t: 0.18, color: '#7fb3a0' }, { t: 0.4, color: '#a9c27a' },
@@ -36,7 +36,7 @@ vec3 isoRamp(float t) {
 }
 `;
 
-function contourGLSL(strength: number): string {
+function contourGLSL(strength: number, normalView: boolean): string {
   return /* glsl */ `
   {
     float h = vIsoWorld.y / uContour;
@@ -46,6 +46,7 @@ function contourGLSL(strength: number): string {
     line *= 1.0 - smoothstep(0.25, 0.5, fw);
     float major = step(0.5, 1.0 - smoothstep(0.0, fw * 1.5, abs(fract(h / 5.0 + 0.5) - 0.5)));
     float k = line * (${strength.toFixed(2)} + 0.25 * major) * (1.0 + uHeights);
+    k *= ${normalView ? '1.0' : 'uHeights'};
     diffuseColor.rgb = mix(diffuseColor.rgb, uContourColor, clamp(k, 0.0, 0.6));
   }`;
 }
@@ -74,10 +75,10 @@ export function applyHeightsMode(material: THREE.Material, opts: HeightsOptions 
     const marker = '#include <alphamap_fragment>';
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>\n${fragVary}\n${GLSL_FRAG_HEAD}`)
-      .replace(marker, `${marker}\n${contours ? contourGLSL(0.22) : ''}\n${GLSL_TINT}`);
+      .replace(marker, `${marker}\n${contours ? contourGLSL(0.22, opts.contoursInNormalView ?? true) : ''}\n${GLSL_TINT}`);
   };
   const key = material.customProgramCacheKey;
-  material.customProgramCacheKey = () => `${key ? key.call(material) : ''}|iso-heights-${contours ? 'c' : 'n'}`;
+  material.customProgramCacheKey = () => `${key ? key.call(material) : ''}|iso-heights-${contours ? 'c' : 'n'}-${opts.contoursInNormalView ?? true}`;
   material.needsUpdate = true;
 }
 

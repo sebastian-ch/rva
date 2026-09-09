@@ -35,6 +35,29 @@ def test_water_levels_without_terrain():
     assert water_levels(polys, None) == [None]
 
 
+def test_water_levels_ignore_raster_gaps(tmp_path):
+    import rasterio
+    from rasterio.transform import from_origin
+    from terrain import Terrain
+
+    path = tmp_path / "partial.tif"
+    values = np.full((10, 10), 30, dtype="float32")
+    values[:, :2] = 1
+    values[0, 0] = -9999
+    with rasterio.open(path, "w", driver="GTiff", height=10, width=10, count=1,
+                       dtype="float32", crs=CRS_PROJ, transform=from_origin(0, 10, 1, 1), nodata=-9999) as ds:
+        ds.write(values, 1)
+    terrain = Terrain(path)
+    try:
+        assert np.isnan(terrain.sample_valid(np.array([-1, 0.5]), np.array([5, 9.5]))).all()
+        assert np.isfinite(terrain.sample(np.array([-1]), np.array([5]))).all()
+        # Most of this canal lies outside the DEM; only its low valid cells count.
+        polys = gpd.GeoDataFrame({"kind": ["canal"]}, geometry=[box(-100, 0, 2, 10)], crs=CRS_PROJ)
+        assert water_levels(polys, terrain, spacing=1) == [0.3]
+    finally:
+        terrain.close()
+
+
 def test_tile_grid_flattens_under_still_water():
     from terrain import Terrain
 
@@ -50,3 +73,19 @@ def test_tile_grid_flattens_under_still_water():
     inside = (xs > 40) & (xs < 60)
     assert np.all(elev[:, inside] <= 25.0 - WATER_BED_M + 1e-6)
     assert np.all(elev[:, xs > 70] > 29)
+
+
+def test_beach_profile_softens_only_mapped_sandy_shore():
+    from terrain import Terrain
+
+    t = Terrain.__new__(Terrain)
+    t.sample = lambda xs, ys: np.full(np.asarray(xs).shape, 5.0)
+    ocean = box(-100, -100, 0, 200)
+    beach = box(0, 0, 40, 40)
+    grid = t.tile_grid(-20, 0, 100, n=101, flatten=[(ocean, 0)], beach_profile=(beach, ocean, 0))
+    elev = np.array(grid["elev"]).reshape(101, 101)
+    assert elev[20, 20] == 0.12  # shoreline meets the sea instead of a five-metre cliff
+    assert np.all(np.diff(elev[20, 20:56]) >= 0)
+    assert elev[20, 55] == 5  # original DEM resumes inland
+    assert elev[80, 20] == 5  # non-beach coastline is unchanged
+    assert elev[20, 10] == -WATER_BED_M
