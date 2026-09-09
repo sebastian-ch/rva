@@ -168,7 +168,7 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
   toolbar.appendChild(nightBtn);
   toolbar.appendChild(pauseBtn);
   toolbar.appendChild(mapBtn);
-  toolbar.appendChild(tourBtn);
+  // toolbar.appendChild(tourBtn); // Tour hidden for now (button still wired; re-add to show it)
   toolbar.appendChild(heightsBtn);
 
   root.appendChild(toolbar);

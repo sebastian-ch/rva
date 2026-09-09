@@ -15,7 +15,7 @@ const SNAPSHOTS_DIR = join(__dirname, '..', 'snapshots');
 const URL = process.env.SMOKE_URL ?? 'http://localhost:5173/';
 const SETTLE_TIMEOUT_MS = 180000;
 
-const TOOLBAR_LABELS = ['Night', 'Pause', 'Map', 'Tour', 'Heights'];
+const TOOLBAR_LABELS = ['Night', 'Pause', 'Map', /* 'Tour' (hidden for now) */ 'Heights'];
 
 function fail(msg) {
   console.error(`[smoke] FAIL: ${msg}`);
