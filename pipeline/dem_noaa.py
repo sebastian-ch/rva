@@ -22,6 +22,38 @@ from config import CRS_PROJ, DATA_RAW, DEFAULT_BBOX, bbox_slug
 
 FT_TO_M = 0.3048006096  # US survey foot
 DEFAULT_ZIP = DATA_RAW / "J1448888.zip"
+DEM_ROOT = "https://noaa-nos-coastal-lidar-pds.s3.amazonaws.com/dem/VA_Richmond_DEM_2025_14836/"
+
+
+def download_tiles(bbox):
+    """Select the public COGs by STAC footprint; no custom NOAA order is required."""
+    import json
+    from concurrent.futures import ThreadPoolExecutor
+    from fetch_richmond import _session
+    from shapely.geometry import box, shape
+
+    cache = DATA_RAW / "noaa_dem_2025"
+    cache.mkdir(parents=True, exist_ok=True)
+    index = cache / "items.json"
+    if not index.exists():
+        r = _session().get(DEM_ROOT + "stac/noaa_item_collection_m14836.json", timeout=120)
+        r.raise_for_status()
+        index.write_bytes(r.content)
+    area = box(*bbox)
+    urls = sorted({asset["href"] for item in json.loads(index.read_text())["features"] if shape(item["geometry"]).intersects(area)
+                   for asset in item["assets"].values() if asset["href"].endswith(".tif")})
+    def download(url):
+        dst = cache / url.rsplit("/", 1)[-1]
+        if not dst.exists():
+            r = _session().get(url, timeout=120)
+            r.raise_for_status()
+            tmp = dst.with_suffix(".download")
+            tmp.write_bytes(r.content)
+            tmp.replace(dst)
+        return str(dst)
+    print(f"  NOAA terrain: {len(urls)} tiles intersect the map")
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        return list(pool.map(download, urls))
 
 
 def tile_paths(zip_path: Path) -> list[str]:
@@ -87,10 +119,12 @@ def main(argv=None) -> int:
     ap.add_argument("--bbox", nargs=4, type=float, metavar=("W", "S", "E", "N"), default=DEFAULT_BBOX)
     ap.add_argument("--res", type=float, default=1.0, help="output cell size in metres")
     ap.add_argument("--force", action="store_true")
+    ap.add_argument("--download", action="store_true", help="download intersecting NOAA tiles directly via STAC")
     a = ap.parse_args(argv)
-    if not a.zip.exists():
+    if not a.download and not a.zip.exists():
         sys.exit(f"missing {a.zip}; order the 2025 City of Richmond DEM from https://coast.noaa.gov/dataviewer/")
     slug = bbox_slug(tuple(a.bbox))
+    DATA_RAW.mkdir(parents=True, exist_ok=True)
     out = DATA_RAW / f"dem_{slug}.tif"
     backup = DATA_RAW / f"dem_{slug}.3dep.tif"
     if out.exists() and not backup.exists():
@@ -98,7 +132,8 @@ def main(argv=None) -> int:
         print(f"  kept previous DEM as {backup.name}")
     elif out.exists() and not a.force:
         sys.exit(f"{out.name} already built from NOAA tiles ({backup.name} exists); use --force to rebuild")
-    stats = build_dem(tile_paths(a.zip), tuple(a.bbox), a.res, out)
+    paths = download_tiles(tuple(a.bbox)) if a.download else tile_paths(a.zip)
+    stats = build_dem(paths, tuple(a.bbox), a.res, out)
     print(f"  DEM {stats['width']}x{stats['height']} @ {a.res} m from {stats['tiles']} tiles -> {out.name}; "
           f"coverage={stats['coverage']:.3f} z={stats['min']:.1f}..{stats['max']:.1f} m")
     if backup.exists():

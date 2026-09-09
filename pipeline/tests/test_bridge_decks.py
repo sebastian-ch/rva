@@ -69,3 +69,18 @@ def test_connector_requires_same_highway_class():
     ]
     _deck, connectors = _deck_endpoints(_gdf(rows), FlatWithTrench())
     assert connectors == []
+
+
+def test_bridge_end_over_underpass_uses_connected_approach_grade():
+    class Underpass:
+        def sample(self, xs, ys):
+            xs = np.asarray(xs, float)
+            return np.where(xs < 10, 10.0, 20.0 - xs * 0.02)
+
+    rows = [
+        {"highway": "motorway", "bridge": "yes", "geometry": LineString([(-100, 0), (0, 0)])},
+        {"highway": "motorway", "bridge": None, "geometry": LineString([(0, 0), (50, 0)])},
+        {"highway": "motorway_link", "bridge": "yes", "geometry": LineString([(-100, 10), (0, 0)])},
+    ]
+    deck, _ = _deck_endpoints(_gdf(rows), Underpass())
+    assert abs(deck.iloc[0][5] - 20.0) < 0.01

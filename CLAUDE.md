@@ -2,12 +2,19 @@
 
 Stylized isometric 3D model of Richmond, VA. Procedurally generated from open geodata, hand-modeled landmarks, rendered in the browser. See `PLAN.md` for the full implementation plan and data inventory.
 
+## Reusable map-building knowledge
+
+Read [docs/map-building-playbook.md](docs/map-building-playbook.md) when adding a region or changing
+map geometry/data/rendering. Record new failure modes and fixes there with code/test references.
+Richmond source details live in [docs/richmond-trees-riverfront.md](docs/richmond-trees-riverfront.md);
+styles use [docs/map-styles.md](docs/map-styles.md).
+
 ## Tech stack
 
 - Data pipeline: Python 3.10+ — `osmnx`, `geopandas`, `shapely`, `rasterio`, `pyproj`, `osmium`
 - Authoring: Blender (Blosm / BlenderGIS import), glTF export with Draco or meshopt
 - Runtime: TypeScript + three.js, `OrthographicCamera`, Vite
-- CRS: EPSG:2284 (VA State Plane South) or EPSG:32618 (UTM 18N). Never do geometry math in EPSG:4326.
+- CRS: `regions.json` selects EPSG:32618 (Richmond, UTM 18N) or EPSG:32604 (Honolulu, UTM 4N). Never do geometry math in EPSG:4326.
 
 ## Layout
 
@@ -27,8 +34,8 @@ web/             three.js app
 - `building:part` polygons are separate buildings (`is_part`, `parent`, `hidden` on the outline); see DATA_FORMAT.md.
 - Roof resolution order: OSM `roof:shape` → Overture `roof_shape` → LiDAR two-plane fit (`pipeline/roofs.py`) → type heuristic.
 - Tiles are ~250 m squares, named by tile index (`x_y`).
-- Palette lives in one file (`assets/palette.json`); every material references it.
-- Automated extraction only from OSM, Overture, VGIN, NAIP, Mapillary. Google and Mapbox imagery are visual reference only — their terms forbid derived datasets.
+- The base scene palette lives in `assets/palette.json`; artistic style palettes and settings live in `web/src/styles/`. Add styles through its registry.
+- Automated sources include OSM, Overture, VGIN, USGS/NAIP, NOAA, city open GIS data, and Mapillary; preserve their terms and attribution. Google and Mapbox imagery are visual reference only — their terms forbid derived datasets.
 - Keep `ATTRIBUTION.md` current whenever a new data source is added.
 
 ## Commands
@@ -62,11 +69,13 @@ Tile schema contract: `DATA_FORMAT.md`. Landmark registry: `assets/landmarks/lan
 - `web/src/`: `tileManager.ts` streams tiles from the camera footprint (`streaming.ts`) through a worker pool (`workerPool.ts` → `tileWorker.ts` → `tileBuild.ts`); `buildings.ts` extrudes (+ `facade.ts` shader, `roofDetails.ts`), `roads.ts` ribbons, `areas.ts` drapes, `scatter.ts` + `propPool.ts` instance props, `landmarkModels.ts` swaps hand-modeled glTFs in. `tiles.ts` only wraps worker payloads into meshes. Moving traffic runs in a dedicated worker (`trafficWorker.ts` → `traffic/sim.ts` IDM car-following + `traffic/graph.ts` road graph stitched from tile car paths, nodes keyed by snapped local x/z, ways split at shared vertices); `trafficClient.ts` streams 20 Hz pose buffers to `propPool.applyPoses`, which only draws them. Walkers still animate in `propPool.ts`. Car paths are the un-extended centrelines (before `adjustEnds`) so junction endpoints coincide. See `docs/traffic-idm-plan.md`. `heightsMode.ts` injects contours + the Heights tint into every material; `groundDetail.ts` adds world-space mottle; `postfx.ts` is the AO/outline/grade pass (`o` toggles it; shader injections must declare `vIsoWorld` only once).
 - Local frame: x = east, z = -north, y = up. Prop geometry is modelled along +X; heading = `atan2(-dz, dx)`.
 - Vertical exaggeration: `web/src/elevation.ts` scales every pipeline elevation (terrain grid, `ground_z`, bridge `deck` z, `water_z`) by `Z_SCALE` (1.6) when tile layers are fetched; building heights are not scaled. Anything shown in metres goes through `realElev`; contour spacing is `5 * Z_SCALE` world units.
-- Still water: canal/pond polygons carry `water_z` (pipeline `water_levels`, DEM p40 + 0.3 m) and the terrain grid is pushed to `water_z - 0.5` under them (`Terrain.tile_grid(flatten=...)`); rivers follow the terrain.
+- Water: canals/ponds use `water_z` and terrain beneath is lowered slightly. Richmond NOAA rivers use shared shoreline elevations and the aligned `water_elev` grid; retain island holes and vertical-unit conversion. See the playbook before substituting hydro sources.
 - `track` and `path` ways are trails: MINOR (no cars, no sidewalks), drawn in the `sand` palette colour; `track` width 2.5 m in `config.ROAD_WIDTH`.
 - Road junctions in `roads.ts` register interior vertices too, so a side street ending on a through road's interior node is trimmed/extended like an endpoint junction; corner fills need ≥ 3 walkable arms.
 - Asset URLs are base-relative (`import.meta.env.BASE_URL`); `vite.config.ts` reads `BASE_PATH` for GitHub Pages.
 - Bridges meet approaches at grade: deck anchors are abutment tops from the DEM (max of the node and 2–8 m back up the approach, capped +3 m, since the DEM cell under the end node is often on the cut slope); non-bridge "connectors" between two chains must be collinear and the same highway class (Mayo's Island), otherwise cross streets between overpasses merge chains; `bridgeLift` is only a 0.6 m deck thickness; ramps (`ramp`) climb to decks via their own `deck`.
+- Bridge endpoints over underpasses can use a guarded same-class connected-approach fit at 20/24/28 m, including branch junctions. These remain estimated profiles. Runtime bridge paths must follow the deck, not `max(deck, terrain)`; see `test_bridge_decks.py` and `roads.test.ts`.
+- Terrain sampling must use the rendered triangle diagonal; road/land drapes adaptively refine where they disagree. Gable/skillion roofs must stay within actual footprints and preserve courtyards. See the playbook for regressions.
 - Layer heights above terrain (`roads.ts`): land 0.08, road 0.28 (`ROAD_Y`), sidewalk strips ROAD_Y + 0.15 curb, markings ROAD_Y + 0.02. Bridges use the pipeline `deck` bank elevations, not the terrain under the span.
 - Default bbox now includes the whole James River (south edge 37.517°).
 
@@ -76,7 +85,7 @@ Keep Claude sessions cheap. Geodata and 3D assets are large and easy to blow con
 
 - Never `cat` or Read files in `data/`, `assets/`, or `*.glb`, `*.geojson`, `*.parquet`, `*.laz`, `*.tif`. Use `head -c`, `ogrinfo`, `python -c` summaries, or `ls -la` instead.
 - Inspect GeoJSON / Parquet with a one-line summary (row count, columns, bbox), not by dumping rows.
-- Prefer `grep`/`sed -n` on specific line ranges over reading whole scripts.
+- Prefer `rg`/`sed -n` on specific line ranges over reading whole scripts.
 - Do not re-read `PLAN.md` every session; it is a reference, only open the section you need.
 - Summarize tool output before reasoning over it; do not paste long logs back into the conversation.
 - Batch independent file edits and shell commands into one call where possible.

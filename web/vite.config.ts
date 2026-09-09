@@ -2,10 +2,14 @@ import { defineConfig, type Plugin } from 'vite';
 import { createReadStream, existsSync, statSync, cpSync } from 'node:fs';
 import { resolve, join, normalize, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import regions from '../regions.json' with { type: 'json' };
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const TILES_DIR = resolve(__dirname, '../data/tiles');
-const ASSETS_DIR = resolve(__dirname, '../assets');
+const region = process.env.ISO_REGION ?? 'richmond';
+if (!(region in regions)) throw new Error(`Unknown ISO_REGION: ${region}`);
+const profile = regions[region as keyof typeof regions];
+const TILES_DIR = resolve(__dirname, '..', profile.data, 'tiles');
+const ASSETS_DIR = resolve(__dirname, '..', profile.assets);
 
 /** Serve ../data/tiles at /tiles/* in dev; copy it into dist/tiles on build. */
 function tilesPlugin(): Plugin {
@@ -36,6 +40,7 @@ function tilesPlugin(): Plugin {
 }
 
 export default defineConfig({
+  define: { 'import.meta.env.VITE_REGION': JSON.stringify(region) },
   base: process.env.BASE_PATH ?? '/',
   plugins: [tilesPlugin()],
   server: { fs: { allow: ['..'] } },

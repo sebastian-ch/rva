@@ -15,7 +15,7 @@ from heights import ROOF_SHAPES  # single definition of the roof-shape enum live
 # ---------------------------------------------------------------- enums
 
 HEIGHT_SOURCES: set[str] = {
-    "override",
+    "override", "cch_height",
     "osm_height", "osm_levels", "overture_height", "overture_levels",
     "lidar", "zoning", "default", "landmark_hint",
 }
@@ -27,9 +27,9 @@ POI_KINDS: set[str] = {
     "fountain", "monument", "shop", "restaurant", "museum",
 }
 
-LANDUSE_KINDS: set[str] = {"park", "grass", "parking", "cemetery", "plaza", "industrial", "forest"}
+LANDUSE_KINDS: set[str] = {"park", "grass", "parking", "cemetery", "plaza", "industrial", "forest", "beach", "groyne", "breakwater", "seawall", "pier", "canal_bank"}
 
-WATER_KINDS: set[str] = {"river", "canal", "pond"}
+WATER_KINDS: set[str] = {"river", "canal", "pond", "ocean"}
 
 # process.py only defaults a missing `crossing` tag to "unmarked" -- it passes the raw OSM
 # crossing=* value through otherwise (e.g. "traffic_signals", "uncontrolled"), so there is no

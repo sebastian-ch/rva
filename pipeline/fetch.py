@@ -33,10 +33,11 @@ LAYER_TAGS: dict[str, dict] = {
         "landuse": ["grass", "cemetery", "industrial", "railway", "recreation_ground", "forest", "commercial", "retail"],
         "leisure": ["park", "garden", "pitch", "playground"],
         "amenity": ["parking"],
-        "natural": ["wood", "grassland", "scrub"],
+        "natural": ["wood", "grassland", "scrub", "beach", "sand"],
         "place": ["square"],
     },
     "water": {"natural": ["water"], "waterway": ["river", "canal", "riverbank", "stream"], "water": True},
+    "coastal_structures": {"man_made": ["breakwater", "groyne", "seawall", "pier"], "barrier": "sea_wall"},
     "pois": {
         "natural": ["tree"],
         "highway": ["street_lamp", "bus_stop", "crossing", "traffic_signals"],
@@ -102,8 +103,8 @@ def fetch_dem(bbox: tuple[float, float, float, float], dst: Path, resolution_m: 
     h = int((maxy - miny) / resolution_m)
     params = {
         "bbox": f"{minx},{miny},{maxx},{maxy}",
-        "bboxSR": "32618",
-        "imageSR": "32618",
+        "bboxSR": CRS_PROJ.split(":")[-1],
+        "imageSR": CRS_PROJ.split(":")[-1],
         "size": f"{w},{h}",
         "format": "tiff",
         "pixelType": "F32",
@@ -133,12 +134,18 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--bbox", nargs=4, type=float, metavar=("W", "S", "E", "N"), default=DEFAULT_BBOX)
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--skip-dem", action="store_true")
+    ap.add_argument("--skip-osm", action="store_true")
+    ap.add_argument("--overpass-url", help="optional public Overpass API base URL for an unavailable default server")
     a = ap.parse_args(argv)
+    if a.overpass_url:
+        ox.settings.overpass_url = a.overpass_url.rstrip("/")
     bbox = tuple(a.bbox)
     slug = bbox_slug(bbox)
     print(f"bbox {bbox} slug {slug}")
-    print("OSM:")
-    fetch_osm(bbox, DATA_RAW / f"osm_{slug}", force=a.force)
+    DATA_RAW.mkdir(parents=True, exist_ok=True)
+    if not a.skip_osm:
+        print("OSM:")
+        fetch_osm(bbox, DATA_RAW / f"osm_{slug}", force=a.force)
     if not a.skip_dem:
         print("DEM:")
         fetch_dem(bbox, DATA_RAW / f"dem_{slug}.tif", force=a.force)

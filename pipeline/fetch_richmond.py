@@ -23,6 +23,7 @@ ORG = "https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis/rest/services"
 LAYERS = {
     "addresses": f"{ORG}/Addresses/FeatureServer/0",
     "zoning": f"{ORG}/ZoningDistricts/FeatureServer/0",
+    "trees": f"{ORG}/TreeInventoryLive_ViewUFWebPage/FeatureServer/0",
 }
 PAGE = 2000
 
@@ -52,6 +53,7 @@ def fetch_layer(url: str, bbox, dst: Path, force: bool = False) -> Path:
             "where": "1=1", "geometry": f"{west},{south},{east},{north}", "geometryType": "esriGeometryEnvelope",
             "inSR": "4326", "spatialRel": "esriSpatialRelIntersects", "outFields": "*", "outSR": "4326",
             "f": "geojson", "resultOffset": offset, "resultRecordCount": PAGE,
+            "orderByFields": "OBJECTID",
         }
         r = s.get(f"{url}/query", params=params, timeout=120)
         r.raise_for_status()

@@ -6,7 +6,7 @@ export type Want = { lod: Lod; priority: number } | null;
 
 export interface Footprint { minX: number; maxX: number; minZ: number; maxZ: number; cx: number; cz: number }
 
-/** Ground footprint (y = 0 plane) of an orthographic camera, expanded by `margin` meters. */
+/** Ground footprint (y = 0 plane) of either camera, expanded by `margin` meters. */
 export function cameraFootprint(camera: THREE.Camera, margin = 150): Footprint {
   const pts: THREE.Vector3[] = [];
   const ray = new THREE.Vector3(), origin = new THREE.Vector3();
@@ -14,7 +14,9 @@ export function cameraFootprint(camera: THREE.Camera, margin = 150): Footprint {
     origin.set(nx, ny, -1).unproject(camera);
     ray.set(nx, ny, 1).unproject(camera).sub(origin).normalize();
     // intersect with y = 0 (fall back to a far point when the ray is parallel)
-    const t = Math.abs(ray.y) > 1e-6 ? -origin.y / ray.y : 5000;
+    const hit = Math.abs(ray.y) > 1e-6 ? -origin.y / ray.y : -1;
+    // A low perspective view includes sky. Never project those rays behind the camera.
+    const t = hit >= 0 ? Math.min(hit, 6000) : 6000;
     pts.push(origin.clone().addScaledVector(ray, t));
   }
   let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;

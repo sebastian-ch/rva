@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import palette from '../../assets/palette.json';
 import landmarksJson from '../../assets/landmarks/landmarks.json';
+import { region, regionId } from './region';
+import { createTropicalSky } from './sky';
 import { createUI, readoutText, type BuildingInfo } from './ui';
 import { IsoCamera } from './camera';
 import { TileWorld, type LoadedTile, type Materials } from './tiles';
@@ -21,9 +23,14 @@ import { applyHeightsMode, setHeightsMode, setHeightsRange, HEIGHT_STOPS } from 
 import { Z_SCALE, realElev } from './elevation';
 import { LandmarkLabels } from './labels';
 import { fetchWikiSummary } from './wiki';
+import { BuildingEffects } from './buildingEffects';
+import { MAP_STYLES } from './styles';
+import { TrafficTrails } from './trafficTrails';
+import { createNavigation, decodeView, type MapStyle, type SearchPlace, type ViewState } from './navigation';
 import type { Landmark, TileIndex } from './types';
 
-const landmarks = landmarksJson as Landmark[];
+const landmarks = (regionId === 'richmond' ? landmarksJson : []) as Landmark[];
+document.title = region.title;
 const landmarkBySlug = new Map(landmarks.map((l) => [l.slug, l]));
 
 const canvas = document.getElementById('scene') as HTMLCanvasElement;
@@ -34,11 +41,19 @@ renderer.toneMapping = THREE.NoToneMapping;
 
 const scene = new THREE.Scene();
 const DAY = { sky: hex('sky'), fog: hex('fog'), sun: hex('sun'), hemi: 0.9, dir: 1.1 };
+if (regionId === 'honolulu') {
+  DAY.sky.set('#83c9ef');
+  DAY.fog.set('#c2e5ef');
+  DAY.sun.set('#fff5d8');
+  DAY.hemi = 1.05;
+}
 const NIGHT = { sky: hex('night_sky'), fog: hex('night_fog'), sun: new THREE.Color('#9fb3d9'), hemi: 0.35, dir: 0.45 };
 scene.background = DAY.sky.clone();
-scene.fog = new THREE.Fog(DAY.fog.clone(), 1800, 5200);
+scene.fog = new THREE.Fog(DAY.fog.clone(), region.cameraDistance, region.cameraDistance + 3400);
+const tropicalSky = regionId === 'honolulu' ? createTropicalSky() : null;
+if (tropicalSky) scene.add(tropicalSky);
 
-const hemi = new THREE.HemisphereLight(hex('sky'), hex('ground'), DAY.hemi);
+const hemi = new THREE.HemisphereLight(DAY.sky, hex('ground'), DAY.hemi);
 const sun = new THREE.DirectionalLight(DAY.sun, DAY.dir);
 const SUN_DIR = new THREE.Vector3(-0.5, 0.75, 0.42).normalize();
 sun.castShadow = true;
@@ -57,7 +72,10 @@ function updateSunShadow() {
   sun.target.position.copy(t);
   sun.position.copy(t).addScaledVector(SUN_DIR, 1500);
   const aspect = window.innerWidth / window.innerHeight;
-  const halfH = (400 / iso.camera.zoom) * 1.6, halfW = halfH * Math.max(1, aspect);
+  const visibleHalfHeight = iso.camera instanceof THREE.PerspectiveCamera
+    ? iso.camera.position.distanceTo(t) * Math.tan(THREE.MathUtils.degToRad(iso.camera.getEffectiveFOV() / 2))
+    : 400 / iso.camera.zoom;
+  const halfH = visibleHalfHeight * 1.6, halfW = halfH * Math.max(1, aspect);
   const cam = sun.shadow.camera;
   const r = Math.max(halfW, halfH);
   if (Math.abs(cam.right - r) > 1) {
@@ -72,15 +90,15 @@ const heightsRange = { min: 0, max: 120 };
 const facade = createFacadeMaterial();
 const water = createWaterMaterial();
 const materials: Materials = {
-  terrain: flat(), buildings: facade.material, roads: flat({ polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
+  terrain: flat({ flatShading: regionId !== 'honolulu' }), buildings: facade.material, roads: flat({ polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
   land: flat({ polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
   water: water.material,
 };
 // elevation cues: contour lines on the ground layers, hypsometric tint on everything in Heights mode
 applyGroundDetail(materials.terrain, 0.05);
 applyGroundDetail(materials.land, 0.09);
-applyHeightsMode(materials.terrain, { contours: true });
-applyHeightsMode(materials.land, { contours: true });
+applyHeightsMode(materials.terrain, { contours: true, contoursInNormalView: regionId !== 'honolulu' });
+applyHeightsMode(materials.land, { contours: true, contoursInNormalView: regionId !== 'honolulu' });
 applyHeightsMode(materials.roads);
 applyHeightsMode(materials.buildings);
 applyHeightsMode(materials.water);
@@ -88,9 +106,12 @@ setHeightsRange(heightsRange.min, heightsRange.max, 5 * Z_SCALE);
 const propMaterial = flat();
 const props = new PropPool(propMaterial);
 const traffic = new TrafficClient();
+const trails = new TrafficTrails();
+scene.add(trails.lines);
 props.group.traverse((o) => { if ((o as THREE.Mesh).isMesh) { o.castShadow = true; o.receiveShadow = true; } });
 scene.add(props.group);
 let landmarkModels: LandmarkModels | null = null;
+let buildingEffects: BuildingEffects | null = null;
 
 const iso = new IsoCamera(canvas, window.innerWidth / window.innerHeight);
 const postfx = createPostFX(renderer, scene, iso.camera);
@@ -101,34 +122,106 @@ const rangesByMesh = new Map<THREE.Mesh, BuildingRange[]>();
 const landmarkTargets = new Map<string, THREE.Vector3>();
 const landmarkTileOf = new Map<string, string>();
 const labels = new LandmarkLabels();
-scene.add(labels.group);
+const labelScene = new THREE.Scene();
+labelScene.add(labels.group);
 
 let night = false, paused = false, heightsOn = false;
+let mapStyle: MapStyle = 'classic';
+let pendingSelection: string | null = null;
+let tileIndex: TileIndex | null = null;
 const ui = createUI(document.getElementById('ui')!, {
   onToggleNight(on) { setNight(on); },
   onTogglePause(on) { paused = on; props.paused = on; traffic.setPaused(on); },
   onToggleMap(on) { iso.setMapMode(on); },
   onTour() { nextTourStop(); },
   onToggleHeights(on) {
+    if (on && mapStyle !== 'classic') setMapStyle('classic');
     heightsOn = on;
     setHeightsMode(on);
     ui.setHeights(on);
     ui.setHeightsLegend(on ? { minElev: realElev(heightsRange.min), maxElev: realElev(heightsRange.max), contour: 5, stops: HEIGHT_STOPS } : null);
   },
   onCloseInfo() { clearSelection(); },
+  onStyle(style) { setMapStyle(style); },
+});
+
+function setMapStyle(style: MapStyle) {
+  mapStyle = style; postfx.setStyle(style); postfx.enabled = true; ui.setStyle(style);
+  const definition = MAP_STYLES[style];
+  buildingEffects?.setStyle(definition, tiles);
+  for (const material of [materials.terrain, materials.land, materials.roads, materials.water, propMaterial] as THREE.MeshStandardMaterial[]) {
+    if (material.vertexColors === definition.xray) {
+      material.vertexColors = !definition.xray; material.color.set(definition.xray ? '#0a2230' : '#ffffff'); material.needsUpdate = true;
+    }
+  }
+  if (landmarkModels) landmarkModels.group.visible = !definition.xray;
+  facade.setMidnight(definition.neonLighting);
+  trails.setEnabled(definition.trafficTrails);
+  props.setMidnight(definition.neonLighting);
+  (materials.roads as THREE.MeshStandardMaterial).roughness = definition.roadRoughness;
+  setNight(night);
+  if (style !== 'classic' && heightsOn) {
+    heightsOn = false; setHeightsMode(false); ui.setHeights(false); ui.setHeightsLegend(null);
+  }
+}
+
+function currentView(): ViewState {
+  const t = iso.controls.target, origin = tileIndex?.origin ?? [0, 0];
+  return { region: regionId, x: t.x + origin[0], y: origin[1] - t.z, z: t.y,
+    zoom: iso.camera.zoom, az: iso.controls.getAzimuthalAngle(), distance: iso.camera.position.distanceTo(t),
+    night, map: iso.isMap, style: mapStyle, building: selectedId ?? pendingSelection ?? undefined };
+}
+
+function tryPendingSelection() {
+  if (!pendingSelection) return;
+  for (const t of tiles) {
+    const feature = t.buildingFeatures.get(pendingSelection);
+    const range = t.ranges.find((r) => r.props.id === pendingSelection) ?? (feature ? { props: feature.properties, start: 0, count: 0 } : undefined);
+    if (range) { pendingSelection = null; select(range, t); return; }
+  }
+}
+
+function restoreView(state: ViewState) {
+  if (!world || !tileIndex) return;
+  const [w, s, e, n] = tileIndex.bbox_proj;
+  if (state.x < w - 500 || state.x > e + 500 || state.y < s - 500 || state.y > n + 500) return;
+  const [x, z] = world.toLocal(state.x, state.y);
+  clearSelection(); ui.hideInfo();
+  iso.restore(new THREE.Vector3(x, state.z, z), state.zoom, state.az, state.distance, state.map);
+  ui.setMap(state.map); setNight(state.night); setMapStyle(state.style);
+  pendingSelection = state.building ?? null;
+  manager?.update(iso.camera, iso.camera.zoom, true);
+  tryPendingSelection();
+}
+
+const navigation = createNavigation(document.getElementById('ui')!, (place: SearchPlace) => {
+  if (!world) return;
+  clearSelection(); ui.hideInfo();
+  const [x, z] = world.toLocal(place.x, place.y);
+  iso.flyTo(new THREE.Vector3(x, place.ground_z * Z_SCALE + 8, z), 2.6);
+  pendingSelection = place.id.startsWith('landmark:') ? null : place.id;
+  tryPendingSelection();
+}, currentView);
+window.addEventListener('hashchange', () => {
+  const state = decodeView(location.hash, regionId); if (state) restoreView(state);
 });
 
 function setNight(on: boolean) {
   night = on;
-  const t = on ? NIGHT : DAY;
+  const effectiveNight = on || MAP_STYLES[mapStyle].nightLighting;
+  const t = effectiveNight ? NIGHT : DAY;
   (scene.background as THREE.Color).copy(t.sky);
   scene.fog!.color.copy(t.fog);
   hemi.intensity = t.hemi;
+  if (tropicalSky) {
+    tropicalSky.visible = !effectiveNight;
+    hemi.color.copy(t.sky);
+  }
   sun.intensity = t.dir;
   sun.color.copy(t.sun);
-  facade.setNight(on);
-  water.setNight(on);
-  postfx.setNight(on);
+  facade.setNight(effectiveNight);
+  water.setNight(effectiveNight);
+  postfx.setNight(effectiveNight);
   ui.setNight(on);
 }
 
@@ -140,6 +233,8 @@ const selMaterial = new THREE.MeshStandardMaterial({ color: hex('landmark_accent
 function clearSelection() {
   if (selection) { scene.remove(selection); selection.geometry.dispose(); selection = null; }
   selectedId = null;
+  pendingSelection = null;
+  selectionSeq++;
 }
 function select(range: BuildingRange, tile: LoadedTile) {
   clearSelection();
@@ -264,20 +359,36 @@ let loggedFirst = false;
 async function boot() {
   ui.setLoading(true, 'Loading index…');
   const index = (await (await fetch(`${import.meta.env.BASE_URL}tiles/index.json`)).json()) as TileIndex;
+  tileIndex = index;
   world = new TileWorld(index, materials);
   landmarkModels = new LandmarkModels(world.toLocal, materials.buildings);
   scene.add(landmarkModels.group);
-  // open on the State Capitol (pipeline-resolved position in tiles/landmarks.json); fall back to downtown
+  buildingEffects = new BuildingEffects(world.toLocal);
+  scene.add(buildingEffects.group);
+  buildingEffects.setStyle(MAP_STYLES[mapStyle], tiles);
+  landmarkModels.group.visible = !MAP_STYLES[mapStyle].xray;
+  // Region targets use projected easting/northing and a world-space camera target height.
   const center = world.center();
-  center.z -= 400; // local z = -north
+  if (regionId === 'richmond') center.z -= 400; // local z = -north
   try {
     const lm = (await (await fetch(`${import.meta.env.BASE_URL}tiles/landmarks.json`)).json()) as Record<string, { x: number; y: number }>;
     const cap = lm['virginia-state-capitol'];
     if (cap) { const [lx, lz] = world.toLocal(cap.x, cap.y); center.set(lx, 0, lz); }
   } catch { /* keep the fallback */ }
-  iso.lookAt(center, 1800);
-  iso.camera.zoom = 1.1;
+  if (region.initialTarget) {
+    const [x, y, height] = region.initialTarget;
+    const [lx, lz] = world.toLocal(x, y);
+    center.set(lx, height, lz);
+  }
+  iso.lookAt(center, region.cameraDistance);
+  iso.camera.zoom = region.initialZoom;
   iso.camera.updateProjectionMatrix();
+  const shared = decodeView(location.hash, regionId);
+  if (shared) restoreView(shared);
+  void fetch(`${import.meta.env.BASE_URL}tiles/search.json`).then(async (r) => {
+    if (!r.ok) throw new Error('Search index unavailable');
+    navigation.setPlaces(await r.json() as SearchPlace[]);
+  }).catch(() => navigation.unavailable());
 
   const rand = rng(hashStr('cars'));
   manager = new TileManager(index, materials, {
@@ -296,6 +407,8 @@ async function boot() {
         if (heightsOn) ui.setHeightsLegend({ minElev: realElev(heightsRange.min), maxElev: realElev(heightsRange.max), contour: 5, stops: HEIGHT_STOPS });
       }
       tiles.push(t);
+      buildingEffects?.add(t);
+      tryPendingSelection();
       if (t.buildings) { buildingMeshes.push(t.buildings); rangesByMesh.set(t.buildings, t.ranges); }
       props.beginTile(t.meta.id);
       props.add(t.placements);
@@ -316,9 +429,11 @@ async function boot() {
         if (i >= 0) buildingMeshes.splice(i, 1);
         rangesByMesh.delete(oldMesh);
         if (newMesh) { buildingMeshes.push(newMesh); rangesByMesh.set(newMesh, ranges); }
+        buildingEffects?.refresh(t);
       });
     },
     onRemoved(t) {
+      buildingEffects?.remove(t);
       landmarkModels?.detachTile(t);
       const i = tiles.indexOf(t);
       if (i >= 0) tiles.splice(i, 1);
@@ -378,17 +493,26 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
-window.addEventListener('keydown', (e) => { if (e.key === 'o' && !(e.target instanceof HTMLInputElement)) postfx.enabled = !postfx.enabled; });
+window.addEventListener('keydown', (e) => {
+  const editing = e.target instanceof HTMLElement && e.target.closest('input, textarea, select, [contenteditable="true"]');
+  if (e.key === 'o' && !editing) postfx.enabled = !postfx.enabled;
+});
 const clock = new THREE.Clock();
 let waterTime = 0;
 function frame() {
   const dt = Math.min(0.1, clock.getDelta());
   iso.update(dt);
-  if (!paused) { props.update(dt); traffic.apply(props); waterTime += dt; water.update(waterTime); }
+  if (tropicalSky) tropicalSky.position.copy(iso.camera.position);
+  if (!paused) { props.update(dt); traffic.apply(props); trails.update(dt); traffic.apply(trails); waterTime += dt; water.update(waterTime); }
   updateSunShadow();
   manager?.update(iso.camera, iso.camera.zoom);
-  labels.update(iso.camera.zoom, night);
+  labels.update(iso.camera.zoom, night || MAP_STYLES[mapStyle].nightLighting);
   if (postfx.enabled) { postfx.update(iso.camera, window.innerHeight); postfx.composer.render(); } else renderer.render(scene, iso.camera);
+  // Place names are UI: draw them after the ink pass so lettering stays readable.
+  if (labels.group.visible) {
+    const autoClear = renderer.autoClear;
+    renderer.autoClear = false; renderer.clearDepth(); renderer.render(labelScene, iso.camera); renderer.autoClear = autoClear;
+  }
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);

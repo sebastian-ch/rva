@@ -37,7 +37,7 @@ Geometry is clipped to the tile bbox. All layers optional; missing = empty.
 | `height` | number | meters, roof-line height above ground |
 | `min_height` | number | meters, default 0 |
 | `levels` | int\|null | |
-| `height_source` | `"osm_height"\|"osm_levels"\|"overture_height"\|"overture_levels"\|"lidar"\|"zoning"\|"default"\|"landmark_hint"\|"override"` | resolution order: OSM height, OSM levels, LiDAR (≥ 10 nDSM cells; eave for pitched roofs), Overture height, Overture levels, sparse LiDAR, zoning, type default; `override` = supplements file. Footprints whose LiDAR surface is at ground (p90 < 1.2 m, ≥ 8 cells) with no OSM height are dropped as stale; LiDAR heights on footprints < 80 m² are capped at 4·√area |
+| `height_source` | `"cch_height"\|"osm_height"\|"osm_levels"\|"overture_height"\|"overture_levels"\|"lidar"\|"zoning"\|"default"\|"landmark_hint"\|"override"` | resolution order: OSM height, OSM levels, CCH maximum height (Honolulu only), LiDAR (≥ 10 nDSM cells; eave for pitched roofs), Overture height, Overture levels, sparse LiDAR, zoning, type default; `override` = supplements file. Footprints whose LiDAR surface is at ground (p90 < 1.2 m, ≥ 8 cells) with no OSM height are dropped as stale; LiDAR heights on footprints < 80 m² are capped at 4·√area |
 | `zoning` | string\|null | City of Richmond zoning district at the footprint |
 | `roof_shape` | `"flat"\|"gable"\|"hip"\|"pyramidal"\|"skillion"\|"dome"` | |
 | `roof_height` | number | meters of roof above `height`, 0 for flat |
@@ -49,7 +49,7 @@ Geometry is clipped to the tile bbox. All layers optional; missing = empty.
 | `wall_color` | string | palette key |
 | `type` | string | OSM `building=*` value |
 | `landmark` | string\|null | slug from `assets/landmarks/landmarks.json` |
-| `footprint_source` | `"osm"\|"vgin"\|"override"` | VGIN footprints are gap-fill only (no OSM footprint overlapped them); they carry no tags |
+| `footprint_source` | `"osm"\|"vgin"\|"cch"\|"override"` | VGIN is gap-fill. Honolulu uses CCH city outlines, enriched with spatially matched OSM tags, plus non-overlapping OSM gap-fill |
 | `is_part` | bool | OSM `building:part` (Simple 3D Buildings); rendered as its own extrusion |
 | `parent` | string\|null | id of the outline building containing a part; parts inherit name/addr/landmark from it |
 | `hidden` | bool | outline whose parts cover ≥ 60% of it; the viewer draws only a 0.6 m plinth (keeps picking and the info card) |
@@ -64,12 +64,12 @@ Geometry is clipped to the tile bbox. All layers optional; missing = empty.
 `id`, `name`, `railway`, `bridge`, `layer`, `deck` (as for roads)
 
 ### landuse (Polygon)
-`id`, `name`, `kind`: `"park"|"grass"|"parking"|"cemetery"|"plaza"|"industrial"|"forest"`
+`id`, `name`, `kind`: `"park"|"grass"|"parking"|"cemetery"|"plaza"|"industrial"|"forest"|"beach"`
 
 Elevations in every layer are real metres above `base_elevation`; the viewer multiplies them by `Z_SCALE` (1.6, `web/src/elevation.ts`) when a tile is loaded and divides back for anything shown to the user.
 
 ### water (Polygon)
-`id`, `name`, `kind`: `"river"|"canal"|"pond"`, `water_z` (m above `base_elevation`; flat surface for canals and ponds,
+`id`, `name`, `kind`: `"river"|"canal"|"pond"|"ocean"`, `water_z` (m above `base_elevation`; flat surface for canals and ponds,
 40th percentile of the DEM inside the polygon + 0.3 m; `null` for rivers, which follow the terrain). The terrain grid is
 pushed down to `water_z - 0.5` under those polygons so the surface is always visible.
 
@@ -94,3 +94,26 @@ Every entry of `assets/landmarks/landmarks.json` resolved to a position by `pipe
               "how": "building"|"name:<layer>"|"nearest:<layer>"|null, "osm_name", "in_first_slice", "model", "wikidata", "website", "description" } }
 ```
 `x, y` are EPSG:32618 metres (centroid of the matched feature, or the registry lat/lon when `how` is null).
+
+Region profiles select the projected CRS and output path. Honolulu IDs use `cch:<objectid>` for city footprints. Its `cch_height` is a maximum roof height: the rendered wall height plus roof rise fits inside that total. Ocean `water_z` is `-base_elevation`, corresponding to zero in the DEM elevation reference.
+
+Honolulu coastal structures use landuse kinds `groyne`, `breakwater`, `seawall`, and `pier`. Optional `base_z` and `top_z` are elevations relative to the regional DEM base; both scale with terrain exaggeration. Their polygons render as solid extrusions. `source` identifies OSM or imagery tracing; `dimensions_source` marks estimated dimensions.
+# Richmond vegetation, hydro, and navigation additions
+
+- `index.json` tile entries may contain `surveyed_trees: true`: complete regional LiDAR canopy processing
+  was available, so the renderer suppresses procedural park/street tree scatter. Existing OSM trees remain
+  where they do not duplicate inventory/canopy points.
+- Tree POIs retain `kind: "tree"` and add optional `species`, `source` (`city_inventory` or `lidar2025`),
+  `tree_height` (metres), `crown_radius` (metres), and `height_source` (`estimated` or `lidar2025`).
+  Heights/crown widths are independent of terrain exaggeration. Unmatched inventory trees use explicit
+  estimated sizes; LiDAR peaks and crown envelopes are approximate.
+- Water features may have `source: "noaa2025"`. `water_z` is numeric or null, never a string.
+  River elevations use optional `terrain.json.water_elev`, a finite array aligned with `elev` in the same
+  unexaggerated, base-relative metre frame. The viewer scales both once. Ground beneath water is lowered
+  while island holes remain untouched.
+- `landuse.kind: "canal_bank"` uses `base_z` and `top_z` for stylized masonry beside mapped downtown canals.
+  Its source is `osm_stylized`; the coping height is an artistic estimate, not a measured wall survey.
+- `search.json` is an array of `{id,name,addr,x,y,ground_z,landmark}`. Positions use the index's projected
+  CRS; `ground_z` is base-relative metres. Landmark names are canonical and deduplicated across parts.
+- Shared URL state is versioned (`view=1`) and region-scoped, with projected target XY, displayed target
+  height Z, zoom, azimuth in radians, camera distance, night/map flags, style and optional building ID.

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { TerrainGrid } from './types';
 import { hex } from './props';
 
-/** Bilinear height lookup over a tile's elevation grid, in tile-local projected meters. */
+/** Triangle-matched height lookup over a tile's elevation grid, in tile-local projected meters. */
 export class HeightField {
   readonly n: number;
   readonly step: number;
@@ -19,7 +19,9 @@ export class HeightField {
     const tx = fx - ix, ty = fy - iy;
     const e = g.elev, n = this.n;
     const a = e[iy * n + ix], b = e[iy * n + ix + 1], c = e[(iy + 1) * n + ix], d = e[(iy + 1) * n + ix + 1];
-    return (a * (1 - tx) + b * tx) * (1 - ty) + (c * (1 - tx) + d * tx) * ty;
+    // Match buildTerrainMesh's a-b-c / b-d-c diagonal. Bilinear interpolation
+    // described a different surface and exposed terrain through parks and roads.
+    return tx + ty <= 1 ? a + (b-a)*tx + (c-a)*ty : d + (c-d)*(1-tx) + (b-d)*(1-ty);
   }
 }
 

@@ -1,10 +1,14 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import palette from '../../assets/palette.json';
+import { regionId } from './region';
 
 export type PropKind =
   | 'tree'
   | 'tree_round'
+  | 'tree_oval'
+  | 'tree_spreading'
+  | 'tree_small'
   | 'streetlight'
   | 'car'
   | 'suv'
@@ -19,6 +23,9 @@ export type PropKind =
 export const PROP_KINDS: PropKind[] = [
   'tree',
   'tree_round',
+  'tree_oval',
+  'tree_spreading',
+  'tree_small',
   'streetlight',
   'car',
   'suv',
@@ -59,7 +66,7 @@ export interface ColoredPart {
 
 export function mergeColored(parts: ColoredPart[]): THREE.BufferGeometry {
   const prepared: THREE.BufferGeometry[] = parts.map((part) => {
-    let g = part.geom.toNonIndexed();
+    let g = part.geom.getIndex() ? part.geom.toNonIndexed() : part.geom.clone();
     // Drop non-position/normal attributes (e.g. uv) for a consistent attribute set.
     for (const name of Object.keys(g.attributes)) {
       if (name !== 'position' && name !== 'normal') {
@@ -138,6 +145,7 @@ function lightBox(width: number, height: number, depth: number): THREE.BufferGeo
 }
 
 function buildTree(round: boolean): THREE.BufferGeometry {
+  if (regionId === 'honolulu') return buildPalm(round);
   const trunk = new THREE.CylinderGeometry(0.15, 0.15, 1.2, 6);
   const canopy = round
     ? new THREE.IcosahedronGeometry(1.6, 0)
@@ -149,6 +157,67 @@ function buildTree(round: boolean): THREE.BufferGeometry {
     { geom: trunk, color: hex('trunk'), position: [0, 0.6, 0] },
     { geom: canopy, color: hex('canopy'), position: [0, canopyY, 0] },
   ]);
+}
+
+/** Multi-lobed deciduous silhouettes, normalized to a 4.4 m height and 1.6 m crown radius. */
+function buildDeciduous(kind: 'tree_oval' | 'tree_spreading' | 'tree_small'): THREE.BufferGeometry {
+  const spread = kind === 'tree_spreading', small = kind === 'tree_small';
+  const parts: ColoredPart[] = [{ geom: new THREE.CylinderGeometry(0.09, 0.18, 2.4, 6), color: hex('trunk'), position: [0, 1.2, 0] }];
+  const lobes = spread ? [[-0.65, 2.7, 0.15], [0.65, 2.8, 0], [0, 3.4, -0.25]]
+    : small ? [[-0.6, 2.7, 0], [0.55, 3.0, 0.3], [0, 3.4, -0.3]] : [[0, 2.4, 0], [-0.3, 3.1, 0.2], [0.2, 3.5, -0.1]];
+  for (const [i, pos] of lobes.entries()) parts.push({ geom: new THREE.IcosahedronGeometry(1, 0),
+    color: hex('canopy').multiplyScalar(0.86 + i * 0.09), position: pos as [number, number, number],
+    scale: spread ? [1.2, 0.9, 1.05] : small ? [0.95, 0.9, 1.0] : [0.9, 1.15, 0.85] });
+  const geom = mergeColored(parts);
+  geom.computeBoundingBox();
+  const bounds = geom.boundingBox!;
+  const radius = Math.max(Math.abs(bounds.min.x), Math.abs(bounds.max.x), Math.abs(bounds.min.z), Math.abs(bounds.max.z));
+  geom.scale(1.6 / radius, 4.4 / bounds.max.y, 1.6 / radius);
+  return geom;
+}
+
+/** Two low-poly palms share the existing instanced tree pools and placement rules. */
+export function buildPalm(tall = false): THREE.BufferGeometry {
+  const height = tall ? 9 : 6.5;
+  const lean = tall ? 0.85 : 0.4;
+  const parts: ColoredPart[] = [];
+  const up = new THREE.Vector3(0, 1, 0);
+  for (let i = 0; i < 4; i++) {
+    const t0 = i / 4, t1 = (i + 1) / 4;
+    const a = new THREE.Vector3(lean * t0 * t0, height * t0, 0);
+    const b = new THREE.Vector3(lean * t1 * t1, height * t1, 0);
+    const trunk = new THREE.CylinderGeometry(0.16 + 0.09 * (1 - t1), 0.16 + 0.09 * (1 - t0), a.distanceTo(b), 6, 1, true);
+    trunk.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(up, b.clone().sub(a).normalize()));
+    const center = a.clone().add(b).multiplyScalar(0.5);
+    trunk.translate(center.x, center.y, center.z);
+    parts.push({ geom: trunk, color: hex('trunk').multiplyScalar(i % 2 ? 1.1 : 1) });
+  }
+  const verts: number[] = [];
+  const tri = (a: THREE.Vector3, b: THREE.Vector3, c: THREE.Vector3) => {
+    // Leaves stay visible from above and below without changing the shared material.
+    for (const p of [a, b, c, c, b, a]) verts.push(p.x, p.y, p.z);
+  };
+  for (let leaf = 0; leaf < 8; leaf++) {
+    const angle = leaf * Math.PI / 4 + (tall ? 0.25 : 0);
+    const length = (tall ? 3.5 : 2.8) * (leaf % 2 ? 0.9 : 1);
+    const side = new THREE.Vector3(-Math.sin(angle), 0, Math.cos(angle));
+    const edge = (t: number, sign: number) => {
+      const width = Math.sin(Math.PI * t) * 0.48;
+      return new THREE.Vector3(lean + Math.cos(angle) * length * t,
+        height + 1.4 * Math.sin(Math.PI * t) - 1.0 * t * t,
+        Math.sin(angle) * length * t).addScaledVector(side, width * sign);
+    };
+    for (let segment = 0; segment < 4; segment++) {
+      const a = edge(segment / 4, -1), b = edge(segment / 4, 1);
+      const c = edge((segment + 1) / 4, -1), d = edge((segment + 1) / 4, 1);
+      tri(a, c, b); tri(b, c, d);
+    }
+  }
+  const fronds = new THREE.BufferGeometry();
+  fronds.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+  fronds.computeVertexNormals();
+  parts.push({ geom: fronds, color: hex('canopy').multiplyScalar(tall ? 0.95 : 1.08) });
+  return mergeColored(parts);
 }
 
 function buildStreetlight(): THREE.BufferGeometry {
@@ -521,6 +590,11 @@ export function buildPropGeometry(
       break;
     case 'tree_round':
       geom = buildTree(true);
+      break;
+    case 'tree_oval':
+    case 'tree_spreading':
+    case 'tree_small':
+      geom = buildDeciduous(kind);
       break;
     case 'streetlight':
       geom = buildStreetlight();

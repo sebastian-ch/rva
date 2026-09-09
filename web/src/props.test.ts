@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PROP_KINDS, VEHICLE_KINDS, buildPropGeometry } from './props';
+import { PROP_KINDS, VEHICLE_KINDS, buildPropGeometry, buildPalm } from './props';
 
 function hasNaN(arr: ArrayLike<number>): boolean {
   for (let i = 0; i < arr.length; i++) if (Number.isNaN(arr[i])) return true;
@@ -14,6 +14,21 @@ const VEHICLE_SPEC: Record<string, { length: number; width: number }> = {
 };
 
 describe('buildPropGeometry', () => {
+  it('palms fit the instanced prop budget with finite geometry and distinct heights', () => {
+    const heights = [false, true].map((tall) => {
+      const geom = buildPalm(tall);
+      expect(geom.attributes.position.count).toBeLessThan(600);
+      for (const attribute of Object.values(geom.attributes)) {
+        expect(Array.from(attribute.array).every(Number.isFinite)).toBe(true);
+      }
+      geom.computeBoundingBox();
+      const height = geom.boundingBox!.max.y;
+      expect(geom.boundingBox!.min.y).toBeGreaterThan(-0.01);
+      geom.dispose();
+      return height;
+    });
+    expect(heights[1]).toBeGreaterThan(heights[0]);
+  });
   for (const kind of PROP_KINDS) {
     it(`builds a valid geometry for "${kind}"`, () => {
       const geom = buildPropGeometry(kind);

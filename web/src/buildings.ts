@@ -92,7 +92,7 @@ export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, Buildin
 
     if (roofH > 0) {
       const done = (p.roof_shape === 'hip' || p.roof_shape === 'pyramidal') && addInsetRoof(mb, outer, top, roofH, roof, p.roof_shape === 'pyramidal');
-      if (!done) addRoof(mb, outer, top, roofH, p.roof_shape, roof, wall, p.roof_azimuth ?? null);
+      if (!done) addRoof(mb, outer, top, roofH, p.roof_shape, roof, wall, p.roof_azimuth ?? null, holes);
     }
     if (opts.details !== false && !hidden) addRoofDetails(mb, outer, top, p, wall, roof);
   }
@@ -167,7 +167,7 @@ function boxAlongAxis(pts: V2[], ax: number, az: number): { center: V2; halfLong
   return { center: [cu * ax + cv * px, cu * az + cv * pz], halfLong: (maxU - minU) / 2, halfShort: (maxV - minV) / 2 };
 }
 
-function addRoof(mb: MeshBuilder, outer: V2[], top: number, roofH: number, shape: string, roof: THREE.Color, wall: THREE.Color, azimuthDeg: number | null) {
+function addRoof(mb: MeshBuilder, outer: V2[], top: number, roofH: number, shape: string, roof: THREE.Color, wall: THREE.Color, azimuthDeg: number | null, holes: V2[][] = []) {
   let ax: number, az: number, L: number, S: number, cx: number, cz: number;
   const inset = 0.97;
   if (azimuthDeg != null && Number.isFinite(azimuthDeg)) {
@@ -182,6 +182,49 @@ function addRoof(mb: MeshBuilder, outer: V2[], top: number, roofH: number, shape
     L = obb.halfLong * inset; S = obb.halfShort * inset; [cx, cz] = obb.center;
   }
   const px = -az, pz = ax; // perpendicular (short axis)
+  if (shape === 'gable' || shape === 'skillion') {
+    // The fitted bounding box supplies an axis, never the roof outline. Clip the
+    // roof to the actual footprint, including concave corners and courtyards.
+    const all = [...outer, ...holes.flat()], indices = triangulate(outer, holes);
+    const across = (p: V2) => (p[0]-cx)*px+(p[1]-cz)*pz;
+    const distances = outer.map(across), low = Math.min(...distances), high = Math.max(...distances);
+    const rise = (p: V2) => {
+      const v=across(p);
+      return roofH * (shape==='skillion' ? (v-low)/(high-low || 1) : Math.max(0,1-Math.abs(v)/(v<0 ? -low : high || 1)));
+    };
+    const vertex = (p: V2) => new THREE.Vector3(p[0],top+rise(p),p[1]);
+    const clip = (ring: V2[], side: number) => {
+      const out: V2[]=[];
+      for(let i=0;i<ring.length;i++) {
+        const a=ring[i],b=ring[(i+1)%ring.length], da=across(a)*side,db=across(b)*side;
+        if(da>=0) out.push(a);
+        if((da>=0)!==(db>=0)) {const t=da/(da-db);out.push([a[0]+t*(b[0]-a[0]),a[1]+t*(b[1]-a[1])]);}
+      }
+      return out;
+    };
+    for(let i=0;i<indices.length;i+=3) {
+      const tri=[all[indices[i]],all[indices[i+1]],all[indices[i+2]]];
+      const pieces=shape==='gable' ? [clip(tri,1),clip(tri,-1)] : [tri];
+      for(const piece of pieces) for(let j=1;j<piece.length-1;j++) {
+        const a=vertex(piece[0]); let b=vertex(piece[j]),c=vertex(piece[j+1]);
+        if(new THREE.Vector3().subVectors(b,a).cross(new THREE.Vector3().subVectors(c,a)).y<0) [b,c]=[c,b];
+        mb.tri(a,b,c,roof);
+      }
+    }
+    for(const ring of [outer,...holes]) for(let i=0;i<ring.length;i++) {
+      const a=ring[i],b=ring[(i+1)%ring.length];
+      const points=[a];
+      if(shape==='gable' && across(a)*across(b)<0) {const t=across(a)/(across(a)-across(b));points.push([a[0]+t*(b[0]-a[0]),a[1]+t*(b[1]-a[1])]);}
+      points.push(b);
+      for(let j=0;j<points.length-1;j++) {
+        const u=points[j],v=points[j+1],u0=new THREE.Vector3(u[0],top,u[1]),v0=new THREE.Vector3(v[0],top,v[1]);
+        const u1=vertex(u),v1=vertex(v),n=new THREE.Vector3(v[1]-u[1],0,u[0]-v[0]).normalize();
+        if(rise(v)>1e-6) mb.tri(u0,v1,v0,wall,n,0.85);
+        if(rise(u)>1e-6) mb.tri(u0,u1,v1,wall,n,0.85);
+      }
+    }
+    return;
+  }
   const P = (u: number, v: number, y: number) => new THREE.Vector3(cx + ax * u + px * v, y, cz + az * u + pz * v);
   const quad = (a: THREE.Vector3, b: THREE.Vector3, c: THREE.Vector3, d: THREE.Vector3, col: THREE.Color, shade = 1) => {
     const n = new THREE.Vector3().subVectors(b, a).cross(new THREE.Vector3().subVectors(c, a)).normalize();

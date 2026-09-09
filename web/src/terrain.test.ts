@@ -54,3 +54,9 @@ describe('FLAT_FIELD', () => {
     expect(f.at(-1e9, 1e9)).toBe(5);
   });
 });
+
+it('matches the rendered diagonal on a non-planar embankment cell',()=>{
+ const field=new HeightField({size:10,n:2,origin:[0,0],elev:[0,0,0,10]});
+ expect(field.at(5,5)).toBe(0); // bilinear gave 2.5 m, intersecting the actual mesh
+ expect(field.at(7.5,7.5)).toBeCloseTo(5);
+});

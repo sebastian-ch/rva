@@ -1,0 +1,32 @@
+{
+  "richmond": {
+    "title": "Isometric Richmond",
+    "subtitle": "Downtown · Shockoe Bottom · Capitol Square",
+    "initialZoom": 1.1,
+    "cameraAzimuth": 45,
+    "cameraProjection": "orthographic",
+    "cameraElevation": 35,
+    "cameraDistance": 1800,
+    "initialTarget": null,
+    "bbox": [-77.456, 37.517, -77.418, 37.548],
+    "crs": "EPSG:32618",
+    "data": "data",
+    "assets": "assets",
+    "elevationScale": 1.6
+  },
+  "honolulu": {
+    "title": "Isometric Honolulu · Diamond Head",
+    "subtitle": "Lēʻahi · Kapiʻolani Park · Pacific coast",
+    "initialZoom": 1.0,
+    "cameraAzimuth": -135,
+    "cameraProjection": "perspective",
+    "cameraElevation": 3,
+    "cameraDistance": 2400,
+    "initialTarget": [623300, 2351500, 90],
+    "bbox": [-157.827499, 21.252022, -157.794901, 21.278613],
+    "crs": "EPSG:32604",
+    "data": "data/honolulu",
+    "assets": "assets/honolulu",
+    "elevationScale": 1.5
+  }
+}

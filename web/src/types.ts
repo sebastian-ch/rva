@@ -5,6 +5,7 @@ export interface TileMeta {
   bbox: [number, number, number, number];
   layers: string[];
   counts: Record<string, number>;
+  surveyed_trees?: boolean;
 }
 export interface TileIndex {
   crs: string;
@@ -21,6 +22,7 @@ export interface TerrainGrid {
   n: number;
   origin: [number, number];
   elev: number[];
+  water_elev?: number[];
 }
 export type Ring = [number, number][];
 export type PolygonCoords = Ring[];
@@ -69,8 +71,8 @@ export interface RoadProps {
   deck?: string | number[] | null;
 }
 export interface RailProps { id: string; name: string | null; railway: string; bridge: boolean; ramp?: boolean; layer: number; deck?: string | number[] | null }
-export interface AreaProps { id: string; name: string | null; kind: string; water_z?: number | null }
-export interface PoiProps { id: string; name: string | null; kind: string }
+export interface AreaProps { id: string; name: string | null; kind: string; source?: string; water_z?: number | null; coastal?: boolean; base_z?: number | null; top_z?: number | null }
+export interface PoiProps { id: string; name: string | null; kind: string; species?: string | null; source?: string; tree_height?: number; crown_radius?: number }
 export interface CrossingProps { id: string; crossing: string }
 
 export interface Landmark {

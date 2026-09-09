@@ -58,6 +58,9 @@ def _body(b: Builder, fp, h, key, shade=1.0, cornice=True):
 def capitol(b, fp):
     f = Frame(fp)
     _body(b, fp, 16.5, "cream")
+    b.window_bays(fp["ring"], 4.0, height=3.0, width=1.5, pitch=5.2, trim="concrete")
+    b.window_bays(fp["ring"], 10.0, height=3.8, width=1.7, pitch=5.2, trim="cream")
+    b.band(fp["ring"], 2.0, 0.3, 0.35, "concrete")
     # central temple runs along v (north-south); wings along u
     b.hip(*f.P(0, 0), 16.5, 46, 27, 5.5, "slate", rot=f.rot_v, inset=6)
     for s in (-1, 1):
@@ -82,6 +85,8 @@ def main_street_station(b, fp):
     # head house at the south end of the long axis
     hh_u = -f.hl + 20
     b.box(*f.P(hh_u, 0), -0.5, 40, 2 * f.hs, 18, "brick", rot=f.rot_u, name="headhouse")
+    b.window_bays(f.rect(hh_u, 0, 40, 2 * f.hs), 3, height=4.5, width=2.2, pitch=5.5, trim="sand", arched=True)
+    b.window_bays(f.rect(hh_u, 0, 40, 2 * f.hs), 10.8, height=3.7, width=1.8, pitch=5.5, trim="sand")
     b.band(f.rect(hh_u, 0, 40, 2 * f.hs), 17.4, 0.5, 0.6, "sand", 0.95)
     b.hip(*f.P(hh_u, 0), 18, 40, 2 * f.hs, 6.5, "roof_red", rot=f.rot_u, inset=8)
     # dormers
@@ -95,25 +100,40 @@ def main_street_station(b, fp):
     for k in range(4):
         ang = f.rot_u + k * math.pi / 2
         x, y = f.P(tu, tv)
-        b.cylinder(x + 5.35 * math.cos(ang), y + 5.35 * math.sin(ang), 31.75, 1.6, 0.2, "cream", n=16)
+        b.clock_face(x + 5.62 * math.cos(ang), y + 5.62 * math.sin(ang), 31.75, 1.6, ang)
     b.band(f.rect(tu, tv, 10, 10), 35.4, 0.7, 0.6, "sand", 0.9)
     b.pyramid(*f.P(tu, tv), 36, 11.4, 11.4, 9, "roof_red", rot=f.rot_u)
-    # train shed north of the head house
-    su = 2 * f.hl - 40  # shed runs from the head house to the far end of the footprint
-    shed_c = -f.hl + 40 + su / 2
-    # train shed: the tracks run on an embankment/viaduct, so the shed walls are tall and the ridge sits
-    # roughly level with the head house roof
-    b.box(*f.P(shed_c, 0), -0.5, su, 30, 14, "brick_dark", rot=f.rot_u, name="shed")
-    b.band(f.rect(shed_c, 0, su, 30), 13.4, 0.4, 0.6, "sand", 0.95)
-    b.gable(*f.P(shed_c, 0), 14, su, 31, 8, "steel", rot=f.rot_u)
-    # clerestory ridge vent
-    b.box(*f.P(shed_c, 0), 21.5, su * 0.9, 4, 1.4, "steel", rot=f.rot_u, shade=0.9)
-    b.gable(*f.P(shed_c, 0), 22.9, su * 0.9, 4.6, 1.2, "steel", rot=f.rot_u, shade=0.95)
+    # Amtrak documents a 123 x 517 ft shed. Fit its north end to the footprint;
+    # the overlap with the simplified headhouse hides their connecting joint.
+    su, sw = min(517 * 0.3048, 2 * f.hl), 123 * 0.3048
+    shed_c = f.hl - su / 2
+    # 2025 LiDAR: eaves ~25.3 m absolute, ridge vent ~32.4 m; ground ~8.25 m.
+    # Raise the eaves, not the peak: the old narrow, deep roof made the shed read low.
+    eave, ridge = 17.0, 22.3
+    # Platform-level glazing; the railway's exaggerated datum is ~31.5 world m
+    # here, versus the model base at 13.8. Lift the upper storey with that datum.
+    platform, upper_eave = 17.5, 27.0
+    b.box(*f.P(shed_c, 0), 0, su, sw, platform, "steel", rot=f.rot_u, shade=0.45, name="shed_base")
+    b.box(*f.P(shed_c, 0), platform, su, sw, upper_eave-platform, "steel", rot=f.rot_u)
+    b.window_bays(f.rect(shed_c, 0, su, sw), platform+0.4, height=8.2, width=4.1, pitch=4.8, trim="steel")
+    for u in range(int(-su/2)+3, int(su/2), 6):
+        for side in [-1,1]:
+            b.box(*f.P(shed_c+u, side*(sw/2+0.12)), 0, 0.5, 0.45, platform, "steel", rot=f.rot_u)
+    rise = upper_eave-eave
+    eave, ridge = upper_eave, ridge+rise
+    b.band(f.rect(shed_c, 0, su, sw), eave - 0.6, 0.4, 0.6, "sand", 0.95)
+    b.gable(*f.P(shed_c, 0), eave, su, sw + 0.6, ridge - eave, "steel", rot=f.rot_u)
+    # Clerestory: physical height ~24.1 m plus the explicit display-datum rise.
+    b.box(*f.P(shed_c, 0), 21.5 + rise, su * 0.9, 4, 1.4, "steel", rot=f.rot_u, shade=0.9)
+    b.gable(*f.P(shed_c, 0), 22.9 + rise, su * 0.9, 4.6, 1.2, "steel", rot=f.rot_u, shade=0.95)
 
 
 def old_city_hall(b, fp):
     f = Frame(fp)
     _body(b, fp, 22, "concrete", 0.92)
+    b.window_bays(fp["ring"], 3, height=4.2, width=1.8, pitch=4.8, trim="sand", arched=True)
+    b.window_bays(fp["ring"], 10, height=4, width=1.8, pitch=4.8, trim="concrete", arched=True)
+    b.window_bays(fp["ring"], 17, height=3.1, width=1.5, pitch=4.8, trim="sand", arched=True)
     b.band(fp["ring"], 8.5, 0.4, 0.5, "concrete", 0.8)
     b.band(fp["ring"], 15.5, 0.4, 0.5, "concrete", 0.8)
     b.hip(*f.P(0, 0), 22, 2 * f.hl - 6, 2 * f.hs - 6, 7, "roof_dark", rot=f.rot_u, inset=8)
@@ -126,6 +146,10 @@ def old_city_hall(b, fp):
     tu, tv = 0, f.hs - 7
     b.box(*f.P(tu, tv), -0.5, 12, 12, 44, "concrete", rot=f.rot_u, shade=0.94, name="tower")
     b.band(f.rect(tu, tv, 12, 12), 38, 0.6, 3.0, "sand", 0.95)
+    for k in range(4):
+        ang = f.rot_u + k * math.pi / 2
+        x, y = f.P(tu, tv)
+        b.clock_face(x + 6.65 * math.cos(ang), y + 6.65 * math.sin(ang), 39.5, 1.3, ang)
     b.pyramid(*f.P(tu, tv), 44, 13.2, 13.2, 16, "roof_dark", rot=f.rot_u)
 
 
@@ -249,6 +273,14 @@ def build(slug, save=None, export=True):
         bpy.ops.wm.save_as_mainfile(filepath=str(Path(save).resolve()))
     if export:
         b.select_all()
+        # The viewer uses vertex colors and one material. Merge the kit parts before
+        # export so windows do not each cost a draw call or a separate Draco decode.
+        bpy.ops.object.join()
+        obj = bpy.context.object
+        for poly in obj.data.polygons:
+            poly.material_index = 0
+        while len(obj.data.materials) > 1:
+            obj.data.materials.pop(index=len(obj.data.materials) - 1)
         out = ROOT / "assets" / "landmarks" / f"{slug}.glb"
         export_landmark.export_glb(out, use_selection=True)
         export_landmark.update_landmarks_json(slug, f"landmarks/{slug}.glb")

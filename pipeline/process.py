@@ -15,7 +15,7 @@ from shapely.ops import unary_union
 from shapely.geometry import Point
 from pyproj import Transformer
 
-from config import ASSETS, CRS_PROJ, DATA_RAW, LANDMARKS_PATH, LANE_WIDTH, LEVEL_HEIGHT, ROAD_WIDTH
+from config import ASSETS, CRS_PROJ, DATA_RAW, LANDMARKS_PATH, LANE_WIDTH, LEVEL_HEIGHT, ROAD_WIDTH, REGION
 from heights import cap_small_footprint, looks_demolished, parse_levels, resolve_colors, resolve_height, resolve_min_height, resolve_roof
 from lidar import classify_roofs, sample_ndsm_stats
 from overture import load_overture, match_overture
@@ -44,8 +44,8 @@ def _tags(row: pd.Series) -> dict[str, Any]:
 
 def _osm_id(row: pd.Series) -> str:
     el = row.get("element", "way")
-    if el == "vgin":
-        return f"vgin:{row.get('id')}"
+    if el in ("vgin", "cch"):
+        return f"{el}:{row.get('id')}"
     return f"osm:{el}/{row.get('id')}"
 
 
@@ -308,7 +308,9 @@ def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True
             below |= pd.to_numeric(raw[col], errors="coerce").fillna(0) < 0
     raw = raw[~below]
     is_part = is_part.loc[raw.index]
-    raw["footprint_source"] = "osm"
+    if "footprint_source" not in raw:
+        raw["footprint_source"] = "osm"
+    raw["footprint_source"] = raw["footprint_source"].fillna("osm")
     if vgin_path is not None and Path(vgin_path).exists():
         raw, is_part = _add_vgin_footprints(raw, is_part, Path(vgin_path))
     raw = raw[raw.geometry.area >= MIN_FOOTPRINT_AREA]
@@ -338,6 +340,10 @@ def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True
         lid = float(ndsm_med[k]) if np.isfinite(ndsm_med[k]) else None
         p90 = float(ndsm_p90[k]) if np.isfinite(ndsm_p90[k]) else None
         h, levels, src = resolve_height(tags)
+        # City maximum heights are in metres. Keep provenance distinct from OSM tags.
+        city_height = tags.get("cch_height_m")
+        if src == "default" and city_height is not None and 2.0 < float(city_height) <= 260.0:
+            h, src = float(city_height), "cch_height"
         if looks_demolished(src, int(ndsm_n[k]), p90):
             phantoms += 1
             continue
@@ -381,8 +387,15 @@ def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True
                     h, src = max(2.5, eave), "lidar"
         if roof_shape == "flat":
             roof_h = 0.0
+        # CCH gives a maximum height, so all roof sources must fit within that total.
+        if src == "cch_height":
+            roof_h = min(roof_h, max(0.0, h - 2.5))
+            h -= roof_h
         seed = zlib.crc32(str(row.get("id")).encode()) % 1000
         wall, roof = resolve_colors(tags, h, roof_shape, seed)
+        # Regional fallback styling only; retain explicit mapped colour/material evidence.
+        if REGION == "honolulu" and h > 25 and not tags.get("building:colour") and not tags.get("building:material"):
+            wall = ("cream", "concrete", "sand", "concrete")[seed % 4]
         addr = None
         if tags.get("addr:housenumber") and tags.get("addr:street"):
             addr = f"{tags['addr:housenumber']} {tags['addr:street']}"
@@ -587,6 +600,28 @@ def _deck_endpoints(lines: gpd.GeoDataFrame, terrain) -> tuple[pd.Series, list]:
             for n, row in zip(an, sz):
                 if zmap[n] > WATER_REL_Z:
                     zmap[n] = float(min(max(zmap[n], row.max()), zmap[n] + ABUTMENT_MAX_RAISE_M))
+    # A bridge end can sit over a road beneath it: the bare-earth DEM then
+    # reads the underpass, not the deck. Fit the connected approach beyond that
+    # cut, only when its grade is consistent and it continues the same road class.
+    if terrain is not None:
+        member_set = set(members_idx)
+        for n in nodes:
+            bridge_classes = {lines.at[i, "highway"] for i in members_idx if n in ends[i]} if "highway" in lines else set()
+            for approach, (a, b) in ends.items():
+                if approach in member_set or n not in (a, b):
+                    continue
+                if bridge_classes and lines.at[approach, "highway"] not in bridge_classes:
+                    continue
+                line = lines.at[approach, "geometry"]
+                if line.length < 28:
+                    continue
+                distances = np.array([20., 24., 28.])
+                points = [line.interpolate(float(d if n == a else line.length-d)) for d in distances]
+                elevations = terrain.sample(np.array([p.x for p in points]), np.array([p.y for p in points]))
+                slope, intercept = np.polyfit(distances, elevations, 1)
+                residual = np.max(np.abs(elevations-(slope*distances+intercept)))
+                if abs(slope) <= 0.15 and residual <= 0.6 and 1.0 < intercept-zmap[n] <= 12.0:
+                    zmap[n] = float(intercept)
     comps = {}
     for n in nodes:
         comps.setdefault(find(n), []).append(n)
@@ -754,6 +789,8 @@ def process_rail(raw_path: Path, terrain=None) -> gpd.GeoDataFrame:
 
 def _landuse_kind(row: pd.Series) -> str | None:
     lu, le, am, na, pl = (_nn(row.get(k)) for k in ("landuse", "leisure", "amenity", "natural", "place"))
+    if na in ("beach", "sand"):
+        return "beach"
     if le in ("park", "garden", "playground"):
         return "park"
     if le == "pitch" or lu in ("grass", "recreation_ground") or na == "grassland":
@@ -810,7 +847,10 @@ def water_levels(polys: gpd.GeoDataFrame, terrain, spacing: float = 2.0) -> list
         if inside.sum() < 3:
             ring = np.array(g.exterior.coords) if g.geom_type == "Polygon" else np.array(max(g.geoms, key=lambda p: p.area).exterior.coords)
             gx, gy, inside = ring[:, 0], ring[:, 1], np.ones(len(ring), bool)
-        z = terrain.sample(gx[inside], gy[inside])
+        # Large water features can extend beyond this region's DEM. Do not let its
+        # fallback median masquerade as measured water elevations.
+        sample = getattr(terrain, "sample_valid", terrain.sample)
+        z = sample(gx[inside], gy[inside])
         z = z[np.isfinite(z)]
         if z.size:
             out[k] = round(float(np.percentile(z, WATER_LEVEL_PCT)) + WATER_LEVEL_LIFT_M, 2)
@@ -843,6 +883,8 @@ def process_water(raw_path: Path, terrain=None) -> gpd.GeoDataFrame:
         return "pond"
 
     polys["kind"] = polys.apply(kind, axis=1)
+    if "name" in polys:
+        polys = polys[~polys["name"].fillna("").str.contains("dry bed", case=False)].copy()
     polys["geometry"] = polys.geometry.simplify(1.0, preserve_topology=True).buffer(0)
     return gpd.GeoDataFrame({
         "id": polys.apply(_osm_id, axis=1),

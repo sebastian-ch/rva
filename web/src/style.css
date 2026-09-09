@@ -94,6 +94,35 @@ body.night {
   color: inherit;
 }
 
+.navigation {
+  position: absolute; left: 16px; top: 88px; width: 330px; max-width: calc(100vw - 32px);
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; padding: 8px;
+}
+.navigation input, .navigation button {
+  min-width: 0; font: inherit; color: var(--ui-text); background: var(--ui-bg-alt);
+  border: 1px solid var(--ui-border); border-radius: 6px; padding: 9px 8px;
+}
+.navigation button { cursor: pointer; }
+.navigation input { width: 100%; }
+.navigation-status { grid-column: 1 / -1; font-size: 12px; }
+.navigation-status:empty { display: none; }
+#place-results { grid-column: 1 / -1; max-height: 48vh; overflow-y: auto; }
+#place-results button { display: block; text-align: left; width: 100%; border: 0; background: transparent; }
+#place-results strong, #place-results span { display: block; }
+#place-results span { font-size: 12px; color: var(--ui-text-muted); margin-top: 3px; }
+#place-results button:hover, #place-results [aria-selected="true"] { background: var(--ui-bg-alt); outline: 1px solid var(--ui-border); }
+.navigation :focus-visible, .toolbar button:focus-visible { outline: 2px solid #3f5bc9; outline-offset: 2px; }
+body.risograph #ui .panel { border-radius: 4px; box-shadow: 2px 2px 0 #3f5bc930; }
+@media (max-width: 1000px) {
+  .toolbar { top: auto !important; bottom: 58px; left: 16px; right: 16px; justify-content: center; flex-wrap: wrap; }
+  .title-badge { max-width: calc(100vw - 32px) !important; }
+}
+@media (max-width: 600px) {
+  .navigation { top: 82px; width: calc(100vw - 32px); }
+  .toolbar button { padding: 7px !important; }
+  .toolbar .icon { display: none; }
+}
+
 #ui .panel {
   pointer-events: auto;
   background: var(--ui-bg);
@@ -149,7 +178,7 @@ body.night {
   font: inherit;
   font-size: 13px;
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease;
 }
 
 .toolbar button .icon {
@@ -443,7 +472,7 @@ body.night .heights-legend-bar-wrap {
   }
 
   .toolbar button .label {
-    display: none;
+    display: inline;
   }
 
   .toolbar button {
@@ -467,3 +496,10 @@ body.night .heights-legend-bar-wrap {
     font-size: 10px;
   }
 }
+
+body.midnight #ui .panel { box-shadow: 0 0 16px #35e5ff18; }
+body.midnight .toolbar button[aria-pressed="true"] { color: #70e4fa; }
+
+.style-picker { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 3px 8px; color: var(--ui-text); }
+.style-picker select { font: inherit; color: var(--ui-text); background: var(--ui-bg-alt); border: 1px solid var(--ui-border); border-radius: 6px; padding: 7px 24px 7px 8px; max-width: 175px; cursor: pointer; }
+.style-picker select:focus-visible { outline: 2px solid var(--ui-text-muted); outline-offset: 2px; }

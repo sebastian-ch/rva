@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 data/raw/
+data/honolulu/
 data/tiles/
 !data/tiles/.gitkeep
 web/node_modules/

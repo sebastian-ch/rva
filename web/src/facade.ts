@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import palette from '../../assets/palette.json';
 import { hex } from './props';
 import type { BuildingProps } from './types';
+import { regionId } from './region';
 
 /** Facade style ids consumed by the shader. */
 export const STYLE_NONE = 0, STYLE_RESIDENTIAL = 1, STYLE_OFFICE = 2, STYLE_RETAIL = 3, STYLE_INDUSTRIAL = 4;
@@ -39,8 +40,10 @@ varying vec4 vFacade;
 
 const GLSL_FRAG = /* glsl */ `
 uniform float uNight;
+uniform float uMidnight;
 uniform vec3 uWindowLit;
 uniform vec3 uGlass;
+uniform float uWeathering;
 float fhash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 `;
 
@@ -55,6 +58,12 @@ const GLSL_WINDOWS = /* glsl */ `
     float seed = vFacade.w;
     float u = vFacadeUv.x;
     float v = vFacadeUv.y;
+    // Broad sun fading and restrained vertical staining, stable per building.
+    float fade = smoothstep(0.0, wallH, v) * uWeathering;
+    diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.78,0.74,0.64), fade * 0.25);
+    float stripe = pow(0.5 + 0.5 * sin(u * 1.3 + seed * 6.0), 8.0);
+    float stain = stripe * (0.35 + 0.65 * sin(v * 0.12 + seed) * sin(v * 0.12 + seed));
+    diffuseColor.rgb *= 1.0 - uWeathering * stain * 0.25;
     // cornice: top band
     float cornice = step(wallH - 0.5, v) * step(v, wallH);
     diffuseColor.rgb *= mix(1.0, 0.86, cornice);
@@ -88,29 +97,33 @@ const GLSL_WINDOWS = /* glsl */ `
       diffuseColor.rgb *= mix(1.0, 0.9, sill);
     }
     vec3 glass = mix(uGlass, diffuseColor.rgb * 0.45, 0.35);
-    float isLit = step(0.62, lit) * uNight;
+    float isLit = mix(step(0.62, lit), 1.0, uMidnight) * uNight;
+    vec3 windowLight = mix(uWindowLit, mix(vec3(0.035, 0.78, 1.0), vec3(1.0, 0.045, 0.32), step(0.5, fhash(vec2(seed, 3.0)))), uMidnight);
     diffuseColor.rgb = mix(diffuseColor.rgb, glass, win * (1.0 - isLit));
-    diffuseColor.rgb = mix(diffuseColor.rgb, uWindowLit, win * isLit);
+    diffuseColor.rgb = mix(diffuseColor.rgb, windowLight, win * isLit);
     // night: darken unlit walls a touch
     diffuseColor.rgb *= mix(1.0, 0.85, uNight * (1.0 - win));
     #ifdef ISO_EMISSIVE
-    totalEmissiveRadiance += uWindowLit * win * isLit * 0.9;
+    totalEmissiveRadiance += windowLight * win * isLit * mix(0.9, 1.8, uMidnight);
     #endif
   }
 }
 `;
 
-export interface FacadeMaterial { material: THREE.MeshStandardMaterial; setNight(on: boolean): void }
+export interface FacadeMaterial { material: THREE.MeshStandardMaterial; setNight(on: boolean): void; setMidnight(on: boolean): void }
 
 export function createFacadeMaterial(): FacadeMaterial {
   const material = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.95, metalness: 0 });
   let uniforms: { [k: string]: THREE.IUniform } | null = null;
-  let night = 0;
+  let night = 0, midnight = 0;
   material.customProgramCacheKey = () => 'iso-facade';
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uNight = { value: night };
+    shader.uniforms.uMidnight = { value: midnight };
     shader.uniforms.uWindowLit = { value: hex('window_lit') };
     shader.uniforms.uGlass = { value: hex('glass') };
+    shader.uniforms.uWeathering = { value: regionId === 'honolulu' ? 0.5 : 0 };
+    if (regionId === 'honolulu') shader.uniforms.uGlass.value = new THREE.Color('#849994');
     uniforms = shader.uniforms;
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', `#include <common>\n${GLSL_COMMON}\nattribute vec4 facade;\nattribute vec2 uv;`.replace('attribute vec2 uv;', '') )
@@ -124,6 +137,7 @@ export function createFacadeMaterial(): FacadeMaterial {
   material.defines = { USE_UV: '', ISO_EMISSIVE: '' };
   return {
     material,
+    setMidnight(on) { midnight = on ? 1 : 0; if (uniforms) uniforms.uMidnight.value = midnight; },
     setNight(on) { night = on ? 1 : 0; if (uniforms) uniforms.uNight.value = night; },
   };
 }

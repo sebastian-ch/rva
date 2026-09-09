@@ -19,10 +19,8 @@ import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-DATA_TILES = ROOT / "data" / "tiles"
-
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from config import DATA_TILES  # noqa: E402
 from schema import LAYER_KEYS, validate_feature  # noqa: E402
 
 LAYERS = tuple(LAYER_KEYS.keys())
