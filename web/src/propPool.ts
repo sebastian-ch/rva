@@ -240,8 +240,11 @@ export class PropPool implements PoseSink {
         this.owners.get(kind)![idx] = TRAFFIC_OWNER;
         this.slotKind[slot] = ki;
         this.slotInst[slot] = idx;
-        im.setColorAt(idx, hex(VEHICLE_COLORS[Math.max(0, Math.min(VEHICLE_COLORS.length - 1, cur[o + 5] | 0))] as never));
-        if (im.instanceColor) im.instanceColor.needsUpdate = true;
+        if (VEHICLE_KINDS.includes(kind)) {
+          // white-bodied car kinds take a body colour; buses (and anything pre-coloured) keep their vertex colours
+          im.setColorAt(idx, hex(VEHICLE_COLORS[Math.max(0, Math.min(VEHICLE_COLORS.length - 1, cur[o + 5] | 0))] as never));
+          if (im.instanceColor) im.instanceColor.needsUpdate = true;
+        }
       }
       let x = cur[o], y = cur[o + 1], z = cur[o + 2], h = cur[o + 3];
       if (prev && prev[o + 4] === ki && had === ki) {

@@ -465,7 +465,8 @@ function buildBus(): THREE.BufferGeometry {
 
   const parts: ColoredPart[] = [
     { geom: body, color: hex('sand'), position: [0, 0.5 + 1.25, 0] },
-    { geom: roofBand, color: hex('roof_dark'), position: [0, 0.5 + 2.5 - 0.2, 0] },
+    // roof cap sits on top of the body (its underside at the body's top face); sharing the top plane z-fights
+    { geom: roofBand, color: hex('roof_dark'), position: [0, 0.5 + 2.5 + 0.2, 0] },
   ];
   for (const x of wheelXOffs) {
     parts.push({ geom: wheel.clone(), color: hex('roof_dark'), position: [x, wheelY, wheelZOff] });
