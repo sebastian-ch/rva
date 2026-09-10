@@ -141,9 +141,15 @@ extension, alleys and parking aisles stop at their centerline node and leave a n
 Register those paved classes, extend their ribbons by the other road's half-width, and emit the asphalt fill
 from all paved arms; keep the sidewalk apron conditional on three walkable arms. Do not apply this rule to
 footways, paths, tracks or grade-separated ways.
+Separately mapped `footway=sidewalk` lines can exist beside roads whose sidewalk tags are absent rather than
+`sidewalk=separate`. Treating the absent tag as permission to synthesize both sides creates doubled strips and
+blocky overlaps around every crossing. Before emitting each synthetic sidewalk segment and curb, suppress it
+when a mapped sidewalk segment is nearby and parallel; keep the other side and uncovered portions of the same
+road. A nearby perpendicular footway is a crossing and must not suppress the sidewalk. The South Meadow Street
+grid is the Richmond regression area.
 Regressions: `pipeline/tests/test_process_helpers.py` covers topology matching;
 `web/src/roads.test.ts` covers topology placement, islands, rounded fills, centering, curb-pair deduplication,
-unmarked crossings and paved service-road T junctions.
+unmarked crossings, paved service-road T junctions and mapped-sidewalk overlap suppression.
 
 Retain bus access and bus-lane count separately. Bus-only ways have distinct muted-red paving;
 partial bus lanes require a known side. Richmond's downtown Broad Street uses curbside lanes, per
