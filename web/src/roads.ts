@@ -385,15 +385,17 @@ export function buildRoads(
             const a = edge[i], b = edge[i + 1];
             const oa = a.clone().sub(path[i]).setY(0).normalize();
             const ob = b.clone().sub(path[i + 1]).setY(0).normalize();
-            const ga = groundLocal(a.x + oa.x * 1.5, a.z + oa.z * 1.5);
-            const gb = groundLocal(b.x + ob.x * 1.5, b.z + ob.z * 1.5);
-            const ta = Math.max(a.y, ga + ROAD_Y * 0.15);
-            const tb = Math.max(b.y, gb + ROAD_Y * 0.15);
-            if (ta - a.y < 0.8 && tb - b.y < 0.8) continue;
-            const aTop = a.clone().setY(ta), bTop = b.clone().setY(tb);
+            const ga = groundLocal(a.x + oa.x * 6, a.z + oa.z * 6);
+            const gb = groundLocal(b.x + ob.x * 6, b.z + ob.z * 6);
+            const ta = Math.max(a.y, ga);
+            const tb = Math.max(b.y, gb);
+            if (ta - a.y < 0.45 && tb - b.y < 0.45) continue;
+            const aWall = a.clone().addScaledVector(oa, 0.18);
+            const bWall = b.clone().addScaledVector(ob, 0.18);
+            const aTop = aWall.clone().setY(ta + 0.06), bTop = bWall.clone().setY(tb + 0.06);
             const n = new THREE.Vector3().subVectors(b, a).cross(UP).normalize();
-            mb.tri(a, b, bTop, concrete, n, 0.82); mb.tri(a, bTop, aTop, concrete, n, 0.82);
-            mb.tri(a, bTop, b, concrete, n.clone().negate(), 0.82); mb.tri(a, aTop, bTop, concrete, n.clone().negate(), 0.82);
+            mb.tri(aWall, bWall, bTop, concrete, n, 0.82); mb.tri(aWall, bTop, aTop, concrete, n, 0.82);
+            mb.tri(aWall, bTop, bWall, concrete, n.clone().negate(), 0.82); mb.tri(aWall, aTop, bTop, concrete, n.clone().negate(), 0.82);
           }
         }
       }
