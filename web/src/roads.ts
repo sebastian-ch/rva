@@ -242,6 +242,9 @@ export function buildRoads(
   const junctions = new Map<string, { pt: THREE.Vector3; ends: { dir: THREE.Vector2; halfW: number; walk: boolean }[] }>();
   const bridgeJunctions = new Map<string, { pt: THREE.Vector3; ends: { dir: THREE.Vector2; halfW: number; walk: boolean; highway: string; name: string | null }[] }>();
   const key = (x: number, y: number) => `${x.toFixed(1)}|${y.toFixed(1)}`;
+  const carriesGeneratedSidewalk = (p: RoadProps) => (p.generated_sidewalk ?? (!MINOR.has(p.highway)
+    && !NO_WALK.has(p.highway) && !p.bus_only && p.highway !== 'busway'))
+    && (p.sidewalk_left !== false || p.sidewalk_right !== false);
   for (const f of feats) {
     const p = f.properties;
     if (p.tunnel || p.bridge || p.ramp || NO_WALK.has(p.highway) || (MINOR.has(p.highway) && !PAVED_MINOR.has(p.highway))) continue;
@@ -256,7 +259,7 @@ export function buildRoads(
         const k = key(end[0], end[1]);
         const [lx, lz] = toLocal(end[0], end[1]);
         const j = junctions.get(k) ?? { pt: new THREE.Vector3(lx, groundAt(end[0], end[1]), lz), ends: [] };
-        j.ends.push({ dir: new THREE.Vector2(next[0] - end[0], next[1] - end[1]).normalize(), halfW: p.width / 2, walk: !NO_WALK.has(p.highway) && (p.sidewalk_left !== false || p.sidewalk_right !== false) });
+        j.ends.push({ dir: new THREE.Vector2(next[0] - end[0], next[1] - end[1]).normalize(), halfW: p.width / 2, walk: carriesGeneratedSidewalk(p) });
         junctions.set(k, j);
       }
     }
@@ -280,7 +283,7 @@ export function buildRoads(
         const j = bridgeJunctions.get(k) ?? { pt, ends: [] };
         j.ends.push({
           dir: new THREE.Vector2(next[0] - end[0], next[1] - end[1]).normalize(), halfW: p.width / 2,
-          walk: !NO_WALK.has(p.highway) && (p.sidewalk_left !== false || p.sidewalk_right !== false),
+          walk: carriesGeneratedSidewalk(p),
           highway: p.highway, name: p.name,
         });
         bridgeJunctions.set(k, j);
@@ -330,7 +333,7 @@ export function buildRoads(
     for (const l of lines(f.geometry)) {
       const c = cleanRing(l);
       if (c.length < 2) continue;
-      const walk = !NO_WALK.has(p.highway) && !p.bus_only && p.highway !== 'busway';
+      const walk = carriesGeneratedSidewalk(p);
       if (p.bridge || p.ramp) {
         const rdeck = p.bridge ? deck : parseDeck(p.deck);
         const base = toPath(l, toLocal, groundAt, ROAD_Y - 0.06 + lift, SEG, rdeck, !!p.ramp && !p.bridge);

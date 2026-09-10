@@ -68,7 +68,7 @@ export interface BuildingProps {
 }
 export interface RoadProps {
   id: string; name: string | null; highway: string; lanes: number | null; width: number;
-  footway?: string | null; sidewalk_left?: boolean | null; sidewalk_right?: boolean | null; bus_lanes?: number | null; bus_only?: boolean; bus_lane_side?: "left" | "right" | null;
+  footway?: string | null; sidewalk_left?: boolean | null; sidewalk_right?: boolean | null; generated_sidewalk?: boolean; bus_lanes?: number | null; bus_only?: boolean; bus_lane_side?: "left" | "right" | null;
   oneway: boolean; surface: string | null; sidewalk: boolean; bridge: boolean; ramp?: boolean; tunnel: boolean; layer: number;
   deck?: string | number[] | null;
 }

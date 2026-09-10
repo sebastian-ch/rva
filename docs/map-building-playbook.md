@@ -110,8 +110,10 @@ locations in [review-geometry.mjs](../web/tools/review-geometry.mjs).
 ### Preserve road access and pedestrian subtypes
 
 Broad Street/I-95 still had duplicate beige edges because `sidewalk:left=no` and
-`sidewalk:right=separate` were discarded. Preserve per-side values; generate sidewalks only where
-appropriate and keep explicitly mapped footways. Null retains the fallback for incomplete data.
+`sidewalk:right=separate` were discarded. Preserve per-side values and normalize them for the selected render
+style: explicit `no` disables the curb strip, while `separate` enables the single curb-aligned visual strip and
+keeps its mapped centerline for navigation without drawing another surface. Null retains the fallback for
+incomplete data.
 `footway=crossing` describes a pedestrian connection across pavement, not a solid sidewalk across
 traffic lanes. Keep its walking path and crossing markings, but omit a solid fill. Service drives
 and living streets use asphalt instead of pedestrian paving.
@@ -141,6 +143,11 @@ extension, alleys and parking aisles stop at their centerline node and leave a n
 Register those paved classes, extend their ribbons by the other road's half-width, and emit the asphalt fill
 from all paved arms; keep the sidewalk apron conditional on three walkable arms. Do not apply this rule to
 footways, paths, tracks or grade-separated ways.
+An untagged paved service road is still an asphalt arm, but it is not a generated-sidewalk arm: the renderer
+does not emit sidewalk strips for `service`, so counting its absent sidewalk tags as walkable creates a detached
+pale apron at an alley T junction. Use the same sidewalk-eligibility predicate for strips and junction arms.
+North Belmont Avenue's service junctions are the Richmond regression area. This rule does not remove mapped
+pedestrian connectivity or the asphalt junction fill.
 Separately mapped `footway=sidewalk` lines can exist beside roads whose sidewalk tags are absent rather than
 `sidewalk=separate`. Drawing both the generated curb strip and offset mapped ribbon produces a real duplicate;
 suppressing the curb strip still leaves a same-colour terrain verge that reads as a second sidewalk. In this

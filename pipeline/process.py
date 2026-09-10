@@ -529,6 +529,32 @@ def _sidewalk_side(row: pd.Series, side: str) -> bool | None:
     return value in ("yes", "both", side)
 
 
+NO_GENERATED_SIDEWALK = {
+    "footway", "path", "steps", "cycleway", "pedestrian", "service", "living_street", "track",
+    "motorway", "motorway_link", "trunk", "trunk_link", "primary_link", "secondary_link", "tertiary_link",
+}
+
+
+def _generated_sidewalk(row: pd.Series) -> bool:
+    """Normalize whether this road class receives the renderer's curb-aligned sidewalk."""
+    bus_only = row.get("highway") == "busway" or (
+        row.get("bus") in ("yes", "designated")
+        and (row.get("access") in ("no", "private") or row.get("motor_vehicle") == "no")
+    )
+    return row.get("highway") not in NO_GENERATED_SIDEWALK and not bus_only
+
+
+def _render_sidewalk_side(row: pd.Series, side: str) -> bool | None:
+    if not _generated_sidewalk(row):
+        return False
+    value = next((_nn(row.get(k)) for k in (f"sidewalk:{side}", "sidewalk:both", "sidewalk") if _nn(row.get(k)) is not None), None)
+    # Mapped sidewalk centerlines remain navigation paths but no longer draw a second surface ribbon, so the
+    # normalized road metadata keeps one curb-aligned visual strip on that explicitly identified side.
+    if value == "separate":
+        return True
+    return _sidewalk_side(row, side)
+
+
 def _road_width(row: pd.Series) -> float:
     hw = str(row.get("highway"))
     w = ROAD_WIDTH.get(hw, 6.0)
@@ -801,8 +827,9 @@ def process_roads(raw_path: Path, terrain=None) -> tuple[gpd.GeoDataFrame, gpd.G
         "oneway": (lines["oneway"].fillna("no") == "yes") if "oneway" in lines else False,
         "surface": lines["surface"].map(_nn) if "surface" in lines else None,
         "footway": lines["footway"].map(_nn) if "footway" in lines else None,
-        "sidewalk_left": lines.apply(lambda row: _sidewalk_side(row, "left"), axis=1),
-        "sidewalk_right": lines.apply(lambda row: _sidewalk_side(row, "right"), axis=1),
+        "sidewalk_left": lines.apply(lambda row: _render_sidewalk_side(row, "left"), axis=1),
+        "sidewalk_right": lines.apply(lambda row: _render_sidewalk_side(row, "right"), axis=1),
+        "generated_sidewalk": lines.apply(_generated_sidewalk, axis=1),
         "bus_lanes": lines["lanes:bus"].map(parse_levels) if "lanes:bus" in lines else None,
         "bus_lane_side": lines.apply(lambda row: "right" if REGION == "richmond" and
             row.get("name") in ("East Broad Street", "West Broad Street") and

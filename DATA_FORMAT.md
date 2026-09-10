@@ -61,8 +61,10 @@ Geometry is clipped to the tile bbox. All layers optional; missing = empty.
 ### roads (LineString)
 `id`, `name`, `highway`, `lanes` (int), `width` (m), `oneway` (bool), `surface`, `sidewalk` (bool), `bridge` (bool), `ramp` (bool: a non-bridge way whose end meets an elevated deck; carries a `deck` so it climbs to it), `tunnel` (bool), `layer` (int), `deck` (bridges and ramps: `[x0,y0,z0,x1,y1,z1]`, the unclipped way's ends with deck elevations relative to `base_elevation`, computed per connected bridge chain from its land ends (chain nodes whose ground is at or above the interpolated deck become anchors too); the GeoJSON driver stores it as a real array)
 
-Optional road attributes: `sidewalk_left` / `sidewalk_right` (boolean or null; false also covers
-separately mapped sidewalks), `footway` (OSM subtype, including crossing), `bus_only` (boolean),
+Optional road attributes: `generated_sidewalk` (the pipeline's normalized curb-strip eligibility),
+`sidewalk_left` / `sidewalk_right` (boolean or null; false also covers
+an explicitly absent side; a mapped `separate` side is normalized true because its source line is navigation-only),
+`footway` (OSM subtype, including crossing), `bus_only` (boolean),
 `bus_lanes` (count), and `bus_lane_side` (`left`/`right` or null). Count alone does not imply lane placement.
 Richmond downtown Broad Street's tagged one-way bus lanes use the documented curbside configuration.
 

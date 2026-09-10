@@ -70,7 +70,7 @@ it('keeps ground-supported approaches and traffic above terrain while preserving
  for(let i=0;i<positions.count;i++) expect(positions.getY(i)).toBeGreaterThan(ground(positions.getX(i))+0.18);
 });
 
-it('does not generate duplicate sidewalks when both sides are separately mapped',async()=>{
+it('honours normalized metadata that disables generated sidewalks on both sides',async()=>{
  const {buildRoads}=await import('./roads');
  const road={type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,0],[100,0]] as [number,number][]},properties:{id:'road',name:null,highway:'primary',lanes:2,width:8,oneway:true,surface:'asphalt',sidewalk:false,sidewalk_left:false,sidewalk_right:false,bridge:false,tunnel:false,layer:0}};
  const result=buildRoads([road],[],[],(x,y)=>[x,-y],()=>0,{markings:false,bridges:false});
@@ -166,6 +166,23 @@ it('closes paved service-road T junctions even though service roads stay minor',
  let serviceExtended=false;
  for(let i=0;i<a.count;i++) if(Math.abs(a.getX(i))<=2.3 && a.getZ(i)>3.5) serviceExtended=true;
  expect(serviceExtended).toBe(true);
+});
+
+it('does not create a sidewalk apron from an untagged service-road arm',async()=>{
+ const {buildRoads}=await import('./roads');
+ const main={name:null,highway:'residential',lanes:2,width:8,oneway:false,surface:'asphalt',sidewalk:true,bridge:false,tunnel:false,layer:0};
+ // Missing sidewalk tags on service ways mean unknown source data, not a rendered sidewalk.
+ const service={...main,highway:'service',lanes:1,width:4.5,sidewalk:false};
+ const roads=[
+  {type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[-20,0],[0,0],[20,0]] as [number,number][]},properties:{id:'main',...main}},
+  {type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,20],[0,0]] as [number,number][]},properties:{id:'aisle',...service}},
+ ];
+ const pos=buildRoads(roads,[],[],(x,y)=>[x,-y],()=>0,{markings:false,bridges:false}).roads.getAttribute('position');
+ let sidewalkApron=false;
+ for(let i=0;i<pos.count;i++) {
+  if(Math.abs(pos.getY(i)-0.22)<0.01 && Math.hypot(pos.getX(i),pos.getZ(i))>5.5) sidewalkApron=true;
+ }
+ expect(sidewalkApron).toBe(false);
 });
 
 it('paints a known right-side bus lane distinctly without moving the roadway',async()=>{
