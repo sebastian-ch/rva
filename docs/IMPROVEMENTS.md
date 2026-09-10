@@ -138,16 +138,35 @@ placement across detail transitions, no missing instances, correct unload/reload
 switching. This is a **future task, not implemented** as part of the current road/bus-lane fixes.
 
 
-## Deferred: faster local rendering and iteration (requested 2026-09-09)
+## Faster local rendering and iteration (reviewed 2026-09-10)
 
-Investigate ways to shorten the edit → rebuild → render → inspect loop. Profile before choosing changes:
+Profile before choosing changes:
 measure cold startup, data fetch/cache time, worker geometry construction, GPU upload, frame time,
 landmark loading, and automated screenshot time separately. Distinguish software-rendered browser QA
 from the interactive GPU-backed viewer; improvements to one may not improve the other.
 
-Candidates to evaluate:
-- Rebuild only changed layers/tiles instead of rerunning unrelated building/LiDAR processing.
-- Cache derived geometry using input and implementation fingerprints, with correct invalidation.
+Completed:
+- `build_tiles.py --roads-only` reprocesses and rewrites roads/crossings while preserving all other tile layers.
+  The expanded Richmond build fell from about 130 seconds for a full rebuild to 8–13 seconds for a road pass.
+- The viewer already builds tile geometry in four workers, transfers typed arrays without copying, streams two
+  detail levels, merges each tile layer into one mesh, instances repeated props, and disposes unloaded geometry.
+
+Measured expanded-Richmond payload (625 tiles, 2026-09-10): 69.0 MB GeoJSON plus 5.8 MB JSON. POIs are
+24.5 MB, buildings 21.0 MB, roads 14.7 MB, land use 6.4 MB, terrain 3.4 MB, and crossings 1.8 MB. All ten
+landmark GLBs together are only 0.18 MB, so landmark compression is not a useful near-term target.
+
+Next candidates, in order:
+- Encode POIs/trees as a compact binary point table (quantized tile-local x/y, kind, height and crown fields).
+  This attacks the largest payload and avoids parsing tens of thousands of repeated GeoJSON property names.
+- Bake reduced-detail tile meshes offline and apply meshopt compression plus quantized attributes. Keep the
+  current worker builder as the development/fallback path and retain small feature sidecars for picking.
+- Preserve indexed terrain geometry through the worker payload instead of expanding it to triangle soup. The
+  regular 26×26 grid has substantial vertex reuse; flat-shaded building and road meshes have less.
+- Generalize selective rebuilding only where dependencies are explicit. A fingerprinted processed-layer cache
+  should include source files, region/options and implementation files so stale LiDAR, hydro or city data cannot
+  silently survive a rebuild.
+- Add `renderer.info.render`/`renderer.info.memory`, frame-time percentiles, transferred bytes and JSON parse time
+  to the existing debug statistics before changing worker count, shadow quality or resident-tile limits.
 - Add saved focused preview views and a small local tile set for a single asset/intersection.
 - Offer an explicit draft preview quality preset for shadows, postprocessing and distant detail;
   keep full-quality verification before shipping.
@@ -155,4 +174,17 @@ Candidates to evaluate:
 - Track representative timing/memory baselines so faster iteration does not hide missing assets or
   change the final rendering semantics.
 
-This is a future investigation, not an implemented performance feature.
+References: Three.js recommends `InstancedMesh` to reduce draw calls and explicit disposal for streamed resources;
+its `BufferGeometry` supports indexed vertices. Three.js recommends glTF/GLB for runtime delivery and supports
+Draco, KTX2 and meshopt through `GLTFLoader`. Khronos recommends vertex/index reordering, quantization, mesh
+instancing and GPU-compressed textures for real-time glTF. Apply those techniques where the measurements justify
+their decoder and pipeline complexity.
+
+- [Three.js InstancedMesh](https://threejs.org/docs/pages/InstancedMesh.html)
+- [Three.js BufferGeometry](https://threejs.org/docs/pages/BufferGeometry.html)
+- [Three.js cleanup guide](https://threejs.org/manual/en/cleanup.html)
+- [Three.js glTF loading workflow](https://threejs.org/manual/en/loading-3d-models.html)
+- [Three.js GLTFLoader compression hooks](https://threejs.org/docs/pages/GLTFLoader.html)
+- [Khronos real-time asset creation guidelines](https://github.com/KhronosGroup/3DC-Asset-Creation/blob/main/asset-creation-guidelines/RealtimeAssetCreationGuidelines.md)
+- [Khronos meshopt compression guidance](https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_meshopt_compression/README.md)
+- [Khronos mesh quantization](https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_mesh_quantization/README.md)

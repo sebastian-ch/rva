@@ -12,7 +12,7 @@ Baseline numbers (2026-09-09):
 | Roof shapes not flat | 227 / 2,234 | most rowhouses show flat when they are gable. **Phase 1 done:** 417 non-flat, 722 LiDAR-fitted |
 | Named buildings | 547 | info cards are mostly empty. **1.6 done:** 80% of buildings now carry an address |
 | Landmarks matched to footprints | 9 / 12 in slice | bridges, canal walk, memorial unmatched. **1.5 done:** 12 / 12 resolved |
-| Triangles on screen | ~1.24 M, ~135 draw calls | fine now, will not scale to 6 districts. **Phase 4 done:** streamed by camera footprint, 0.66 M resident at the default view |
+| Triangles on screen | ~1.24 M, ~135 draw calls | **Streaming done; scale target open:** the expanded Richmond geometry QA view is now about 3.6 M resident triangles |
 | Tile payload | 6.8 MB GeoJSON | geometry is built on the main thread at load. **Phase 4 done:** built in 4 workers, main thread wraps in 0.2 ms per tile |
 
 Effort key: S = under a day, M = 1–3 days, L = a week or more. "Delegable" marks tasks a smaller model
@@ -132,11 +132,23 @@ Today the client parses GeoJSON and builds ~1.2 M triangles on the main thread. 
 
 ### 4.2 Streaming and LOD (M) — done
 - Load tiles by distance from the camera target, unload beyond a radius, cap concurrent fetches.
-- LOD1 per tile: buildings only, roofs flattened, props dropped, used past a zoom threshold.
-- Acceptance: six districts loaded lazily stay under 2 M visible triangles.
+- LOD1 per tile: simplified buildings and roads, no facade/roof details or markings, and trees-only props past a
+  zoom threshold.
+- The original six-district acceptance target of 2 M visible triangles is not met; current expanded-region QA is
+  about 3.6 M and is tracked in 4.4.
 
 ### 4.3 Web worker geometry (M) — done
 - Run the tile builder in a worker, transfer `Float32Array`s. Acceptance: no frame over 50 ms during load.
+
+### 4.4 Compact payloads and measured runtime budgets (M) — next
+- Replace the 24.5 MB POI GeoJSON layer with a quantized binary point table; trees dominate the expanded-region
+  payload and need only a small fixed set of placement fields.
+- Bake meshopt-compressed LOD1 geometry offline before considering full-detail baked tiles. Preserve the current
+  worker builder for development and fallback.
+- Carry indexed terrain through worker transfer instead of expanding the regular grid to triangle soup.
+- Report renderer memory/draw statistics, frame-time percentiles, parse time and transferred bytes in debug QA.
+- Acceptance: document cold/hot load and mobile-class frame baselines; reduce expanded-region transferred tile
+  bytes and resident vertex memory by at least 40% without changing the saved geometry views.
 
 ---
 
@@ -156,7 +168,8 @@ Today the client parses GeoJSON and builds ~1.2 M triangles on the main thread. 
 
 - Multi-bbox builds: `build_tiles.py --slice fan|carytown|church-hill|scotts-addition|manchester` with per-slice
   bboxes in `config.py`, writing into the same grid so tiles line up. (S)
-- Incremental builds: skip tiles whose raw inputs are unchanged (hash of raw parquet + code version). (S)
+- Incremental builds: `--roads-only` is done (8–13 seconds versus about 130 seconds full); add fingerprinted
+  processed-layer caches and other selective layers only with explicit dependency invalidation. (S)
 - **Fan / VCU coverage done 2026-09-10** through the expanded Richmond build extent. Next: Carytown, Church Hill,
   Scott's Addition, and Manchester. Per-slice builds and input-hash incremental rebuilds remain open.
 
