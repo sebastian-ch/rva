@@ -43,6 +43,22 @@ it('does not stamp ground-level junction squares onto joined bridge segments',as
  for(let i=0;i<positions.count;i++) expect(positions.getY(i)).toBeGreaterThan(20);
 });
 
+it('stitches aligned bridge segments at deck height',async()=>{
+ const {buildRoads}=await import('./roads');
+ const props={name:'Bridge Street',highway:'secondary',lanes:2,width:8,oneway:false,surface:'asphalt',sidewalk:true,bridge:true,tunnel:false,layer:1};
+ const features=[[[0,0],[20,0]],[[20,0],[40,1]]].map((coordinates,i)=>({
+  type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:coordinates as [number,number][]},
+  properties:{id:`bridge-${i}`,...props,deck:[...coordinates[0],20,...coordinates[1],20]},
+ }));
+ const positions=buildRoads(features,[],[],(x,y)=>[x,-y],()=>0,{markings:false,bridges:false}).roads.getAttribute('position');
+ let outerCap=false;
+ for(let i=0;i<positions.count;i++) {
+  const d=Math.hypot(positions.getX(i)-20,positions.getZ(i));
+  if(d>6 && d<6.3 && positions.getY(i)>20) outerCap=true;
+ }
+ expect(outerCap).toBe(true);
+});
+
 it('keeps ground-supported approaches and traffic above terrain while preserving the deck landing',async()=>{
  const {buildRoads}=await import('./roads');
  const ground=(x:number)=>8*Math.sin(Math.PI*x/100);
@@ -117,6 +133,23 @@ it('fills walkable junctions with rounded polygons instead of square corners',as
  let squareCorner=false;
  for(let i=0;i<pos.count;i++) if(pos.getY(i)<0.3&&Math.abs(pos.getX(i))>5.8&&Math.abs(pos.getZ(i))>5.8) squareCorner=true;
  expect(squareCorner).toBe(false);
+});
+
+it('closes paved service-road T junctions even though service roads stay minor',async()=>{
+ const {buildRoads}=await import('./roads');
+ const main={name:null,highway:'residential',lanes:2,width:8,oneway:false,surface:'asphalt',sidewalk:true,bridge:false,tunnel:false,layer:0};
+ const service={...main,highway:'service',lanes:1,width:4.5,sidewalk:false,sidewalk_left:false,sidewalk_right:false};
+ const joined=[
+  {type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[-20,0],[0,0],[20,0]] as [number,number][]},properties:{id:'main',...main}},
+  {type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,20],[0,0]] as [number,number][]},properties:{id:'aisle',...service}},
+ ];
+ const isolated=[joined[1]];
+ const a=buildRoads(joined,[],[],(x,y)=>[x,-y],()=>0,{markings:false,bridges:false}).roads.getAttribute('position');
+ const b=buildRoads(isolated,[],[],(x,y)=>[x,-y],()=>0,{markings:false,bridges:false}).roads.getAttribute('position');
+ expect(a.count).toBeGreaterThan(b.count);
+ let serviceExtended=false;
+ for(let i=0;i<a.count;i++) if(Math.abs(a.getX(i))<=2.3 && a.getZ(i)>3.5) serviceExtended=true;
+ expect(serviceExtended).toBe(true);
 });
 
 it('paints a known right-side bus lane distinctly without moving the roadway',async()=>{

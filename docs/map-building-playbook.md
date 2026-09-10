@@ -135,9 +135,15 @@ At nodes with at least three distinct walkable road arms, use terrain-draped rou
 apron for the curb-radius silhouette and a smaller asphalt polygon joining the road ribbons. Keep the apron
 below road pavement and the asphalt below markings. This is a visual junction surface, not a full geometric
 union: explicit curb walls, turn pockets and mapped median polygons still need source-aware construction.
+Paved minor roads need the same asphalt topology even when they do not carry sidewalks or simulated traffic.
+If `service` and `living_street` ways are drawn as asphalt but omitted from junction registration and endpoint
+extension, alleys and parking aisles stop at their centerline node and leave a notch at the receiving road.
+Register those paved classes, extend their ribbons by the other road's half-width, and emit the asphalt fill
+from all paved arms; keep the sidewalk apron conditional on three walkable arms. Do not apply this rule to
+footways, paths, tracks or grade-separated ways.
 Regressions: `pipeline/tests/test_process_helpers.py` covers topology matching;
 `web/src/roads.test.ts` covers topology placement, islands, rounded fills, centering, curb-pair deduplication,
-and unmarked crossings.
+unmarked crossings and paved service-road T junctions.
 
 Retain bus access and bus-lane count separately. Bus-only ways have distinct muted-red paving;
 partial bus lanes require a known side. Richmond's downtown Broad Street uses curbside lanes, per
@@ -149,6 +155,11 @@ otherwise develops gaps on slopes. Bridge railings are omitted where a neighbori
 same height and horizontal space; crossings on a different level do not suppress railings. Branching
 bridge decks also use exposed concrete edge strips rather than overlapping full-width underlays;
 otherwise different branch grades can expose large concrete wedges over the asphalt.
+OSM may divide one straight bridge into separate tagged ways at each carriageway below. Rendering every way
+as an independent mitered ribbon leaves thin wedges at their shared deck nodes. At a degree-two join, stitch
+the pieces with small concrete and asphalt caps only when their name, road class, width and direction agree;
+place the caps at the supplied deck elevation. Do not cap branches, sharp turns, mismatched roads or untagged
+ground-level joins. South Meadow Street over the Downtown Expressway is the Richmond regression case.
 Regressions: `pipeline/tests/test_road_attributes.py`, `web/src/roads.test.ts`.
 
 ## 4. Elevation sources must be replaced as a dependency chain

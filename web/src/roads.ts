@@ -10,6 +10,8 @@ const ROAD_Y = 0.28; // road surface above terrain; land drapes sit at 0.08 so r
 const SEG = 8;        // resample step (m), same as the land drape subdivision
 
 const MINOR = new Set(['footway', 'path', 'steps', 'cycleway', 'pedestrian', 'service', 'living_street', 'track']);
+/** Minor classes that still form a paved carriageway and must participate in road junction geometry. */
+const PAVED_MINOR = new Set(['service', 'living_street']);
 /** Unpaved trails (Belle Isle, riverbank): drawn in dirt colour, no cars, no sidewalks. */
 const TRAIL = new Set(['path', 'track']);
 const FOOT_MINOR = new Set(['footway', 'pedestrian', 'path']);
@@ -233,15 +235,16 @@ export function buildRoads(
     return false;
   });
 
-  // junctions: endpoints shared by >= 2 road polylines get a disc at the widest half width
-  // Junctions: every polyline endpoint shared by two or more ways. Asphalt ends are extended into the node by
-  // the widest crossing road's half width (square fill, no discs); sidewalk strips are shortened by the same
-  // amount plus the sidewalk width so they stop at the corner.
+  // Junctions: every paved polyline endpoint shared by two or more ways. Asphalt ends are extended into the
+  // node by the widest crossing road's half width; sidewalk strips are shortened by that amount plus the
+  // sidewalk width so they stop at the corner. Service alleys and parking aisles are paved roads here even
+  // though they remain minor for traffic, markings and sidewalks.
   const junctions = new Map<string, { pt: THREE.Vector3; ends: { dir: THREE.Vector2; halfW: number; walk: boolean }[] }>();
+  const bridgeJunctions = new Map<string, { pt: THREE.Vector3; ends: { dir: THREE.Vector2; halfW: number; walk: boolean; highway: string; name: string | null }[] }>();
   const key = (x: number, y: number) => `${x.toFixed(1)}|${y.toFixed(1)}`;
   for (const f of feats) {
     const p = f.properties;
-    if (p.tunnel || p.bridge || p.ramp || NO_WALK.has(p.highway) || MINOR.has(p.highway)) continue;
+    if (p.tunnel || p.bridge || p.ramp || NO_WALK.has(p.highway) || (MINOR.has(p.highway) && !PAVED_MINOR.has(p.highway))) continue;
     for (const l of lines(f.geometry)) {
       const c = cleanRing(l);
       if (c.length < 2) continue;
@@ -255,6 +258,32 @@ export function buildRoads(
         const j = junctions.get(k) ?? { pt: new THREE.Vector3(lx, groundAt(end[0], end[1]), lz), ends: [] };
         j.ends.push({ dir: new THREE.Vector2(next[0] - end[0], next[1] - end[1]).normalize(), halfW: p.width / 2, walk: !NO_WALK.has(p.highway) && (p.sidewalk_left !== false || p.sidewalk_right !== false) });
         junctions.set(k, j);
+      }
+    }
+  }
+  // OSM commonly splits a bridge at every carriageway crossed below. Each piece then gets its own mitered
+  // ribbon, which leaves hairline wedges at slightly bent joins. Record straight, same-road deck joins so a
+  // small cap can stitch the pieces at their supplied elevation without creating a ground-level junction.
+  for (const f of feats) {
+    const p = f.properties;
+    if (!p.bridge || p.tunnel || MINOR.has(p.highway)) continue;
+    const deck = parseDeck(p.deck);
+    if (!deck) continue;
+    for (const l of lines(f.geometry)) {
+      const c = cleanRing(l);
+      if (c.length < 2) continue;
+      const ends: [V2, V2][] = [[c[0], c[1]], [c[c.length - 1], c[c.length - 2]]];
+      for (const [end, next] of ends) {
+        const k = key(end[0], end[1]);
+        const [lx, lz] = toLocal(end[0], end[1]);
+        const pt = new THREE.Vector3(lx, deckHeight(deck, end[0], end[1]) + bridgeLift(p.layer), lz);
+        const j = bridgeJunctions.get(k) ?? { pt, ends: [] };
+        j.ends.push({
+          dir: new THREE.Vector2(next[0] - end[0], next[1] - end[1]).normalize(), halfW: p.width / 2,
+          walk: !NO_WALK.has(p.highway) && (p.sidewalk_left !== false || p.sidewalk_right !== false),
+          highway: p.highway, name: p.name,
+        });
+        bridgeJunctions.set(k, j);
       }
     }
   }
@@ -342,14 +371,15 @@ export function buildRoads(
       }
     }
   }
-  // Rounded junction polygons: a low sidewalk apron fills the corners while a smaller
-  // asphalt polygon joins the incoming ribbons. Keeping both below the raised sidewalk
-  // strips produces a curb-radius silhouette without walls crossing the road arms.
+  // Rounded junction polygons: asphalt joins every paved three-arm node, including service-road T junctions.
+  // A low sidewalk apron is added only when at least three arms carry sidewalks. Keeping both below the raised
+  // sidewalk strips produces a curb-radius silhouette without walls crossing the road arms.
   for (const j of junctions.values()) {
+    const uniqueRoad = j.ends.filter((e, i, all) => all.findIndex((o) => Math.abs(o.dir.dot(e.dir) - 1) < 0.002) === i);
     const walkEnds = j.ends.filter((e) => e.walk);
-    const unique = walkEnds.filter((e, i, all) => all.findIndex((o) => Math.abs(o.dir.dot(e.dir) - 1) < 0.002) === i);
-    if (unique.length < 3) continue;
-    const halfW = Math.max(...walkEnds.map((e) => e.halfW));
+    const uniqueWalk = walkEnds.filter((e, i, all) => all.findIndex((o) => Math.abs(o.dir.dot(e.dir) - 1) < 0.002) === i);
+    if (uniqueRoad.length < 3) continue;
+    const halfW = Math.max(...j.ends.map((e) => e.halfW));
     const fill = (radius: number, lift: number, color: THREE.Color, shade: number) => {
       const center = new THREE.Vector3(j.pt.x, groundLocal(j.pt.x, j.pt.z) + lift, j.pt.z);
       const ring = Array.from({ length: 12 }, (_, i) => {
@@ -359,8 +389,23 @@ export function buildRoads(
       });
       for (let i = 0; i < ring.length; i++) mb.tri(center, ring[(i + 1) % ring.length], ring[i], color, UP, shade);
     };
-    fill(halfW + WALK_W, ROAD_Y - 0.06, sidewalk, 0.96);
+    if (uniqueWalk.length >= 3) fill(halfW + WALK_W, ROAD_Y - 0.06, sidewalk, 0.96);
     fill(halfW + 0.2, ROAD_Y + 0.015, asphalt, 1);
+  }
+  for (const j of bridgeJunctions.values()) {
+    if (j.ends.length !== 2) continue;
+    const [a, b] = j.ends;
+    if (a.highway !== b.highway || a.name !== b.name || Math.abs(a.halfW - b.halfW) > 0.3 || a.dir.dot(b.dir) > -0.98) continue;
+    const fill = (radius: number, y: number, color: THREE.Color, shade: number) => {
+      const center = j.pt.clone().setY(y);
+      const ring = Array.from({ length: 12 }, (_, i) => {
+        const angle = i * Math.PI * 2 / 12;
+        return new THREE.Vector3(j.pt.x + Math.cos(angle) * radius, y, j.pt.z + Math.sin(angle) * radius);
+      });
+      for (let i = 0; i < ring.length; i++) mb.tri(center, ring[(i + 1) % ring.length], ring[i], color, UP, shade);
+    };
+    if (a.walk && b.walk) fill(a.halfW + WALK_W, j.pt.y + ROAD_Y - 0.06, concrete, 0.98);
+    fill(a.halfW + 0.2, j.pt.y + ROAD_Y + 0.015, asphalt, 1);
   }
 
   for (const f of feats) {
@@ -373,7 +418,7 @@ export function buildRoads(
       let path = toPath(l, toLocal, groundAt, (minor ? ROAD_Y - 0.04 : ROAD_Y) + lift, SEG, deck, !!p.ramp && !p.bridge);
       if (path.length < 2) continue;
       const carPath = path; // un-extended: endpoints sit on the OSM node so the traffic graph can join ways
-      if (!minor && !deck) {
+      if ((!minor || PAVED_MINOR.has(p.highway)) && !deck) {
         const c = cleanRing(l);
         const [d0, d1] = endDirs(c);
         path = adjustEnds(path, otherHalfW(c[0], p.width / 2, d0), otherHalfW(c[c.length - 1], p.width / 2, d1));
