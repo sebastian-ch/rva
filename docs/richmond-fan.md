@@ -33,6 +33,11 @@ Acquired 2026-09-10:
 
 The optional VGIN shapefile was not available locally for this expansion. OSM and Overture provide
 the footprint sources. No missing VGIN data is represented as a completed download.
+Richmond's public [Structures FeatureServer](https://services1.arcgis.com/k3vhq11XkBNeeOfM/ArcGIS/rest/services/Structures/FeatureServer)
+was identified after this build. Although its lineage begins with 1999 orthophotography and a 2009
+completeness capture, the city describes it as maintained from site plans and the service reported a
+2026-09-08 data edit when checked on 2026-09-10. It is the preferred future replacement for the manual
+VGIN import: query subtype 1 buildings by bbox and retain subtype 3 decks/patios separately.
 Attribution and source limitations are in `ATTRIBUTION.md` and `richmond-trees-riverfront.md`.
 
 ```sh

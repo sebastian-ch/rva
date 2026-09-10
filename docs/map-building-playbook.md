@@ -120,12 +120,24 @@ Crossing point tags may sit at either curb instead of the road centerline, and a
 contain one point per curb. Painting directly at those source points produces offset or doubled zebra
 bars; accepting any road within a broad fixed radius can also attach paint to the wrong street. Match
 within the candidate road's half-width plus a small curb allowance, project the marking onto that road's
-centerline, and deduplicate projected curb pairs with compatible headings. `crossing=unmarked` remains
-pedestrian connectivity without paint. This rule assumes the nearest eligible road is the intended one;
-complex plazas or tightly parallel carriageways may eventually require explicit way-node relationships.
+centerline, and deduplicate projected curb pairs with compatible headings. Do that match in the processing
+pipeline and store the road id, center, direction and width with the crossing; when a mapped
+`footway=crossing` is present, prefer the road perpendicular to its direction. This removes tile-loading
+order and runtime nearest-road ambiguity. `crossing=unmarked` remains pedestrian connectivity without paint.
+Complex plazas, divided carriageways and crossings without a nearby motor road can still require explicit
+way-node relationships; unmatched crossings retain the runtime fallback for older tile sets.
 Do not infer stop lines from a crossing node: those markings need their own source evidence, and adding
 two full-width bars to every crossing creates dense false markings at ordinary intersections.
-Regression: `web/src/roads.test.ts` covers centering, curb-pair deduplication, and unmarked crossings.
+Render refuge islands only from `crossing:island=yes`; lane count alone does not prove that a median exists.
+
+Square sidewalk corner fills hide gaps but produce blocky intersections and can cover crosswalk ends.
+At nodes with at least three distinct walkable road arms, use terrain-draped rounded polygons: a low sidewalk
+apron for the curb-radius silhouette and a smaller asphalt polygon joining the road ribbons. Keep the apron
+below road pavement and the asphalt below markings. This is a visual junction surface, not a full geometric
+union: explicit curb walls, turn pockets and mapped median polygons still need source-aware construction.
+Regressions: `pipeline/tests/test_process_helpers.py` covers topology matching;
+`web/src/roads.test.ts` covers topology placement, islands, rounded fills, centering, curb-pair deduplication,
+and unmarked crossings.
 
 Retain bus access and bus-lane count separately. Bus-only ways have distinct muted-red paving;
 partial bus lanes require a known side. Richmond's downtown Broad Street uses curbside lanes, per

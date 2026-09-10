@@ -96,6 +96,29 @@ it('deduplicates paired curb crossing nodes after projecting them onto the road'
  expect(pair.getAttribute('position').count).toBe(one.getAttribute('position').count);
 });
 
+it('uses processed road topology and source-backed crossing islands',async()=>{
+ const {buildRoads}=await import('./roads');
+ const road={type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,0],[20,0]] as [number,number][]},properties:{id:'main',name:null,highway:'primary',lanes:4,width:14,oneway:false,surface:'asphalt',sidewalk:false,bridge:false,tunnel:false,layer:0}};
+ const crossing=(island:boolean)=>({type:'Feature' as const,geometry:{type:'Point' as const,coordinates:[10,20] as [number,number]},properties:{id:`topology-${island}`,crossing:'marked',road_id:'main',road_width:14,road_dx:1,road_dy:0,road_x:10,road_y:0,crossing_island:island}});
+ const plain=buildRoads([road],[],[crossing(false)],(x,y)=>[x,-y],()=>0,{markings:true,bridges:false}).roads;
+ const refuge=buildRoads([road],[],[crossing(true)],(x,y)=>[x,-y],()=>0,{markings:true,bridges:false}).roads;
+ expect(refuge.getAttribute('position').count).toBeGreaterThan(plain.getAttribute('position').count);
+});
+
+it('fills walkable junctions with rounded polygons instead of square corners',async()=>{
+ const {buildRoads}=await import('./roads');
+ const props={name:null,highway:'residential',lanes:2,width:8,oneway:false,surface:'asphalt',sidewalk:true,bridge:false,tunnel:false,layer:0};
+ const roads=[
+  {type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[-20,0],[0,0],[20,0]] as [number,number][]},properties:{id:'east-west',...props}},
+  {type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,0],[0,20]] as [number,number][]},properties:{id:'north',...props}},
+ ];
+ const g=buildRoads(roads,[],[],(x,y)=>[x,-y],()=>0,{markings:false,bridges:false}).roads;
+ const pos=g.getAttribute('position');
+ let squareCorner=false;
+ for(let i=0;i<pos.count;i++) if(pos.getY(i)<0.3&&Math.abs(pos.getX(i))>5.8&&Math.abs(pos.getZ(i))>5.8) squareCorner=true;
+ expect(squareCorner).toBe(false);
+});
+
 it('paints a known right-side bus lane distinctly without moving the roadway',async()=>{
  const {buildRoads}=await import('./roads');
  const {hex}=await import('./props');

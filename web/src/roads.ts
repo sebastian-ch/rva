@@ -342,20 +342,25 @@ export function buildRoads(
       }
     }
   }
-  // junction corner fills: a low square in sidewalk colour under each junction so corners are not bare ground
+  // Rounded junction polygons: a low sidewalk apron fills the corners while a smaller
+  // asphalt polygon joins the incoming ribbons. Keeping both below the raised sidewalk
+  // strips produces a curb-radius silhouette without walls crossing the road arms.
   for (const j of junctions.values()) {
     const walkEnds = j.ends.filter((e) => e.walk);
-    if (walkEnds.length < 3) continue;
-    let widest = walkEnds[0];
-    for (const e of walkEnds) if (e.halfW > widest.halfW) widest = e;
-    const r = widest.halfW + WALK_W;
-    const ux = widest.dir.x, uz = -widest.dir.y, vx = -uz, vz = ux; // local frame: z = -north
-    const y = j.pt.y + ROAD_Y - 0.06;
-    const P = (u: number, v: number) => new THREE.Vector3(j.pt.x + ux * u + vx * v, y, j.pt.z + uz * u + vz * v);
-    const a = P(-r, -r), b = P(r, -r), c2 = P(r, r), d = P(-r, r);
-    const cr = new THREE.Vector3().subVectors(b, a).cross(new THREE.Vector3().subVectors(c2, a));
-    if (cr.y >= 0) { mb.tri(a, b, c2, sidewalk, UP, 0.96); mb.tri(a, c2, d, sidewalk, UP, 0.96); }
-    else { mb.tri(a, c2, b, sidewalk, UP, 0.96); mb.tri(a, d, c2, sidewalk, UP, 0.96); }
+    const unique = walkEnds.filter((e, i, all) => all.findIndex((o) => Math.abs(o.dir.dot(e.dir) - 1) < 0.002) === i);
+    if (unique.length < 3) continue;
+    const halfW = Math.max(...walkEnds.map((e) => e.halfW));
+    const fill = (radius: number, lift: number, color: THREE.Color, shade: number) => {
+      const center = new THREE.Vector3(j.pt.x, groundLocal(j.pt.x, j.pt.z) + lift, j.pt.z);
+      const ring = Array.from({ length: 12 }, (_, i) => {
+        const a = i * Math.PI * 2 / 12;
+        const x = j.pt.x + Math.cos(a) * radius, z = j.pt.z + Math.sin(a) * radius;
+        return new THREE.Vector3(x, groundLocal(x, z) + lift, z);
+      });
+      for (let i = 0; i < ring.length; i++) mb.tri(center, ring[(i + 1) % ring.length], ring[i], color, UP, shade);
+    };
+    fill(halfW + WALK_W, ROAD_Y - 0.06, sidewalk, 0.96);
+    fill(halfW + 0.2, ROAD_Y + 0.015, asphalt, 1);
   }
 
   for (const f of feats) {
@@ -452,7 +457,15 @@ export function buildRoads(
     if (c.properties.crossing === 'unmarked') continue;
     const [x, y] = c.geometry.coordinates;
     const [lx, lz] = toLocal(x, y);
-    const near = nearestRoad(roadPaths, lx, lz);
+    const p = c.properties;
+    const hasTopology = p.road_x != null && p.road_y != null && p.road_width != null && p.road_dx != null && p.road_dy != null;
+    const near = hasTopology
+      ? (() => {
+          const [cx, cz] = toLocal(p.road_x!, p.road_y!);
+          const dir = new THREE.Vector3(p.road_dx!, 0, -p.road_dy!).normalize();
+          return { dir, width: p.road_width!, point: new THREE.Vector3(cx, groundAt(p.road_x!, p.road_y!) + ROAD_Y, cz), distance: Math.hypot(lx - cx, lz - cz) };
+        })()
+      : nearestRoad(roadPaths, lx, lz);
     if (!near) continue;
     // Crossing nodes are often mapped at both curbs rather than on the road
     // centreline. Project paint onto the matched road and collapse the pair.
@@ -470,6 +483,12 @@ export function buildRoads(
       const a = centre.clone().addScaledVector(side, -(near.width / 2 - 0.2));
       const b = centre.clone().addScaledVector(side, near.width / 2 - 0.2);
       ribbon(mb, [a, b], 0.28, paint);
+    }
+    if (p.crossing_island && near.width >= 8) {
+      const islandHalf = crossingDepth / 2 + 0.65;
+      const a = new THREE.Vector3(cx, gy + 0.055, cz).addScaledVector(dir, -islandHalf);
+      const b = new THREE.Vector3(cx, gy + 0.055, cz).addScaledVector(dir, islandHalf);
+      ribbon(mb, [a, b], 0.55, sidewalk, 0.97);
     }
   }
   return { roads: mb.build(), paths: carPaths, pathMeta: carMeta, walkPaths };

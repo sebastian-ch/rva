@@ -79,7 +79,9 @@ Elevations in every layer are real metres above `base_elevation`; the viewer mul
 pushed down to `water_z - 0.5` under those polygons so the surface is always visible.
 
 ### crossings (Point)
-`id`, `crossing` (raw OSM `crossing=*` value: `marked`, `unmarked`, `traffic_signals`, `uncontrolled`, `zebra`, …; missing tag → `unmarked`)
+`id`, `crossing` (raw OSM `crossing=*` value: `marked`, `unmarked`, `traffic_signals`, `uncontrolled`, `zebra`, …; missing tag → `unmarked`),
+`road_id`, `road_width`, `road_dx`, `road_dy`, `road_x`, `road_y` (the matched motor-road id, width, unit direction and projected centreline point; nullable when no safe match exists),
+`crossing_island` (true only for source `crossing:island=yes`)
 
 ### pois (Point)
 `id`, `name`, `kind`: `"tree"|"streetlight"|"bench"|"bus_stop"|"traffic_signals"|"fountain"|"monument"|"shop"|"restaurant"|"museum"`

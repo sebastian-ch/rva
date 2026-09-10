@@ -46,11 +46,13 @@ The hook exists (`pipeline/lidar.py` reads `data/raw/ndsm.tif`). Fill it.
   buildings over 150 m, footprints under 15 m², roads with no width, tiles with no terrain.
 - Run it at the end of `build_tiles.py`. Acceptance: the report is generated and linked from the README.
 
-### 1.6 City of Richmond open data (S, delegable) — done for addresses + zoning; no footprint or street-tree services are published on the city hub
-- `pipeline/fetch_richmond.py` pulling the city's ArcGIS Hub feature services (GeoJSON query endpoints, open data
-  license): building footprints (cross-check OSM/Overture gaps), address points (fill `addr` on unnamed buildings),
-  street tree inventory (replace scattered trees with surveyed positions and species), zoning (better type
-  defaults). The Esri basemap tiles themselves are proprietary and stay reference-only, like Google and Mapbox.
+### 1.6 City of Richmond open data (S, delegable) — in progress; addresses, zoning and trees done
+- `pipeline/fetch_richmond.py` pulls the city's address points (fill `addr` on unnamed buildings), street-tree
+  inventory (replace scattered trees with surveyed positions and species), and zoning (better type defaults)
+  from ArcGIS feature services. The Esri basemap tiles themselves stay reference-only.
+- Replace the manual optional VGIN footprint import with bbox-clipped queries to Richmond's live `Structures`
+  FeatureServer. It contains city-maintained buildings and decks/patios; preserve its edit date and subtype as
+  provenance, use buildings only as an OSM/Overture gap fill, and keep patio/deck polygons out of extrusions. (S)
 - Acceptance: named/addressed buildings above 60%; surveyed trees replace scatter in the first slice.
 
 ### 1.5 Fix the three unmatched landmarks (S) — done (`pipeline/landmarks.py` → `data/tiles/landmarks.json`)
@@ -85,9 +87,12 @@ The plan's key visual step. Recommended approach: a procedural facade shader, no
 - Water: animated stylized rapids on `river` polygons near the fall line (scrolling noise in a shader).
 - Acceptance: buildings cast shadows on streets at the default view; 60 fps on an M-series laptop.
 
-### 2.4 Road network fidelity (M) — done (junction discs, dashed markings, bridge railings and piers)
-- Junction polygons instead of overlapping ribbons (union of buffered centerlines per intersection node).
-- Dashed lane markings, turn arrows at stop lines, aligned crosswalks from `roads` geometry instead of nearest-path guess.
+### 2.4 Road network fidelity (M) — in progress (rounded junction polygons and topology-linked crossings added 2026-09-10)
+- Rounded junction polygons now replace square corner fills. Full buffered-centerline unions, explicit curb walls,
+  turn pockets and source-backed median areas remain open.
+- Dashed lane markings are done. Crossings now carry their matched road centre, direction and width from the
+  processing pipeline instead of relying on a runtime nearest-path guess. Turn arrows remain open; stop lines
+  will render only when a source explicitly identifies them.
 - Bridge decks with piers and railings for Mayo Bridge, the I-95 viaduct and the rail trestles; skip tunnels but
   draw portals.
 - Acceptance: no z-fighting or seams at the Broad / 9th intersection; bridges are recognisable in the tour.
@@ -153,7 +158,8 @@ Today the client parses GeoJSON and builds ~1.2 M triangles on the main thread. 
 - Multi-bbox builds: `build_tiles.py --slice fan|carytown|church-hill|scotts-addition|manchester` with per-slice
   bboxes in `config.py`, writing into the same grid so tiles line up. (S)
 - Incremental builds: skip tiles whose raw inputs are unchanged (hash of raw parquet + code version). (S)
-- The Fan / VCU first (dense rowhouses stress 1.3 and 2.2), then Carytown, Church Hill, Scott's Addition, Manchester.
+- **Fan / VCU coverage done 2026-09-10** through the expanded Richmond build extent. Next: Carytown, Church Hill,
+  Scott's Addition, and Manchester. Per-slice builds and input-hash incremental rebuilds remain open.
 
 ---
 
@@ -186,8 +192,8 @@ Today the client parses GeoJSON and builds ~1.2 M triangles on the main thread. 
 Fixed from a close-up review:
 - Vehicles drove broadside: the car/bus body is modelled along +X but headings mapped travel onto +Z. Headings
   in `propPool.ts` and `scatter.ts` now use `atan2(-dz, dx)`; streetlight arms follow the same convention.
-- Road edges bulged at every shared endpoint because junction discs were drawn on plain continuations. Discs
-  now appear only where three or more ends meet, two ends turn by more than 12°, or widths differ.
+- Road edges bulged at every shared endpoint because junction discs were drawn on plain continuations. The
+  interim conditional discs were later replaced by rounded, terrain-draped polygons at three-arm junctions.
 - Crosswalks spanned a fixed 5 m; they now take the nearest road's width and orientation.
 - Elevation is hard to read on the flat-shaded ground: faint contour lines every 5 m on terrain and land, a
   Heights view (hypsometric tint by absolute height on every layer, legend with the live range, `h` key), and a
@@ -199,11 +205,11 @@ Second pass (same day):
   chain on its land ends (degree-1 nodes above the water level) and assigns every joint an inverse-distance
   weighted deck elevation (`deck` on roads/rail). The viewer runs each way straight between its deck ends
   (`bridgeLift`: 3.5 m, +3 m per extra `layer`); piers still drop to the terrain.
-- "Curved crosswalks" were the sidewalk junction discs bulging past side streets. Discs are gone: asphalt ends
-  extend into the junction by the crossing road's half width (square fills), sidewalk strips stop at the corner,
-  and a low corner fill covers the quadrant.
+- "Curved crosswalks" were the sidewalk junction discs bulging past side streets. The first fix used square
+  corner fills; the topology pass later replaced those with rounded sidewalk aprons and asphalt junction polygons.
 - Sidewalks are raised strips with a 15 cm curb face instead of a wide ribbon under the road.
-- Stop lines before each crosswalk on the approaching half of the road.
+- The first pass inferred stop lines from crosswalks; these were later removed because crossing nodes do not
+  establish a stop-controlled approach. Stop lines now require explicit source data.
 - Sawtooth edges where parks met roads on slopes: land drapes are now subdivided at 8 m (roads resample at 8 m
   too) and roads sit 0.28 m above terrain vs 0.08 m for land, so the road always wins.
 

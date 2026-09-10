@@ -770,12 +770,87 @@ def process_roads(raw_path: Path, terrain=None) -> tuple[gpd.GeoDataFrame, gpd.G
         pts = pts[pts["highway"] == "crossing"]
     else:
         pts = pts.iloc[0:0]
+    topology = _match_crossings_to_roads(pts, roads)
     crossings = gpd.GeoDataFrame({
         "id": pts.apply(_osm_id, axis=1) if len(pts) else [],
         "crossing": pts["crossing"].map(_nn).fillna("unmarked") if "crossing" in pts else "unmarked",
+        "road_id": topology["road_id"],
+        "road_width": topology["road_width"],
+        "road_dx": topology["road_dx"],
+        "road_dy": topology["road_dy"],
+        "road_x": topology["road_x"],
+        "road_y": topology["road_y"],
+        "crossing_island": (pts["crossing:island"].fillna("no") == "yes").tolist() if "crossing:island" in pts else [False] * len(pts),
         "geometry": pts.geometry,
     }, crs=CRS_PROJ)
     return roads, crossings
+
+
+def _match_crossings_to_roads(points: gpd.GeoDataFrame, roads: gpd.GeoDataFrame) -> dict[str, list]:
+    """Attach each crossing to the road it crosses, using mapped crossing-footway direction when available."""
+    empty = {k: [None] * len(points) for k in ("road_id", "road_width", "road_dx", "road_dy", "road_x", "road_y")}
+    if len(points) == 0 or len(roads) == 0:
+        return empty
+    from shapely.geometry import LineString
+    from shapely.strtree import STRtree
+
+    minor = {"footway", "path", "steps", "cycleway", "pedestrian", "service", "living_street", "track"}
+    motor = roads[~roads["highway"].isin(minor) & ~roads["bridge"] & ~roads["tunnel"]].reset_index(drop=True)
+    foot = roads[roads["footway"] == "crossing"].reset_index(drop=True)
+    if len(motor) == 0:
+        return empty
+    motor_geoms = list(motor.geometry)
+    motor_tree = STRtree(motor_geoms)
+    foot_geoms = list(foot.geometry)
+    foot_tree = STRtree(foot_geoms) if foot_geoms else None
+
+    def tangent(geom, point: Point) -> tuple[float, float]:
+        coords = list(geom.coords)
+        best = (1.0, 0.0)
+        best_dist = float("inf")
+        for a, b in zip(coords, coords[1:]):
+            dx, dy = b[0] - a[0], b[1] - a[1]
+            length = math.hypot(dx, dy)
+            if length < 1e-6:
+                continue
+            dist = LineString([a, b]).distance(point)
+            if dist < best_dist:
+                best_dist = dist
+                best = (dx / length, dy / length)
+        return best
+
+    out = {k: [] for k in empty}
+    for point in points.geometry:
+        foot_dir = None
+        if foot_tree is not None:
+            nearest_foot = min(foot_tree.query(point.buffer(2)), key=lambda i: foot_geoms[i].distance(point), default=None)
+            if nearest_foot is not None and foot_geoms[nearest_foot].distance(point) <= 1.5:
+                foot_dir = tangent(foot_geoms[nearest_foot], point)
+        best = None
+        for i in motor_tree.query(point.buffer(15)):
+            row = motor.iloc[i]
+            geom = motor_geoms[i]
+            distance = geom.distance(point)
+            if distance > float(row["width"]) / 2 + 2:
+                continue
+            road_dir = tangent(geom, point)
+            parallel_penalty = abs(road_dir[0] * foot_dir[0] + road_dir[1] * foot_dir[1]) * 4 if foot_dir else 0
+            score = distance + parallel_penalty
+            if best is None or score < best[0]:
+                projected = geom.interpolate(geom.project(point))
+                best = (score, row, road_dir, projected)
+        if best is None:
+            for key in out:
+                out[key].append(None)
+            continue
+        _, row, (dx, dy), projected = best
+        out["road_id"].append(row["id"])
+        out["road_width"].append(round(float(row["width"]), 2))
+        out["road_dx"].append(round(dx, 6))
+        out["road_dy"].append(round(dy, 6))
+        out["road_x"].append(round(projected.x, 2))
+        out["road_y"].append(round(projected.y, 2))
+    return out
 
 
 def process_rail(raw_path: Path, terrain=None) -> gpd.GeoDataFrame:

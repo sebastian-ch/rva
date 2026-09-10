@@ -74,7 +74,11 @@ export interface RoadProps {
 export interface RailProps { id: string; name: string | null; railway: string; bridge: boolean; ramp?: boolean; layer: number; deck?: string | number[] | null }
 export interface AreaProps { id: string; name: string | null; kind: string; source?: string; water_z?: number | null; coastal?: boolean; base_z?: number | null; top_z?: number | null }
 export interface PoiProps { id: string; name: string | null; kind: string; species?: string | null; source?: string; tree_height?: number; crown_radius?: number }
-export interface CrossingProps { id: string; crossing: string }
+export interface CrossingProps {
+  id: string; crossing: string;
+  road_id?: string | null; road_width?: number | null; road_dx?: number | null; road_dy?: number | null;
+  road_x?: number | null; road_y?: number | null; crossing_island?: boolean;
+}
 
 export interface Landmark {
   slug: string; name: string; lat: number; lon: number; kind: string; wikidata: string | null;
