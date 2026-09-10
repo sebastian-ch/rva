@@ -376,6 +376,27 @@ export function buildRoads(
       const busStripe = p.bus_lanes && p.oneway && p.bus_lane_side && p.lanes && !p.bus_only
         ? {fraction: Math.min(p.bus_lanes/p.lanes,1),side:p.bus_lane_side,color:busColor} : undefined;
       if (p.footway !== 'crossing') ribbon(mb, path, p.width / 2, p.bus_only || p.highway === 'busway' ? busColor : minor && p.highway !== 'service' && p.highway !== 'living_street' ? (TRAIL.has(p.highway) ? dirt : sidewalk) : asphalt, minor ? 0.94 : 1, deck && p.bridge ? undefined : draped((minor ? ROAD_Y - 0.04 : ROAD_Y) + lift), busStripe);
+      // Sunken freeways otherwise expose the DEM's coarse, faceted shoulder. Add a short
+      // retaining edge only where the adjacent ground rises materially above the pavement.
+      if (!minor && !deck && ['motorway', 'motorway_link', 'trunk', 'trunk_link'].includes(p.highway)) {
+        for (const side of [-1, 1]) {
+          const edge = offsetPath(path, side * p.width / 2);
+          for (let i = 0; i < edge.length - 1; i++) {
+            const a = edge[i], b = edge[i + 1];
+            const oa = a.clone().sub(path[i]).setY(0).normalize();
+            const ob = b.clone().sub(path[i + 1]).setY(0).normalize();
+            const ga = groundLocal(a.x + oa.x * 1.5, a.z + oa.z * 1.5);
+            const gb = groundLocal(b.x + ob.x * 1.5, b.z + ob.z * 1.5);
+            const ta = Math.max(a.y, ga + ROAD_Y * 0.15);
+            const tb = Math.max(b.y, gb + ROAD_Y * 0.15);
+            if (ta - a.y < 0.8 && tb - b.y < 0.8) continue;
+            const aTop = a.clone().setY(ta), bTop = b.clone().setY(tb);
+            const n = new THREE.Vector3().subVectors(b, a).cross(UP).normalize();
+            mb.tri(a, b, bTop, concrete, n, 0.82); mb.tri(a, bTop, aTop, concrete, n, 0.82);
+            mb.tri(a, bTop, b, concrete, n.clone().negate(), 0.82); mb.tri(a, aTop, bTop, concrete, n.clone().negate(), 0.82);
+          }
+        }
+      }
       if (!minor) roadPaths.push({ path, width: p.width });
       if (!minor && p.highway !== 'service') {
         carPaths.push(carPath);
