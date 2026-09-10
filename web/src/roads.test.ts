@@ -82,7 +82,8 @@ it('does not generate duplicate sidewalks when both sides are separately mapped'
 it('suppresses a synthetic sidewalk segment beside a separately mapped sidewalk',async()=>{
  const {buildRoads}=await import('./roads');
  const road={type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,0],[40,0]] as [number,number][]},properties:{id:'road',name:null,highway:'residential',lanes:2,width:8,oneway:false,surface:'asphalt',sidewalk:false,sidewalk_left:null,sidewalk_right:null,bridge:false,tunnel:false,layer:0}};
- const mapped={type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,5.1],[40,5.1]] as [number,number][]},properties:{id:'mapped-walk',name:null,highway:'footway',footway:'sidewalk',lanes:null,width:2,oneway:false,surface:'concrete',sidewalk:false,bridge:false,tunnel:false,layer:0}};
+ // A grass verge places the authoritative sidewalk centerline 3 m beyond the generated strip centerline.
+ const mapped={type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,8.1],[40,8.1]] as [number,number][]},properties:{id:'mapped-walk',name:null,highway:'footway',footway:'sidewalk',lanes:null,width:2,oneway:false,surface:'concrete',sidewalk:false,bridge:false,tunnel:false,layer:0}};
  const positions=buildRoads([road,mapped],[],[],(x,y)=>[x,-y],()=>0,{markings:false,bridges:false}).roads.getAttribute('position');
  let syntheticOnMappedSide=false, syntheticOnOtherSide=false;
  for(let i=0;i<positions.count;i++) {

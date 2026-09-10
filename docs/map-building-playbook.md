@@ -146,7 +146,11 @@ Separately mapped `footway=sidewalk` lines can exist beside roads whose sidewalk
 blocky overlaps around every crossing. Before emitting each synthetic sidewalk segment and curb, suppress it
 when a mapped sidewalk segment is nearby and parallel; keep the other side and uncovered portions of the same
 road. A nearby perpendicular footway is a crossing and must not suppress the sidewalk. The South Meadow Street
-grid is the Richmond regression area.
+grid is the Richmond regression area. Compare the rendered sidewalk corridors, not just near-coincident
+centerlines: mapped sidewalk centerlines may sit several metres behind the curb across a grass verge. A 4.1 m
+same-side corridor covers Richmond's mapped half-width, generated half-width and typical setback while staying
+clear of the generated sidewalk on the far side of a seven-metre residential street. Recheck that limit against
+local road widths and sidewalk setbacks before applying it to another region.
 Regressions: `pipeline/tests/test_process_helpers.py` covers topology matching;
 `web/src/roads.test.ts` covers topology placement, islands, rounded fills, centering, curb-pair deduplication,
 unmarked crossings, paved service-road T junctions and mapped-sidewalk overlap suppression.

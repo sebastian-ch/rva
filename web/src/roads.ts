@@ -327,6 +327,10 @@ export function buildRoads(
       const path = toPath(l, toLocal, groundAt, WALK_Y);
       return path.slice(1).map((b, i) => [path[i], b] as [THREE.Vector3, THREE.Vector3]);
     }));
+  // OSM sidewalk centerlines often sit behind a grass verge. Compare corridors rather than requiring the
+  // mapped and generated centerlines to nearly coincide: 2.1 m covers both rendered half-widths and the
+  // remaining allowance covers a typical setback without reaching the synthetic strip on the opposite side.
+  const MAPPED_SIDEWALK_CORRIDOR = WALK_W / 2 + 1 + 2;
   const coveredByMappedSidewalk = (a: THREE.Vector3, b: THREE.Vector3) => {
     const mid = a.clone().lerp(b, 0.5), dx = b.x - a.x, dz = b.z - a.z, len = Math.hypot(dx, dz);
     if (len < 1e-6) return false;
@@ -334,7 +338,7 @@ export function buildRoads(
       const sx = d.x - c.x, sz = d.z - c.z, sl2 = sx * sx + sz * sz;
       if (sl2 < 1e-6 || Math.abs((dx * sx + dz * sz) / (len * Math.sqrt(sl2))) < 0.85) return false;
       const t = THREE.MathUtils.clamp(((mid.x - c.x) * sx + (mid.z - c.z) * sz) / sl2, 0, 1);
-      return Math.hypot(mid.x - c.x - t * sx, mid.z - c.z - t * sz) < 2.4;
+      return Math.hypot(mid.x - c.x - t * sx, mid.z - c.z - t * sz) < MAPPED_SIDEWALK_CORRIDOR;
     });
   };
 
