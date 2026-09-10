@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
-import { rangeForFace, buildBuildingsMesh, type BuildingRange } from './buildings';
+import { rangeForFace, buildBuildingsMesh, isSevenEleven, type BuildingRange } from './buildings';
 import type { BuildingProps, Feature, PolyGeom, RoofShape } from './types';
 import type { V2 } from './geomutil';
 
@@ -23,6 +23,14 @@ describe('rangeForFace', () => {
   it('returns null outside all ranges', () => {
     expect(rangeForFace(ranges, 35)).toBeNull();
     expect(rangeForFace(ranges, -1)).toBeNull();
+  });
+});
+
+describe('isSevenEleven', () => {
+  it('limits the custom facade to the mapped store', () => {
+    expect(isSevenEleven({ id: 'osm:way/236014923', name: null, addr: null, website: null })).toBe(true);
+    expect(isSevenEleven({ id: 'other', name: '7-Eleven', addr: null, website: null })).toBe(true);
+    expect(isSevenEleven({ id: 'other', name: 'Convenience store', addr: '3301 West Cary Street', website: null })).toBe(false);
   });
 });
 

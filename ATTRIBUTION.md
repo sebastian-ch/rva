@@ -2,6 +2,10 @@
 
 Update this file whenever a new data source is added.
 
+Richmond coverage was expanded through the Fan District on 2026-09-10 using refreshed OSM,
+Overture, city address/zoning/tree data and the existing NOAA 2025 Richmond survey sources.
+See [the expansion notes](docs/richmond-fan.md) for extent, acquisition counts and limitations.
+
 ## OpenStreetMap
 
 - **What we use it for:** Building footprints, heights, roof shapes, roads, rail, land cover, water, POIs, trees.

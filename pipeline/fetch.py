@@ -10,6 +10,8 @@ Outputs (gitignored):
 from __future__ import annotations
 
 import argparse
+from collections import OrderedDict
+import json
 import sys
 import time
 from pathlib import Path
@@ -17,6 +19,7 @@ from pathlib import Path
 import geopandas as gpd
 import osmnx as ox
 import requests
+from shapely.geometry import box
 
 from config import CRS_PROJ, DATA_RAW, DEFAULT_BBOX, bbox_slug
 
@@ -53,6 +56,34 @@ DEM_URL = "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/
 LIST_COLS = ("nodes", "ways", "members")
 
 
+def osm_bbox_query(bbox, tags) -> str:
+    """Union tagged elements first, then fetch their geometry dependencies once."""
+    west, south, east, north = bbox
+    bounds = f"({south:.6f},{west:.6f},{north:.6f},{east:.6f})"
+    clauses = []
+    for key, values in tags.items():
+        if values is True:
+            clauses.append(f"nwr[{json.dumps(key)}]{bounds};")
+        else:
+            for value in ([values] if isinstance(values, str) else values):
+                clauses.append(f"nwr[{json.dumps(key)}={json.dumps(value)}]{bounds};")
+    return f"[out:json][timeout:180];({''.join(clauses)});(._;>;);out;"
+
+
+def fetch_osm_features(bbox, tags):
+    # Reuse OSMnx caching, rate limiting and relation assembly. Expanding every
+    # tag/type separately produced repeated 504s for the expanded Fan landuse query.
+    response = ox._overpass._overpass_request(OrderedDict(data=osm_bbox_query(bbox, tags)))
+    if response.get("remark"):
+        raise RuntimeError(f"Overpass returned an incomplete result: {response['remark']}")
+    # Only a successfully downloaded response can represent an empty layer.
+    # Transport/parser failures from _overpass_request must propagate.
+    try:
+        return ox.features._create_gdf([response], box(*bbox), tags)
+    except ox._errors.InsufficientResponseError:
+        return gpd.GeoDataFrame(geometry=[], crs="EPSG:4326")
+
+
 def _clean_for_parquet(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """OSM frames carry list-typed columns and a MultiIndex; flatten for Parquet."""
     gdf = gdf.reset_index()
@@ -69,7 +100,6 @@ def _clean_for_parquet(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
 def fetch_osm(bbox: tuple[float, float, float, float], out_dir: Path, force: bool = False) -> dict[str, Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
-    west, south, east, north = bbox
     written: dict[str, Path] = {}
     for layer, tags in LAYER_TAGS.items():
         dst = out_dir / f"{layer}.parquet"
@@ -78,10 +108,7 @@ def fetch_osm(bbox: tuple[float, float, float, float], out_dir: Path, force: boo
             written[layer] = dst
             continue
         t0 = time.time()
-        try:
-            gdf = ox.features.features_from_bbox(bbox=(west, south, east, north), tags=tags)
-        except ox._errors.InsufficientResponseError:
-            gdf = gpd.GeoDataFrame(geometry=[], crs="EPSG:4326")
+        gdf = fetch_osm_features(bbox, tags)
         gdf = _clean_for_parquet(gdf)
         gdf.to_parquet(dst)
         print(f"  {layer:10s} {len(gdf):6d} features  {time.time() - t0:5.1f}s")
@@ -136,7 +163,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--skip-dem", action="store_true")
     ap.add_argument("--skip-osm", action="store_true")
     ap.add_argument("--overpass-url", help="optional public Overpass API base URL for an unavailable default server")
+    ap.add_argument("--verbose", action="store_true", help="show OSM request/cache/retry progress")
     a = ap.parse_args(argv)
+    ox.settings.log_console = a.verbose
     if a.overpass_url:
         ox.settings.overpass_url = a.overpass_url.rstrip("/")
     bbox = tuple(a.bbox)

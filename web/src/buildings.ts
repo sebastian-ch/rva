@@ -3,7 +3,7 @@ import palette from '../../assets/palette.json';
 import { hex } from './props';
 import { MeshBuilder, ccw, centroid, cleanRing, insetRing, minAreaOBB, polygons, signedArea, triangulate, type V2 } from './geomutil';
 import { facadeParams } from './facade';
-import { addRoofDetails } from './roofDetails';
+import { addBox, addRoofDetails } from './roofDetails';
 import { hashStr } from './geomutil';
 import type { BuildingProps, Feature, PolyGeom } from './types';
 
@@ -22,10 +22,66 @@ const AO_HEIGHT = 6;     // meters over which the gradient fades
  */
 export interface ExtrudeOptions { details?: boolean }
 
+export function isSevenEleven(p: Pick<BuildingProps, 'id' | 'name' | 'addr' | 'website'>): boolean {
+  return p.id === 'osm:way/236014923' || /7[- ]?eleven/i.test(`${p.name ?? ''} ${p.addr ?? ''} ${p.website ?? ''}`);
+}
+
+function addSevenElevenFacade(mb: MeshBuilder, outer: V2[], ground: number): void {
+  const obb = minAreaOBB(outer);
+  const [ax, az] = obb.axis;
+  const perp: V2 = [-az, ax];
+  let minU = Infinity, maxU = -Infinity, minV = Infinity, maxV = -Infinity;
+  for (const [x, z] of outer) {
+    const u = x * ax + z * az, v = x * perp[0] + z * perp[1];
+    minU = Math.min(minU, u); maxU = Math.max(maxU, u); minV = Math.min(minV, v); maxV = Math.max(maxV, v);
+  }
+  const uMid = (minU + maxU) * 0.5;
+  const rot = Math.atan2(az, ax);
+  const point = (u: number, v: number): V2 => [u * ax + v * perp[0], u * az + v * perp[1]];
+  // The store's customer-facing side is the south-facing long edge in the local map frame.
+  const southAtMax = point(uMid, maxV)[1] > point(uMid, minV)[1];
+  const side = southAtMax ? 1 : -1;
+  const vFront = side > 0 ? maxV : minV;
+  const box = (u: number, y: number, width: number, height: number, d: number, color: THREE.Color, vOffset = 0) => {
+    const [x, z] = point(u, vFront + side * (d * 0.5 + vOffset));
+    addBox(mb, x, ground + y, z, width, height, d, rot, color);
+  };
+  const orange = pal('seven_orange'), green = pal('seven_green'), red = pal('seven_red');
+  const brown = pal('seven_brown'), brick = pal('seven_brick'), glass = pal('seven_glass');
+  const white = pal('seven_white');
+  const width = Math.max(12, Math.min(20, maxU - minU - 1.2));
+  const left = uMid - width * 0.5, right = uMid + width * 0.5;
+  // Brick end wings and dark storefront glazing echo the supplied reference photo.
+  box(left + 2.0, 0.05, 4.0, 3.35, 0.10, brick, side * 0.02);
+  box(right - 2.0, 0.05, 4.0, 3.35, 0.10, brick, side * 0.02);
+  box(uMid, 0.85, width - 4.0, 1.85, 0.10, glass, side * 0.03);
+  // Deep brown projecting fascia and the three signature stripe bands.
+  box(uMid, 2.72, width, 0.72, 1.05, brown);
+  for (const [y, color] of [[2.92, red], [3.15, green], [3.38, red]] as const) {
+    const gap = 1.5;
+    box(uMid - gap * 0.5 - (width - 2.1) * 0.25, y, (width - 2.1) * 0.42, 0.11, 0.08, color, side * 0.56);
+    box(uMid + gap * 0.5 + (width - 2.1) * 0.25, y, (width - 2.1) * 0.42, 0.11, 0.08, color, side * 0.56);
+  }
+  // Central white sign with the red/green 7-Eleven color block motif.
+  box(uMid, 3.03, 1.55, 1.18, 0.22, white, side * 0.58);
+  box(uMid, 3.58, 0.78, 0.34, 0.04, red, side * 0.72);
+  box(uMid, 2.78, 0.16, 0.34, 0.04, red, side * 0.72);
+  box(uMid, 2.93, 0.64, 0.10, 0.04, green, side * 0.72);
+  // Small canopy lip above the customer doors.
+  box(uMid, 2.28, width - 3.2, 0.16, 0.9, orange);
+  // A slim pole sign gives the store a recognizable silhouette at map scale.
+  const signU = right - 0.9;
+  box(signU, 3.6, 0.16, 2.0, 0.16, brown, side * 0.15);
+  box(signU, 4.52, 0.9, 0.7, 0.22, white, side * 0.16);
+  box(signU, 4.78, 0.46, 0.18, 0.04, red, side * 0.29);
+  box(signU, 4.59, 0.10, 0.18, 0.04, red, side * 0.29);
+  box(signU, 4.50, 0.40, 0.08, 0.04, green, side * 0.29);
+}
+
 export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, BuildingProps>, toLocal: (x: number, y: number) => V2, groundY: number, opts: ExtrudeOptions = {}): number {
   const p = feat.properties;
   const start = mb.triCount;
-  const wall = pal(p.wall_color), roof = pal(p.roof_color);
+  const wall = pal(p.wall_color), roof = pal(isSevenEleven(p) ? 'concrete' : p.roof_color);
   // outlines covered by their building:parts become a low plinth: still pickable, no facade, no roof
   const hidden = p.hidden === true;
   const base = groundY - 0.3 + p.min_height; // sink slightly so slopes don't show gaps
@@ -94,7 +150,10 @@ export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, Buildin
       const done = (p.roof_shape === 'hip' || p.roof_shape === 'pyramidal') && addInsetRoof(mb, outer, top, roofH, roof, p.roof_shape === 'pyramidal');
       if (!done) addRoof(mb, outer, top, roofH, p.roof_shape, roof, wall, p.roof_azimuth ?? null, holes);
     }
-    if (opts.details !== false && !hidden) addRoofDetails(mb, outer, top, p, wall, roof);
+    if (opts.details !== false && !hidden) {
+      if (isSevenEleven(p)) addSevenElevenFacade(mb, outer, groundY);
+      addRoofDetails(mb, outer, top, p, wall, roof);
+    }
   }
   return mb.triCount - start;
 }

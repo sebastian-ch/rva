@@ -215,6 +215,22 @@ rebuild: obtaining raw data alone does not update the viewer.
 Treat `index.json` as the manifest for active tiles. Old unreferenced tile files can survive an
 incremental rebuild; globbing every directory can produce misleading counts or stale feature values.
 Only clean generated caches deliberately, and do not delete another region's data.
+`pipeline/tiles_inspect.py` now reads only manifest-listed tiles and layers; its previous directory
+glob included stale layers left after an extent change. Regression: `test_tiles_inspect.py`.
+
+The Fan expansion's multi-tag OSM landuse query repeatedly returned HTTP 504. Union matching
+nodes/ways/relations first and expand geometry dependencies once, rather than once per tag/type.
+`pipeline/fetch.py` retains OSMnx caching and relation assembly, offers `--verbose` retry logging,
+and rejects responses with an Overpass error remark before writing a layer. Regression:
+`test_fetch_osm.py`. This reduces redundant work for rectangular region requests; large regions may
+still need subdivision, and an endpoint failure must never be treated as an empty successful layer.
+
+Expanding Richmond west into the Fan exposed a hard-coded downtown origin in the geometry review
+script. Its projected coordinates would visit the wrong location after the tile origin moved.
+Resolve the active manifest origin before converting projected coordinates to scene coordinates;
+wait for camera animation as well as tile loading. `web/tools/lib/browser.mjs` (`visitProjected`)
+is shared by `review-geometry.mjs` and `review-fan.mjs`. This corrects diagnostic positioning;
+raw local-coordinate bookmarks still belong to the extent that created them. See `richmond-fan.md`.
 
 Landmark GLBs copied to stable public paths can remain in browser caches after a deployment, even
 when a fresh server download is correct. Compare local/live file hashes before blaming geometry.
@@ -228,6 +244,21 @@ Inspect the exported model in the actual map, not just Blender. Check portico/pe
 vertical clock faces, footprint placement, ground datum, scale and overlap with procedural outlines.
 Join compatible parts/materials and preserve vertex colors so window trim does not add hundreds of
 draw calls. Keep the scripts and exported assets together.
+
+An expanded extent can expose stale landmark anchors: The Diamond's incorrect registry coordinate
+made the nearest-footprint fallback label a Richmond police precinct as a stadium. Check a newly
+resolved feature's actual source name and position, not just a non-null match count. Correct the
+registry against an identified source, and allow out-of-extent landmarks to remain unmatched.
+See `assets/landmarks/landmarks.json` and `docs/richmond-fan.md`. Coordinate corrections are
+site-specific; a nearby large footprint alone does not establish landmark identity.
+
+Small branded storefronts are better represented by a procedural facade attached to the mapped
+footprint than by a generic marketplace building. Preserve the source footprint and height, add only
+the high-signal massing and color cues visible at map scale, keep the treatment out of reduced-detail
+tiles, and avoid bundling reference photos as textures. The 3301 West Cary Street 7-Eleven uses this
+pattern in `web/src/buildings.ts`; its user-provided photo is documented in `docs/7-eleven-facade.md`.
+This is suitable for one-off low commercial buildings; repeated chains should eventually use a
+shared asset definition rather than more address-specific branches.
 
 When a landmark looks too short, compare eaves, ridge, width and adjacent elevated infrastructure
 separately. A correct peak with low eaves and an undersized footprint can still read too small.
@@ -249,6 +280,13 @@ stored in shared links; renaming Terrarium to Overgrown kept the `terrarium` key
 Keep label text outside artistic postprocessing. Apply linear/output color conversion once. Verify
 UI contrast when switching light/dark styles, mobile control width, keyboard input and shared-view
 restoration. Global shortcuts must ignore the style dropdown and other editable controls.
+
+Review mobile controls with a building selected. The Fan address-search review exposed a bottom
+selection card covering the style picker and attribution, despite the picker still having an
+in-viewport bounding box. Keep the card above the wrapped controls and constrain its scrollable
+height (`web/src/style.css`); `web/tools/review-fan.mjs` checks card/toolbar separation and actual
+style selection. OSM `building=yes` is an unspecified building, so display “Building”, not the raw
+tag value (`web/src/ui.ts`). The layout is checked at 390 × 844; reassess with new toolbar rows.
 
 Geometry effects need bounded allocation and cleanup on tile unload/style changes. X-ray floor plates
 preserve courtyard holes and use plausible reported levels or explicitly illustrative estimates;
