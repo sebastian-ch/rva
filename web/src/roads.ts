@@ -422,27 +422,32 @@ export function buildRoads(
       ribbon(mb, path.map((v) => new THREE.Vector3(v.x, v.y + 0.02, v.z)), 0.75, hex('roof_dark'));
     }
   }
-  // crosswalks: zebra bars parallel to the road, spanning its full width, at each crossing node
+  // Crosswalks: zebra bars spanning the road at each marked crossing node.
   for (const c of opts.markings === false ? [] : crossings) {
+    // OSM uses crossing=unmarked for pedestrian connectivity without painted markings.
+    if (c.properties.crossing === 'unmarked') continue;
     const [x, y] = c.geometry.coordinates;
     const [lx, lz] = toLocal(x, y);
     const gy = groundAt(x, y) + ROAD_Y + 0.02;
     const near = nearestRoad(roadPaths, lx, lz);
     if (!near) continue;
     const dir = near.dir, side = new THREE.Vector3(-dir.z, 0, dir.x);
-    const nBars = Math.max(3, Math.round(near.width / 1.0));
+    // A zebra consists of short, regularly spaced bars along the road direction,
+    // each one spanning the road from curb to curb.
+    const crossingDepth = Math.min(4.2, Math.max(2.8, near.width * 0.55));
+    const nBars = Math.max(4, Math.round(crossingDepth / 0.7));
     for (let s = 0; s < nBars; s++) {
-      const off = side.clone().multiplyScalar((s - (nBars - 1) / 2) * 1.0);
-      const a = new THREE.Vector3(lx, gy, lz).add(off).addScaledVector(dir, -1.5);
-      const b = new THREE.Vector3(lx, gy, lz).add(off).addScaledVector(dir, 1.5);
+      const off = dir.clone().multiplyScalar((s - (nBars - 1) / 2) * 0.7);
+      const centre = new THREE.Vector3(lx, gy, lz).add(off);
+      const a = centre.clone().addScaledVector(side, -(near.width / 2 - 0.2));
+      const b = centre.clone().addScaledVector(side, near.width / 2 - 0.2);
       ribbon(mb, [a, b], 0.28, paint);
     }
     // stop lines: a solid bar before the zebra on the approaching half (right-hand traffic) of each direction
     const hw = near.width / 2;
     for (const sgn of [1, -1]) {
-      const centre = new THREE.Vector3(lx, gy, lz).addScaledVector(dir, -sgn * 2.4);
-      const right = side.clone().multiplyScalar(sgn);
-      ribbon(mb, [centre.clone().addScaledVector(right, 0.3), centre.clone().addScaledVector(right, hw - 0.2)], 0.25, paint);
+      const centre = new THREE.Vector3(lx, gy, lz).addScaledVector(dir, sgn * (crossingDepth / 2 + 0.9));
+      ribbon(mb, [centre.clone().addScaledVector(side, -hw + 0.2), centre.clone().addScaledVector(side, hw - 0.2)], 0.25, paint);
     }
   }
   return { roads: mb.build(), paths: carPaths, pathMeta: carMeta, walkPaths };
