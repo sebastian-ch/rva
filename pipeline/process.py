@@ -854,6 +854,7 @@ def process_roads(raw_path: Path, terrain=None) -> tuple[gpd.GeoDataFrame, gpd.G
     crossings = gpd.GeoDataFrame({
         "id": pts.apply(_osm_id, axis=1) if len(pts) else [],
         "crossing": pts["crossing"].map(_nn).fillna("unmarked") if "crossing" in pts else "unmarked",
+        "crossing_markings": pts["crossing:markings"].map(_nn) if "crossing:markings" in pts else None,
         "road_id": topology["road_id"],
         "road_width": topology["road_width"],
         "road_dx": topology["road_dx"],

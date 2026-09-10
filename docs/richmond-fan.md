@@ -41,6 +41,15 @@ do not substantially overlap OSM, and renders decks/patios as low surfaces becau
 is supplied. The optional VGIN shapefile remains an offline building fallback when this extract is absent.
 Attribution and source limitations are in `ATTRIBUTION.md` and `richmond-trees-riverfront.md`.
 
+Richmond's [Roads polygon layer](https://services1.arcgis.com/k3vhq11XkBNeeOfM/ArcGIS/rest/services/Roads/FeatureServer/0)
+and [Carriageway Centerlines](https://services1.arcgis.com/k3vhq11XkBNeeOfM/ArcGIS/rest/services/CarriagewayCenterlines/FeatureServer/0)
+were evaluated on 2026-09-10. The polygons provide continuous measured paved surfaces and junction outlines;
+the centerlines are segmented between at-grade intersections and split divided streets into separate road beds.
+Both cover the expanded region. They are the preferred inputs for a future Richmond road-surface topology pass,
+with OSM retained for access, sidewalk, crossing, surface and pedestrian attributes. Fetch them explicitly with
+`pipeline/fetch_richmond.py --layer road_polygons --layer road_centerlines`; they are not part of the default city
+download until the renderer consumes them.
+
 ```sh
 .venv/bin/python pipeline/fetch.py --skip-dem
 .venv/bin/python pipeline/fetch_overture.py

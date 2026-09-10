@@ -137,7 +137,7 @@ it('uses processed road topology and source-backed crossing islands',async()=>{
  expect(refuge.getAttribute('position').count).toBeGreaterThan(plain.getAttribute('position').count);
 });
 
-it('fills walkable junctions with rounded polygons instead of square corners',async()=>{
+it('does not place a circular sidewalk apron beneath a three-arm junction',async()=>{
  const {buildRoads}=await import('./roads');
  const props={name:null,highway:'residential',lanes:2,width:8,oneway:false,surface:'asphalt',sidewalk:true,bridge:false,tunnel:false,layer:0};
  const roads=[
@@ -146,9 +146,53 @@ it('fills walkable junctions with rounded polygons instead of square corners',as
  ];
  const g=buildRoads(roads,[],[],(x,y)=>[x,-y],()=>0,{markings:false,bridges:false}).roads;
  const pos=g.getAttribute('position');
- let squareCorner=false;
- for(let i=0;i<pos.count;i++) if(pos.getY(i)<0.3&&Math.abs(pos.getX(i))>5.8&&Math.abs(pos.getZ(i))>5.8) squareCorner=true;
- expect(squareCorner).toBe(false);
+ let lowApron=false;
+ for(let i=0;i<pos.count;i++) {
+  if(pos.getY(i)<0.25) lowApron=true;
+ }
+ expect(lowApron).toBe(false);
+});
+
+it('does not place a circular sidewalk apron beneath a four-arm junction',async()=>{
+ const {buildRoads}=await import('./roads');
+ const props={name:null,highway:'residential',lanes:2,width:8,oneway:false,surface:'asphalt',sidewalk:true,bridge:false,tunnel:false,layer:0};
+ const roads=[
+  {type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[-20,0],[0,0],[20,0]] as [number,number][]},properties:{id:'east-west',...props}},
+  {type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,-20],[0,0],[0,20]] as [number,number][]},properties:{id:'north-south',...props}},
+ ];
+ const g=buildRoads(roads,[],[],(x,y)=>[x,-y],()=>0,{markings:false,bridges:false}).roads;
+ const pos=g.getAttribute('position');
+ let lowApron=false;
+ for(let i=0;i<pos.count;i++) {
+  if(pos.getY(i)<0.25) lowApron=true;
+ }
+ expect(lowApron).toBe(false);
+});
+
+it('does not mistake duplicate directions at a three-arm junction for a four-way junction',async()=>{
+ const {buildRoads}=await import('./roads');
+ const props={name:null,highway:'residential',lanes:2,width:8,oneway:false,surface:'asphalt',sidewalk:true,bridge:false,tunnel:false,layer:0};
+ const roads=[
+  {type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[-20,0],[0,0],[20,0]] as [number,number][]},properties:{id:'through',...props}},
+  {type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,0],[1,20]] as [number,number][]},properties:{id:'branch-a',...props}},
+  {type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,0],[-1,20]] as [number,number][]},properties:{id:'branch-b',...props}},
+ ];
+ const g=buildRoads(roads,[],[],(x,y)=>[x,-y],()=>0,{markings:false,bridges:false}).roads;
+ const pos=g.getAttribute('position');
+ let lowApron=false;
+ for(let i=0;i<pos.count;i++) {
+  if(pos.getY(i)<0.25) lowApron=true;
+ }
+ expect(lowApron).toBe(false);
+});
+
+it('uses OSM crossing markings instead of painting every crossing as a zebra',async()=>{
+ const {buildRoads}=await import('./roads');
+ const road={type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,0],[20,0]] as [number,number][]},properties:{id:'main',name:null,highway:'primary',lanes:2,width:10,oneway:false,surface:'asphalt',sidewalk:false,bridge:false,tunnel:false,layer:0}};
+ const crossing=(id:string,markings:string|null)=>({type:'Feature' as const,geometry:{type:'Point' as const,coordinates:[10,0] as [number,number]},properties:{id,crossing:'traffic_signals',crossing_markings:markings,road_id:'main',road_width:10,road_dx:1,road_dy:0,road_x:10,road_y:0}});
+ const plain=buildRoads([road],[],[crossing('plain',null)],(x,y)=>[x,-y],()=>0,{markings:true,bridges:false}).roads;
+ const zebra=buildRoads([road],[],[crossing('zebra','zebra')],(x,y)=>[x,-y],()=>0,{markings:true,bridges:false}).roads;
+ expect(zebra.getAttribute('position').count).toBeGreaterThan(plain.getAttribute('position').count);
 });
 
 it('closes paved service-road T junctions even though service roads stay minor',async()=>{

@@ -65,6 +65,12 @@ completeness capture, and is maintained from site plans and other sources. The s
 2026-09-08 edit when accessed 2026-09-10. Its public item provides City disclaimers rather than a named
 standard license; preserve City of Richmond credit. The Esri Community basemap tiles are not used.
 
+**Road geometry evaluated 2026-09-10:** `Roads/FeatureServer/0` supplies paved-surface polygons maintained
+by the city from orthophotography, site plans and development review sources; its reported data edit is
+2023-12-08. `CarriagewayCenterlines/FeatureServer/0` supplies routable road-bed centerlines and represents
+divided streets with one line per carriageway. These are cached for the planned Richmond road-surface topology
+pass; current road classes, access, sidewalks and crossings still come from OSM. Preserve City of Richmond credit.
+
 **Tree inventory (2026-09-09):** `TreeInventoryLive_ViewUFWebPage/FeatureServer/0`, linked from the
 [city Urban Forestry page](https://www.rva.gov/public-works/urban-forestry). Used for tree stem positions,
 species and in-service status. Vacant sites, stumps, retired and out-of-service records are excluded.

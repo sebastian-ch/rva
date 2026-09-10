@@ -59,7 +59,7 @@ LAYER_KEYS: dict[str, set[str]] = {
     },
     "landuse": {"id", "name", "kind"},
     "water": {"id", "name", "kind"},
-    "crossings": {"id", "crossing", "road_id", "road_width", "road_dx", "road_dy", "road_x", "road_y", "crossing_island"},
+    "crossings": {"id", "crossing", "crossing_markings", "road_id", "road_width", "road_dx", "road_dy", "road_x", "road_y", "crossing_island"},
     "pois": {"id", "name", "kind"},
 }
 

@@ -85,6 +85,7 @@ pushed down to `water_z - 0.5` under those polygons so the surface is always vis
 
 ### crossings (Point)
 `id`, `crossing` (raw OSM `crossing=*` value: `marked`, `unmarked`, `traffic_signals`, `uncontrolled`, `zebra`, …; missing tag → `unmarked`),
+`crossing_markings` (raw OSM `crossing:markings=*`; explicit `zebra` renders zebra bars, while unspecified marked crossings use a neutral transverse pair),
 `road_id`, `road_width`, `road_dx`, `road_dy`, `road_x`, `road_y` (the matched motor-road id, width, unit direction and projected centreline point; nullable when no safe match exists),
 `crossing_island` (true only for source `crossing:island=yes`)
 

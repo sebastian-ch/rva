@@ -2,8 +2,9 @@
 
     python pipeline/fetch_richmond.py [--bbox W S E N] [--force]
 
-Layers (see ATTRIBUTION.md): addresses, zoning, trees, and Structures buildings/decks. Written as GeoParquet
-in EPSG:4326 to data/raw/richmond_<slug>/<layer>.parquet. The Esri basemap itself is not used.
+Layers (see ATTRIBUTION.md): addresses, zoning, trees, Structures buildings/decks, and optional road polygons
+and carriageway centerlines. Written as GeoParquet in EPSG:4326 to data/raw/richmond_<slug>/<layer>.parquet.
+The Esri basemap itself is not used.
 """
 from __future__ import annotations
 
@@ -27,7 +28,10 @@ LAYERS = {
     "zoning": f"{ORG}/ZoningDistricts/FeatureServer/0",
     "trees": f"{ORG}/TreeInventoryLive_ViewUFWebPage/FeatureServer/0",
     "structures": f"{ORG}/Structures/FeatureServer/0",
+    "road_polygons": f"{ORG}/Roads/FeatureServer/0",
+    "road_centerlines": f"{ORG}/CarriagewayCenterlines/FeatureServer/0",
 }
+DEFAULT_LAYERS = ("addresses", "zoning", "trees", "structures")
 LAYER_WHERE = {"structures": "Subtype IN (1,3)"}
 LAYER_FIELDS = {"structures": "OBJECTID,Subtype,FIPS,PermitID,CreatedDate,EditDate"}
 PAGE = 2000
@@ -86,7 +90,8 @@ def fetch_layer(url: str, bbox, dst: Path, force: bool = False,
         feats = fc.get("features", [])
         if feats:
             frames.append(gpd.GeoDataFrame.from_features(feats, crs="EPSG:4326"))
-        if len(feats) < PAGE or not fc.get("properties", {}).get("exceededTransferLimit", len(feats) == PAGE):
+        exceeded = fc.get("properties", {}).get("exceededTransferLimit", len(feats) == PAGE)
+        if not exceeded:
             break
         offset += len(feats)
     gdf = gpd.GeoDataFrame(pd.concat(frames, ignore_index=True), crs="EPSG:4326") if frames else gpd.GeoDataFrame(geometry=[], crs="EPSG:4326")
@@ -99,7 +104,7 @@ def fetch_layer(url: str, bbox, dst: Path, force: bool = False,
 
 def fetch_richmond(bbox, force: bool = False, layers: list[str] | None = None) -> dict[str, Path]:
     out_dir = DATA_RAW / f"richmond_{bbox_slug(bbox)}"
-    selected = layers or list(LAYERS)
+    selected = layers or list(DEFAULT_LAYERS)
     return {name: fetch_layer(LAYERS[name], bbox, out_dir / f"{name}.parquet", force,
                               LAYER_WHERE.get(name, "1=1"), LAYER_FIELDS.get(name, "*"))
             for name in selected}

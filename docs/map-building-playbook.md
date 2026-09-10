@@ -128,6 +128,9 @@ pipeline and store the road id, center, direction and width with the crossing; w
 order and runtime nearest-road ambiguity. `crossing=unmarked` remains pedestrian connectivity without paint.
 Complex plazas, divided carriageways and crossings without a nearby motor road can still require explicit
 way-node relationships; unmatched crossings retain the runtime fallback for older tile sets.
+Preserve `crossing:markings`: render zebra bars only for explicit `zebra`, honor explicit `no`, and use a
+neutral transverse pair when a marked or signalized crossing has no stated pattern. Treating every signalized
+crossing as zebra produces dense, misleading fans on divided approaches such as Broad Street near Gilmer.
 Do not infer stop lines from a crossing node: those markings need their own source evidence, and adding
 two full-width bars to every crossing creates dense false markings at ordinary intersections.
 Render refuge islands only from `crossing:island=yes`; lane count alone does not prove that a median exists.
@@ -154,6 +157,12 @@ even when the junction apron is correct. Split the visual sidewalk at every inte
 retract each resulting end by the intersecting road width; retain the unsplit source line for pedestrian motion.
 This applies to topology vertices shared by paved at-grade roads, not ordinary shape points or grade-separated
 crossings. North Belmont Avenue exposes both endpoint and interior-vertex forms in the same review area.
+At oblique intersections, divide the intersecting half-width by the sine of the arm angle to find the trim or
+extension distance along an arm. A perpendicular-only half-width leaves triangular overlaps. A full circular
+sidewalk underlay also works poorly because its exposed sectors resemble islands or a roundabout. Do not emit
+one until real curb polygons are available. Cary/Dooley and Floyd/Harvie are Richmond regressions for these
+limits. Nearly duplicated source arms can inflate a raw arm count, so classify junctions from distinct directions
+rather than count alone.
 Separately mapped `footway=sidewalk` lines can exist beside roads whose sidewalk tags are absent rather than
 `sidewalk=separate`. Drawing both the generated curb strip and offset mapped ribbon produces a real duplicate;
 suppressing the curb strip still leaves a same-colour terrain verge that reads as a second sidewalk. In this

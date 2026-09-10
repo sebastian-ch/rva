@@ -292,8 +292,8 @@ export function buildRoads(
       }
     }
   }
-  /** Half width of the widest *other* road meeting at this end, or 0 when the end is free / a continuation. */
-  const otherHalfW = (pt: V2, myHalfW: number, myDir: V2): number => {
+  /** Distance along this arm needed to clear every other road at the node. */
+  const otherClearance = (pt: V2, myHalfW: number, myDir: V2, extra = 0): number => {
     const j = junctions.get(key(pt[0], pt[1]));
     if (!j || j.ends.length < 2) return 0;
     let best = 0;
@@ -301,7 +301,10 @@ export function buildRoads(
       const cos = e.dir.x * myDir[0] + e.dir.y * myDir[1];
       if (cos > 0.999 && Math.abs(e.halfW - myHalfW) < 0.05) continue; // this way itself
       if (cos < -0.98 && Math.abs(e.halfW - myHalfW) < 0.3) continue;  // straight continuation, same width
-      best = Math.max(best, e.halfW);
+      // A perpendicular arm needs only its half-width. At an oblique junction the same road boundary travels
+      // farther along this arm; ignoring that projection leaves triangular pavement/sidewalk overlaps.
+      const sin = Math.abs(e.dir.x * myDir[1] - e.dir.y * myDir[0]);
+      best = Math.max(best, (e.halfW + extra) / Math.max(0.35, sin));
     }
     return best;
   };
@@ -374,9 +377,10 @@ export function buildRoads(
       for (const side of sidewalkSides(p)) walkPaths.push(offsetPath(walkBase, side * (p.width / 2 + WALK_W / 2)));
       for (const chunk of splitAtJunctions(c)) {
         const [d0, d1] = endDirs(chunk);
-        const o0 = otherHalfW(chunk[0], p.width / 2, d0), o1 = otherHalfW(chunk[chunk.length - 1], p.width / 2, d1);
+        const o0 = otherClearance(chunk[0], p.width / 2, d0, WALK_W);
+        const o1 = otherClearance(chunk[chunk.length - 1], p.width / 2, d1, WALK_W);
         const base = toPath(chunk, toLocal, groundAt, WALK_Y);
-        const path = adjustEnds(base, -(o0 ? o0 + WALK_W : 0), -(o1 ? o1 + WALK_W : 0));
+        const path = adjustEnds(base, -o0, -o1);
         if (path.length < 2) continue;
         for (const side of sidewalkSides(p)) {
           const strip = offsetPath(path, side * (p.width / 2 + WALK_W / 2));
@@ -394,13 +398,10 @@ export function buildRoads(
       }
     }
   }
-  // Rounded junction polygons: asphalt joins every paved three-arm node, including service-road T junctions.
-  // A low sidewalk apron is added only when at least three arms carry sidewalks. Keeping both below the raised
-  // sidewalk strips produces a curb-radius silhouette without walls crossing the road arms.
+  // Asphalt junction polygons join every paved three-arm node, including service-road T junctions. A generic
+  // circular sidewalk underlay is deliberately omitted: its exposed sectors form false islands and roundabouts.
   for (const j of junctions.values()) {
     const uniqueRoad = uniqueDirections(j.ends);
-    const walkEnds = j.ends.filter((e) => e.walk);
-    const uniqueWalk = uniqueDirections(walkEnds);
     if (uniqueRoad.length < 3) continue;
     const halfW = Math.max(...j.ends.map((e) => e.halfW));
     const fill = (radius: number, lift: number, color: THREE.Color, shade: number) => {
@@ -412,7 +413,6 @@ export function buildRoads(
       });
       for (let i = 0; i < ring.length; i++) mb.tri(center, ring[(i + 1) % ring.length], ring[i], color, UP, shade);
     };
-    if (uniqueWalk.length >= 3) fill(halfW + WALK_W, ROAD_Y - 0.06, sidewalk, 0.96);
     fill(halfW + 0.2, ROAD_Y + 0.015, asphalt, 1);
   }
   for (const j of bridgeJunctions.values()) {
@@ -444,7 +444,7 @@ export function buildRoads(
       if ((!minor || PAVED_MINOR.has(p.highway)) && !deck) {
         const c = cleanRing(l);
         const [d0, d1] = endDirs(c);
-        path = adjustEnds(path, otherHalfW(c[0], p.width / 2, d0), otherHalfW(c[c.length - 1], p.width / 2, d1));
+        path = adjustEnds(path, otherClearance(c[0], p.width / 2, d0), otherClearance(c[c.length - 1], p.width / 2, d1));
       }
       const busStripe = p.bus_lanes && p.oneway && p.bus_lane_side && p.lanes && !p.bus_only
         ? {fraction: Math.min(p.bus_lanes/p.lanes,1),side:p.bus_lane_side,color:busColor} : undefined;
@@ -524,7 +524,7 @@ export function buildRoads(
   const paintedCrossings: { x: number; z: number; dir: THREE.Vector3 }[] = [];
   for (const c of opts.markings === false ? [] : crossings) {
     // OSM uses crossing=unmarked for pedestrian connectivity without painted markings.
-    if (c.properties.crossing === 'unmarked') continue;
+    if (c.properties.crossing === 'unmarked' || c.properties.crossing_markings === 'no') continue;
     const [x, y] = c.geometry.coordinates;
     const [lx, lz] = toLocal(x, y);
     const p = c.properties;
@@ -546,13 +546,21 @@ export function buildRoads(
     // A zebra consists of short, regularly spaced bars along the road direction,
     // each one spanning the road from curb to curb.
     const crossingDepth = Math.min(4.2, Math.max(2.8, near.width * 0.55));
-    const nBars = Math.max(4, Math.round(crossingDepth / 0.7));
-    for (let s = 0; s < nBars; s++) {
-      const off = dir.clone().multiplyScalar((s - (nBars - 1) / 2) * 0.7);
+    const markings = c.properties.crossing_markings;
+    // Only draw a zebra where OSM identifies one. Unknown/unspecified marked crossings use the neutral US
+    // transverse pair instead of inventing dense zebra bars at every signalized intersection.
+    const zebraBars = Math.max(4, Math.round(crossingDepth / 0.7));
+    const offsets = markings === 'zebra'
+      ? Array.from({ length: zebraBars }, (_, s) => (s - (zebraBars - 1) / 2) * 0.7)
+      : markings === 'lines:paired'
+        ? [-crossingDepth / 2, -crossingDepth / 2 + 0.35, crossingDepth / 2 - 0.35, crossingDepth / 2]
+        : [-crossingDepth / 2, crossingDepth / 2];
+    for (const distance of offsets) {
+      const off = dir.clone().multiplyScalar(distance);
       const centre = new THREE.Vector3(cx, gy, cz).add(off);
       const a = centre.clone().addScaledVector(side, -(near.width / 2 - 0.2));
       const b = centre.clone().addScaledVector(side, near.width / 2 - 0.2);
-      ribbon(mb, [a, b], 0.28, paint);
+      ribbon(mb, [a, b], markings === 'zebra' ? 0.28 : 0.12, paint);
     }
     if (p.crossing_island && near.width >= 8) {
       const islandHalf = crossingDepth / 2 + 0.65;

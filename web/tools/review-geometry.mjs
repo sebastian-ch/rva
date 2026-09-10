@@ -14,6 +14,9 @@ try {
   ['fan-service-junction-grayland',281869.98,4158407.33,6.221,0],
   ['fan-meadow-bridge',281928.62,4158535.68,5.711,0],
   ['fan-service-junction-belmont',280975.31,4159291.00,6.149,0],
+  ['fan-sidewalk-auburn',280585.55,4159236.00,12.000,0],
+  ['fan-roundabout',282883.07,4158525.19,10.868,0],
+  ['fan-crosswalk-lombardy',283703.67,4158682.20,8.315,0],
   ['fan-service-junction-meadow',281506.39,4157052.19,5.915,0],
  ]) {
   if (process.env.QA_VIEW && process.env.QA_VIEW !== name) continue;
