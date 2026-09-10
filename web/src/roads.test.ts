@@ -71,17 +71,29 @@ it('retains pedestrian crossing connectivity without a solid sidewalk across the
  expect(result.roads.getAttribute('position').count).toBe(0);
 });
 
-it('renders marked crossings across the road and omits unmarked paint', async () => {
+it('centres marked crossings on the road and omits unmarked paint', async () => {
  const {buildRoads}=await import('./roads');
- const road={type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,0],[20,0]] as [number,number][]},properties:{id:'main',name:null,highway:'primary',lanes:2,width:8,oneway:false,surface:'asphalt',sidewalk:false,bridge:false,tunnel:false,layer:0}};
- const crossing=(kind:'uncontrolled'|'unmarked')=>({type:'Feature' as const,geometry:{type:'Point' as const,coordinates:[10,0] as [number,number]},properties:{id:`crossing-${kind}`,crossing:kind}});
+ const {hex}=await import('./props');
+ const road={type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,0],[20,0]] as [number,number][]},properties:{id:'main',name:null,highway:'primary',lanes:1,width:8,oneway:true,surface:'asphalt',sidewalk:false,bridge:false,tunnel:false,layer:0}};
+ const crossing=(kind:'uncontrolled'|'unmarked', offset=3)=>({type:'Feature' as const,geometry:{type:'Point' as const,coordinates:[10,offset] as [number,number]},properties:{id:`crossing-${kind}-${offset}`,crossing:kind}});
  const marked=buildRoads([road],[],[crossing('uncontrolled')],(x,y)=>[x,-y],()=>0,{markings:true,bridges:false}).roads;
  const unmarked=buildRoads([road],[],[crossing('unmarked')],(x,y)=>[x,-y],()=>0,{markings:true,bridges:false}).roads;
  expect(marked.getAttribute('position').count).toBeGreaterThan(unmarked.getAttribute('position').count);
- const pos=marked.getAttribute('position');
- let spansRoad=false;
- for(let i=0;i<pos.count;i++) if(Math.abs(pos.getZ(i))>3.5) { spansRoad=true; break; }
- expect(spansRoad).toBe(true);
+ const pos=marked.getAttribute('position'),color=marked.getAttribute('color'),paint=hex('lane_paint');
+ const z:number[]=[];
+ for(let i=0;i<pos.count;i++) if(Math.abs(color.getX(i)-paint.r)<1e-6 && Math.abs(color.getY(i)-paint.g)<1e-6) z.push(pos.getZ(i));
+ expect(Math.min(...z)).toBeLessThan(-3.5);
+ expect(Math.max(...z)).toBeGreaterThan(3.5);
+ expect((Math.min(...z)+Math.max(...z))/2).toBeCloseTo(0,1);
+});
+
+it('deduplicates paired curb crossing nodes after projecting them onto the road',async()=>{
+ const {buildRoads}=await import('./roads');
+ const road={type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,0],[20,0]] as [number,number][]},properties:{id:'main',name:null,highway:'primary',lanes:1,width:8,oneway:true,surface:'asphalt',sidewalk:false,bridge:false,tunnel:false,layer:0}};
+ const crossing=(id:string,y:number)=>({type:'Feature' as const,geometry:{type:'Point' as const,coordinates:[10,y] as [number,number]},properties:{id,crossing:'uncontrolled'}});
+ const one=buildRoads([road],[],[crossing('a',3)],(x,y)=>[x,-y],()=>0,{markings:true,bridges:false}).roads;
+ const pair=buildRoads([road],[],[crossing('a',3),crossing('b',-3)],(x,y)=>[x,-y],()=>0,{markings:true,bridges:false}).roads;
+ expect(pair.getAttribute('position').count).toBe(one.getAttribute('position').count);
 });
 
 it('paints a known right-side bus lane distinctly without moving the roadway',async()=>{

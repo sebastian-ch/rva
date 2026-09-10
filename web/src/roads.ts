@@ -446,14 +446,19 @@ export function buildRoads(
     }
   }
   // Crosswalks: zebra bars spanning the road at each marked crossing node.
+  const paintedCrossings: { x: number; z: number; dir: THREE.Vector3 }[] = [];
   for (const c of opts.markings === false ? [] : crossings) {
     // OSM uses crossing=unmarked for pedestrian connectivity without painted markings.
     if (c.properties.crossing === 'unmarked') continue;
     const [x, y] = c.geometry.coordinates;
     const [lx, lz] = toLocal(x, y);
-    const gy = groundAt(x, y) + ROAD_Y + 0.02;
     const near = nearestRoad(roadPaths, lx, lz);
     if (!near) continue;
+    // Crossing nodes are often mapped at both curbs rather than on the road
+    // centreline. Project paint onto the matched road and collapse the pair.
+    if (paintedCrossings.some((p) => Math.hypot(p.x - near.point.x, p.z - near.point.z) < 2.5 && Math.abs(p.dir.dot(near.dir)) > 0.95)) continue;
+    paintedCrossings.push({ x: near.point.x, z: near.point.z, dir: near.dir });
+    const cx = near.point.x, cz = near.point.z, gy = near.point.y + 0.02;
     const dir = near.dir, side = new THREE.Vector3(-dir.z, 0, dir.x);
     // A zebra consists of short, regularly spaced bars along the road direction,
     // each one spanning the road from curb to curb.
@@ -461,7 +466,7 @@ export function buildRoads(
     const nBars = Math.max(4, Math.round(crossingDepth / 0.7));
     for (let s = 0; s < nBars; s++) {
       const off = dir.clone().multiplyScalar((s - (nBars - 1) / 2) * 0.7);
-      const centre = new THREE.Vector3(lx, gy, lz).add(off);
+      const centre = new THREE.Vector3(cx, gy, cz).add(off);
       const a = centre.clone().addScaledVector(side, -(near.width / 2 - 0.2));
       const b = centre.clone().addScaledVector(side, near.width / 2 - 0.2);
       ribbon(mb, [a, b], 0.28, paint);
@@ -469,15 +474,15 @@ export function buildRoads(
     // stop lines: a solid bar before the zebra on the approaching half (right-hand traffic) of each direction
     const hw = near.width / 2;
     for (const sgn of [1, -1]) {
-      const centre = new THREE.Vector3(lx, gy, lz).addScaledVector(dir, sgn * (crossingDepth / 2 + 0.9));
+      const centre = new THREE.Vector3(cx, gy, cz).addScaledVector(dir, sgn * (crossingDepth / 2 + 0.9));
       ribbon(mb, [centre.clone().addScaledVector(side, -hw + 0.2), centre.clone().addScaledVector(side, hw - 0.2)], 0.25, paint);
     }
   }
   return { roads: mb.build(), paths: carPaths, pathMeta: carMeta, walkPaths };
 }
 
-function nearestRoad(paths: { path: THREE.Vector3[]; width: number }[], x: number, z: number): { dir: THREE.Vector3; width: number } | null {
-  let best = 1e9, out: { dir: THREE.Vector3; width: number } | null = null;
+function nearestRoad(paths: { path: THREE.Vector3[]; width: number }[], x: number, z: number): { dir: THREE.Vector3; width: number; point: THREE.Vector3; distance: number } | null {
+  let best = 1e9, out: { dir: THREE.Vector3; width: number; point: THREE.Vector3; distance: number } | null = null;
   const q = new THREE.Vector3(x, 0, z);
   for (const { path, width } of paths) {
     for (let i = 0; i < path.length - 1; i++) {
@@ -486,9 +491,10 @@ function nearestRoad(paths: { path: THREE.Vector3[]; width: number }[], x: numbe
       const len2 = ab.lengthSq();
       if (len2 < 1e-9) continue;
       const t = THREE.MathUtils.clamp(new THREE.Vector3(x - a.x, 0, z - a.z).dot(ab) / len2, 0, 1);
-      const d = q.distanceTo(new THREE.Vector3(a.x + ab.x * t, 0, a.z + ab.z * t));
-      if (d < best) { best = d; out = { dir: ab.normalize(), width }; }
+      const point = new THREE.Vector3(a.x + ab.x * t, a.y + (b.y - a.y) * t, a.z + ab.z * t);
+      const d = q.distanceTo(new THREE.Vector3(point.x, 0, point.z));
+      if (d < best) { best = d; out = { dir: ab.normalize(), width, point, distance: d }; }
     }
   }
-  return best < 12 ? out : null;
+  return out && out.distance <= out.width / 2 + 1.5 ? out : null;
 }

@@ -116,6 +116,15 @@ appropriate and keep explicitly mapped footways. Null retains the fallback for i
 traffic lanes. Keep its walking path and crossing markings, but omit a solid fill. Service drives
 and living streets use asphalt instead of pedestrian paving.
 
+Crossing point tags may sit at either curb instead of the road centerline, and a mapped crossing can
+contain one point per curb. Painting directly at those source points produces offset or doubled zebra
+bars; accepting any road within a broad fixed radius can also attach paint to the wrong street. Match
+within the candidate road's half-width plus a small curb allowance, project the marking onto that road's
+centerline, and deduplicate projected curb pairs with compatible headings. `crossing=unmarked` remains
+pedestrian connectivity without paint. This rule assumes the nearest eligible road is the intended one;
+complex plazas or tightly parallel carriageways may eventually require explicit way-node relationships.
+Regression: `web/src/roads.test.ts` covers centering, curb-pair deduplication, and unmarked crossings.
+
 Retain bus access and bus-lane count separately. Bus-only ways have distinct muted-red paving;
 partial bus lanes require a known side. Richmond's downtown Broad Street uses curbside lanes, per
 [the city's red-lane project description](https://www.rva.gov/press-releases-and-announcements-public-works/news/pulse-brt-red-lane-painting-broad-street).
