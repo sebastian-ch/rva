@@ -221,12 +221,19 @@ export function buildPalm(tall = false): THREE.BufferGeometry {
 }
 
 function buildStreetlight(): THREE.BufferGeometry {
-  const pole = new THREE.CylinderGeometry(0.06, 0.06, 5, 6);
-  const lamp = new THREE.BoxGeometry(0.25, 0.2, 0.25);
+  const pole = new THREE.CylinderGeometry(0.065, 0.08, 4.6, 8);
+  const base = new THREE.CylinderGeometry(0.13, 0.16, 0.28, 8);
+  const arm = new THREE.CylinderGeometry(0.045, 0.05, 1.15, 6);
+  arm.rotateZ(-Math.PI / 2);
+  const housing = new THREE.BoxGeometry(0.55, 0.16, 0.28);
+  const lens = new THREE.BoxGeometry(0.38, 0.035, 0.2);
 
   return mergeColored([
-    { geom: pole, color: hex('steel'), position: [0, 2.5, 0] },
-    { geom: lamp, color: hex('window_lit'), position: [0.6, 4.9, 0] },
+    { geom: base, color: hex('roof_dark'), position: [0, 0.14, 0] },
+    { geom: pole, color: hex('steel'), position: [0, 2.45, 0] },
+    { geom: arm, color: hex('steel'), position: [0.52, 4.67, 0] },
+    { geom: housing, color: hex('roof_dark'), position: [1.04, 4.65, 0] },
+    { geom: lens, color: hex('window_lit'), position: [1.08, 4.55, 0] },
   ]);
 }
 

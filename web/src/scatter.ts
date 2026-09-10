@@ -79,13 +79,16 @@ export function scatterTile(
       }
     }
   }
-  const nearestRoadHeading = (x: number, y: number): number | undefined => {
-    let best = Infinity, heading: number | undefined;
+  const nearestRoadOrientation = (x: number, y: number): { heading: number; facing: number } | undefined => {
+    let best = Infinity, result: { heading: number; facing: number } | undefined;
     for (const s of roadSegments) {
-      const d = distToSegment([x, y], s.a, s.b);
-      if (d < best) { best = d; heading = s.heading; }
+      const dx = s.b[0] - s.a[0], dy = s.b[1] - s.a[1], len2 = dx * dx + dy * dy;
+      const t = len2 < 1e-9 ? 0 : Math.max(0, Math.min(1, ((x - s.a[0]) * dx + (y - s.a[1]) * dy) / len2));
+      const px = s.a[0] + t * dx, py = s.a[1] + t * dy;
+      const d = Math.hypot(x - px, y - py);
+      if (d < best) { best = d; result = { heading: s.heading, facing: Math.atan2(py - y, px - x) }; }
     }
-    return best <= ROAD_HEADING_SEARCH_RADIUS ? heading : undefined;
+    return best <= ROAD_HEADING_SEARCH_RADIUS ? result : undefined;
   };
 
   // Extra street trees are only added when OSM-surveyed tree POIs are sparse relative to
@@ -119,10 +122,10 @@ export function scatterTile(
         // Surveyed trees use normalized meshes: height and crown width are independent.
         place(kind, x, y, undefined, Math.max(0.5, tree.crown_radius) / 1.6, Math.max(2, tree.tree_height) / 4.4);
       } else place(rand() < 0.5 ? 'tree' : 'tree_round', x, y, undefined, 0.85 + rand() * 0.5);
-    } else if (k === 'streetlight') place('streetlight', x, y);
+    } else if (k === 'streetlight') place('streetlight', x, y, nearestRoadOrientation(x, y)?.facing);
     else if (k === 'bench') place('bench', x, y);
     else if (k === 'bus_stop') place('person', x, y);
-    else if (k === 'traffic_signals') place('traffic_light', x, y, nearestRoadHeading(x, y));
+    else if (k === 'traffic_signals') place('traffic_light', x, y, nearestRoadOrientation(x, y)?.heading);
     else if (k === 'fountain') place('fountain', x, y);
   }
 

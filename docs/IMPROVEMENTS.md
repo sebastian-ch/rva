@@ -85,6 +85,23 @@ Weak spots, roughly in the order a viewer notices them:
 | 9 | Widen to The Fan / Church Hill with per-district palettes (Phase 6) | M | Content |
 | 10 | CI with the smoke test and snapshot diffs (Phase 7) | S | Keeps the polish from regressing |
 
+### Deferred street-level data additions
+
+After the streetlight pass, consider these additions in roughly this order:
+
+- Fire hydrants from `emergency=fire_hydrant`, preferring a Richmond municipal inventory when it is
+  more complete than OSM.
+- GRTC stop poles and shelters using `highway=bus_stop`, `public_transport=platform`, `shelter=*`,
+  `bench=*`, and `covered=*`; replace the current generic person marker.
+- Bicycle racks from `amenity=bicycle_parking`, including rack type and capacity where available.
+- Traffic-calming geometry from `traffic_calming=*`, especially raised tables, humps, and islands.
+- Bollards, waste baskets, parking meters, utility poles, and overhead lines at close detail only.
+- Murals, public art, memorials, and historic markers with distinct low-poly treatments.
+
+Treat OSM street-furniture coverage as opportunistic rather than complete. Compare counts and spatial
+coverage with Richmond open data before using absence as evidence, and keep dense small props out of
+reduced-detail tiles.
+
 ## 4. Measuring "better"
 
 - Keep `pipeline/tiles_inspect.py validate` and `data/tiles/qa.md` green after every data change.

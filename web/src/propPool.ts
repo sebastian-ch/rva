@@ -69,19 +69,22 @@ export class PropPool implements PoseSink {
   private currentTile = '';
   private tmp = new THREE.Object3D();
   paused = false;
+  private night = { value: 0 };
   private midnight = { value: 0 };
 
   constructor(material: THREE.Material) {
     const lampMaterial = material.clone();
     lampMaterial.onBeforeCompile = (shader) => {
+      shader.uniforms.uNightLamp = this.night;
       shader.uniforms.uMidnightLamp = this.midnight;
       shader.uniforms.uLampColor = { value: hex('window_lit') };
       shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', '#include <common>\nuniform float uMidnightLamp;\nuniform vec3 uLampColor;')
+        .replace('#include <common>', '#include <common>\nuniform float uNightLamp;\nuniform float uMidnightLamp;\nuniform vec3 uLampColor;')
         .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
           #ifdef USE_COLOR
           float lamp = 1.0 - step(0.02, distance(vColor.rgb, uLampColor));
-          totalEmissiveRadiance += vec3(0.035, 0.78, 1.0) * lamp * uMidnightLamp * 2.0;
+          vec3 lampGlow = mix(vec3(1.0, 0.66, 0.28), vec3(0.035, 0.78, 1.0), uMidnightLamp);
+          totalEmissiveRadiance += lampGlow * lamp * uNightLamp * 1.8;
           #endif`);
     };
     lampMaterial.customProgramCacheKey = () => 'iso-neon-lamp';
@@ -98,6 +101,7 @@ export class PropPool implements PoseSink {
     }
   }
 
+  setNight(on: boolean) { this.night.value = on ? 1 : 0; }
   setMidnight(on: boolean) { this.midnight.value = on ? 1 : 0; }
 
   /** Tag everything added until the next call with this tile id (for removeTile). */
