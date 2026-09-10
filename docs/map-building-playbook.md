@@ -142,18 +142,17 @@ Register those paved classes, extend their ribbons by the other road's half-widt
 from all paved arms; keep the sidewalk apron conditional on three walkable arms. Do not apply this rule to
 footways, paths, tracks or grade-separated ways.
 Separately mapped `footway=sidewalk` lines can exist beside roads whose sidewalk tags are absent rather than
-`sidewalk=separate`. Treating the absent tag as permission to synthesize both sides creates doubled strips and
-blocky overlaps around every crossing. Before emitting each synthetic sidewalk segment and curb, suppress it
-when a mapped sidewalk segment is nearby and parallel; keep the other side and uncovered portions of the same
-road. A nearby perpendicular footway is a crossing and must not suppress the sidewalk. The South Meadow Street
-grid is the Richmond regression area. Compare the rendered sidewalk corridors, not just near-coincident
-centerlines: mapped sidewalk centerlines may sit several metres behind the curb across a grass verge. A 4.1 m
-same-side corridor covers Richmond's mapped half-width, generated half-width and typical setback while staying
-clear of the generated sidewalk on the far side of a seven-metre residential street. Recheck that limit against
-local road widths and sidewalk setbacks before applying it to another region.
+`sidewalk=separate`. Drawing both the generated curb strip and offset mapped ribbon produces a real duplicate;
+suppressing the curb strip still leaves a same-colour terrain verge that reads as a second sidewalk. In this
+compact low-poly style, keep mapped sidewalk lines as pedestrian navigation paths but omit their surface ribbon;
+draw one consistent visible sidewalk from the road. This trades exact verge/setback placement for clear street
+silhouettes and remains unsuitable where the precise pedestrian alignment must be visible. The South Meadow
+Street grid is the Richmond regression area. A nearby `footway=crossing` remains a distinct pedestrian connection
+and must not be treated as a roadside sidewalk.
 Regressions: `pipeline/tests/test_process_helpers.py` covers topology matching;
-`web/src/roads.test.ts` covers topology placement, islands, rounded fills, centering, curb-pair deduplication,
-unmarked crossings, paved service-road T junctions and mapped-sidewalk overlap suppression.
+`pipeline/tests/test_build_tiles.py` covers reusable tile clipping; `web/src/roads.test.ts` covers topology
+placement, islands, rounded fills, centering, curb-pair deduplication, unmarked crossings, paved service-road T
+junctions and navigation-only mapped-sidewalk rendering.
 
 Retain bus access and bus-lane count separately. Bus-only ways have distinct muted-red paving;
 partial bus lanes require a known side. Richmond's downtown Broad Street uses curbside lanes, per

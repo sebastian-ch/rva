@@ -22,6 +22,7 @@ python3 -m venv .venv
 .venv/bin/python pipeline/dem_noaa.py --download # Download NOAA 2025 DEM tiles and build 1 m terrain
 .venv/bin/python pipeline/fetch_lidar.py        # 2025 City of Richmond LiDAR -> heights + roofs
 .venv/bin/python pipeline/build_tiles.py --no-merge # Preserve individual rowhouses
+.venv/bin/python pipeline/build_tiles.py --roads-only # Fast road/crossing iteration using existing tiles
 ```
 
 The full command list, data conventions and layout notes live in `CLAUDE.md`.

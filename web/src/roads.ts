@@ -321,27 +321,6 @@ export function buildRoads(
   };
   const sidewalkSides = (p: RoadProps) => [-1, 1].filter(side => (side === -1 ? p.sidewalk_left : p.sidewalk_right) !== false);
   const CURB = 0.15, WALK_W = 2.2, WALK_Y = ROAD_Y + CURB, DECK_EDGE = 0.5;
-  const mappedSidewalkSegments = feats
-    .filter((f) => f.properties.highway === 'footway' && f.properties.footway === 'sidewalk')
-    .flatMap((f) => lines(f.geometry).flatMap((l) => {
-      const path = toPath(l, toLocal, groundAt, WALK_Y);
-      return path.slice(1).map((b, i) => [path[i], b] as [THREE.Vector3, THREE.Vector3]);
-    }));
-  // OSM sidewalk centerlines often sit behind a grass verge. Compare corridors rather than requiring the
-  // mapped and generated centerlines to nearly coincide: 2.1 m covers both rendered half-widths and the
-  // remaining allowance covers a typical setback without reaching the synthetic strip on the opposite side.
-  const MAPPED_SIDEWALK_CORRIDOR = WALK_W / 2 + 1 + 2;
-  const coveredByMappedSidewalk = (a: THREE.Vector3, b: THREE.Vector3) => {
-    const mid = a.clone().lerp(b, 0.5), dx = b.x - a.x, dz = b.z - a.z, len = Math.hypot(dx, dz);
-    if (len < 1e-6) return false;
-    return mappedSidewalkSegments.some(([c, d]) => {
-      const sx = d.x - c.x, sz = d.z - c.z, sl2 = sx * sx + sz * sz;
-      if (sl2 < 1e-6 || Math.abs((dx * sx + dz * sz) / (len * Math.sqrt(sl2))) < 0.85) return false;
-      const t = THREE.MathUtils.clamp(((mid.x - c.x) * sx + (mid.z - c.z) * sz) / sl2, 0, 1);
-      return Math.hypot(mid.x - c.x - t * sx, mid.z - c.z - t * sz) < MAPPED_SIDEWALK_CORRIDOR;
-    });
-  };
-
   // sidewalks: raised strips either side with a curb face; bridges keep a wide concrete deck instead
   for (const f of feats) {
     const p = f.properties;
@@ -377,17 +356,10 @@ export function buildRoads(
       if (path.length < 2) continue;
       for (const side of sidewalkSides(p)) {
         const strip = offsetPath(path, side * (p.width / 2 + WALK_W / 2));
-        let runStart = 0;
-        for (let i = 0; i < strip.length - 1; i++) {
-          if (!coveredByMappedSidewalk(strip[i], strip[i + 1])) continue;
-          if (i > runStart) ribbon(mb, strip.slice(runStart, i + 1), WALK_W / 2, sidewalk, 0.98, draped(WALK_Y));
-          runStart = i + 1;
-        }
-        if (runStart < strip.length - 1) ribbon(mb, strip.slice(runStart), WALK_W / 2, sidewalk, 0.98, draped(WALK_Y));
+        ribbon(mb, strip, WALK_W / 2, sidewalk, 0.98, draped(WALK_Y));
         walkPaths.push(strip);
         const inner = offsetPath(path, side * (p.width / 2));
         for (let i = 0; i < inner.length - 1; i++) {
-          if (coveredByMappedSidewalk(strip[i], strip[i + 1])) continue;
           const a = inner[i], b = inner[i + 1];
           const a2 = a.clone().setY(a.y - CURB - 0.02), b2 = b.clone().setY(b.y - CURB - 0.02);
           const n = new THREE.Vector3().subVectors(b, a).cross(UP).normalize().multiplyScalar(-side);
@@ -452,7 +424,9 @@ export function buildRoads(
       }
       const busStripe = p.bus_lanes && p.oneway && p.bus_lane_side && p.lanes && !p.bus_only
         ? {fraction: Math.min(p.bus_lanes/p.lanes,1),side:p.bus_lane_side,color:busColor} : undefined;
-      if (p.footway !== 'crossing') ribbon(mb, path, p.width / 2, p.bus_only || p.highway === 'busway' ? busColor : minor && p.highway !== 'service' && p.highway !== 'living_street' ? (TRAIL.has(p.highway) ? dirt : sidewalk) : asphalt, minor ? 0.94 : 1, deck && p.bridge ? undefined : draped((minor ? ROAD_Y - 0.04 : ROAD_Y) + lift), busStripe);
+      // Roadside sidewalk centerlines remain pedestrian paths, while the road emits the one visible curb strip.
+      // Drawing both makes the intervening terrain verge read as a second sidewalk in the compact palette.
+      if (p.footway !== 'crossing' && p.footway !== 'sidewalk') ribbon(mb, path, p.width / 2, p.bus_only || p.highway === 'busway' ? busColor : minor && p.highway !== 'service' && p.highway !== 'living_street' ? (TRAIL.has(p.highway) ? dirt : sidewalk) : asphalt, minor ? 0.94 : 1, deck && p.bridge ? undefined : draped((minor ? ROAD_Y - 0.04 : ROAD_Y) + lift), busStripe);
       // Sunken freeways otherwise expose the DEM's coarse, faceted shoulder. Add a short
       // retaining edge only where the adjacent ground rises materially above the pavement.
       if (!minor && !deck && ['motorway', 'motorway_link', 'trunk', 'trunk_link'].includes(p.highway)) {
