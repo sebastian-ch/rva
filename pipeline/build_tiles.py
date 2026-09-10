@@ -19,8 +19,8 @@ from pyproj import Transformer
 from shapely.geometry import box
 
 from config import CRS_PROJ, DATA_RAW, DATA_TILES, DEFAULT_BBOX, TILE_SIZE, REGION, PROFILE, bbox_slug, snap_down
-from process import (process_buildings, process_landuse, process_pois, process_rail, process_roads,
-                     process_water)
+from process import (process_buildings, process_landuse, process_pois, process_rail, process_richmond_decks,
+                     process_roads, process_water)
 from terrain import Terrain
 from landmarks import resolve_landmarks
 
@@ -75,6 +75,7 @@ def build(bbox, merge_rowhouses=True, clean=False) -> Path:
                                        overture_path=DATA_RAW / f"overture_{slug}.parquet",
                                        lidar_npz=DATA_RAW / f"lidar_{slug}.npz",
                                        richmond_dir=DATA_RAW / f"richmond_{slug}",
+                                       richmond_structures_path=DATA_RAW / f"richmond_{slug}" / "structures.parquet",
                                        vgin_path=DATA_RAW / f"vgin_{slug}.parquet"),
         "roads": roads,
         "crossings": crossings,
@@ -86,6 +87,9 @@ def build(bbox, merge_rowhouses=True, clean=False) -> Path:
     hydro = None
     surveyed_trees = False
     if REGION == "richmond":
+        city_decks = process_richmond_decks(DATA_RAW / f"richmond_{slug}" / "structures.parquet")
+        if len(city_decks):
+            layers["landuse"] = gpd.GeoDataFrame(pd.concat([layers["landuse"], city_decks], ignore_index=True), crs=CRS_PROJ)
         hydro_path = DATA_RAW / "richmond_hydro_2025.gpkg"
         if hydro_path.exists() and terrain:
             from hydro import load_hydro, merge_water

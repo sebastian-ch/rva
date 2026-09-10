@@ -15,7 +15,7 @@ GOOD_BUILDING = {
     "height_source": "osm_levels", "roof_shape": "flat", "roof_height": 0.0, "roof_azimuth": None,
     "roof_source": "heuristic", "roof_color": "roof_flat", "wall_color": "brick", "type": "yes",
     "landmark": None, "is_part": False, "footprint_source": "osm", "parent": None, "hidden": False, "addr": "100 Main Street", "wikidata": None, "website": None,
-    "zoning": "B-3", "lidar_p90": None, "ground_z": 30.0,
+    "zoning": "B-3", "lidar_p90": None, "ground_z": 30.0, "source_updated": None,
 }
 
 GOOD_ROAD = {

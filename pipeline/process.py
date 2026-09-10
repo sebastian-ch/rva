@@ -44,7 +44,7 @@ def _tags(row: pd.Series) -> dict[str, Any]:
 
 def _osm_id(row: pd.Series) -> str:
     el = row.get("element", "way")
-    if el in ("vgin", "cch"):
+    if el in ("vgin", "cch", "richmond_structure"):
         return f"{el}:{row.get('id')}"
     return f"osm:{el}/{row.get('id')}"
 
@@ -163,38 +163,85 @@ def _merge_rowhouses(b: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
 PART_COVER = 0.6  # parts covering this share of the outline hide the outline (rendered as a plinth)
 VGIN_MIN_AREA = 20.0  # m^2; smaller VGIN footprints are sheds/steps and add noise
+RICHMOND_STRUCTURE_MIN_AREA = 12.0
+
+
+def _source_date(v: Any) -> str | None:
+    if _nn(v) is None:
+        return None
+    try:
+        stamp = pd.to_datetime(v, unit="ms", utc=True) if isinstance(v, (int, float, np.integer, np.floating)) else pd.to_datetime(v, utc=True)
+        return stamp.isoformat().replace("+00:00", "Z")
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+
+def _add_gap_footprints(raw: gpd.GeoDataFrame, is_part: pd.Series, path: Path, *,
+                        source: str, element: str, min_area: float,
+                        subtype: int | None = None) -> tuple[gpd.GeoDataFrame, pd.Series]:
+    """Append source footprints that do not substantially overlap an existing building.
+
+    Area overlap, rather than the intersects predicate alone, allows attached buildings that share a wall.
+    """
+    city = gpd.read_parquet(path)
+    if len(city) == 0:
+        return raw, is_part
+    city = city.to_crs(raw.crs)
+    if subtype is not None and "Subtype" in city:
+        city = city[city["Subtype"] == subtype]
+    city = city[city.geometry.geom_type.isin(["Polygon", "MultiPolygon"])]
+    city = city[city.geometry.area >= min_area].copy()
+    if len(city) == 0:
+        return raw, is_part
+    hit = gpd.sjoin(city[["geometry"]], raw[["geometry"]], how="inner", predicate="intersects")
+    covered = set()
+    for ci, oi in zip(hit.index, hit["index_right"]):
+        overlap = city.at[ci, "geometry"].intersection(raw.at[oi, "geometry"]).area
+        if overlap >= 0.25 * min(city.at[ci, "geometry"].area, raw.at[oi, "geometry"].area):
+            covered.add(ci)
+    add = city[~city.index.isin(covered)].copy().reset_index(drop=True)
+    if len(add) == 0:
+        return raw, is_part
+    add["element"] = element
+    add["id"] = add["OBJECTID"].astype(str) if "OBJECTID" in add else [str(i) for i in add.index]
+    add["building"] = "yes"
+    add["footprint_source"] = source
+    add["source_updated"] = add["EditDate"].map(_source_date) if "EditDate" in add else None
+    add["geometry"] = add.geometry.simplify(SIMPLIFY_TOL, preserve_topology=True).buffer(0)
+    add = add[~add.geometry.is_empty]
+    start = raw.index.max() + 1 if len(raw) else 0
+    add.index = range(start, start + len(add))
+    for col in add.columns:
+        if col not in raw and col != "geometry":
+            raw[col] = None
+    out = gpd.GeoDataFrame(pd.concat([raw, add[[c for c in add.columns if c in raw.columns or c == "geometry"]]]), geometry="geometry", crs=raw.crs)
+    parts = pd.concat([is_part, pd.Series(False, index=add.index)])
+    print(f"  {source} footprints added: {len(add)} (of {len(city)} >= {min_area:g} m2 in bbox)")
+    return out, parts
 
 
 def _add_vgin_footprints(raw: gpd.GeoDataFrame, is_part: pd.Series, path: Path) -> tuple[gpd.GeoDataFrame, pd.Series]:
     """Append VGIN footprints that overlap no OSM footprint (gap-fill: garages, alley buildings, unmapped blocks)."""
-    v = gpd.read_parquet(path)
-    if len(v) == 0:
-        return raw, is_part
-    v = v.to_crs(raw.crs)
-    v = v[v.geometry.geom_type.isin(["Polygon", "MultiPolygon"])]
-    v = v[v.geometry.area >= VGIN_MIN_AREA].copy()
-    if len(v) == 0:
-        return raw, is_part
-    hit = gpd.sjoin(v[["geometry"]], raw[["geometry"]], how="left", predicate="intersects")
-    covered = set(hit.index[hit["index_right"].notna()])
-    add = v[~v.index.isin(covered)].copy()
-    if len(add) == 0:
-        return raw, is_part
-    add = add.reset_index(drop=True)
-    add["element"] = "vgin"
-    add["id"] = add["OBJECTID"].astype(str) if "OBJECTID" in add else [str(i) for i in add.index]
-    add["building"] = "yes"
-    add["footprint_source"] = "vgin"
-    add["geometry"] = add.geometry.simplify(SIMPLIFY_TOL, preserve_topology=True).buffer(0)
-    add = add[~add.geometry.is_empty]
-    add.index = range(raw.index.max() + 1, raw.index.max() + 1 + len(add))
-    out = gpd.GeoDataFrame(pd.concat([raw, add[[c for c in add.columns if c in raw.columns or c in ("geometry",)]]]), geometry="geometry", crs=raw.crs)
-    for col in ("building:part",):
-        if col not in out:
-            out[col] = None
-    parts = pd.concat([is_part, pd.Series(False, index=add.index)])
-    print(f"  VGIN footprints added: {len(add)} (of {len(v)} >= {VGIN_MIN_AREA} m2 in bbox)")
-    return out, parts
+    return _add_gap_footprints(raw, is_part, path, source="vgin", element="vgin", min_area=VGIN_MIN_AREA)
+
+
+def process_richmond_decks(path: Path) -> gpd.GeoDataFrame:
+    """Convert Richmond Structures subtype 3 deck/patio outlines to low terrain surfaces."""
+    city = _read(path)
+    if len(city) == 0 or "Subtype" not in city:
+        return gpd.GeoDataFrame(columns=["id", "name", "kind", "source", "source_updated", "geometry"], geometry="geometry", crs=CRS_PROJ)
+    city = city[(city["Subtype"] == 3) & city.geometry.geom_type.isin(["Polygon", "MultiPolygon"])].copy()
+    city = city[city.geometry.area >= 2.0]
+    city["geometry"] = city.geometry.simplify(0.2, preserve_topology=True).buffer(0)
+    city = city[~city.geometry.is_empty]
+    return gpd.GeoDataFrame({
+        "id": "richmond_structure:" + city["OBJECTID"].astype(str),
+        "name": None,
+        "kind": "deck",
+        "source": "richmond_structures",
+        "source_updated": city["EditDate"].map(_source_date) if "EditDate" in city else None,
+        "geometry": city.geometry,
+    }, crs=CRS_PROJ)
 
 
 def _assign_parts(raw: gpd.GeoDataFrame, is_part: pd.Series) -> tuple[dict, dict]:
@@ -286,7 +333,8 @@ def apply_overrides(b: gpd.GeoDataFrame, terrain=None, path: Path = OVERRIDES_PA
 
 def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True,
                       overture_path: Path | None = None, lidar_npz: Path | None = None,
-                      richmond_dir: Path | None = None, vgin_path: Path | None = None) -> gpd.GeoDataFrame:
+                      richmond_dir: Path | None = None, vgin_path: Path | None = None,
+                      richmond_structures_path: Path | None = None) -> gpd.GeoDataFrame:
     raw = _read(raw_path)
     if len(raw) == 0:
         return gpd.GeoDataFrame(geometry=[], crs=CRS_PROJ)
@@ -311,7 +359,11 @@ def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True
     if "footprint_source" not in raw:
         raw["footprint_source"] = "osm"
     raw["footprint_source"] = raw["footprint_source"].fillna("osm")
-    if vgin_path is not None and Path(vgin_path).exists():
+    if richmond_structures_path is not None and Path(richmond_structures_path).exists():
+        raw, is_part = _add_gap_footprints(raw, is_part, Path(richmond_structures_path),
+                                           source="richmond_structures", element="richmond_structure",
+                                           min_area=RICHMOND_STRUCTURE_MIN_AREA, subtype=1)
+    elif vgin_path is not None and Path(vgin_path).exists():
         raw, is_part = _add_vgin_footprints(raw, is_part, Path(vgin_path))
     raw = raw[raw.geometry.area >= MIN_FOOTPRINT_AREA]
     is_part = is_part.loc[raw.index]
@@ -417,6 +469,7 @@ def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True
             "type": str(tags.get("building") or tags.get("building:part") or "yes"),
             "landmark": None,
             "footprint_source": str(row.get("footprint_source") or "osm"),
+            "source_updated": _source_date(row.get("source_updated")) or _source_date(row.get("EditDate")),
             "is_part": bool(is_part.at[idx]),
             "parent": parent_of.get(idx),
             "hidden": bool(hidden.get(idx, False)),

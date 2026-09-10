@@ -23,7 +23,8 @@ Acquired 2026-09-10:
   landuse HTTP 504s; `fetch.py --verbose` exposes requests and rate-limit waits.
 - Overture building footprints and height fallbacks: 24,483 raw records from release `2026-08-19.0`.
 - Richmond live services: 62,335 addresses, 339 zoning polygons and 39,171 tree inventory records
-  before active-status and duplicate filtering.
+  before active-status and duplicate filtering. The Structures extract added on 2026-09-10 contains
+  30,798 building and 10,538 deck/patio records before geometry and overlap filtering.
 - NOAA terrain: 272 intersecting source tiles, a 6,157 × 5,817 raster, 99.9% valid coverage.
 - NOAA classified LiDAR at the established depth 8: 6,647 nodes. Existing downtown nodes were
   copied into the new bbox cache; all derived elevations and crowns are rebuilt for the new extent.
@@ -31,13 +32,13 @@ Acquired 2026-09-10:
   offset against this DEM; the nDSM has 96% valid coverage, including sparse/water areas.
 - Existing NOAA hydro GeoPackage, clipped to the expanded region during the build.
 
-The optional VGIN shapefile was not available locally for this expansion. OSM and Overture provide
-the footprint sources. No missing VGIN data is represented as a completed download.
 Richmond's public [Structures FeatureServer](https://services1.arcgis.com/k3vhq11XkBNeeOfM/ArcGIS/rest/services/Structures/FeatureServer)
-was identified after this build. Although its lineage begins with 1999 orthophotography and a 2009
+now supplies the city footprint gap fill and deck/patio surfaces. Although its lineage begins with 1999 orthophotography and a 2009
 completeness capture, the city describes it as maintained from site plans and the service reported a
-2026-09-08 data edit when checked on 2026-09-10. It is the preferred future replacement for the manual
-VGIN import: query subtype 1 buildings by bbox and retain subtype 3 decks/patios separately.
+2026-09-08 data edit when checked on 2026-09-10. The pipeline queries subtype 1 buildings and subtype 3
+decks/patios by bbox, saves compact service metadata beside the raw extract, uses buildings only where they
+do not substantially overlap OSM, and renders decks/patios as low surfaces because no elevation or material
+is supplied. The optional VGIN shapefile remains an offline building fallback when this extract is absent.
 Attribution and source limitations are in `ATTRIBUTION.md` and `richmond-trees-riverfront.md`.
 
 ```sh
@@ -85,19 +86,21 @@ node tools/review-tree-loading.mjs
 
 ## Results
 
-The build produces 625 tiles (25 × 25), with origin `[280250, 4154750]`, 22,697 building
-features and approximately 67.6 MB of generated files. Individual footprints remain intact at tile
-boundaries. All three existing hand corrections applied; LiDAR checks removed 258 stale footprints.
-Heights use LiDAR for 21,145 buildings, OSM levels for 893, zoning estimates for 425, OSM heights
-for 189, Overture heights for 26, landmark hints for 16 and hand overrides for three.
-Roof classification remains approximate: 10,608 LiDAR fits and 11,747 heuristic assignments.
+The build produces 625 tiles (25 × 25), with origin `[280250, 4154750]`, 25,517 tiled building
+features and approximately 75.1 MB of generated files. Richmond Structures supplies 2,820 of those
+buildings plus 10,502 source deck/patio polygons (11,070 fragments after tile clipping). Individual
+building footprints remain intact at tile boundaries. All three existing hand corrections applied;
+LiDAR checks removed 440 stale footprints across all sources. Heights use LiDAR for 23,540 processed
+buildings, OSM levels for 893, zoning estimates for 860, OSM heights for 189, Overture heights for 31,
+landmark hints for 16, hand overrides for three and defaults for two. Roof classification remains
+approximate: 11,138 LiDAR fits and 14,053 heuristic assignments before tile-boundary filtering.
 
 Tree processing starts with 27,453 active inventory stems and 68,809 inferred crowns, then removes
 duplicates and building/water conflicts. The wide-view browser check rendered all 26,797 expected
 tree instances; the initial view also retained trees on reduced-detail tiles. This is a rendering
 check, not a claim that every real tree was surveyed or detected.
 
-Validation: 132 Python tests passed (seven fixture-dependent tests skipped), 173 frontend tests
+Validation: 135 Python tests passed (seven fixture-dependent tests skipped), 180 frontend tests
 passed, and generated-feature schema validation reported zero problems. Fan browser checks cover
 five locations, Hanover address search, five styles and mobile controls. The mobile selection card
 now sits above the toolbar, and unspecified `building=yes` records are labeled “Building”.

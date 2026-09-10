@@ -12,6 +12,7 @@ try {
     ['scuffletown', 282062, 4159406, 4],
     ['meadow-park', 282461, 4159140, 4],
     ['upper-fan', 281276, 4159480, 3.5],
+    ['structures-decks', 280875, 4159625, 8],
     ['monroe-park', 283541, 4158368, 3.3],
   ];
   const stats = [];

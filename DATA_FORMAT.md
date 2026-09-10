@@ -49,7 +49,8 @@ Geometry is clipped to the tile bbox. All layers optional; missing = empty.
 | `wall_color` | string | palette key |
 | `type` | string | OSM `building=*` value |
 | `landmark` | string\|null | slug from `assets/landmarks/landmarks.json` |
-| `footprint_source` | `"osm"\|"vgin"\|"cch"\|"override"` | VGIN is gap-fill. Honolulu uses CCH city outlines, enriched with spatially matched OSM tags, plus non-overlapping OSM gap-fill |
+| `footprint_source` | `"osm"\|"richmond_structures"\|"vgin"\|"cch"\|"override"` | Richmond Structures is the current city gap-fill; VGIN is the offline fallback. Honolulu uses CCH city outlines, enriched with spatially matched OSM tags, plus non-overlapping OSM gap-fill |
+| `source_updated` | string\|null | ISO timestamp from the source feature edit field when available |
 | `is_part` | bool | OSM `building:part` (Simple 3D Buildings); rendered as its own extrusion |
 | `parent` | string\|null | id of the outline building containing a part; parts inherit name/addr/landmark from it |
 | `hidden` | bool | outline whose parts cover ≥ 60% of it; the viewer draws only a 0.6 m plinth (keeps picking and the info card) |
@@ -69,7 +70,9 @@ Richmond downtown Broad Street's tagged one-way bus lanes use the documented cur
 `id`, `name`, `railway`, `bridge`, `layer`, `deck` (as for roads)
 
 ### landuse (Polygon)
-`id`, `name`, `kind`: `"park"|"grass"|"parking"|"cemetery"|"plaza"|"industrial"|"forest"|"beach"`
+`id`, `name`, `kind`: `"park"|"grass"|"parking"|"cemetery"|"plaza"|"industrial"|"forest"|"beach"|"deck"`.
+Richmond `deck` surfaces come from Structures subtype 3 and include `source: "richmond_structures"` plus the
+optional per-feature `source_updated` timestamp. They are draped 0.12 m above terrain because the source has no elevation.
 
 Elevations in every layer are real metres above `base_elevation`; the viewer multiplies them by `Z_SCALE` (1.6, `web/src/elevation.ts`) when a tile is loaded and divides back for anything shown to the user.
 

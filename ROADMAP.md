@@ -46,13 +46,12 @@ The hook exists (`pipeline/lidar.py` reads `data/raw/ndsm.tif`). Fill it.
   buildings over 150 m, footprints under 15 m², roads with no width, tiles with no terrain.
 - Run it at the end of `build_tiles.py`. Acceptance: the report is generated and linked from the README.
 
-### 1.6 City of Richmond open data (S, delegable) — in progress; addresses, zoning and trees done
+### 1.6 City of Richmond open data (S, delegable) — done
 - `pipeline/fetch_richmond.py` pulls the city's address points (fill `addr` on unnamed buildings), street-tree
   inventory (replace scattered trees with surveyed positions and species), and zoning (better type defaults)
   from ArcGIS feature services. The Esri basemap tiles themselves stay reference-only.
-- Replace the manual optional VGIN footprint import with bbox-clipped queries to Richmond's live `Structures`
-  FeatureServer. It contains city-maintained buildings and decks/patios; preserve its edit date and subtype as
-  provenance, use buildings only as an OSM/Overture gap fill, and keep patio/deck polygons out of extrusions. (S)
+- Bbox-clipped queries to Richmond's live `Structures` FeatureServer preserve edit dates and subtypes. Buildings
+  gap-fill OSM; decks/patios render as separate low surfaces. The manual VGIN import remains an offline fallback.
 - Acceptance: named/addressed buildings above 60%; surveyed trees replace scatter in the first slice.
 
 ### 1.5 Fix the three unmatched landmarks (S) — done (`pipeline/landmarks.py` → `data/tiles/landmarks.json`)

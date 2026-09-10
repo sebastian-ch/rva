@@ -57,7 +57,13 @@ See [the expansion notes](docs/richmond-fan.md) for extent, acquisition counts a
 - **Required attribution:** City of Richmond
 - **URL:** https://richmond-geo-hub-cor.hub.arcgis.com
 
-**Used for:** `Addresses` (address points → building `addr`) and `ZoningDistricts` (height defaults) from the city's ArcGIS Hub feature services at `services1.arcgis.com/k3vhq11XkBNeeOfM`. The Esri basemap tiles are not used.
+**Used for:** `Addresses` (address points → building `addr`), `ZoningDistricts` (height defaults), and
+`Structures/FeatureServer/0` from the city's ArcGIS feature services at
+`services1.arcgis.com/k3vhq11XkBNeeOfM`. Structures subtype 1 fills gaps after OSM; subtype 3 renders as
+low deck/patio surfaces. The Structures layer began with 1999 orthophotography, received a 2009
+completeness capture, and is maintained from site plans and other sources. The service reported a
+2026-09-08 edit when accessed 2026-09-10. Its public item provides City disclaimers rather than a named
+standard license; preserve City of Richmond credit. The Esri Community basemap tiles are not used.
 
 **Tree inventory (2026-09-09):** `TreeInventoryLive_ViewUFWebPage/FeatureServer/0`, linked from the
 [city Urban Forestry page](https://www.rva.gov/public-works/urban-forestry). Used for tree stem positions,
@@ -104,7 +110,10 @@ The following sources are used solely as visual reference for hand-modeling land
 - **Google Photorealistic 3D Tiles and Street View:** Visual reference for landmark modeling and facade colors. Terms prohibit derived datasets.
 - **Mapbox Satellite:** Visual reference. Terms prohibit derived datasets.
 
-**Used for:** the Virginia building-footprint layer (`Richmond_Building_Footprints.shp`, jurisdiction-sourced, updated 2026-02) as a gap-fill footprint source behind OSM and Overture (`pipeline/fetch_vgin_footprints.py`). Its height and storey attributes are empty; heights come from LiDAR and zoning.
+**Offline fallback:** the Virginia building-footprint layer (`Richmond_Building_Footprints.shp`,
+jurisdiction-sourced, updated 2026-02) can gap-fill footprints when the live Richmond Structures extract is
+absent (`pipeline/fetch_vgin_footprints.py`). Its height and storey attributes are empty; heights come from
+LiDAR and zoning.
 
 ## Honolulu coastal structure references
 

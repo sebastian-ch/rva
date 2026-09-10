@@ -22,3 +22,13 @@ it('keeps coastal decks above water with outward-facing solid sides', () => {
   }
   expect(sides).toBe(8);
 });
+
+it('renders Richmond deck and patio surfaces above terrain', () => {
+  const { land } = buildAreas([{
+    type: 'Feature', properties: { id: 'richmond_structure:3', name: null, kind: 'deck', source: 'richmond_structures' },
+    geometry: { type: 'Polygon', coordinates: [[[0, 0], [4, 0], [4, 3], [0, 3], [0, 0]]] },
+  }], [], (x, y) => [x, -y], () => 2, 0);
+  const positions = land.getAttribute('position');
+  expect(positions.count).toBeGreaterThan(0);
+  for (let i = 0; i < positions.count; i++) expect(positions.getY(i)).toBeCloseTo(2.12);
+});

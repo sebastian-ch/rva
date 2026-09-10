@@ -235,6 +235,16 @@ Record source URLs, dates, attribution and known limitations. A live service's u
 not mean every observation was surveyed on that date. Check counts and coverage after fetching, then
 rebuild: obtaining raw data alone does not update the viewer.
 
+When a city footprint layer gap-fills OSM, an `intersects` join alone is too aggressive: attached
+buildings often share a boundary with an OSM footprint and have zero overlap area. Treat a candidate as
+a duplicate only when their intersection covers a meaningful fraction of the smaller polygon. Preserve
+the source subtype and edit timestamp. Render accessory polygons according to their source semantics;
+Richmond Structures subtype 3 combines decks and patios but supplies neither elevation nor material, so
+it becomes a low terrain-draped surface rather than a building extrusion or an invented elevated deck.
+Regression: `pipeline/tests/test_richmond_structures.py` covers overlap filtering and subtype separation;
+`web/src/areas.test.ts` covers the rendered surface lift. Recheck subtype codes, units and edit fields for
+every new city because these are Richmond service conventions.
+
 Treat `index.json` as the manifest for active tiles. Old unreferenced tile files can survive an
 incremental rebuild; globbing every directory can produce misleading counts or stale feature values.
 Only clean generated caches deliberately, and do not delete another region's data.
