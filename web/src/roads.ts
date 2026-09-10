@@ -242,6 +242,8 @@ export function buildRoads(
   const junctions = new Map<string, { pt: THREE.Vector3; ends: { dir: THREE.Vector2; halfW: number; walk: boolean }[] }>();
   const bridgeJunctions = new Map<string, { pt: THREE.Vector3; ends: { dir: THREE.Vector2; halfW: number; walk: boolean; highway: string; name: string | null }[] }>();
   const key = (x: number, y: number) => `${x.toFixed(1)}|${y.toFixed(1)}`;
+  const uniqueDirections = <T extends { dir: THREE.Vector2 }>(ends: T[]) =>
+    ends.filter((e, i, all) => all.findIndex((o) => Math.abs(o.dir.dot(e.dir) - 1) < 0.002) === i);
   const carriesGeneratedSidewalk = (p: RoadProps) => (p.generated_sidewalk ?? (!MINOR.has(p.highway)
     && !NO_WALK.has(p.highway) && !p.bus_only && p.highway !== 'busway'))
     && (p.sidewalk_left !== false || p.sidewalk_right !== false);
@@ -323,6 +325,20 @@ export function buildRoads(
     return out;
   };
   const sidewalkSides = (p: RoadProps) => [-1, 1].filter(side => (side === -1 ? p.sidewalk_left : p.sidewalk_right) !== false);
+  /** Split a through-road polyline wherever another paved road joins an interior OSM node. */
+  const splitAtJunctions = (c: V2[]): V2[][] => {
+    const chunks: V2[][] = [];
+    let start = 0;
+    for (let i = 1; i < c.length - 1; i++) {
+      const j = junctions.get(key(c[i][0], c[i][1]));
+      if (!j) continue;
+      if (uniqueDirections(j.ends).length < 3) continue;
+      chunks.push(c.slice(start, i + 1));
+      start = i;
+    }
+    chunks.push(c.slice(start));
+    return chunks.filter((chunk) => chunk.length >= 2);
+  };
   const CURB = 0.15, WALK_W = 2.2, WALK_Y = ROAD_Y + CURB, DECK_EDGE = 0.5;
   // sidewalks: raised strips either side with a curb face; bridges keep a wide concrete deck instead
   for (const f of feats) {
@@ -352,23 +368,28 @@ export function buildRoads(
         continue;
       }
       if (!walk) continue;
-      const [d0, d1] = endDirs(c);
-      const o0 = otherHalfW(c[0], p.width / 2, d0), o1 = otherHalfW(c[c.length - 1], p.width / 2, d1);
-      const base = toPath(l, toLocal, groundAt, WALK_Y);
-      const path = adjustEnds(base, -(o0 ? o0 + WALK_W : 0), -(o1 ? o1 + WALK_W : 0));
-      if (path.length < 2) continue;
-      for (const side of sidewalkSides(p)) {
-        const strip = offsetPath(path, side * (p.width / 2 + WALK_W / 2));
-        ribbon(mb, strip, WALK_W / 2, sidewalk, 0.98, draped(WALK_Y));
-        walkPaths.push(strip);
-        const inner = offsetPath(path, side * (p.width / 2));
-        for (let i = 0; i < inner.length - 1; i++) {
-          const a = inner[i], b = inner[i + 1];
-          const a2 = a.clone().setY(a.y - CURB - 0.02), b2 = b.clone().setY(b.y - CURB - 0.02);
-          const n = new THREE.Vector3().subVectors(b, a).cross(UP).normalize().multiplyScalar(-side);
-          const cr = new THREE.Vector3().subVectors(b, a).cross(new THREE.Vector3().subVectors(a2, a));
-          if (cr.dot(n) > 0) { mb.tri(a, b, b2, sidewalk, n, 0.85); mb.tri(a, b2, a2, sidewalk, n, 0.85); }
-          else { mb.tri(a, b2, b, sidewalk, n, 0.85); mb.tri(a, a2, b2, sidewalk, n, 0.85); }
+      // Keep pedestrian motion continuous along the source line. The visible strips below are split and
+      // retracted at every interior junction so they cannot continue across a side street or alley.
+      const walkBase = toPath(l, toLocal, groundAt, WALK_Y);
+      for (const side of sidewalkSides(p)) walkPaths.push(offsetPath(walkBase, side * (p.width / 2 + WALK_W / 2)));
+      for (const chunk of splitAtJunctions(c)) {
+        const [d0, d1] = endDirs(chunk);
+        const o0 = otherHalfW(chunk[0], p.width / 2, d0), o1 = otherHalfW(chunk[chunk.length - 1], p.width / 2, d1);
+        const base = toPath(chunk, toLocal, groundAt, WALK_Y);
+        const path = adjustEnds(base, -(o0 ? o0 + WALK_W : 0), -(o1 ? o1 + WALK_W : 0));
+        if (path.length < 2) continue;
+        for (const side of sidewalkSides(p)) {
+          const strip = offsetPath(path, side * (p.width / 2 + WALK_W / 2));
+          ribbon(mb, strip, WALK_W / 2, sidewalk, 0.98, draped(WALK_Y));
+          const inner = offsetPath(path, side * (p.width / 2));
+          for (let i = 0; i < inner.length - 1; i++) {
+            const a = inner[i], b = inner[i + 1];
+            const a2 = a.clone().setY(a.y - CURB - 0.02), b2 = b.clone().setY(b.y - CURB - 0.02);
+            const n = new THREE.Vector3().subVectors(b, a).cross(UP).normalize().multiplyScalar(-side);
+            const cr = new THREE.Vector3().subVectors(b, a).cross(new THREE.Vector3().subVectors(a2, a));
+            if (cr.dot(n) > 0) { mb.tri(a, b, b2, sidewalk, n, 0.85); mb.tri(a, b2, a2, sidewalk, n, 0.85); }
+            else { mb.tri(a, b2, b, sidewalk, n, 0.85); mb.tri(a, a2, b2, sidewalk, n, 0.85); }
+          }
         }
       }
     }
@@ -377,9 +398,9 @@ export function buildRoads(
   // A low sidewalk apron is added only when at least three arms carry sidewalks. Keeping both below the raised
   // sidewalk strips produces a curb-radius silhouette without walls crossing the road arms.
   for (const j of junctions.values()) {
-    const uniqueRoad = j.ends.filter((e, i, all) => all.findIndex((o) => Math.abs(o.dir.dot(e.dir) - 1) < 0.002) === i);
+    const uniqueRoad = uniqueDirections(j.ends);
     const walkEnds = j.ends.filter((e) => e.walk);
-    const uniqueWalk = walkEnds.filter((e, i, all) => all.findIndex((o) => Math.abs(o.dir.dot(e.dir) - 1) < 0.002) === i);
+    const uniqueWalk = uniqueDirections(walkEnds);
     if (uniqueRoad.length < 3) continue;
     const halfW = Math.max(...j.ends.map((e) => e.halfW));
     const fill = (radius: number, lift: number, color: THREE.Color, shade: number) => {

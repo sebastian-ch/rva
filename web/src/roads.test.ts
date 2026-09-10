@@ -185,6 +185,25 @@ it('does not create a sidewalk apron from an untagged service-road arm',async()=
  expect(sidewalkApron).toBe(false);
 });
 
+it('cuts generated sidewalk ribbons at a service road joined to an interior vertex',async()=>{
+ const {buildRoads}=await import('./roads');
+ const {hex}=await import('./props');
+ const main={name:null,highway:'residential',lanes:2,width:8,oneway:false,surface:'asphalt',sidewalk:true,generated_sidewalk:true,bridge:false,tunnel:false,layer:0};
+ const service={...main,highway:'service',lanes:1,width:4.5,sidewalk:false,sidewalk_left:false,sidewalk_right:false,generated_sidewalk:false};
+ const roads=[
+  {type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[-20,0],[0,0],[20,0]] as [number,number][]},properties:{id:'through-road',...main}},
+  {type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,20],[0,0]] as [number,number][]},properties:{id:'side-alley',...service}},
+ ];
+ const geometry=buildRoads(roads,[],[],(x,y)=>[x,-y],()=>0,{markings:false,bridges:false}).roads;
+ const pos=geometry.getAttribute('position'),color=geometry.getAttribute('color'),walk=hex('sidewalk');
+ let sidewalkAcrossJunction=false;
+ for(let i=0;i<pos.count;i++) {
+  const isWalk=Math.abs(color.getX(i)-walk.r)<1e-6&&Math.abs(color.getY(i)-walk.g)<1e-6&&Math.abs(color.getZ(i)-walk.b)<1e-6;
+  if(isWalk&&pos.getY(i)>0.4&&Math.abs(pos.getX(i))<2.3) sidewalkAcrossJunction=true;
+ }
+ expect(sidewalkAcrossJunction).toBe(false);
+});
+
 it('paints a known right-side bus lane distinctly without moving the roadway',async()=>{
  const {buildRoads}=await import('./roads');
  const {hex}=await import('./props');

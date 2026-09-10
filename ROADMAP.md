@@ -89,9 +89,14 @@ The plan's key visual step. Recommended approach: a procedural facade shader, no
 ### 2.4 Road network fidelity (M) — in progress (rounded junction polygons and topology-linked crossings added 2026-09-10)
 - Rounded junction polygons now replace square corner fills. Full buffered-centerline unions, explicit curb walls,
   turn pockets and source-backed median areas remain open.
+- Replace per-tile ribbon inference with a canonical surface-topology build before tiling: node the at-grade road
+  graph, buffer carriageway centerlines by their normalized widths, union compatible arms into one junction
+  polygon, and derive curb/sidewalk rings from that surface. Generate tiles with a geometry buffer and assign
+  one owner to seam geometry so clipping cannot change junction topology or double-render tile edges.
 - Dashed lane markings are done. Crossings now carry their matched road centre, direction and width from the
-  processing pipeline instead of relying on a runtime nearest-path guess. Turn arrows remain open; stop lines
-  will render only when a source explicitly identifies them.
+  processing pipeline instead of relying on a runtime nearest-path guess. The canonical pass should clip each
+  marking to its matched carriageway polygon and use `crossing:markings`, `crossing:island` and separately mapped
+  islands when present. Turn arrows remain open; stop lines will render only when a source explicitly identifies them.
 - Bridge decks with piers and railings for Mayo Bridge, the I-95 viaduct and the rail trestles; skip tunnels but
   draw portals.
 - Acceptance: no z-fighting or seams at the Broad / 9th intersection; bridges are recognisable in the tour.

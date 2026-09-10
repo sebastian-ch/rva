@@ -76,7 +76,7 @@ Weak spots, roughly in the order a viewer notices them:
 |---|---|---|---|
 | 1 | Render OSM `building:part` and `min_height` as separate extrusions | S | **Done 2026-09-09:** 126 parts, 42 covered outlines drawn as plinths; James Center's three towers now rise from their shared podium |
 | 2 | Screen-space AO + outline + colour grade post pass | M | **Done:** `postfx.ts` — depth-difference contact AO, depth-edge outline, warm/cool grade, vignette; `o` toggles it |
-| 3 | Junction areas as polygons (OSM2World style) with curb radii | M | Fixes the last road artefacts and enables medians and turn lanes |
+| 3 | Prebuilt road and junction surface topology with curb radii | M | Replaces per-line ribbon overlap, stays stable across tile boundaries, and enables medians and turn lanes |
 | 4 | roofer-based LoD2 roofs replacing the two-plane fit | L | Real roof forms on every building; inputs already exist |
 | 5 | Facade grammar (geometry) for the ground floor: doors, storefront frames, awnings, steps | M | The plan's kit-of-parts, done where the camera sees it |
 | 6 | Ground detail: sidewalk paving tint, lawn vs bed, parking stripes, rail ballast | S | **Partly done:** world-space mottle on land/terrain (`groundDetail.ts`), painted stall lines on surface parking; paving tint and ballast open |

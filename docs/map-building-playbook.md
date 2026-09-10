@@ -148,6 +148,12 @@ does not emit sidewalk strips for `service`, so counting its absent sidewalk tag
 pale apron at an alley T junction. Use the same sidewalk-eligibility predicate for strips and junction arms.
 North Belmont Avenue's service junctions are the Richmond regression area. This rule does not remove mapped
 pedestrian connectivity or the asphalt junction fill.
+OSM can attach a side street or alley to an interior vertex of one continuous through-road way. Shortening
+sidewalks only at feature endpoints leaves the through road's raised sidewalk ribbon painted across that arm,
+even when the junction apron is correct. Split the visual sidewalk at every interior paved junction vertex and
+retract each resulting end by the intersecting road width; retain the unsplit source line for pedestrian motion.
+This applies to topology vertices shared by paved at-grade roads, not ordinary shape points or grade-separated
+crossings. North Belmont Avenue exposes both endpoint and interior-vertex forms in the same review area.
 Separately mapped `footway=sidewalk` lines can exist beside roads whose sidewalk tags are absent rather than
 `sidewalk=separate`. Drawing both the generated curb strip and offset mapped ribbon produces a real duplicate;
 suppressing the curb strip still leaves a same-colour terrain verge that reads as a second sidewalk. In this
