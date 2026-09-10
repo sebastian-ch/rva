@@ -123,6 +123,8 @@ within the candidate road's half-width plus a small curb allowance, project the 
 centerline, and deduplicate projected curb pairs with compatible headings. `crossing=unmarked` remains
 pedestrian connectivity without paint. This rule assumes the nearest eligible road is the intended one;
 complex plazas or tightly parallel carriageways may eventually require explicit way-node relationships.
+Do not infer stop lines from a crossing node: those markings need their own source evidence, and adding
+two full-width bars to every crossing creates dense false markings at ordinary intersections.
 Regression: `web/src/roads.test.ts` covers centering, curb-pair deduplication, and unmarked crossings.
 
 Retain bus access and bus-lane count separately. Bus-only ways have distinct muted-red paving;

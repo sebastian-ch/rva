@@ -471,12 +471,6 @@ export function buildRoads(
       const b = centre.clone().addScaledVector(side, near.width / 2 - 0.2);
       ribbon(mb, [a, b], 0.28, paint);
     }
-    // stop lines: a solid bar before the zebra on the approaching half (right-hand traffic) of each direction
-    const hw = near.width / 2;
-    for (const sgn of [1, -1]) {
-      const centre = new THREE.Vector3(cx, gy, cz).addScaledVector(dir, sgn * (crossingDepth / 2 + 0.9));
-      ribbon(mb, [centre.clone().addScaledVector(side, -hw + 0.2), centre.clone().addScaledVector(side, hw - 0.2)], 0.25, paint);
-    }
   }
   return { roads: mb.build(), paths: carPaths, pathMeta: carMeta, walkPaths };
 }
