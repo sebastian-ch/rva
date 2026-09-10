@@ -71,6 +71,19 @@ it('retains pedestrian crossing connectivity without a solid sidewalk across the
  expect(result.roads.getAttribute('position').count).toBe(0);
 });
 
+it('renders marked crossings across the road and omits unmarked paint', async () => {
+ const {buildRoads}=await import('./roads');
+ const road={type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,0],[20,0]] as [number,number][]},properties:{id:'main',name:null,highway:'primary',lanes:2,width:8,oneway:false,surface:'asphalt',sidewalk:false,bridge:false,tunnel:false,layer:0}};
+ const crossing=(kind:'uncontrolled'|'unmarked')=>({type:'Feature' as const,geometry:{type:'Point' as const,coordinates:[10,0] as [number,number]},properties:{id:`crossing-${kind}`,crossing:kind}});
+ const marked=buildRoads([road],[],[crossing('uncontrolled')],(x,y)=>[x,-y],()=>0,{markings:true,bridges:false}).roads;
+ const unmarked=buildRoads([road],[],[crossing('unmarked')],(x,y)=>[x,-y],()=>0,{markings:true,bridges:false}).roads;
+ expect(marked.getAttribute('position').count).toBeGreaterThan(unmarked.getAttribute('position').count);
+ const pos=marked.getAttribute('position');
+ let spansRoad=false;
+ for(let i=0;i<pos.count;i++) if(Math.abs(pos.getZ(i))>3.5) { spansRoad=true; break; }
+ expect(spansRoad).toBe(true);
+});
+
 it('paints a known right-side bus lane distinctly without moving the roadway',async()=>{
  const {buildRoads}=await import('./roads');
  const {hex}=await import('./props');
