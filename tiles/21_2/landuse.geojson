@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/44771123", "name": "City of Richmond Wastewater Treatment Facility", "kind": "industrial", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285705.11, 4155399.07 ], [ 285682.51, 4155500.0 ], [ 285750.0, 4155500.0 ], [ 285750.0, 4155250.0 ], [ 285621.85, 4155250.0 ], [ 285637.6, 4155283.64 ], [ 285705.11, 4155399.07 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:354468", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285727.57, 4155355.04 ], [ 285728.42, 4155351.34 ], [ 285726.06, 4155350.81 ], [ 285725.21, 4155354.32 ], [ 285727.57, 4155355.04 ] ] ] } }
+]
+}

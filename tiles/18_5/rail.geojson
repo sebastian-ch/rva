@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "rail",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/463588976", "name": null, "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 284801.64, 4156000.0 ], [ 284790.55, 4156014.72 ], [ 284788.31, 4156017.67 ], [ 284773.89, 4156036.18 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/6032717", "name": null, "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 284750.0, 4156002.41 ], [ 284752.36, 4156000.0 ] ] } }
+]
+}

@@ -1,0 +1,17 @@
+{
+"type": "FeatureCollection",
+"name": "crossings",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:node/11507882464", "crossing": "unmarked", "crossing_markings": "no", "road_id": null, "road_width": null, "road_dx": null, "road_dy": null, "road_x": null, "road_y": null, "crossing_island": false }, "geometry": { "type": "Point", "coordinates": [ 286309.3, 4156563.67 ] } },
+{ "type": "Feature", "properties": { "id": "osm:node/11507892276", "crossing": "marked", "crossing_markings": "zebra", "road_id": "osm:way/6039408", "road_width": 9.5, "road_dx": -0.633791, "road_dy": -0.773504, "road_x": 286270.83, "road_y": 4156594.97, "crossing_island": false }, "geometry": { "type": "Point", "coordinates": [ 286270.83, 4156594.97 ] } },
+{ "type": "Feature", "properties": { "id": "osm:node/11507892277", "crossing": "marked", "crossing_markings": "zebra", "road_id": "osm:way/204588078", "road_width": 9.5, "road_dx": 0.774481, "road_dy": -0.632598, "road_x": 286282.13, "road_y": 4156596.32, "crossing_island": false }, "geometry": { "type": "Point", "coordinates": [ 286282.13, 4156596.32 ] } },
+{ "type": "Feature", "properties": { "id": "osm:node/11507892275", "crossing": "marked", "crossing_markings": "zebra", "road_id": "osm:way/47969578", "road_width": 9.5, "road_dx": -0.77887, "road_dy": 0.627186, "road_x": 286270.1, "road_y": 4156606.08, "crossing_island": false }, "geometry": { "type": "Point", "coordinates": [ 286270.1, 4156606.08 ] } },
+{ "type": "Feature", "properties": { "id": "osm:node/11436135924", "crossing": "marked", "crossing_markings": "zebra", "road_id": "osm:way/6039408", "road_width": 9.5, "road_dx": -0.618825, "road_dy": -0.785529, "road_x": 286280.68, "road_y": 4156607.22, "crossing_island": false }, "geometry": { "type": "Point", "coordinates": [ 286280.68, 4156607.22 ] } },
+{ "type": "Feature", "properties": { "id": "osm:node/11436119867", "crossing": "unmarked", "crossing_markings": "no", "road_id": null, "road_width": null, "road_dx": null, "road_dy": null, "road_x": null, "road_y": null, "crossing_island": false }, "geometry": { "type": "Point", "coordinates": [ 286314.1, 4156635.25 ] } },
+{ "type": "Feature", "properties": { "id": "osm:node/11436135876", "crossing": "uncontrolled", "crossing_markings": "zebra", "road_id": "osm:way/6039408", "road_width": 9.5, "road_dx": -0.628514, "road_dy": -0.777798, "road_x": 286345.53, "road_y": 4156688.39, "crossing_island": false }, "geometry": { "type": "Point", "coordinates": [ 286345.53, 4156688.39 ] } },
+{ "type": "Feature", "properties": { "id": "osm:node/11436135875", "crossing": "uncontrolled", "crossing_markings": "zebra", "road_id": "osm:way/692891969", "road_width": 7.0, "road_dx": 0.792647, "road_dy": -0.609681, "road_x": 286344.23, "road_y": 4156700.64, "crossing_island": false }, "geometry": { "type": "Point", "coordinates": [ 286344.23, 4156700.64 ] } },
+{ "type": "Feature", "properties": { "id": "osm:node/11436119854", "crossing": "unmarked", "crossing_markings": "no", "road_id": null, "road_width": null, "road_dx": null, "road_dy": null, "road_x": null, "road_y": null, "crossing_island": false }, "geometry": { "type": "Point", "coordinates": [ 286307.84, 4156719.55 ] } }
+]
+}

@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "buildings",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/503533445", "name": null, "height": 2.69, "min_height": 0.0, "levels": null, "height_source": "lidar", "roof_shape": "skillion", "roof_height": 1.69, "roof_azimuth": 53.9, "roof_source": "lidar", "roof_color": "roof_dark", "wall_color": "brick", "type": "yes", "landmark": null, "footprint_source": "osm", "source_updated": null, "is_part": false, "parent": null, "hidden": false, "addr": null, "wikidata": null, "website": null, "zoning": "R-2", "lidar_p90": 4.2, "ground_z": 58.37, "merged_count": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280662.73, 4157370.5 ], [ 280655.42, 4157365.93 ], [ 280651.54, 4157371.66 ], [ 280658.64, 4157376.67 ], [ 280662.73, 4157370.5 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/503533444", "name": null, "height": 2.82, "min_height": 0.0, "levels": null, "height_source": "lidar", "roof_shape": "gable", "roof_height": 2.36, "roof_azimuth": 42.8, "roof_source": "lidar", "roof_color": "roof_red", "wall_color": "cream", "type": "yes", "landmark": null, "footprint_source": "osm", "source_updated": null, "is_part": false, "parent": null, "hidden": false, "addr": null, "wikidata": null, "website": null, "zoning": "R-2", "lidar_p90": 5.04, "ground_z": 60.71, "merged_count": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280728.27, 4157445.83 ], [ 280716.62, 4157433.23 ], [ 280707.59, 4157441.6 ], [ 280719.34, 4157453.97 ], [ 280728.27, 4157445.83 ] ] ] } }
+]
+}

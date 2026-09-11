@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "richmond_structure:412939", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284908.09, 4155757.68 ], [ 284911.26, 4155760.25 ], [ 284917.33, 4155753.18 ], [ 284913.05, 4155750.0 ], [ 284911.18, 4155750.0 ], [ 284911.79, 4155750.4 ], [ 284908.13, 4155755.92 ], [ 284902.75, 4155752.35 ], [ 284904.31, 4155750.0 ], [ 284898.97, 4155750.0 ], [ 284898.12, 4155751.15 ], [ 284899.55, 4155752.21 ], [ 284897.14, 4155756.68 ], [ 284900.02, 4155758.72 ], [ 284901.2, 4155757.13 ], [ 284905.66, 4155760.68 ], [ 284908.09, 4155757.68 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1098327922", "name": "Magellan Terminal", "kind": "industrial", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285000.0, 4155896.31 ], [ 285000.0, 4155815.68 ], [ 284947.76, 4155884.21 ], [ 285000.0, 4155896.31 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:354534", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284789.28, 4155983.95 ], [ 284786.76, 4155986.14 ], [ 284792.0, 4155991.36 ], [ 284794.39, 4155989.09 ], [ 284789.28, 4155983.95 ] ] ] } }
+]
+}

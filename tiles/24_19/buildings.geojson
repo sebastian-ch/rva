@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "buildings",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/755575332", "name": null, "height": 8.07, "min_height": 0.0, "levels": null, "height_source": "lidar", "roof_shape": "flat", "roof_height": 0.0, "roof_azimuth": null, "roof_source": "heuristic", "roof_color": "roof_dark", "wall_color": "terracotta", "type": "yes", "landmark": null, "footprint_source": "osm", "source_updated": null, "is_part": false, "parent": null, "hidden": false, "addr": "2400 Magnolia Court", "wikidata": null, "website": null, "zoning": "M-2", "lidar_p90": 8.61, "ground_z": 47.49, "merged_count": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286473.66, 4159782.02 ], [ 286496.22, 4159761.49 ], [ 286476.06, 4159739.32 ], [ 286487.46, 4159728.95 ], [ 286467.35, 4159706.84 ], [ 286455.93, 4159717.22 ], [ 286446.89, 4159707.28 ], [ 286424.35, 4159727.8 ], [ 286473.66, 4159782.02 ] ] ] } }
+]
+}

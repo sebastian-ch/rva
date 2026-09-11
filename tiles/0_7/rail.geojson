@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "rail",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/37844919", "name": "Richmond District", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 280250.0, 4156677.39 ], [ 280305.29, 4156673.79 ], [ 280327.34, 4156667.96 ], [ 280389.8, 4156648.24 ], [ 280448.22, 4156609.6 ], [ 280454.21, 4156604.54 ], [ 280500.0, 4156556.95 ] ] } }
+]
+}

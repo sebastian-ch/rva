@@ -1,0 +1,14 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "richmond_structure:303076", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286370.81, 4157793.84 ], [ 286369.29, 4157791.82 ], [ 286363.78, 4157796.31 ], [ 286363.6, 4157797.35 ], [ 286365.04, 4157798.85 ], [ 286365.49, 4157798.07 ], [ 286370.81, 4157793.84 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:308966", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286372.99, 4157798.05 ], [ 286371.86, 4157796.51 ], [ 286367.09, 4157800.41 ], [ 286366.75, 4157800.97 ], [ 286367.92, 4157802.43 ], [ 286368.27, 4157801.75 ], [ 286372.99, 4157798.05 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:307158", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286376.77, 4157802.57 ], [ 286371.46, 4157806.85 ], [ 286373.43, 4157809.3 ], [ 286378.4, 4157805.07 ], [ 286376.77, 4157802.57 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:306928", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286379.62, 4157806.35 ], [ 286374.75, 4157810.95 ], [ 286376.69, 4157813.17 ], [ 286381.39, 4157808.92 ], [ 286379.62, 4157806.35 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:308870", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286394.05, 4157818.06 ], [ 286389.47, 4157821.97 ], [ 286390.82, 4157823.63 ], [ 286395.65, 4157820.17 ], [ 286394.05, 4157818.06 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:425651", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286261.78, 4157828.7 ], [ 286269.54, 4157817.68 ], [ 286267.72, 4157815.67 ], [ 286257.94, 4157823.37 ], [ 286261.78, 4157828.7 ] ] ] } }
+]
+}

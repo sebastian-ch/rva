@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Isometric Richmond</title>
+    <!-- Both are fetched as soon as main.ts runs; starting them here overlaps them with the bundle download. -->
+    <link rel="preload" as="fetch" href="tiles/index.json" />
+    <link rel="preload" as="fetch" href="tiles/landmarks.json" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏛️</text></svg>" />
+    <script type="module" crossorigin src="/rva/assets/index-FCJmWp_1.js"></script>
+    <link rel="stylesheet" crossorigin href="/rva/assets/index-DKfQJZFa.css">
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="scene"></canvas>
+      <div id="ui"></div>
+    </div>
+  </body>
+</html>

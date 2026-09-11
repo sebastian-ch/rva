@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "rail",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/169784611", "name": "Bellwood Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285233.8, 4155250.0 ], [ 285242.65, 4155210.84 ], [ 285250.0, 4155176.28 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/38232580", "name": null, "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285250.0, 4155133.84 ], [ 285233.53, 4155209.47 ], [ 285224.62, 4155250.0 ] ] } }
+]
+}

@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "buildings",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/225274675", "name": "CoStar Group", "height": 45.09, "min_height": 0.0, "levels": 12.0, "height_source": "osm_height", "roof_shape": "flat", "roof_height": 0.0, "roof_azimuth": null, "roof_source": "heuristic", "roof_color": "roof_flat", "wall_color": "glass", "type": "office", "landmark": null, "footprint_source": "osm", "source_updated": null, "is_part": false, "parent": null, "hidden": false, "addr": "501 South 5th Street", "wikidata": "Q16988748", "website": "https://www.costargroup.com/", "zoning": "B-4", "lidar_p90": 57.25, "ground_z": 19.35, "merged_count": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284238.91, 4157075.77 ], [ 284234.3, 4157079.45 ], [ 284227.83, 4157071.42 ], [ 284202.93, 4157091.32 ], [ 284258.43, 4157160.15 ], [ 284287.91, 4157136.59 ], [ 284238.91, 4157075.77 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "override:CoStar Tower", "name": "CoStar Tower", "height": 155.0, "min_height": 0.0, "levels": 26.0, "height_source": "override", "roof_shape": "flat", "roof_height": 0.0, "roof_azimuth": null, "roof_source": "override", "roof_color": "concrete", "wall_color": "glass", "type": "office", "landmark": null, "footprint_source": "override", "source_updated": null, "is_part": false, "parent": null, "hidden": false, "addr": null, "wikidata": null, "website": "https://www.costar.com", "zoning": null, "lidar_p90": null, "ground_z": 24.39, "merged_count": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284158.31, 4157217.21 ], [ 284182.69, 4157247.11 ], [ 284237.59, 4157202.15 ], [ 284213.11, 4157172.36 ], [ 284158.31, 4157217.21 ] ] ] } }
+]
+}

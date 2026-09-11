@@ -1,0 +1,14 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/1417136254", "name": null, "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282454.61, 4160001.79 ], [ 282440.21, 4160013.1 ], [ 282479.52, 4160062.8 ], [ 282493.92, 4160051.39 ], [ 282454.61, 4160001.79 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:409729", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282313.74, 4160083.11 ], [ 282318.38, 4160078.55 ], [ 282304.85, 4160061.91 ], [ 282300.53, 4160065.07 ], [ 282313.74, 4160083.11 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:274359", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282330.3, 4160159.3 ], [ 282325.15, 4160151.93 ], [ 282326.45, 4160150.78 ], [ 282319.14, 4160141.18 ], [ 282289.68, 4160163.92 ], [ 282295.31, 4160171.15 ], [ 282298.47, 4160169.02 ], [ 282310.23, 4160175.35 ], [ 282308.47, 4160179.02 ], [ 282314.47, 4160182.3 ], [ 282326.38, 4160160.29 ], [ 282327.72, 4160161.0 ], [ 282330.3, 4160159.3 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/334124801", "name": null, "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282462.35, 4160250.0 ], [ 282500.0, 4160250.0 ], [ 282500.0, 4160096.09 ], [ 282470.79, 4160117.39 ], [ 282401.6, 4160250.0 ], [ 282448.12, 4160250.0 ], [ 282451.57, 4160243.76 ], [ 282462.35, 4160250.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/822691474", "name": null, "kind": "grass", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282298.37, 4160187.47 ], [ 282273.52, 4160235.08 ], [ 282302.35, 4160250.0 ], [ 282306.58, 4160250.0 ], [ 282330.54, 4160204.12 ], [ 282298.37, 4160187.47 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/822691472", "name": null, "kind": "grass", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282250.0, 4160250.0 ], [ 282264.99, 4160250.0 ], [ 282250.0, 4160241.89 ], [ 282250.0, 4160250.0 ] ] ] } }
+]
+}

@@ -1,0 +1,12 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/236488184", "name": null, "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284797.96, 4157250.0 ], [ 284791.68, 4157250.0 ], [ 284794.02, 4157253.01 ], [ 284797.96, 4157250.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:312191", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284910.43, 4157314.76 ], [ 284914.8, 4157310.76 ], [ 284908.66, 4157303.01 ], [ 284904.03, 4157306.68 ], [ 284910.43, 4157314.76 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/113023443", "name": "Capitol Square", "kind": "park", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284797.37, 4157427.07 ], [ 284855.25, 4157500.0 ], [ 285000.0, 4157500.0 ], [ 285000.0, 4157268.13 ], [ 284982.21, 4157281.42 ], [ 284797.37, 4157427.07 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/252837447", "name": null, "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284750.0, 4157466.38 ], [ 284750.0, 4157500.0 ], [ 284760.75, 4157500.0 ], [ 284805.28, 4157464.34 ], [ 284807.22, 4157458.55 ], [ 284788.38, 4157436.38 ], [ 284750.0, 4157466.38 ] ] ] } }
+]
+}

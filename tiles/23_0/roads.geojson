@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"name": "roads",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/967983521", "name": null, "highway": "service", "lanes": null, "width": 4.5, "oneway": false, "surface": null, "footway": null, "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 286123.43, 4154994.27 ], [ 286145.89, 4154975.34 ], [ 286167.28, 4154960.07 ], [ 286186.76, 4154956.32 ], [ 286229.48, 4154968.51 ], [ 286250.0, 4154973.59 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/671965410", "name": null, "highway": "service", "lanes": null, "width": 4.5, "oneway": false, "surface": null, "footway": null, "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 286121.68, 4155000.0 ], [ 286123.43, 4154994.27 ], [ 286120.37, 4154985.26 ], [ 286115.83, 4154960.72 ], [ 286111.36, 4154947.42 ], [ 286100.71, 4154938.32 ], [ 286083.32, 4154933.73 ], [ 286067.06, 4154931.42 ], [ 286085.96, 4154855.26 ], [ 286080.94, 4154845.88 ], [ 286073.57, 4154838.28 ], [ 286000.0, 4154823.28 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1210903585", "name": null, "highway": "footway", "lanes": null, "width": 2.0, "oneway": false, "surface": null, "footway": null, "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 286083.67, 4154981.79 ], [ 286093.91, 4154984.34 ], [ 286090.49, 4155000.0 ] ] } }
+]
+}

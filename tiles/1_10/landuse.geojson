@@ -1,0 +1,12 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/264469781", "name": "Maymont", "kind": "park", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280750.0, 4157250.0 ], [ 280728.06, 4157250.0 ], [ 280750.0, 4157316.86 ], [ 280750.0, 4157250.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1245689432", "name": "Dell Meadow", "kind": "park", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280614.85, 4157495.52 ], [ 280603.78, 4157496.88 ], [ 280600.58, 4157500.0 ], [ 280642.37, 4157500.0 ], [ 280634.08, 4157497.94 ], [ 280614.85, 4157495.52 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:relation/17142534", "name": null, "kind": "forest", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280665.8, 4157425.46 ], [ 280630.42, 4157380.96 ], [ 280605.63, 4157356.9 ], [ 280583.22, 4157346.69 ], [ 280566.77, 4157333.22 ], [ 280551.19, 4157311.15 ], [ 280537.33, 4157285.89 ], [ 280521.69, 4157250.0 ], [ 280500.0, 4157250.0 ], [ 280500.0, 4157500.0 ], [ 280600.58, 4157500.0 ], [ 280603.78, 4157496.88 ], [ 280614.85, 4157495.52 ], [ 280634.08, 4157497.94 ], [ 280642.37, 4157500.0 ], [ 280680.34, 4157500.0 ], [ 280678.09, 4157458.54 ], [ 280665.8, 4157425.46 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/264469782", "name": "Byrd Park", "kind": "park", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280716.0, 4157337.29 ], [ 280703.82, 4157329.92 ], [ 280699.4, 4157322.99 ], [ 280676.93, 4157250.0 ], [ 280500.0, 4157250.0 ], [ 280500.0, 4157500.0 ], [ 280750.0, 4157500.0 ], [ 280750.0, 4157355.02 ], [ 280744.35, 4157341.3 ], [ 280716.0, 4157337.29 ] ] ] } }
+]
+}

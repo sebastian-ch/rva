@@ -1,0 +1,12 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/1098327923", "name": "FirstEnergy Terminal", "kind": "industrial", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285197.07, 4155750.0 ], [ 285174.66, 4155750.0 ], [ 285188.76, 4155761.19 ], [ 285197.07, 4155750.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:411556", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285024.94, 4155793.74 ], [ 285027.8, 4155795.25 ], [ 285030.5, 4155791.78 ], [ 285033.89, 4155794.43 ], [ 285031.19, 4155797.89 ], [ 285034.33, 4155798.83 ], [ 285039.69, 4155791.45 ], [ 285037.04, 4155789.83 ], [ 285029.93, 4155787.22 ], [ 285024.94, 4155793.74 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1098327922", "name": "Magellan Terminal", "kind": "industrial", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285000.0, 4155896.31 ], [ 285022.17, 4155901.45 ], [ 285045.36, 4155897.07 ], [ 285087.67, 4155858.15 ], [ 285101.7, 4155822.72 ], [ 285116.04, 4155750.0 ], [ 285050.06, 4155750.0 ], [ 285000.0, 4155815.68 ], [ 285000.0, 4155896.31 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/679319538", "name": "Walker's Creek Retention Basin Park", "kind": "park", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285167.71, 4155921.6 ], [ 285136.79, 4155922.33 ], [ 285140.72, 4156000.0 ], [ 285250.0, 4156000.0 ], [ 285250.0, 4155910.37 ], [ 285223.95, 4155915.67 ], [ 285167.71, 4155921.6 ] ] ] } }
+]
+}

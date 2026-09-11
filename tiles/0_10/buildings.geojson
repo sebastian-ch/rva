@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "buildings",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/236152566", "name": null, "height": 16.14, "min_height": 0.0, "levels": null, "height_source": "lidar", "roof_shape": "flat", "roof_height": 0.0, "roof_azimuth": null, "roof_source": "lidar", "roof_color": "roof_dark", "wall_color": "cream", "type": "yes", "landmark": null, "footprint_source": "osm", "source_updated": null, "is_part": false, "parent": null, "hidden": false, "addr": null, "wikidata": null, "website": null, "zoning": "R-2", "lidar_p90": 17.06, "ground_z": 26.34, "merged_count": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280375.74, 4157286.06 ], [ 280400.42, 4157271.45 ], [ 280393.36, 4157259.63 ], [ 280368.68, 4157274.25 ], [ 280375.74, 4157286.06 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/236152567", "name": "Byrd Park Pump House", "height": 14.78, "min_height": 0.0, "levels": null, "height_source": "lidar", "roof_shape": "flat", "roof_height": 0.0, "roof_azimuth": null, "roof_source": "heuristic", "roof_color": "roof_flat", "wall_color": "sand", "type": "service", "landmark": null, "footprint_source": "osm", "source_updated": null, "is_part": false, "parent": null, "hidden": false, "addr": "1700 Pump House Dr", "wikidata": "Q16895812", "website": null, "zoning": "R-2", "lidar_p90": 17.02, "ground_z": 27.22, "merged_count": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280333.45, 4157303.03 ], [ 280321.76, 4157310.12 ], [ 280319.95, 4157307.17 ], [ 280311.24, 4157312.47 ], [ 280318.48, 4157324.3 ], [ 280337.99, 4157312.45 ], [ 280342.79, 4157320.28 ], [ 280376.93, 4157299.54 ], [ 280368.31, 4157285.47 ], [ 280335.07, 4157305.68 ], [ 280333.45, 4157303.03 ] ] ] } }
+]
+}

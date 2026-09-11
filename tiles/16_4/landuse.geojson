@@ -1,0 +1,13 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "richmond_structure:412947", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284500.0, 4155764.73 ], [ 284500.0, 4155763.42 ], [ 284499.37, 4155764.25 ], [ 284500.0, 4155764.73 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:354571", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284317.79, 4155783.33 ], [ 284321.22, 4155778.62 ], [ 284318.73, 4155777.15 ], [ 284315.28, 4155781.32 ], [ 284317.79, 4155783.33 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:426265", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284485.53, 4155803.97 ], [ 284487.37, 4155801.73 ], [ 284485.3, 4155799.98 ], [ 284483.44, 4155802.36 ], [ 284485.53, 4155803.97 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:412945", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 284412.47, 4155975.62 ], [ 284394.31, 4156000.0 ], [ 284398.48, 4156000.0 ], [ 284399.11, 4155998.99 ], [ 284398.74, 4155998.76 ], [ 284409.5, 4155981.63 ], [ 284413.12, 4155983.9 ], [ 284409.93, 4155988.97 ], [ 284415.97, 4155991.73 ], [ 284412.11, 4156000.0 ], [ 284416.73, 4156000.0 ], [ 284418.89, 4155995.28 ], [ 284423.87, 4155997.55 ], [ 284422.75, 4156000.0 ], [ 284433.89, 4156000.0 ], [ 284438.08, 4155994.7 ], [ 284412.47, 4155975.62 ] ] ], [ [ [ 284404.45, 4155997.69 ], [ 284403.0, 4156000.0 ], [ 284406.37, 4156000.0 ], [ 284406.91, 4155998.8 ], [ 284404.45, 4155997.69 ] ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/822389320", "name": null, "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284467.7, 4155985.51 ], [ 284456.57, 4156000.0 ], [ 284484.17, 4156000.0 ], [ 284484.2, 4155999.96 ], [ 284467.7, 4155985.51 ] ] ] } }
+]
+}

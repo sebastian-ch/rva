@@ -1,0 +1,12 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/1098327924", "name": "Citgo Terminal", "kind": "industrial", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284920.57, 4155557.52 ], [ 285000.0, 4155617.01 ], [ 285000.0, 4155500.0 ], [ 284976.66, 4155500.0 ], [ 284968.85, 4155505.07 ], [ 284920.57, 4155557.52 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:354530", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285000.0, 4155642.73 ], [ 285000.0, 4155642.01 ], [ 284999.65, 4155642.44 ], [ 285000.0, 4155642.73 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:412847", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284941.85, 4155707.08 ], [ 284954.24, 4155690.75 ], [ 284951.86, 4155688.95 ], [ 284939.47, 4155705.27 ], [ 284941.85, 4155707.08 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:412939", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284898.97, 4155750.0 ], [ 284904.31, 4155750.0 ], [ 284906.41, 4155746.84 ], [ 284911.18, 4155750.0 ], [ 284913.05, 4155750.0 ], [ 284903.97, 4155743.25 ], [ 284898.97, 4155750.0 ] ] ] } }
+]
+}

@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "roads",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/359871991", "name": null, "highway": "footway", "lanes": null, "width": 2.0, "oneway": false, "surface": null, "footway": null, "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 281930.59, 4156453.07 ], [ 281924.65, 4156457.2 ], [ 281917.48, 4156464.47 ], [ 281908.55, 4156467.54 ], [ 281903.78, 4156466.49 ], [ 281900.38, 4156463.73 ], [ 281899.34, 4156459.98 ], [ 281899.2, 4156454.79 ], [ 281898.46, 4156449.5 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/880661956", "name": "Texas Beach Trail", "highway": "footway", "lanes": null, "width": 2.0, "oneway": false, "surface": "dirt", "footway": null, "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 281956.2, 4156500.0 ], [ 281951.68, 4156491.24 ], [ 281945.56, 4156481.12 ], [ 281942.97, 4156474.69 ], [ 281939.95, 4156466.41 ], [ 281938.02, 4156461.02 ], [ 281935.09, 4156457.59 ], [ 281932.76, 4156454.74 ], [ 281930.59, 4156453.07 ], [ 281928.54, 4156451.49 ], [ 281926.24, 4156450.45 ], [ 281921.01, 4156446.11 ], [ 281915.75, 4156444.31 ], [ 281909.94, 4156445.15 ], [ 281898.46, 4156449.5 ], [ 281886.85, 4156453.47 ], [ 281881.97, 4156452.19 ], [ 281872.52, 4156452.01 ], [ 281864.11, 4156450.68 ], [ 281856.79, 4156451.34 ], [ 281849.02, 4156451.28 ], [ 281839.99, 4156453.4 ], [ 281821.43, 4156457.62 ], [ 281805.67, 4156458.36 ], [ 281794.31, 4156458.76 ], [ 281776.18, 4156451.6 ], [ 281764.63, 4156446.78 ], [ 281756.56, 4156440.78 ], [ 281750.0, 4156437.28 ] ] } }
+]
+}

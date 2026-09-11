@@ -1,0 +1,14 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/1430721261", "name": null, "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285745.94, 4160038.18 ], [ 285740.36, 4160039.06 ], [ 285741.2, 4160044.37 ], [ 285746.78, 4160043.48 ], [ 285745.94, 4160038.18 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1430721260", "name": null, "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285734.21, 4160039.47 ], [ 285728.94, 4160040.0 ], [ 285729.49, 4160045.39 ], [ 285734.76, 4160044.85 ], [ 285734.21, 4160039.47 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1430721259", "name": null, "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285714.81, 4160041.53 ], [ 285706.89, 4160042.36 ], [ 285707.45, 4160047.71 ], [ 285715.37, 4160046.88 ], [ 285714.81, 4160041.53 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1430721258", "name": null, "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285728.54, 4160050.64 ], [ 285717.72, 4160051.9 ], [ 285718.32, 4160057.06 ], [ 285729.14, 4160055.8 ], [ 285728.54, 4160050.64 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/755574203", "name": null, "kind": "grass", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285558.82, 4160078.89 ], [ 285579.97, 4160056.35 ], [ 285555.17, 4160030.99 ], [ 285532.97, 4160054.57 ], [ 285558.82, 4160078.89 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/755574264", "name": null, "kind": "grass", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285500.0, 4160076.34 ], [ 285525.57, 4160057.33 ], [ 285509.24, 4160035.91 ], [ 285500.0, 4160042.76 ], [ 285500.0, 4160076.34 ] ] ] } }
+]
+}

@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "buildings",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "richmond_structure:433521", "name": null, "height": 2.54, "min_height": 0.0, "levels": null, "height_source": "lidar", "roof_shape": "flat", "roof_height": 0.0, "roof_azimuth": null, "roof_source": "heuristic", "roof_color": "roof_flat", "wall_color": "sand", "type": "yes", "landmark": null, "footprint_source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "is_part": false, "parent": null, "hidden": false, "addr": null, "wikidata": null, "website": null, "zoning": "R-5", "lidar_p90": 3.04, "ground_z": 43.41, "merged_count": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283014.82, 4157086.02 ], [ 283013.37, 4157083.29 ], [ 283009.83, 4157085.17 ], [ 283011.27, 4157087.9 ], [ 283014.82, 4157086.02 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:433517", "name": null, "height": 2.94, "min_height": 0.0, "levels": null, "height_source": "lidar", "roof_shape": "flat", "roof_height": 0.0, "roof_azimuth": null, "roof_source": "heuristic", "roof_color": "roof_dark", "wall_color": "terracotta", "type": "yes", "landmark": null, "footprint_source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "is_part": false, "parent": null, "hidden": false, "addr": null, "wikidata": null, "website": null, "zoning": "R-5", "lidar_p90": 3.73, "ground_z": 34.66, "merged_count": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283091.61, 4157136.76 ], [ 283094.31, 4157135.14 ], [ 283091.9, 4157131.14 ], [ 283089.2, 4157132.76 ], [ 283091.61, 4157136.76 ] ] ] } }
+]
+}

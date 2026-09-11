@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/45103242", "name": null, "kind": "industrial", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283289.74, 4160762.98 ], [ 283287.31, 4160750.0 ], [ 283250.0, 4160750.0 ], [ 283250.0, 4160947.83 ], [ 283269.8, 4160947.22 ], [ 283290.56, 4160866.83 ], [ 283289.74, 4160762.98 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/676149769", "name": null, "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283272.8, 4160804.54 ], [ 283273.38, 4160826.75 ], [ 283285.09, 4160826.73 ], [ 283285.87, 4160762.7 ], [ 283283.8, 4160750.0 ], [ 283250.0, 4160750.0 ], [ 283250.0, 4160827.86 ], [ 283268.49, 4160826.88 ], [ 283267.99, 4160804.9 ], [ 283272.8, 4160804.54 ] ] ] } }
+]
+}

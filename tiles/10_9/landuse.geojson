@@ -1,0 +1,13 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/264670934", "name": "Riverview Cemetery", "kind": "cemetery", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282761.81, 4157236.96 ], [ 282750.0, 4157239.95 ], [ 282750.0, 4157250.0 ], [ 282778.7, 4157250.0 ], [ 282778.63, 4157249.47 ], [ 282761.81, 4157236.96 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:272698", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282933.77, 4157166.84 ], [ 282935.66, 4157168.32 ], [ 282935.23, 4157165.72 ], [ 282936.54, 4157165.71 ], [ 282937.1, 4157168.32 ], [ 282938.09, 4157167.39 ], [ 282938.99, 4157164.85 ], [ 282938.0, 4157164.87 ], [ 282938.03, 4157165.32 ], [ 282933.28, 4157165.61 ], [ 282933.77, 4157166.84 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/76362268", "name": "Hollywood Cemetery", "kind": "cemetery", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282891.93, 4157250.0 ], [ 283000.0, 4157250.0 ], [ 283000.0, 4157000.0 ], [ 282750.0, 4157000.0 ], [ 282750.0, 4157183.47 ], [ 282871.12, 4157173.5 ], [ 282891.93, 4157250.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/823018126", "name": null, "kind": "grass", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282761.81, 4157236.96 ], [ 282750.0, 4157239.95 ], [ 282750.0, 4157250.0 ], [ 282778.7, 4157250.0 ], [ 282778.63, 4157249.47 ], [ 282761.81, 4157236.96 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/368239975", "name": null, "kind": "forest", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282750.0, 4157183.47 ], [ 282750.0, 4157239.95 ], [ 282761.81, 4157236.96 ], [ 282778.63, 4157249.47 ], [ 282778.7, 4157250.0 ], [ 282891.93, 4157250.0 ], [ 282871.12, 4157173.5 ], [ 282750.0, 4157183.47 ] ] ] } }
+]
+}

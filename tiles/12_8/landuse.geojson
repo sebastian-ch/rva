@@ -1,0 +1,12 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/822783213", "name": null, "kind": "forest", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283374.29, 4156935.46 ], [ 283393.01, 4156937.15 ], [ 283400.55, 4156940.05 ], [ 283500.0, 4156948.21 ], [ 283500.0, 4156929.56 ], [ 283271.4, 4156906.13 ], [ 283269.85, 4156906.56 ], [ 283269.65, 4156906.6 ], [ 283264.14, 4156912.0 ], [ 283258.27, 4156925.17 ], [ 283264.92, 4156929.64 ], [ 283356.26, 4156935.93 ], [ 283374.29, 4156935.46 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:272690", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283444.11, 4156959.14 ], [ 283443.62, 4156966.3 ], [ 283457.64, 4156967.26 ], [ 283458.12, 4156960.09 ], [ 283444.11, 4156959.14 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/225361960", "name": "Dominion Clearinghouse Parking", "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283432.13, 4156995.63 ], [ 283433.97, 4156956.85 ], [ 283351.26, 4156950.51 ], [ 283348.46, 4156988.37 ], [ 283432.13, 4156995.63 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:408690", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283253.63, 4156974.7 ], [ 283253.13, 4156980.74 ], [ 283257.18, 4156981.05 ], [ 283256.72, 4156984.71 ], [ 283259.34, 4156984.89 ], [ 283260.25, 4156976.02 ], [ 283259.0, 4156975.81 ], [ 283259.05, 4156975.11 ], [ 283253.63, 4156974.7 ] ] ] } }
+]
+}

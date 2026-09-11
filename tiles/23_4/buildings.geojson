@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "buildings",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/1351210720", "name": "James A. Buzzard River Education Center", "height": 10.62, "min_height": 0.0, "levels": null, "height_source": "lidar", "roof_shape": "flat", "roof_height": 0.0, "roof_azimuth": null, "roof_source": "lidar", "roof_color": "roof_flat", "wall_color": "brick", "type": "yes", "landmark": null, "footprint_source": "osm", "source_updated": null, "is_part": false, "parent": null, "hidden": false, "addr": null, "wikidata": null, "website": null, "zoning": "M-2", "lidar_p90": 11.32, "ground_z": 5.74, "merged_count": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286126.16, 4155911.93 ], [ 286111.96, 4155904.46 ], [ 286101.09, 4155925.08 ], [ 286099.44, 4155924.52 ], [ 286095.21, 4155932.17 ], [ 286105.48, 4155937.77 ], [ 286104.5, 4155939.43 ], [ 286110.27, 4155942.48 ], [ 286126.16, 4155911.93 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:305670", "name": null, "height": 2.5, "min_height": 0.0, "levels": null, "height_source": "lidar", "roof_shape": "flat", "roof_height": 0.0, "roof_azimuth": null, "roof_source": "heuristic", "roof_color": "roof_dark", "wall_color": "cream", "type": "yes", "landmark": null, "footprint_source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "is_part": false, "parent": null, "hidden": false, "addr": null, "wikidata": null, "website": null, "zoning": "M-2", "lidar_p90": 2.41, "ground_z": 18.85, "merged_count": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286223.8, 4155970.67 ], [ 286221.16, 4155973.88 ], [ 286224.14, 4155976.32 ], [ 286226.77, 4155973.11 ], [ 286223.8, 4155970.67 ] ] ] } }
+]
+}

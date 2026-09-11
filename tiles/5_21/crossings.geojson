@@ -1,0 +1,13 @@
+{
+"type": "FeatureCollection",
+"name": "crossings",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:node/11590446682", "crossing": "unmarked", "crossing_markings": "no", "road_id": "osm:way/268832620", "road_width": 11.0, "road_dx": 0.78284, "road_dy": -0.622224, "road_x": 281732.55, "road_y": 4160207.04, "crossing_island": false }, "geometry": { "type": "Point", "coordinates": [ 281728.65, 4160202.13 ] } },
+{ "type": "Feature", "properties": { "id": "osm:node/7022169270", "crossing": "traffic_signals", "crossing_markings": "no", "road_id": "osm:way/83606951", "road_width": 7.0, "road_dx": -0.628132, "road_dy": -0.778106, "road_x": 281692.61, "road_y": 4160230.42, "crossing_island": false }, "geometry": { "type": "Point", "coordinates": [ 281692.61, 4160230.42 ] } },
+{ "type": "Feature", "properties": { "id": "osm:node/5492092952", "crossing": "traffic_signals", "crossing_markings": "zebra", "road_id": "osm:way/268832620", "road_width": 11.0, "road_dx": 0.73154, "road_dy": -0.681798, "road_x": 281702.66, "road_y": 4160230.73, "crossing_island": false }, "geometry": { "type": "Point", "coordinates": [ 281702.66, 4160230.73 ] } },
+{ "type": "Feature", "properties": { "id": "osm:node/7022169269", "crossing": "traffic_signals", "crossing_markings": "zebra", "road_id": "osm:way/751220431", "road_width": 11.0, "road_dx": 0.669457, "road_dy": -0.742851, "road_x": 281693.25, "road_y": 4160239.93, "crossing_island": false }, "geometry": { "type": "Point", "coordinates": [ 281693.25, 4160239.93 ] } },
+{ "type": "Feature", "properties": { "id": "osm:node/7022169272", "crossing": "traffic_signals", "crossing_markings": "zebra", "road_id": "osm:way/708342779", "road_width": 11.0, "road_dx": -0.778067, "road_dy": 0.628181, "road_x": 281714.0, "road_y": 4160245.35, "crossing_island": false }, "geometry": { "type": "Point", "coordinates": [ 281714.0, 4160245.35 ] } }
+]
+}

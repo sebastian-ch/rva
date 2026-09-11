@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/45031115", "name": "Forest Hill Park", "kind": "park", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 281500.0, 4155000.0 ], [ 281609.16, 4155000.0 ], [ 281589.52, 4154989.03 ], [ 281570.87, 4154990.05 ], [ 281558.0, 4154960.01 ], [ 281500.75, 4154975.27 ], [ 281500.0, 4154975.57 ], [ 281500.0, 4155000.0 ] ] ] } }
+]
+}

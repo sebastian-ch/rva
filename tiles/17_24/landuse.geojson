@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/677107281", "name": "Battery Park", "kind": "park", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284504.2, 4160750.0 ], [ 284500.0, 4160750.0 ], [ 284500.0, 4160781.85 ], [ 284507.01, 4160781.4 ], [ 284504.2, 4160750.0 ] ] ] } }
+]
+}

@@ -1,0 +1,13 @@
+{
+"type": "FeatureCollection",
+"name": "pois",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "rva-tree:20468", "name": "Lagerstroemia indica", "kind": "tree", "species": "Lagerstroemia indica", "source": "city_inventory", "tree_height": 8.0, "crown_radius": 2.5, "height_source": "estimated" }, "geometry": { "type": "Point", "coordinates": [ 281987.83, 4160751.4 ] } },
+{ "type": "Feature", "properties": { "id": "rva-tree:20467", "name": "Lagerstroemia indica", "kind": "tree", "species": "Lagerstroemia indica", "source": "city_inventory", "tree_height": 8.0, "crown_radius": 2.5, "height_source": "estimated" }, "geometry": { "type": "Point", "coordinates": [ 281983.74, 4160755.41 ] } },
+{ "type": "Feature", "properties": { "id": "rva-tree:20466", "name": "Lagerstroemia indica", "kind": "tree", "species": "Lagerstroemia indica", "source": "city_inventory", "tree_height": 8.0, "crown_radius": 2.5, "height_source": "estimated" }, "geometry": { "type": "Point", "coordinates": [ 281979.73, 4160761.53 ] } },
+{ "type": "Feature", "properties": { "id": "rva-tree:20465", "name": "Lagerstroemia indica", "kind": "tree", "species": "Lagerstroemia indica", "source": "city_inventory", "tree_height": 8.0, "crown_radius": 2.5, "height_source": "estimated" }, "geometry": { "type": "Point", "coordinates": [ 281975.86, 4160766.3 ] } },
+{ "type": "Feature", "properties": { "id": "rva-tree:20461", "name": "Lagerstroemia indica", "kind": "tree", "species": "Lagerstroemia indica", "source": "city_inventory", "tree_height": 8.0, "crown_radius": 2.5, "height_source": "estimated" }, "geometry": { "type": "Point", "coordinates": [ 281967.13, 4160795.72 ] } }
+]
+}

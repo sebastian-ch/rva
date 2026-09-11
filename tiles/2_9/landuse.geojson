@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "richmond_structure:270504", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280922.09, 4157012.8 ], [ 280925.07, 4157021.52 ], [ 280933.11, 4157018.77 ], [ 280930.13, 4157010.05 ], [ 280922.09, 4157012.8 ] ], [ [ 280929.02, 4157011.16 ], [ 280931.52, 4157018.21 ], [ 280925.74, 4157020.25 ], [ 280923.25, 4157013.2 ], [ 280929.02, 4157011.16 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:272246", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280928.9, 4157026.17 ], [ 280932.53, 4157024.82 ], [ 280931.68, 4157022.52 ], [ 280928.05, 4157023.87 ], [ 280928.9, 4157026.17 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/264469781", "name": "Maymont", "kind": "park", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280750.0, 4157250.0 ], [ 281000.0, 4157250.0 ], [ 281000.0, 4157000.0 ], [ 280750.0, 4157000.0 ], [ 280750.0, 4157250.0 ] ] ] } }
+]
+}

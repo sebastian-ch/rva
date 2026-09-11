@@ -1,0 +1,12 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/45103242", "name": null, "kind": "industrial", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283000.0, 4160500.0 ], [ 283000.0, 4160750.0 ], [ 283250.0, 4160750.0 ], [ 283250.0, 4160551.13 ], [ 283240.41, 4160500.0 ], [ 283000.0, 4160500.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:273817", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283031.48, 4160541.34 ], [ 283031.39, 4160542.54 ], [ 283028.89, 4160542.73 ], [ 283028.81, 4160546.71 ], [ 283036.98, 4160546.42 ], [ 283036.91, 4160541.2 ], [ 283031.48, 4160541.34 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/676149770", "name": null, "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283130.58, 4160611.22 ], [ 283153.62, 4160610.42 ], [ 283154.39, 4160632.59 ], [ 283250.0, 4160629.61 ], [ 283250.0, 4160612.16 ], [ 283248.26, 4160609.56 ], [ 283250.0, 4160609.18 ], [ 283250.0, 4160595.42 ], [ 283247.43, 4160595.65 ], [ 283247.13, 4160589.05 ], [ 283124.22, 4160592.7 ], [ 283124.63, 4160604.41 ], [ 283130.34, 4160604.2 ], [ 283130.58, 4160611.22 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/676149769", "name": null, "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283244.68, 4160750.0 ], [ 283250.0, 4160750.0 ], [ 283250.0, 4160676.58 ], [ 283242.24, 4160677.07 ], [ 283244.68, 4160750.0 ] ] ] } }
+]
+}

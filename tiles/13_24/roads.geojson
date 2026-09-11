@@ -1,0 +1,12 @@
+{
+"type": "FeatureCollection",
+"name": "roads",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/1369081070", "name": "Brook Road", "highway": "secondary", "lanes": 1.0, "width": 9.5, "oneway": true, "surface": "asphalt", "footway": null, "sidewalk_left": null, "sidewalk_right": null, "generated_sidewalk": true, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 283706.95, 4160772.14 ], [ 283707.6, 4160750.0 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1369624226", "name": "Brook Road", "highway": "secondary", "lanes": 1.0, "width": 9.5, "oneway": true, "surface": "asphalt", "footway": null, "sidewalk_left": null, "sidewalk_right": null, "generated_sidewalk": true, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 283718.24, 4160750.0 ], [ 283717.57, 4160773.35 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1424026652", "name": null, "highway": "footway", "lanes": null, "width": 2.0, "oneway": false, "surface": "concrete", "footway": "sidewalk", "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 283727.83, 4160750.0 ], [ 283727.68, 4160755.2 ], [ 283727.28, 4160769.21 ], [ 283750.0, 4160771.64 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1349721532", "name": null, "highway": "footway", "lanes": null, "width": 2.0, "oneway": false, "surface": null, "footway": "sidewalk", "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 283694.3, 4160933.75 ], [ 283693.2, 4160932.77 ], [ 283694.17, 4160907.12 ], [ 283694.29, 4160892.07 ], [ 283695.05, 4160876.03 ], [ 283697.04, 4160810.0 ], [ 283698.76, 4160750.0 ] ] } }
+]
+}

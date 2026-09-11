@@ -1,0 +1,12 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "richmond_structure:404745", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285718.22, 4158018.77 ], [ 285719.48, 4158018.77 ], [ 285719.54, 4158007.44 ], [ 285718.27, 4158007.44 ], [ 285718.22, 4158018.77 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:311550", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285718.71, 4158049.96 ], [ 285718.35, 4158046.3 ], [ 285716.28, 4158046.52 ], [ 285716.44, 4158049.97 ], [ 285718.71, 4158049.96 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/296796851", "name": null, "kind": "forest", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285616.64, 4158215.48 ], [ 285615.98, 4158250.0 ], [ 285690.5, 4158250.0 ], [ 285701.8, 4158184.12 ], [ 285700.41, 4158130.32 ], [ 285692.18, 4158013.87 ], [ 285691.83, 4158000.0 ], [ 285629.34, 4158000.0 ], [ 285626.76, 4158028.66 ], [ 285616.64, 4158215.48 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/296796852", "name": null, "kind": "forest", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285620.39, 4158000.0 ], [ 285517.99, 4158000.0 ], [ 285508.94, 4158027.46 ], [ 285500.0, 4158061.07 ], [ 285500.0, 4158250.0 ], [ 285607.12, 4158250.0 ], [ 285607.08, 4158198.43 ], [ 285620.39, 4158000.0 ] ] ] } }
+]
+}

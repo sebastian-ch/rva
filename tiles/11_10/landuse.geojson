@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/76362268", "name": "Hollywood Cemetery", "kind": "cemetery", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283000.0, 4157500.0 ], [ 283250.0, 4157500.0 ], [ 283250.0, 4157250.0 ], [ 283000.0, 4157250.0 ], [ 283000.0, 4157500.0 ] ] ] } }
+]
+}

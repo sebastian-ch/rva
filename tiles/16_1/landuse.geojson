@@ -1,0 +1,13 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "richmond_structure:412949", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284398.16, 4155001.75 ], [ 284395.76, 4155000.0 ], [ 284375.25, 4155000.0 ], [ 284395.56, 4155015.09 ], [ 284402.82, 4155005.16 ], [ 284400.4, 4155003.39 ], [ 284400.0, 4155003.76 ], [ 284398.16, 4155001.75 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:411598", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284475.78, 4155195.7 ], [ 284476.88, 4155194.25 ], [ 284474.62, 4155192.53 ], [ 284473.52, 4155193.98 ], [ 284475.78, 4155195.7 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:411599", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284477.93, 4155202.94 ], [ 284480.4, 4155199.69 ], [ 284477.51, 4155197.5 ], [ 284475.07, 4155200.71 ], [ 284477.93, 4155202.94 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:411590", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284273.61, 4155240.13 ], [ 284274.75, 4155238.66 ], [ 284273.76, 4155237.9 ], [ 284272.63, 4155239.37 ], [ 284273.61, 4155240.13 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:411591", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 284268.48, 4155250.0 ], [ 284269.08, 4155249.19 ], [ 284268.2, 4155248.53 ], [ 284267.1, 4155250.0 ], [ 284268.48, 4155250.0 ] ] ], [ [ [ 284264.86, 4155250.0 ], [ 284265.06, 4155250.0 ], [ 284264.93, 4155249.9 ], [ 284264.86, 4155250.0 ] ] ] ] } }
+]
+}

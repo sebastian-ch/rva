@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/679319538", "name": "Walker's Creek Retention Basin Park", "kind": "park", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285234.1, 4156046.35 ], [ 285250.0, 4156043.16 ], [ 285250.0, 4156000.0 ], [ 285140.72, 4156000.0 ], [ 285143.43, 4156053.64 ], [ 285194.83, 4156050.67 ], [ 285234.1, 4156046.35 ] ] ] } }
+]
+}

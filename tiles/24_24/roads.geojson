@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "roads",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/6035906", "name": "2nd Avenue", "highway": "residential", "lanes": null, "width": 7.0, "oneway": false, "surface": "asphalt", "footway": null, "sidewalk_left": false, "sidewalk_right": null, "generated_sidewalk": true, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 286374.78, 4160750.0 ], [ 286404.42, 4160794.03 ], [ 286412.39, 4160805.68 ], [ 286424.53, 4160823.84 ], [ 286430.72, 4160833.1 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/6037263", "name": "Woodcliff Avenue", "highway": "residential", "lanes": null, "width": 7.0, "oneway": true, "surface": null, "footway": null, "sidewalk_left": false, "sidewalk_right": null, "generated_sidewalk": true, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 286250.0, 4160773.85 ], [ 286257.28, 4160802.22 ], [ 286263.0, 4160824.53 ], [ 286272.66, 4160866.21 ], [ 286274.01, 4160872.05 ] ] } }
+]
+}

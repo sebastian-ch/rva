@@ -1,0 +1,13 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "richmond_structure:411427", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284894.83, 4156044.71 ], [ 284896.13, 4156045.24 ], [ 284899.74, 4156044.9 ], [ 284901.27, 4156043.93 ], [ 284903.01, 4156041.1 ], [ 284903.13, 4156038.64 ], [ 284902.47, 4156036.09 ], [ 284901.76, 4156034.92 ], [ 284900.6, 4156034.29 ], [ 284897.12, 4156033.54 ], [ 284891.12, 4156033.5 ], [ 284891.73, 4156042.6 ], [ 284894.83, 4156044.71 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/317253249", "name": "Floodwall Parking", "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284762.55, 4156057.43 ], [ 284766.39, 4156054.11 ], [ 284753.35, 4156044.65 ], [ 284750.0, 4156047.39 ], [ 284750.0, 4156068.24 ], [ 284763.4, 4156066.05 ], [ 284762.55, 4156057.43 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/823768838", "name": null, "kind": "forest", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284772.7, 4156072.37 ], [ 284780.24, 4156067.07 ], [ 284766.39, 4156054.11 ], [ 284762.55, 4156057.43 ], [ 284763.4, 4156066.05 ], [ 284750.0, 4156068.24 ], [ 284750.0, 4156074.5 ], [ 284751.92, 4156074.17 ], [ 284766.92, 4156074.01 ], [ 284772.7, 4156072.37 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:426260", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284952.64, 4156071.41 ], [ 284959.65, 4156069.22 ], [ 284956.94, 4156061.9 ], [ 284944.07, 4156066.28 ], [ 284946.77, 4156074.5 ], [ 284952.92, 4156072.27 ], [ 284952.64, 4156071.41 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/491695518", "name": "Floodwall Park", "kind": "park", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284752.76, 4156086.11 ], [ 284750.25, 4156095.9 ], [ 284754.09, 4156104.87 ], [ 284759.21, 4156128.16 ], [ 284756.0, 4156141.09 ], [ 284760.72, 4156144.24 ], [ 284772.34, 4156127.33 ], [ 284792.56, 4156113.34 ], [ 284819.12, 4156103.92 ], [ 284814.36, 4156092.24 ], [ 284793.31, 4156076.45 ], [ 284752.76, 4156086.11 ] ] ] } }
+]
+}

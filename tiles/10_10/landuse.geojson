@@ -1,0 +1,12 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/264670934", "name": "Riverview Cemetery", "kind": "cemetery", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282802.43, 4157318.87 ], [ 282783.92, 4157285.93 ], [ 282778.7, 4157250.0 ], [ 282750.0, 4157250.0 ], [ 282750.0, 4157500.0 ], [ 282815.92, 4157500.0 ], [ 282847.29, 4157492.36 ], [ 282936.88, 4157472.17 ], [ 282916.96, 4157442.01 ], [ 282904.44, 4157416.83 ], [ 282876.55, 4157328.51 ], [ 282847.4, 4157303.53 ], [ 282829.92, 4157306.35 ], [ 282802.43, 4157318.87 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/76362268", "name": "Hollywood Cemetery", "kind": "cemetery", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282922.69, 4157375.98 ], [ 282936.88, 4157472.17 ], [ 282942.03, 4157500.0 ], [ 283000.0, 4157500.0 ], [ 283000.0, 4157250.0 ], [ 282891.93, 4157250.0 ], [ 282903.14, 4157291.19 ], [ 282922.69, 4157375.98 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/823018126", "name": null, "kind": "grass", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282778.7, 4157250.0 ], [ 282750.0, 4157250.0 ], [ 282750.0, 4157362.98 ], [ 282812.03, 4157347.44 ], [ 282829.92, 4157306.35 ], [ 282802.43, 4157318.87 ], [ 282783.92, 4157285.93 ], [ 282778.7, 4157250.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/368239975", "name": null, "kind": "forest", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282891.93, 4157250.0 ], [ 282778.7, 4157250.0 ], [ 282783.92, 4157285.93 ], [ 282802.43, 4157318.87 ], [ 282829.92, 4157306.35 ], [ 282847.4, 4157303.53 ], [ 282876.55, 4157328.51 ], [ 282904.44, 4157416.83 ], [ 282916.96, 4157442.01 ], [ 282936.88, 4157472.17 ], [ 282922.69, 4157375.98 ], [ 282903.14, 4157291.19 ], [ 282891.93, 4157250.0 ] ] ] } }
+]
+}

@@ -1,0 +1,14 @@
+{
+"type": "FeatureCollection",
+"name": "rail",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/308161636", "name": "Bellwood Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 282622.78, 4160250.0 ], [ 282597.99, 4160275.08 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/836456190", "name": "Bellwood Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 282597.99, 4160275.08 ], [ 282624.98, 4160250.47 ], [ 282625.48, 4160250.0 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1028123553", "name": "Bellwood Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 282589.11, 4160290.02 ], [ 282628.61, 4160250.0 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1028123552", "name": "Bellwood Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 282597.99, 4160275.08 ], [ 282586.14, 4160287.08 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/880021819", "name": "Richmond Terminal Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 282500.0, 4160381.05 ], [ 282500.09, 4160380.96 ], [ 282555.66, 4160323.92 ], [ 282589.11, 4160290.02 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/880021818", "name": "Richmond Terminal Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 282586.14, 4160287.08 ], [ 282582.23, 4160291.03 ], [ 282500.0, 4160373.99 ] ] } }
+]
+}

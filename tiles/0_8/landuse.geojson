@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/303803586", "name": "JRPS Texas Beach Park", "kind": "park", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280488.69, 4156970.61 ], [ 280479.28, 4156983.72 ], [ 280478.11, 4156985.92 ], [ 280471.01, 4156985.85 ], [ 280464.79, 4156987.44 ], [ 280463.33, 4156988.84 ], [ 280462.62, 4156991.09 ], [ 280463.38, 4156994.4 ], [ 280464.25, 4157000.0 ], [ 280500.0, 4157000.0 ], [ 280500.0, 4156960.69 ], [ 280491.87, 4156967.16 ], [ 280488.69, 4156970.61 ] ] ] } }
+]
+}

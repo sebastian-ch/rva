@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "buildings",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/735392242", "name": "River's Edge at Manchester", "height": 40.69, "min_height": 0.0, "levels": 10.0, "height_source": "osm_height", "roof_shape": "flat", "roof_height": 0.0, "roof_azimuth": null, "roof_source": "lidar", "roof_color": "roof_flat", "wall_color": "brick", "type": "apartments", "landmark": null, "footprint_source": "osm", "source_updated": null, "is_part": false, "parent": null, "hidden": false, "addr": "519 Porter Street", "wikidata": null, "website": null, "zoning": "RF-2", "lidar_p90": 34.65, "ground_z": 13.3, "merged_count": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284290.47, 4156084.92 ], [ 284270.94, 4156069.6 ], [ 284289.67, 4156045.91 ], [ 284309.2, 4156061.22 ], [ 284321.13, 4156046.13 ], [ 284302.37, 4156031.43 ], [ 284310.2, 4156021.52 ], [ 284294.37, 4156009.1 ], [ 284285.94, 4156019.74 ], [ 284280.63, 4156015.57 ], [ 284269.18, 4156030.04 ], [ 284281.1, 4156039.39 ], [ 284263.02, 4156062.23 ], [ 284251.52, 4156053.22 ], [ 284239.52, 4156068.39 ], [ 284246.45, 4156073.82 ], [ 284239.02, 4156083.21 ], [ 284253.04, 4156094.21 ], [ 284261.47, 4156083.54 ], [ 284280.04, 4156098.1 ], [ 284290.47, 4156084.92 ] ] ] } }
+]
+}

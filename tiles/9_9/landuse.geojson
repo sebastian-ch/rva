@@ -1,0 +1,13 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/822783217", "name": null, "kind": "grass", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282647.6, 4157173.67 ], [ 282648.53, 4157198.14 ], [ 282667.68, 4157200.23 ], [ 282667.49, 4157190.26 ], [ 282656.18, 4157191.19 ], [ 282616.54, 4157000.0 ], [ 282614.24, 4157000.0 ], [ 282620.78, 4157027.89 ], [ 282647.6, 4157173.67 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/264670934", "name": "Riverview Cemetery", "kind": "cemetery", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 282750.0, 4157250.0 ], [ 282750.0, 4157239.95 ], [ 282710.33, 4157250.0 ], [ 282750.0, 4157250.0 ] ] ], [ [ [ 282672.9, 4157222.57 ], [ 282667.68, 4157200.23 ], [ 282648.53, 4157198.14 ], [ 282647.6, 4157173.67 ], [ 282620.78, 4157027.89 ], [ 282614.24, 4157000.0 ], [ 282500.0, 4157000.0 ], [ 282500.0, 4157250.0 ], [ 282700.87, 4157250.0 ], [ 282681.61, 4157245.96 ], [ 282672.9, 4157222.57 ] ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/76362268", "name": "Hollywood Cemetery", "kind": "cemetery", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282750.0, 4157183.47 ], [ 282750.0, 4157000.0 ], [ 282616.54, 4157000.0 ], [ 282656.18, 4157191.19 ], [ 282750.0, 4157183.47 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/823018126", "name": null, "kind": "grass", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 282750.0, 4157250.0 ], [ 282750.0, 4157239.95 ], [ 282710.33, 4157250.0 ], [ 282750.0, 4157250.0 ] ] ], [ [ [ 282681.95, 4157250.0 ], [ 282700.87, 4157250.0 ], [ 282681.61, 4157245.96 ], [ 282681.95, 4157250.0 ] ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/368239975", "name": null, "kind": "forest", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282667.68, 4157200.23 ], [ 282672.9, 4157222.57 ], [ 282681.61, 4157245.96 ], [ 282700.87, 4157250.0 ], [ 282710.33, 4157250.0 ], [ 282750.0, 4157239.95 ], [ 282750.0, 4157183.47 ], [ 282667.49, 4157190.26 ], [ 282667.68, 4157200.23 ] ] ] } }
+]
+}

@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "buildings",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/266860006", "name": null, "height": 9.6, "min_height": 0.0, "levels": 3.0, "height_source": "osm_levels", "roof_shape": "flat", "roof_height": 0.0, "roof_azimuth": null, "roof_source": "heuristic", "roof_color": "roof_flat", "wall_color": "concrete", "type": "office", "landmark": null, "footprint_source": "osm", "source_updated": null, "is_part": false, "parent": null, "hidden": false, "addr": null, "wikidata": "Q137922163", "website": null, "zoning": "RO-3", "lidar_p90": 13.25, "ground_z": 46.3, "merged_count": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283994.68, 4157407.09 ], [ 283996.49, 4157405.69 ], [ 283991.53, 4157399.35 ], [ 283996.59, 4157395.43 ], [ 283991.91, 4157389.42 ], [ 283987.06, 4157390.45 ], [ 283983.08, 4157385.33 ], [ 283981.07, 4157386.87 ], [ 283979.32, 4157384.63 ], [ 283965.98, 4157394.92 ], [ 283967.26, 4157396.56 ], [ 283965.28, 4157398.1 ], [ 283966.62, 4157399.82 ], [ 283964.66, 4157401.34 ], [ 283965.77, 4157402.78 ], [ 283946.69, 4157417.58 ], [ 283958.07, 4157432.16 ], [ 283979.02, 4157415.92 ], [ 283980.44, 4157417.73 ], [ 283982.03, 4157416.5 ], [ 283983.46, 4157418.32 ], [ 283995.92, 4157408.67 ], [ 283994.68, 4157407.09 ] ] ] } }
+]
+}

@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/306164702", "name": "Ancarrow's Landing Parking area", "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286256.04, 4155210.75 ], [ 286255.6, 4155202.72 ], [ 286250.0, 4155201.44 ], [ 286250.0, 4155229.65 ], [ 286250.11, 4155229.09 ], [ 286256.04, 4155210.75 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/679324138", "name": "Ancarrow's Landing", "kind": "park", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286250.0, 4155000.0 ], [ 286250.0, 4155250.0 ], [ 286293.82, 4155250.0 ], [ 286297.88, 4155000.0 ], [ 286250.0, 4155000.0 ] ] ] } }
+]
+}

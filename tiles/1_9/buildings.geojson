@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "buildings",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "richmond_structure:266462", "name": null, "height": 2.56, "min_height": 0.0, "levels": null, "height_source": "lidar", "roof_shape": "gable", "roof_height": 3.53, "roof_azimuth": 97.1, "roof_source": "lidar", "roof_color": "slate", "wall_color": "sand", "type": "yes", "landmark": null, "footprint_source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "is_part": false, "parent": null, "hidden": false, "addr": "1600 Park Dr", "wikidata": null, "website": null, "zoning": "R-2", "lidar_p90": 6.24, "ground_z": 46.06, "merged_count": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280699.09, 4157215.66 ], [ 280698.73, 4157212.73 ], [ 280690.85, 4157213.71 ], [ 280691.6, 4157219.74 ], [ 280689.01, 4157220.07 ], [ 280689.5, 4157224.69 ], [ 280699.15, 4157223.49 ], [ 280698.7, 4157219.81 ], [ 280701.28, 4157219.49 ], [ 280700.66, 4157215.46 ], [ 280699.09, 4157215.66 ] ] ] } }
+]
+}

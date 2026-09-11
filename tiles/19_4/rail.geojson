@@ -1,0 +1,13 @@
+{
+"type": "FeatureCollection",
+"name": "rail",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/169784611", "name": "Bellwood Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285137.47, 4155957.38 ], [ 285136.79, 4155922.33 ], [ 285136.33, 4155896.46 ], [ 285138.7, 4155843.88 ], [ 285143.75, 4155750.0 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/38232580", "name": null, "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285134.83, 4155750.0 ], [ 285133.64, 4155765.46 ], [ 285131.45, 4155778.17 ], [ 285127.44, 4155794.8 ], [ 285117.98, 4155822.61 ], [ 285105.64, 4155850.35 ], [ 285093.93, 4155867.18 ], [ 285081.39, 4155881.78 ], [ 285069.19, 4155890.67 ], [ 285054.06, 4155898.38 ], [ 285039.09, 4155903.83 ], [ 285022.5, 4155907.08 ], [ 285011.15, 4155907.58 ], [ 285003.3, 4155906.92 ], [ 285000.0, 4155906.7 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1098327921", "name": null, "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285087.07, 4155923.57 ], [ 285057.96, 4155922.71 ], [ 285050.02, 4155921.37 ], [ 285039.09, 4155919.61 ], [ 285000.0, 4155911.0 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/463588981", "name": null, "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285087.07, 4155923.57 ], [ 285058.13, 4155925.68 ], [ 285049.29, 4155925.21 ], [ 285038.03, 4155923.67 ], [ 285000.0, 4155915.26 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/38232584", "name": "Bellwood Subdivision", "railway": "rail", "bridge": true, "ramp": false, "layer": 1, "deck": [ 285137.5, 4155957.4, 9.66, 285670.6, 4157377.4, 14.16 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 285137.47, 4155957.38 ], [ 285138.46, 4156000.0 ] ] } }
+]
+}

@@ -1,0 +1,14 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "richmond_structure:409541", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280489.85, 4160022.53 ], [ 280495.49, 4160019.88 ], [ 280492.97, 4160014.51 ], [ 280487.33, 4160017.16 ], [ 280489.85, 4160022.53 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/366222790", "name": null, "kind": "grass", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280404.15, 4160019.93 ], [ 280416.42, 4160033.28 ], [ 280423.87, 4160026.5 ], [ 280411.59, 4160013.14 ], [ 280404.15, 4160019.93 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/366222782", "name": "Humphrey Calder Community Center", "kind": "park", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280463.31, 4160162.44 ], [ 280500.0, 4160130.77 ], [ 280500.0, 4160102.1 ], [ 280406.17, 4160000.0 ], [ 280350.39, 4160000.0 ], [ 280328.98, 4160016.45 ], [ 280463.31, 4160162.44 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/366222788", "name": null, "kind": "grass", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280435.09, 4160045.65 ], [ 280397.08, 4160078.72 ], [ 280423.9, 4160109.29 ], [ 280461.91, 4160076.23 ], [ 280435.09, 4160045.65 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/366222789", "name": null, "kind": "grass", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280472.22, 4160085.16 ], [ 280434.21, 4160118.23 ], [ 280461.03, 4160148.8 ], [ 280499.04, 4160115.73 ], [ 280472.22, 4160085.16 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:263240", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280500.0, 4160174.44 ], [ 280500.0, 4160170.97 ], [ 280498.23, 4160172.69 ], [ 280500.0, 4160174.44 ] ] ] } }
+]
+}

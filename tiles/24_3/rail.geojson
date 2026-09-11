@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "rail",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/114143948", "name": "Peninsula Subdivision", "railway": "rail", "bridge": true, "ramp": false, "layer": 1, "deck": [ 286268.2, 4155868.4, 37.87, 286654.9, 4155338.4, 47.49 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 286379.58, 4155750.0 ], [ 286500.0, 4155620.92 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/398442725", "name": "Peninsula Subdivision", "railway": "rail", "bridge": true, "ramp": false, "layer": 1, "deck": [ 286269.9, 4155872.2, 37.84, 286659.6, 4155339.4, 47.49 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 286386.13, 4155750.0 ], [ 286500.0, 4155627.95 ] ] } }
+]
+}

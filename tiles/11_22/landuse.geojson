@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/45103242", "name": null, "kind": "industrial", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283214.41, 4160250.0 ], [ 283000.0, 4160250.0 ], [ 283000.0, 4160500.0 ], [ 283240.41, 4160500.0 ], [ 283228.04, 4160434.06 ], [ 283214.41, 4160250.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:273818", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283218.07, 4160481.1 ], [ 283198.45, 4160481.63 ], [ 283198.52, 4160484.26 ], [ 283218.14, 4160483.74 ], [ 283218.07, 4160481.1 ] ] ] } }
+]
+}

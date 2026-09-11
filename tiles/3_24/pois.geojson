@@ -1,0 +1,25 @@
+{
+"type": "FeatureCollection",
+"name": "pois",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:node/4265490885", "name": null, "kind": "tree", "species": null, "source": null, "tree_height": null, "crown_radius": null, "height_source": null }, "geometry": { "type": "Point", "coordinates": [ 281183.42, 4160752.26 ] } },
+{ "type": "Feature", "properties": { "id": "osm:node/12006751565", "name": "Broad & Roseneath", "kind": "bus_stop", "species": null, "source": null, "tree_height": null, "crown_radius": null, "height_source": null }, "geometry": { "type": "Point", "coordinates": [ 281221.37, 4160758.6 ] } },
+{ "type": "Feature", "properties": { "id": "osm:node/7684198374", "name": null, "kind": "tree", "species": null, "source": null, "tree_height": null, "crown_radius": null, "height_source": null }, "geometry": { "type": "Point", "coordinates": [ 281061.4, 4160751.88 ] } },
+{ "type": "Feature", "properties": { "id": "osm:node/7684198375", "name": null, "kind": "tree", "species": null, "source": null, "tree_height": null, "crown_radius": null, "height_source": null }, "geometry": { "type": "Point", "coordinates": [ 281054.68, 4160755.63 ] } },
+{ "type": "Feature", "properties": { "id": "osm:node/7684198377", "name": null, "kind": "tree", "species": null, "source": null, "tree_height": null, "crown_radius": null, "height_source": null }, "geometry": { "type": "Point", "coordinates": [ 281081.45, 4160753.95 ] } },
+{ "type": "Feature", "properties": { "id": "osm:node/7684198383", "name": null, "kind": "tree", "species": null, "source": null, "tree_height": null, "crown_radius": null, "height_source": null }, "geometry": { "type": "Point", "coordinates": [ 281087.84, 4160758.42 ] } },
+{ "type": "Feature", "properties": { "id": "osm:node/7684198378", "name": null, "kind": "tree", "species": null, "source": null, "tree_height": null, "crown_radius": null, "height_source": null }, "geometry": { "type": "Point", "coordinates": [ 281082.58, 4160759.45 ] } },
+{ "type": "Feature", "properties": { "id": "osm:node/7684198381", "name": null, "kind": "tree", "species": null, "source": null, "tree_height": null, "crown_radius": null, "height_source": null }, "geometry": { "type": "Point", "coordinates": [ 281089.37, 4160761.68 ] } },
+{ "type": "Feature", "properties": { "id": "osm:node/7684198382", "name": null, "kind": "tree", "species": null, "source": null, "tree_height": null, "crown_radius": null, "height_source": null }, "geometry": { "type": "Point", "coordinates": [ 281085.96, 4160761.77 ] } },
+{ "type": "Feature", "properties": { "id": "osm:node/7684198379", "name": null, "kind": "tree", "species": null, "source": null, "tree_height": null, "crown_radius": null, "height_source": null }, "geometry": { "type": "Point", "coordinates": [ 281079.96, 4160762.11 ] } },
+{ "type": "Feature", "properties": { "id": "osm:node/7684198380", "name": null, "kind": "tree", "species": null, "source": null, "tree_height": null, "crown_radius": null, "height_source": null }, "geometry": { "type": "Point", "coordinates": [ 281076.62, 4160764.62 ] } },
+{ "type": "Feature", "properties": { "id": "lidar-tree:281096:4160772", "name": null, "kind": "tree", "species": null, "source": "lidar2025", "tree_height": 9.4, "crown_radius": 1.6, "height_source": "lidar2025" }, "geometry": { "type": "Point", "coordinates": [ 281096.5, 4160772.5 ] } },
+{ "type": "Feature", "properties": { "id": "rva-tree:28158", "name": "Cornus florida", "kind": "tree", "species": "Cornus florida", "source": "city_inventory", "tree_height": 8.0, "crown_radius": 2.5, "height_source": "estimated" }, "geometry": { "type": "Point", "coordinates": [ 281123.59, 4160774.04 ] } },
+{ "type": "Feature", "properties": { "id": "lidar-tree:281102:4160778", "name": null, "kind": "tree", "species": null, "source": "lidar2025", "tree_height": 10.2, "crown_radius": 2.0, "height_source": "lidar2025" }, "geometry": { "type": "Point", "coordinates": [ 281101.5, 4160778.5 ] } },
+{ "type": "Feature", "properties": { "id": "rva-tree:28159", "name": "Cornus florida", "kind": "tree", "species": "Cornus florida", "source": "city_inventory", "tree_height": 8.0, "crown_radius": 2.5, "height_source": "estimated" }, "geometry": { "type": "Point", "coordinates": [ 281128.59, 4160779.91 ] } },
+{ "type": "Feature", "properties": { "id": "osm:node/12006751567", "name": null, "kind": "bench", "species": null, "source": null, "tree_height": null, "crown_radius": null, "height_source": null }, "geometry": { "type": "Point", "coordinates": [ 281215.07, 4160765.64 ] } },
+{ "type": "Feature", "properties": { "id": "rva-tree:28160", "name": "Cornus florida", "kind": "tree", "species": "Cornus florida", "source": "city_inventory", "tree_height": 8.0, "crown_radius": 2.5, "height_source": "estimated" }, "geometry": { "type": "Point", "coordinates": [ 281135.1, 4160786.93 ] } }
+]
+}

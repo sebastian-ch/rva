@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "buildings",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/762180645", "name": null, "height": 9.25, "min_height": 0.0, "levels": null, "height_source": "lidar", "roof_shape": "flat", "roof_height": 0.0, "roof_azimuth": null, "roof_source": "heuristic", "roof_color": "roof_flat", "wall_color": "sand", "type": "yes", "landmark": null, "footprint_source": "osm", "source_updated": null, "is_part": false, "parent": null, "hidden": false, "addr": null, "wikidata": null, "website": null, "zoning": "M-2", "lidar_p90": 10.58, "ground_z": 6.01, "merged_count": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286032.75, 4155034.37 ], [ 286031.24, 4155040.94 ], [ 286040.58, 4155043.08 ], [ 286042.09, 4155036.5 ], [ 286032.75, 4155034.37 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/762180669", "name": null, "height": 9.0, "min_height": 0.0, "levels": null, "height_source": "zoning", "roof_shape": "flat", "roof_height": 0.0, "roof_azimuth": null, "roof_source": "heuristic", "roof_color": "roof_flat", "wall_color": "cream", "type": "yes", "landmark": null, "footprint_source": "osm", "source_updated": null, "is_part": false, "parent": null, "hidden": false, "addr": null, "wikidata": null, "website": null, "zoning": "M-2", "lidar_p90": 2.58, "ground_z": 5.25, "merged_count": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286039.4, 4155161.54 ], [ 286038.5, 4155165.16 ], [ 286042.26, 4155166.09 ], [ 286043.14, 4155162.47 ], [ 286039.4, 4155161.54 ] ] ] } }
+]
+}

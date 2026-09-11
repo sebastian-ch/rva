@@ -1,0 +1,12 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "richmond_structure:426131", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284113.84, 4156109.5 ], [ 284122.93, 4156097.6 ], [ 284115.33, 4156091.93 ], [ 284106.21, 4156103.73 ], [ 284113.84, 4156109.5 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/317253248", "name": null, "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284090.34, 4156124.75 ], [ 284113.79, 4156141.67 ], [ 284128.16, 4156123.68 ], [ 284104.55, 4156107.14 ], [ 284090.34, 4156124.75 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:426142", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284125.83, 4156125.55 ], [ 284127.19, 4156126.58 ], [ 284114.37, 4156143.34 ], [ 284121.18, 4156148.55 ], [ 284128.47, 4156139.02 ], [ 284127.48, 4156138.27 ], [ 284132.44, 4156131.78 ], [ 284133.38, 4156132.5 ], [ 284138.57, 4156125.72 ], [ 284137.65, 4156125.01 ], [ 284141.05, 4156120.55 ], [ 284141.83, 4156121.14 ], [ 284145.18, 4156116.76 ], [ 284141.37, 4156113.85 ], [ 284132.99, 4156123.95 ], [ 284129.15, 4156121.21 ], [ 284125.83, 4156125.55 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/823768835", "name": null, "kind": "forest", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284250.0, 4156250.0 ], [ 284250.0, 4156210.71 ], [ 284217.81, 4156250.0 ], [ 284250.0, 4156250.0 ] ] ] } }
+]
+}

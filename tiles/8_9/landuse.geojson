@@ -1,0 +1,13 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/264670697", "name": "Mount Calvary Cemetery", "kind": "cemetery", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282319.86, 4157000.0 ], [ 282250.0, 4157000.0 ], [ 282250.0, 4157250.0 ], [ 282359.78, 4157250.0 ], [ 282358.57, 4157245.92 ], [ 282319.86, 4157000.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/264670934", "name": "Riverview Cemetery", "kind": "cemetery", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282359.78, 4157250.0 ], [ 282500.0, 4157250.0 ], [ 282500.0, 4157000.0 ], [ 282319.86, 4157000.0 ], [ 282358.57, 4157245.92 ], [ 282359.78, 4157250.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/823018123", "name": null, "kind": "grass", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282307.65, 4157126.94 ], [ 282250.0, 4157141.2 ], [ 282250.0, 4157163.89 ], [ 282251.29, 4157169.15 ], [ 282250.0, 4157174.13 ], [ 282250.0, 4157223.45 ], [ 282261.38, 4157231.61 ], [ 282270.05, 4157233.1 ], [ 282315.47, 4157221.25 ], [ 282330.78, 4157199.54 ], [ 282313.2, 4157127.83 ], [ 282310.57, 4157126.36 ], [ 282307.65, 4157126.94 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1194734072", "name": null, "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282393.2, 4157225.01 ], [ 282391.8, 4157219.87 ], [ 282380.88, 4157224.07 ], [ 282374.51, 4157230.11 ], [ 282378.78, 4157233.22 ], [ 282385.16, 4157227.81 ], [ 282393.2, 4157225.01 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/823018124", "name": null, "kind": "grass", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282250.0, 4157250.0 ], [ 282252.68, 4157250.0 ], [ 282260.49, 4157237.88 ], [ 282250.0, 4157231.19 ], [ 282250.0, 4157250.0 ] ] ] } }
+]
+}

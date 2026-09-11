@@ -1,0 +1,13 @@
+{
+"type": "FeatureCollection",
+"name": "pois",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "lidar-tree:282272:4156004", "name": null, "kind": "tree", "species": null, "source": "lidar2025", "tree_height": 5.9, "crown_radius": 2.5, "height_source": "lidar2025" }, "geometry": { "type": "Point", "coordinates": [ 282272.5, 4156004.5 ] } },
+{ "type": "Feature", "properties": { "id": "lidar-tree:282264:4156014", "name": null, "kind": "tree", "species": null, "source": "lidar2025", "tree_height": 15.9, "crown_radius": 5.2, "height_source": "lidar2025" }, "geometry": { "type": "Point", "coordinates": [ 282263.5, 4156014.5 ] } },
+{ "type": "Feature", "properties": { "id": "lidar-tree:282274:4156016", "name": null, "kind": "tree", "species": null, "source": "lidar2025", "tree_height": 6.9, "crown_radius": 3.0, "height_source": "lidar2025" }, "geometry": { "type": "Point", "coordinates": [ 282273.5, 4156016.5 ] } },
+{ "type": "Feature", "properties": { "id": "lidar-tree:282296:4156002", "name": null, "kind": "tree", "species": null, "source": "lidar2025", "tree_height": 6.5, "crown_radius": 3.8, "height_source": "lidar2025" }, "geometry": { "type": "Point", "coordinates": [ 282295.5, 4156001.5 ] } },
+{ "type": "Feature", "properties": { "id": "lidar-tree:282288:4156010", "name": null, "kind": "tree", "species": null, "source": "lidar2025", "tree_height": 8.1, "crown_radius": 4.1, "height_source": "lidar2025" }, "geometry": { "type": "Point", "coordinates": [ 282288.5, 4156009.5 ] } }
+]
+}

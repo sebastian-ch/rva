@@ -1,0 +1,13 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/1098327924", "name": "Citgo Terminal", "kind": "industrial", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285000.0, 4155500.0 ], [ 285000.0, 4155617.01 ], [ 285133.15, 4155716.72 ], [ 285144.01, 4155597.65 ], [ 285163.83, 4155500.0 ], [ 285000.0, 4155500.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:354530", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285002.54, 4155638.92 ], [ 285000.0, 4155642.01 ], [ 285000.0, 4155642.73 ], [ 285001.18, 4155643.7 ], [ 285004.07, 4155640.18 ], [ 285002.54, 4155638.92 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1098327923", "name": "FirstEnergy Terminal", "kind": "industrial", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285158.19, 4155646.97 ], [ 285148.15, 4155728.95 ], [ 285174.66, 4155750.0 ], [ 285197.07, 4155750.0 ], [ 285250.0, 4155678.78 ], [ 285250.0, 4155563.86 ], [ 285175.63, 4155537.8 ], [ 285158.19, 4155646.97 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:354570", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285028.45, 4155682.23 ], [ 285020.07, 4155693.85 ], [ 285031.48, 4155702.21 ], [ 285040.14, 4155690.74 ], [ 285028.45, 4155682.23 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1098327922", "name": "Magellan Terminal", "kind": "industrial", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285116.04, 4155750.0 ], [ 285121.4, 4155722.83 ], [ 285089.36, 4155698.43 ], [ 285050.06, 4155750.0 ], [ 285116.04, 4155750.0 ] ] ] } }
+]
+}

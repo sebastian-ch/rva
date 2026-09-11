@@ -1,0 +1,12 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/822783215", "name": null, "kind": "forest", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 282250.0, 4156531.96 ], [ 282250.0, 4156611.73 ], [ 282281.05, 4156585.09 ], [ 282332.62, 4156561.94 ], [ 282400.48, 4156567.09 ], [ 282430.02, 4156562.03 ], [ 282448.27, 4156555.86 ], [ 282467.59, 4156543.74 ], [ 282491.03, 4156532.12 ], [ 282500.0, 4156532.79 ], [ 282500.0, 4156500.0 ], [ 282366.85, 4156500.0 ], [ 282303.09, 4156514.63 ], [ 282250.0, 4156531.96 ] ] ], [ [ [ 282500.0, 4156679.34 ], [ 282500.0, 4156670.9 ], [ 282498.11, 4156677.61 ], [ 282500.0, 4156679.34 ] ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/303803586", "name": "JRPS Texas Beach Park", "kind": "park", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282299.85, 4156500.0 ], [ 282250.0, 4156500.0 ], [ 282250.0, 4156514.1 ], [ 282268.65, 4156508.09 ], [ 282299.85, 4156500.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/264670697", "name": "Mount Calvary Cemetery", "kind": "cemetery", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282250.0, 4156738.4 ], [ 282250.0, 4156750.0 ], [ 282266.8, 4156750.0 ], [ 282266.2, 4156747.73 ], [ 282250.0, 4156738.4 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/264670934", "name": "Riverview Cemetery", "kind": "cemetery", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282500.0, 4156670.9 ], [ 282500.0, 4156532.79 ], [ 282491.03, 4156532.12 ], [ 282467.59, 4156543.74 ], [ 282448.27, 4156555.86 ], [ 282430.02, 4156562.03 ], [ 282400.48, 4156567.09 ], [ 282332.62, 4156561.94 ], [ 282281.05, 4156585.09 ], [ 282250.0, 4156611.73 ], [ 282250.0, 4156738.4 ], [ 282266.2, 4156747.73 ], [ 282266.8, 4156750.0 ], [ 282500.0, 4156750.0 ], [ 282500.0, 4156679.34 ], [ 282498.11, 4156677.61 ], [ 282500.0, 4156670.9 ] ] ] } }
+]
+}

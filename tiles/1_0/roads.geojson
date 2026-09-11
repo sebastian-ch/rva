@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "roads",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/6038696", "name": "West 42nd Street", "highway": "residential", "lanes": null, "width": 7.0, "oneway": false, "surface": null, "footway": null, "sidewalk_left": null, "sidewalk_right": null, "generated_sidewalk": true, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 280722.06, 4154887.43 ], [ 280750.0, 4154933.34 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/6040762", "name": "West 43rd Street", "highway": "residential", "lanes": null, "width": 7.0, "oneway": false, "surface": null, "footway": null, "sidewalk_left": null, "sidewalk_right": false, "generated_sidewalk": true, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 280628.42, 4154958.39 ], [ 280655.69, 4155000.0 ] ] } }
+]
+}

@@ -1,0 +1,14 @@
+{
+"type": "FeatureCollection",
+"name": "rail",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/463588989", "name": "Richmond District", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 286161.57, 4156000.0 ], [ 286172.03, 4155990.48 ], [ 286250.0, 4155915.17 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/169784636", "name": "Peninsula Subdivision", "railway": "rail", "bridge": true, "ramp": false, "layer": 0, "deck": [ 286221.2, 4155915.2, 37.11, 286268.2, 4155868.4, 37.87 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 286221.17, 4155915.19 ], [ 286223.33, 4155913.02 ], [ 286250.0, 4155886.51 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/463588983", "name": "Peninsula Subdivision", "railway": "rail", "bridge": true, "ramp": false, "layer": 0, "deck": [ 286269.9, 4155872.2, 37.84, 286224.2, 4155918.2, 37.1 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 286250.0, 4155892.24 ], [ 286224.24, 4155918.24 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/398442732", "name": "Peninsula Subdivision", "railway": "rail", "bridge": false, "ramp": true, "layer": 0, "deck": [ 286260.53, 4155881.61, 37.69, 286223.33, 4155913.02, 37.14 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 286250.0, 4155890.76 ], [ 286243.76, 4155896.18 ], [ 286223.33, 4155913.02 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/169784635", "name": "Peninsula Subdivision", "railway": "rail", "bridge": true, "ramp": false, "layer": 1, "deck": [ 285607.8, 4156444.5, 29.68, 286221.2, 4155915.2, 37.11 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 286123.27, 4156000.0 ], [ 286221.17, 4155915.19 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/398442726", "name": "Peninsula Subdivision", "railway": "rail", "bridge": true, "ramp": false, "layer": 1, "deck": [ 286224.2, 4155918.2, 37.1, 285535.0, 4156512.2, 28.97 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 286224.24, 4155918.24 ], [ 286129.82, 4156000.0 ] ] } }
+]
+}

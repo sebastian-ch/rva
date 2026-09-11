@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/264670697", "name": "Mount Calvary Cemetery", "kind": "cemetery", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282250.0, 4157250.0 ], [ 282250.0, 4157000.0 ], [ 282000.0, 4157000.0 ], [ 282000.0, 4157232.89 ], [ 282003.48, 4157250.0 ], [ 282250.0, 4157250.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/823018123", "name": null, "kind": "grass", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 282245.3, 4157144.74 ], [ 282250.0, 4157163.89 ], [ 282250.0, 4157141.2 ], [ 282249.35, 4157141.36 ], [ 282245.3, 4157144.74 ] ] ], [ [ [ 282241.24, 4157187.63 ], [ 282239.35, 4157194.38 ], [ 282239.86, 4157200.56 ], [ 282244.42, 4157216.76 ], [ 282248.89, 4157222.65 ], [ 282250.0, 4157223.45 ], [ 282250.0, 4157174.13 ], [ 282248.46, 4157180.05 ], [ 282241.24, 4157187.63 ] ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/823018124", "name": null, "kind": "grass", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282233.2, 4157244.22 ], [ 282242.26, 4157250.0 ], [ 282250.0, 4157250.0 ], [ 282250.0, 4157231.19 ], [ 282244.04, 4157227.39 ], [ 282233.2, 4157244.22 ] ] ] } }
+]
+}

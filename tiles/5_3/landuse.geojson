@@ -1,0 +1,14 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/45031115", "name": "Forest Hill Park", "kind": "park", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 281606.52, 4155687.12 ], [ 281640.82, 4155750.0 ], [ 281750.0, 4155750.0 ], [ 281750.0, 4155671.74 ], [ 281732.9, 4155663.34 ], [ 281729.26, 4155659.91 ], [ 281727.76, 4155656.04 ], [ 281729.35, 4155646.04 ], [ 281750.0, 4155600.97 ], [ 281750.0, 4155500.0 ], [ 281500.0, 4155500.0 ], [ 281500.0, 4155663.16 ], [ 281532.48, 4155682.73 ], [ 281606.52, 4155687.12 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:413645", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 281596.04, 4155706.47 ], [ 281596.65, 4155703.37 ], [ 281589.92, 4155702.05 ], [ 281589.31, 4155705.14 ], [ 281596.04, 4155706.47 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:346651", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 281531.04, 4155714.98 ], [ 281539.38, 4155711.66 ], [ 281538.15, 4155708.59 ], [ 281529.82, 4155711.91 ], [ 281531.04, 4155714.98 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:347490", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 281518.32, 4155721.51 ], [ 281523.07, 4155719.9 ], [ 281522.15, 4155716.95 ], [ 281517.12, 4155718.76 ], [ 281518.32, 4155721.51 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:347560", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 281500.0, 4155728.13 ], [ 281503.82, 4155726.69 ], [ 281502.73, 4155723.79 ], [ 281500.0, 4155724.82 ], [ 281500.0, 4155728.13 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:347636", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 281576.18, 4155750.0 ], [ 281575.89, 4155748.79 ], [ 281573.95, 4155749.25 ], [ 281574.13, 4155750.0 ], [ 281576.18, 4155750.0 ] ] ] } }
+]
+}

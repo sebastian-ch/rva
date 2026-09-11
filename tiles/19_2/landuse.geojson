@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/1098327924", "name": "Citgo Terminal", "kind": "industrial", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285138.7, 4155441.9 ], [ 285093.32, 4155450.14 ], [ 285029.14, 4155465.92 ], [ 285000.0, 4155484.85 ], [ 285000.0, 4155500.0 ], [ 285163.83, 4155500.0 ], [ 285175.46, 4155442.72 ], [ 285138.7, 4155441.9 ] ] ] } }
+]
+}

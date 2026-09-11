@@ -1,0 +1,13 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/334124801", "name": null, "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 282401.6, 4160250.0 ], [ 282341.18, 4160365.82 ], [ 282374.64, 4160383.06 ], [ 282448.12, 4160250.0 ], [ 282401.6, 4160250.0 ] ] ], [ [ [ 282500.0, 4160250.0 ], [ 282462.35, 4160250.0 ], [ 282500.0, 4160271.78 ], [ 282500.0, 4160250.0 ] ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/822691474", "name": null, "kind": "grass", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282302.35, 4160250.0 ], [ 282305.68, 4160251.72 ], [ 282306.58, 4160250.0 ], [ 282302.35, 4160250.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/822691472", "name": null, "kind": "grass", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282264.99, 4160250.0 ], [ 282250.0, 4160250.0 ], [ 282250.0, 4160306.0 ], [ 282277.0, 4160256.5 ], [ 282264.99, 4160250.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/822691473", "name": null, "kind": "grass", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282284.91, 4160260.62 ], [ 282250.0, 4160324.6 ], [ 282250.0, 4160366.58 ], [ 282275.66, 4160380.46 ], [ 282328.25, 4160284.06 ], [ 282284.91, 4160260.62 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/45103242", "name": null, "kind": "industrial", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282500.0, 4160500.0 ], [ 282500.0, 4160471.46 ], [ 282490.15, 4160500.0 ], [ 282500.0, 4160500.0 ] ] ] } }
+]
+}

@@ -1,0 +1,331 @@
+[
+  {
+    "slug": "virginia-state-capitol",
+    "name": "Virginia State Capitol",
+    "osm_name_hints": [
+      "Virginia State Capitol",
+      "State Capitol"
+    ],
+    "lat": 37.5407,
+    "lon": -77.436,
+    "kind": "building",
+    "wikidata": "Q2537798",
+    "website": "https://virginiacapitol.gov/",
+    "description": "Neoclassical capitol building designed with Thomas Jefferson's input, completed in 1788; still houses the Virginia General Assembly.",
+    "district": "Capitol Square",
+    "in_first_slice": true,
+    "model": "landmarks/virginia-state-capitol.glb",
+    "height_hint_m": 24
+  },
+  {
+    "slug": "main-street-station",
+    "name": "Main Street Station",
+    "osm_name_hints": [
+      "Main Street Station",
+      "Richmond Main Street Station"
+    ],
+    "lat": 37.5324,
+    "lon": -77.4297,
+    "kind": "building",
+    "wikidata": "Q11343430",
+    "website": "https://www.mainstreetstation.com/",
+    "description": "1901 French Renaissance Revival railway station with a distinctive clock tower, in Shockoe Bottom; still an active Amtrak stop.",
+    "district": "Shockoe Bottom",
+    "in_first_slice": true,
+    "model": "landmarks/main-street-station.glb",
+    "height_hint_m": 34
+  },
+  {
+    "slug": "the-jefferson-hotel",
+    "name": "The Jefferson Hotel",
+    "osm_name_hints": [
+      "The Jefferson Hotel",
+      "Jefferson Hotel"
+    ],
+    "lat": 37.5424,
+    "lon": -77.4402,
+    "kind": "building",
+    "wikidata": "Q6175505",
+    "website": "https://www.jeffersonhotel.com/",
+    "description": "Opulent 1895 Beaux-Arts hotel designed by Carr\u00e8re and Hastings, known for its grand staircase and rooftop palm court.",
+    "district": "Downtown",
+    "in_first_slice": true,
+    "model": "landmarks/the-jefferson-hotel.glb",
+    "height_hint_m": 38
+  },
+  {
+    "slug": "old-city-hall",
+    "name": "Old City Hall",
+    "osm_name_hints": [
+      "Old City Hall",
+      "Richmond Old City Hall"
+    ],
+    "lat": 37.5391,
+    "lon": -77.4344,
+    "kind": "building",
+    "wikidata": null,
+    "website": null,
+    "description": "High Victorian Gothic government building completed in 1894, adjacent to Capitol Square; now used as office space.",
+    "district": "Capitol Square",
+    "in_first_slice": true,
+    "model": "landmarks/old-city-hall.glb",
+    "height_hint_m": 38
+  },
+  {
+    "slug": "carpenter-theatre-dominion-energy-center",
+    "name": "Carpenter Theatre / Dominion Energy Center",
+    "osm_name_hints": [
+      "Carpenter Theatre",
+      "Dominion Energy Center",
+      "Carpenter Theater"
+    ],
+    "lat": 37.5417,
+    "lon": -77.4356,
+    "kind": "building",
+    "wikidata": null,
+    "website": "https://dominionenergycenter.com/",
+    "description": "1928 Loew's movie palace restored as the Carpenter Theatre, now the anchor venue of the Dominion Energy Center for the Performing Arts.",
+    "district": "Downtown",
+    "in_first_slice": true,
+    "model": "landmarks/carpenter-theatre-dominion-energy-center.glb",
+    "height_hint_m": 26
+  },
+  {
+    "slug": "federal-reserve-bank-of-richmond",
+    "name": "Federal Reserve Bank of Richmond",
+    "osm_name_hints": [
+      "Federal Reserve Bank of Richmond",
+      "Federal Reserve Bank"
+    ],
+    "lat": 37.533,
+    "lon": -77.438,
+    "kind": "building",
+    "wikidata": "Q5440363",
+    "website": "https://www.richmondfed.org/",
+    "description": "Aluminum-clad Fifth District Federal Reserve headquarters tower designed by Minoru Yamasaki, built 1975-1978 overlooking the James River.",
+    "district": "Downtown",
+    "in_first_slice": true,
+    "model": "landmarks/federal-reserve-bank-of-richmond.glb",
+    "height_hint_m": 119
+  },
+  {
+    "slug": "james-monroe-building",
+    "name": "James Monroe Building",
+    "osm_name_hints": [
+      "James Monroe Building"
+    ],
+    "lat": 37.5406,
+    "lon": -77.4374,
+    "kind": "building",
+    "wikidata": null,
+    "website": null,
+    "description": "State office tower on Capitol Square housing several Virginia state agencies, named for President James Monroe.",
+    "district": "Capitol Square",
+    "in_first_slice": true,
+    "model": "landmarks/james-monroe-building.glb",
+    "height_hint_m": 137
+  },
+  {
+    "slug": "dominion-energy-tower-600-canal-place",
+    "name": "Dominion Energy tower (600 Canal Place)",
+    "osm_name_hints": [
+      "Dominion Energy",
+      "600 Canal Place",
+      "Dominion Tower"
+    ],
+    "lat": 37.5346,
+    "lon": -77.4372,
+    "kind": "building",
+    "wikidata": null,
+    "website": null,
+    "description": "High-rise corporate headquarters of Dominion Energy at 600 Canal Place, one of the tallest buildings in downtown Richmond's skyline.",
+    "district": "Downtown",
+    "in_first_slice": true,
+    "model": "landmarks/dominion-energy-tower-600-canal-place.glb",
+    "height_hint_m": 96
+  },
+  {
+    "slug": "altria-theater",
+    "name": "Altria Theater",
+    "osm_name_hints": [
+      "Altria Theater",
+      "Mosque Theatre",
+      "Landmark Theater"
+    ],
+    "lat": 37.551,
+    "lon": -77.4548,
+    "kind": "building",
+    "wikidata": null,
+    "website": "https://altriatheater.com/",
+    "description": "1927 Shriners' Mosque-style auditorium later known as the Landmark Theater, now a major performing arts and concert venue near Monroe Park.",
+    "district": "VCU",
+    "in_first_slice": false,
+    "model": "landmarks/altria-theater.glb",
+    "height_hint_m": 28
+  },
+  {
+    "slug": "byrd-theatre",
+    "name": "Byrd Theatre",
+    "osm_name_hints": [
+      "Byrd Theatre",
+      "Byrd Theater"
+    ],
+    "lat": 37.5533,
+    "lon": -77.4762,
+    "kind": "building",
+    "wikidata": "Q5004235",
+    "website": "https://byrdtheatre.org/",
+    "description": "Lavish 1928 movie palace on Cary Street with an original Wurlitzer organ, still operating as a single-screen cinema.",
+    "district": "Carytown",
+    "in_first_slice": false,
+    "model": "landmarks/byrd-theatre.glb",
+    "height_hint_m": 18
+  },
+  {
+    "slug": "monument-avenue-streetscape",
+    "name": "Monument Avenue streetscape",
+    "osm_name_hints": [
+      "Monument Avenue"
+    ],
+    "lat": 37.5561,
+    "lon": -77.465,
+    "kind": "streetscape",
+    "wikidata": null,
+    "website": null,
+    "description": "Grand tree-lined boulevard of Victorian and Beaux-Arts mansions with a landscaped median, a National Historic Landmark district.",
+    "district": "Monument Avenue",
+    "in_first_slice": false,
+    "approx": true,
+    "model": null,
+    "height_hint_m": null
+  },
+  {
+    "slug": "hollywood-cemetery",
+    "name": "Hollywood Cemetery",
+    "osm_name_hints": [
+      "Hollywood Cemetery"
+    ],
+    "lat": 37.5326,
+    "lon": -77.4534,
+    "kind": "cemetery",
+    "wikidata": "Q5882648",
+    "website": "https://www.hollywoodcemetery.org/",
+    "description": "1849 rural garden cemetery on the James River bluffs, burial site of two U.S. presidents and Confederate president Jefferson Davis.",
+    "district": "Hollywood",
+    "in_first_slice": false,
+    "model": null,
+    "height_hint_m": null
+  },
+  {
+    "slug": "belle-isle-footbridge",
+    "name": "Belle Isle footbridge",
+    "osm_name_hints": [
+      "Belle Isle Footbridge",
+      "Belle Isle Pedestrian Bridge"
+    ],
+    "lat": 37.533,
+    "lon": -77.446,
+    "kind": "bridge",
+    "wikidata": null,
+    "website": null,
+    "description": "Pedestrian suspension footbridge beneath the Robert E. Lee Bridge connecting downtown to Belle Isle, a former factory site turned riverfront park.",
+    "district": "Belle Isle",
+    "in_first_slice": true,
+    "approx": true,
+    "model": null,
+    "height_hint_m": null
+  },
+  {
+    "slug": "mayo-bridge",
+    "name": "Mayo Bridge",
+    "osm_name_hints": [
+      "Mayo Bridge",
+      "Mayo's Bridge"
+    ],
+    "lat": 37.5305,
+    "lon": -77.4335,
+    "kind": "bridge",
+    "wikidata": "Q6797494",
+    "website": null,
+    "description": "Richmond's oldest James River highway crossing, carrying US 360; the current structure dates to 1913 on a river-crossing site used since colonial times.",
+    "district": "Manchester",
+    "in_first_slice": true,
+    "model": null,
+    "height_hint_m": null
+  },
+  {
+    "slug": "canal-walk-tredegar-iron-works",
+    "name": "Canal Walk + Tredegar Iron Works",
+    "osm_name_hints": [
+      "Canal Walk",
+      "Tredegar Iron Works",
+      "Tredegar"
+    ],
+    "lat": 37.5333,
+    "lon": -77.4404,
+    "kind": "site",
+    "wikidata": "Q7837469",
+    "website": "https://acwm.org/",
+    "description": "Riverfront walkway along the historic James River and Kanawha Canal, passing the ruins of the Tredegar Iron Works, a Confederate munitions foundry now home to the American Civil War Museum.",
+    "district": "Downtown",
+    "in_first_slice": true,
+    "model": null,
+    "height_hint_m": null
+  },
+  {
+    "slug": "the-diamond",
+    "name": "The Diamond",
+    "osm_name_hints": [
+      "The Diamond",
+      "CarMax Park"
+    ],
+    "lat": 37.571806,
+    "lon": -77.463733,
+    "kind": "building",
+    "wikidata": "Q7730070",
+    "website": null,
+    "description": "1985 baseball stadium on North Arthur Ashe Boulevard, longtime home of the Richmond Flying Squirrels, now succeeded by a new ballpark under the CarMax Park name.",
+    "district": "Scott's Addition",
+    "in_first_slice": false,
+    "model": null,
+    "height_hint_m": null
+  },
+  {
+    "slug": "vcu-cabell-library",
+    "name": "VCU Cabell Library",
+    "osm_name_hints": [
+      "Cabell Library",
+      "James Branch Cabell Library"
+    ],
+    "lat": 37.5497,
+    "lon": -77.453,
+    "kind": "building",
+    "wikidata": null,
+    "website": "https://www.library.vcu.edu/",
+    "description": "Main library of Virginia Commonwealth University's Monroe Park campus, named for novelist James Branch Cabell.",
+    "district": "VCU",
+    "in_first_slice": false,
+    "model": "landmarks/vcu-cabell-library.glb",
+    "height_hint_m": 22
+  },
+  {
+    "slug": "maggie-l-walker-memorial",
+    "name": "Maggie L. Walker memorial",
+    "osm_name_hints": [
+      "Maggie Lena Walker Statue",
+      "Maggie Walker Statue",
+      "Maggie Lena Walker Memorial Plaza",
+      "Maggie L. Walker Memorial"
+    ],
+    "lat": 37.54626,
+    "lon": -77.44255,
+    "kind": "site",
+    "wikidata": null,
+    "website": null,
+    "description": "Bronze statue of banker and civic leader Maggie L. Walker by sculptor Toby Mendez, dedicated 2017 at Broad and Adams streets in Jackson Ward.",
+    "district": "Downtown",
+    "in_first_slice": true,
+    "model": null,
+    "height_hint_m": null
+  }
+]

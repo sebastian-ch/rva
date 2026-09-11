@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:relation/6243497", "name": "Dry Rocks", "kind": "park", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282750.0, 4156000.0 ], [ 282723.46, 4156000.0 ], [ 282714.22, 4156007.79 ], [ 282704.53, 4156014.6 ], [ 282703.33, 4156015.45 ], [ 282713.29, 4156040.8 ], [ 282750.0, 4156064.01 ], [ 282750.0, 4156000.0 ] ] ] } }
+]
+}

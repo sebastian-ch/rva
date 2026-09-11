@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"name": "roads",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/889083982", "name": null, "highway": "service", "lanes": null, "width": 4.5, "oneway": false, "surface": "gravel", "footway": null, "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285482.99, 4155000.0 ], [ 285491.59, 4154958.99 ], [ 285500.0, 4154923.51 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1502839844", "name": null, "highway": "service", "lanes": null, "width": 4.5, "oneway": false, "surface": null, "footway": null, "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285250.0, 4154950.79 ], [ 285269.54, 4154954.21 ], [ 285269.7, 4154960.19 ], [ 285260.94, 4155000.0 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/549254798", "name": null, "highway": "service", "lanes": null, "width": 4.5, "oneway": false, "surface": null, "footway": null, "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285315.18, 4155000.0 ], [ 285318.97, 4154993.33 ], [ 285333.07, 4154982.81 ], [ 285348.74, 4155000.0 ] ] } }
+]
+}

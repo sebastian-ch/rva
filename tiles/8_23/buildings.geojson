@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "buildings",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/253482142", "name": null, "height": 6.07, "min_height": 0.0, "levels": null, "height_source": "lidar", "roof_shape": "flat", "roof_height": 0.0, "roof_azimuth": null, "roof_source": "heuristic", "roof_color": "concrete", "wall_color": "concrete", "type": "industrial", "landmark": null, "footprint_source": "osm", "source_updated": null, "is_part": false, "parent": null, "hidden": false, "addr": "1727 Rhoadmiller St", "wikidata": null, "website": null, "zoning": "B-7", "lidar_p90": 7.47, "ground_z": 58.78, "merged_count": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282524.11, 4160553.26 ], [ 282478.83, 4160569.95 ], [ 282479.06, 4160566.71 ], [ 282456.53, 4160585.71 ], [ 282456.06, 4160604.77 ], [ 282505.36, 4160604.78 ], [ 282505.24, 4160600.26 ], [ 282511.73, 4160600.41 ], [ 282511.81, 4160603.64 ], [ 282524.79, 4160603.62 ], [ 282524.11, 4160553.26 ] ] ] } }
+]
+}

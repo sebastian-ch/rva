@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/76362268", "name": "Hollywood Cemetery", "kind": "cemetery", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283242.56, 4157673.49 ], [ 283245.36, 4157655.84 ], [ 283250.0, 4157655.67 ], [ 283250.0, 4157500.0 ], [ 283000.0, 4157500.0 ], [ 283000.0, 4157750.0 ], [ 283228.29, 4157750.0 ], [ 283233.26, 4157706.85 ], [ 283242.56, 4157673.49 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/900609576", "name": null, "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283248.41, 4157661.13 ], [ 283250.0, 4157661.06 ], [ 283250.0, 4157656.32 ], [ 283248.21, 4157656.4 ], [ 283248.41, 4157661.13 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:424955", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283234.43, 4157680.28 ], [ 283237.48, 4157680.17 ], [ 283237.43, 4157678.13 ], [ 283239.07, 4157678.09 ], [ 283238.97, 4157675.23 ], [ 283234.26, 4157675.4 ], [ 283234.43, 4157680.28 ] ] ] } }
+]
+}

@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/679319538", "name": "Walker's Creek Retention Basin Park", "kind": "park", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285301.93, 4156020.16 ], [ 285321.44, 4156005.56 ], [ 285326.8, 4156000.0 ], [ 285250.0, 4156000.0 ], [ 285250.0, 4156043.16 ], [ 285263.82, 4156040.38 ], [ 285301.93, 4156020.16 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/200859659", "name": "Mayo Island", "kind": "industrial", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285322.63, 4156246.85 ], [ 285322.54, 4156246.45 ], [ 285322.39, 4156246.19 ], [ 285322.12, 4156245.93 ], [ 285309.47, 4156250.0 ], [ 285321.86, 4156250.0 ], [ 285322.61, 4156247.04 ], [ 285322.63, 4156246.85 ] ] ] } }
+]
+}

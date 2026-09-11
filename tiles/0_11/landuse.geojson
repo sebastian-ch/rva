@@ -1,0 +1,12 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/600879394", "name": "Pump House Park", "kind": "park", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280298.1, 4157500.0 ], [ 280290.8, 4157696.18 ], [ 280307.53, 4157565.75 ], [ 280314.67, 4157500.0 ], [ 280298.1, 4157500.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:relation/17142534", "name": null, "kind": "forest", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280369.02, 4157743.9 ], [ 280366.41, 4157750.0 ], [ 280404.02, 4157750.0 ], [ 280405.28, 4157748.44 ], [ 280415.13, 4157733.27 ], [ 280420.78, 4157710.16 ], [ 280452.3, 4157697.88 ], [ 280483.81, 4157696.57 ], [ 280500.0, 4157687.8 ], [ 280500.0, 4157635.03 ], [ 280481.15, 4157620.0 ], [ 280482.27, 4157602.83 ], [ 280492.01, 4157590.16 ], [ 280500.0, 4157602.27 ], [ 280500.0, 4157500.0 ], [ 280338.18, 4157500.0 ], [ 280325.61, 4157549.35 ], [ 280318.37, 4157605.66 ], [ 280313.01, 4157681.96 ], [ 280373.55, 4157688.86 ], [ 280395.97, 4157707.0 ], [ 280385.03, 4157730.64 ], [ 280369.02, 4157743.9 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/502099421", "name": "The Carillon Tot Lot", "kind": "park", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280437.68, 4157709.9 ], [ 280447.42, 4157730.76 ], [ 280470.84, 4157719.88 ], [ 280461.16, 4157698.52 ], [ 280437.68, 4157709.9 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/264469782", "name": "Byrd Park", "kind": "park", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280304.56, 4157683.96 ], [ 280310.89, 4157727.02 ], [ 280317.76, 4157750.0 ], [ 280500.0, 4157750.0 ], [ 280500.0, 4157500.0 ], [ 280326.26, 4157500.0 ], [ 280312.54, 4157627.42 ], [ 280304.56, 4157683.96 ] ] ] } }
+]
+}

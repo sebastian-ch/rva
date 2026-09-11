@@ -1,0 +1,13 @@
+{
+"type": "FeatureCollection",
+"name": "rail",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/169671749", "name": "Bellwood Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285612.86, 4158589.08 ], [ 285612.67, 4158500.0 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/308319097", "name": "Bellwood Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285615.51, 4158749.93 ], [ 285617.14, 4158735.15 ], [ 285617.8, 4158724.04 ], [ 285618.02, 4158704.91 ], [ 285617.61, 4158652.49 ], [ 285616.73, 4158590.89 ], [ 285617.42, 4158562.53 ], [ 285618.9, 4158540.44 ], [ 285623.6, 4158500.0 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/308319291", "name": "Bellwood Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285611.1, 4158750.0 ], [ 285613.1, 4158734.78 ], [ 285614.1, 4158719.81 ], [ 285613.02, 4158647.06 ], [ 285612.86, 4158589.08 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1028123551", "name": "Bellwood Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285615.5, 4158750.0 ], [ 285615.51, 4158749.93 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1221872827", "name": "Piedmont Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285739.75, 4158500.0 ], [ 285745.83, 4158565.02 ], [ 285750.0, 4158588.91 ] ] } }
+]
+}

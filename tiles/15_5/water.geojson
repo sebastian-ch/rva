@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "water",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/167830270", "name": "Manchester Canal", "kind": "canal", "water_z": 7.52, "source": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284237.89, 4156250.0 ], [ 284250.0, 4156239.03 ], [ 284250.0, 4156225.56 ], [ 284223.02, 4156250.0 ], [ 284237.89, 4156250.0 ] ] ] } }
+]
+}

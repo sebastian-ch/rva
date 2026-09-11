@@ -1,0 +1,14 @@
+{
+"type": "FeatureCollection",
+"name": "rail",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/6036180", "name": "Peninsula Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285703.02, 4158103.92 ], [ 285700.93, 4158061.51 ], [ 285701.89, 4158015.56 ], [ 285702.65, 4158004.48 ], [ 285702.95, 4158000.0 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/169671718", "name": "Bellwood Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285703.02, 4158103.92 ], [ 285697.87, 4158045.9 ], [ 285695.87, 4158006.04 ], [ 285695.83, 4158004.11 ], [ 285695.94, 4158000.0 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/169671749", "name": "Bellwood Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285613.92, 4158250.0 ], [ 285614.32, 4158216.37 ], [ 285624.51, 4158023.82 ], [ 285626.24, 4158000.0 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/169671714", "name": "Bellwood Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285704.44, 4158119.56 ], [ 285703.02, 4158103.92 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/308319097", "name": "Bellwood Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285694.8, 4158250.0 ], [ 285696.01, 4158245.94 ], [ 285703.43, 4158206.61 ], [ 285704.74, 4158189.41 ], [ 285705.56, 4158178.58 ], [ 285705.6, 4158157.84 ], [ 285704.44, 4158119.56 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1221872827", "name": "Piedmont Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285704.44, 4158119.56 ], [ 285710.78, 4158188.82 ], [ 285715.79, 4158243.62 ], [ 285716.39, 4158250.0 ] ] } }
+]
+}

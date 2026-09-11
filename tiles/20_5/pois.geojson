@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "pois",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "lidar-tree:285414:4156000", "name": null, "kind": "tree", "species": null, "source": "lidar2025", "tree_height": 16.4, "crown_radius": 6.0, "height_source": "lidar2025" }, "geometry": { "type": "Point", "coordinates": [ 285413.5, 4156000.5 ] } }
+]
+}

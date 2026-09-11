@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:relation/16078640", "name": "Dock Street Park", "kind": "park", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286250.0, 4155750.0 ], [ 286250.0, 4155794.22 ], [ 286279.09, 4155750.0 ], [ 286250.0, 4155750.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/298621431", "name": "Libby Hill Park", "kind": "park", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286456.34, 4155914.06 ], [ 286484.55, 4155949.18 ], [ 286463.4, 4155966.66 ], [ 286477.84, 4155986.12 ], [ 286500.0, 4155968.51 ], [ 286500.0, 4155888.08 ], [ 286469.73, 4155867.88 ], [ 286460.86, 4155866.25 ], [ 286455.04, 4155865.96 ], [ 286358.35, 4155902.47 ], [ 286332.17, 4155919.15 ], [ 286299.64, 4155950.78 ], [ 286295.63, 4155956.79 ], [ 286287.88, 4156000.0 ], [ 286413.72, 4156000.0 ], [ 286386.82, 4155965.62 ], [ 286456.34, 4155914.06 ] ] ] } }
+]
+}

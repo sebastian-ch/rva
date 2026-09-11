@@ -1,0 +1,13 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/107789389", "name": null, "kind": "industrial", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284000.0, 4159795.48 ], [ 284000.0, 4159750.0 ], [ 283750.0, 4159750.0 ], [ 283750.0, 4159782.12 ], [ 283835.55, 4159782.78 ], [ 284000.0, 4159795.48 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:293690", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283947.24, 4159750.0 ], [ 283946.65, 4159750.0 ], [ 283947.09, 4159750.28 ], [ 283947.24, 4159750.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:293374", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283765.95, 4159897.44 ], [ 283765.95, 4159893.69 ], [ 283762.14, 4159893.72 ], [ 283762.24, 4159897.45 ], [ 283765.95, 4159897.44 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/253544788", "name": "Hovey Field", "kind": "grass", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283750.0, 4159956.0 ], [ 283750.0, 4160000.0 ], [ 283751.34, 4160000.0 ], [ 283771.85, 4159984.3 ], [ 283750.0, 4159956.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:425185", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283993.87, 4159996.35 ], [ 283993.3, 4159998.24 ], [ 283995.74, 4159998.82 ], [ 283996.54, 4159995.08 ], [ 283995.42, 4159994.81 ], [ 283995.09, 4159996.24 ], [ 283993.87, 4159996.35 ] ] ] } }
+]
+}

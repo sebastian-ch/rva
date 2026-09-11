@@ -1,0 +1,13 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/334123560", "name": null, "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283189.59, 4159356.75 ], [ 283242.66, 4159315.54 ], [ 283191.35, 4159250.0 ], [ 283112.46, 4159250.0 ], [ 283108.46, 4159253.11 ], [ 283189.59, 4159356.75 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/334123558", "name": null, "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283080.42, 4159286.53 ], [ 283136.0, 4159361.03 ], [ 283152.61, 4159348.75 ], [ 283084.51, 4159257.45 ], [ 283074.18, 4159265.08 ], [ 283086.71, 4159281.88 ], [ 283080.42, 4159286.53 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/334123542", "name": null, "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283023.46, 4159312.97 ], [ 283030.33, 4159297.31 ], [ 283031.75, 4159290.06 ], [ 283000.0, 4159250.23 ], [ 283000.0, 4159332.45 ], [ 283020.58, 4159316.66 ], [ 283023.46, 4159312.97 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/334125534", "name": null, "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283250.0, 4159472.66 ], [ 283250.0, 4159466.31 ], [ 283239.69, 4159453.14 ], [ 283180.2, 4159500.0 ], [ 283225.8, 4159500.0 ], [ 283221.84, 4159494.64 ], [ 283250.0, 4159472.66 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:relation/4714965", "name": null, "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283017.7, 4159469.16 ], [ 283000.0, 4159495.53 ], [ 283000.0, 4159500.0 ], [ 283027.62, 4159500.0 ], [ 283041.05, 4159489.44 ], [ 283049.43, 4159500.0 ], [ 283137.74, 4159500.0 ], [ 283076.71, 4159422.37 ], [ 283017.7, 4159469.16 ] ] ] } }
+]
+}

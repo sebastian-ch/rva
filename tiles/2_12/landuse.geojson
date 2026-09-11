@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/502779221", "name": null, "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280801.97, 4157750.0 ], [ 280755.08, 4157750.0 ], [ 280760.32, 4157775.02 ], [ 280801.97, 4157750.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/264469782", "name": "Byrd Park", "kind": "park", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280750.0, 4157750.0 ], [ 280750.0, 4158000.0 ], [ 281000.0, 4158000.0 ], [ 281000.0, 4157824.94 ], [ 280965.9, 4157750.0 ], [ 280750.0, 4157750.0 ] ] ] } }
+]
+}

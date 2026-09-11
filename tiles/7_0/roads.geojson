@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"name": "roads",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/561710147", "name": "McDonough Street", "highway": "residential", "lanes": null, "width": 7.0, "oneway": false, "surface": null, "footway": null, "sidewalk_left": null, "sidewalk_right": false, "generated_sidewalk": true, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 282089.39, 4155000.0 ], [ 282037.53, 4154976.46 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/560208489", "name": "West 31st Street", "highway": "residential", "lanes": 2.0, "width": 7.0, "oneway": false, "surface": "asphalt", "footway": null, "sidewalk_left": null, "sidewalk_right": false, "generated_sidewalk": true, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 282150.91, 4155000.0 ], [ 282182.9, 4154930.6 ], [ 282184.32, 4154925.82 ], [ 282184.94, 4154922.97 ], [ 282186.85, 4154914.2 ], [ 282185.1, 4154907.36 ], [ 282172.83, 4154859.24 ], [ 282159.18, 4154810.36 ], [ 282156.49, 4154800.73 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/744938378", "name": "West 32nd Street", "highway": "residential", "lanes": null, "width": 7.0, "oneway": false, "surface": null, "footway": null, "sidewalk_left": null, "sidewalk_right": null, "generated_sidewalk": true, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 282037.53, 4154976.46 ], [ 282035.19, 4154981.3 ], [ 282026.21, 4155000.0 ] ] } }
+]
+}

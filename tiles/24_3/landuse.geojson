@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:relation/16078640", "name": "Dock Street Park", "kind": "park", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286257.8, 4155674.71 ], [ 286254.25, 4155678.7 ], [ 286251.96, 4155680.06 ], [ 286251.76, 4155680.17 ], [ 286251.61, 4155680.32 ], [ 286250.0, 4155682.47 ], [ 286250.0, 4155750.0 ], [ 286279.09, 4155750.0 ], [ 286298.63, 4155720.3 ], [ 286257.8, 4155674.71 ] ] ] } }
+]
+}

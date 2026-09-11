@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"name": "roads",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/967983521", "name": null, "highway": "service", "lanes": null, "width": 4.5, "oneway": false, "surface": null, "footway": null, "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 286250.0, 4154973.59 ], [ 286252.16, 4154974.12 ], [ 286260.33, 4154968.89 ], [ 286268.21, 4154963.97 ], [ 286277.51, 4154963.92 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1277750339", "name": null, "highway": "service", "lanes": null, "width": 4.5, "oneway": false, "surface": null, "footway": null, "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 286285.24, 4154977.4 ], [ 286279.45, 4154979.65 ], [ 286267.66, 4154977.27 ], [ 286257.85, 4154976.04 ], [ 286252.16, 4154974.12 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1162899102", "name": "Ancarrow’s Landing", "highway": "path", "lanes": null, "width": 1.5, "oneway": false, "surface": "dirt", "footway": null, "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 286292.54, 4155000.0 ], [ 286291.52, 4154995.46 ], [ 286286.31, 4154980.71 ], [ 286285.24, 4154977.4 ], [ 286282.85, 4154970.76 ], [ 286277.51, 4154963.92 ], [ 286270.74, 4154961.14 ], [ 286265.97, 4154959.34 ], [ 286261.52, 4154956.88 ], [ 286259.05, 4154953.16 ], [ 286258.31, 4154949.15 ] ] } }
+]
+}

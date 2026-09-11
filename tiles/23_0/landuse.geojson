@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/1085107607", "name": null, "kind": "forest", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286025.14, 4154810.18 ], [ 286071.71, 4154823.32 ], [ 286096.84, 4154847.98 ], [ 286109.18, 4154851.92 ], [ 286116.53, 4154863.63 ], [ 286128.09, 4154860.89 ], [ 286135.17, 4154873.82 ], [ 286154.3, 4154879.73 ], [ 286182.86, 4154750.0 ], [ 286000.0, 4154750.0 ], [ 286000.0, 4154805.1 ], [ 286012.97, 4154813.24 ], [ 286025.14, 4154810.18 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/44771123", "name": "City of Richmond Wastewater Treatment Facility", "kind": "industrial", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286000.0, 4154813.0 ], [ 286000.0, 4155000.0 ], [ 286138.55, 4155000.0 ], [ 286184.31, 4154846.21 ], [ 286000.0, 4154813.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/679324138", "name": "Ancarrow's Landing", "kind": "park", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286138.54, 4155000.0 ], [ 286250.0, 4155000.0 ], [ 286250.0, 4154850.6 ], [ 286184.31, 4154846.21 ], [ 286138.54, 4155000.0 ] ] ] } }
+]
+}

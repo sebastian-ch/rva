@@ -1,0 +1,15 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "richmond_structure:308329", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285038.18, 4157773.12 ], [ 285041.95, 4157770.03 ], [ 285040.14, 4157767.81 ], [ 285036.36, 4157770.91 ], [ 285038.18, 4157773.12 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:310009", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285140.66, 4157797.28 ], [ 285142.75, 4157795.79 ], [ 285141.2, 4157793.61 ], [ 285139.11, 4157795.11 ], [ 285140.66, 4157797.28 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/224510142", "name": "Public Services Dept. Parking", "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285187.86, 4157810.41 ], [ 285184.39, 4157822.68 ], [ 285227.5, 4157875.72 ], [ 285184.96, 4157909.99 ], [ 285207.22, 4157939.22 ], [ 285250.0, 4157904.79 ], [ 285250.0, 4157869.28 ], [ 285197.36, 4157803.04 ], [ 285187.86, 4157810.41 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1556368802", "name": null, "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285059.95, 4157905.25 ], [ 285077.27, 4157925.19 ], [ 285131.59, 4157882.18 ], [ 285114.93, 4157860.9 ], [ 285059.95, 4157905.25 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/321367751", "name": null, "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285035.51, 4157905.92 ], [ 285000.0, 4157933.77 ], [ 285000.0, 4157947.18 ], [ 285042.05, 4157914.2 ], [ 285035.51, 4157905.92 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/822816423", "name": null, "kind": "grass", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285242.19, 4157974.55 ], [ 285248.3, 4157969.65 ], [ 285245.0, 4157965.58 ], [ 285250.0, 4157961.57 ], [ 285250.0, 4157959.73 ], [ 285249.76, 4157959.43 ], [ 285250.0, 4157959.23 ], [ 285250.0, 4157950.76 ], [ 285233.19, 4157962.74 ], [ 285242.19, 4157974.55 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/44888567", "name": null, "kind": "parking", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285007.31, 4157970.57 ], [ 285031.04, 4158000.0 ], [ 285102.89, 4158000.0 ], [ 285051.0, 4157935.63 ], [ 285007.31, 4157970.57 ] ] ] } }
+]
+}

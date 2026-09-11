@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "buildings",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/527243383", "name": null, "height": 3.49, "min_height": 0.0, "levels": null, "height_source": "lidar", "roof_shape": "gable", "roof_height": 1.4, "roof_azimuth": 4.8, "roof_source": "lidar", "roof_color": "roof_red", "wall_color": "sand", "type": "yes", "landmark": null, "footprint_source": "osm", "source_updated": null, "is_part": false, "parent": null, "hidden": false, "addr": "2301 Park Dr", "wikidata": null, "website": null, "zoning": "R-2", "lidar_p90": 4.99, "ground_z": 58.66, "merged_count": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280672.04, 4157715.95 ], [ 280668.83, 4157693.85 ], [ 280653.09, 4157695.47 ], [ 280653.62, 4157707.84 ], [ 280653.17, 4157717.52 ], [ 280672.04, 4157715.95 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/823018115", "name": null, "height": 7.54, "min_height": 0.0, "levels": null, "height_source": "lidar", "roof_shape": "skillion", "roof_height": 1.81, "roof_azimuth": 94.6, "roof_source": "lidar", "roof_color": "roof_red", "wall_color": "sand", "type": "yes", "landmark": null, "footprint_source": "osm", "source_updated": null, "is_part": false, "parent": null, "hidden": false, "addr": null, "wikidata": null, "website": null, "zoning": "R-2", "lidar_p90": 9.31, "ground_z": 59.67, "merged_count": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280653.17, 4157717.52 ], [ 280653.22, 4157728.42 ], [ 280655.18, 4157731.11 ], [ 280660.07, 4157731.68 ], [ 280672.44, 4157729.94 ], [ 280673.98, 4157726.19 ], [ 280672.04, 4157715.95 ], [ 280653.17, 4157717.52 ] ] ] } }
+]
+}

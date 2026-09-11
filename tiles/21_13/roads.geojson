@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"name": "roads",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/601102862", "name": "Richmond-Petersburg Turnpike", "highway": "motorway", "lanes": 4.0, "width": 14.0, "oneway": true, "surface": "asphalt", "footway": null, "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": true, "tunnel": false, "layer": 0, "deck": [ 285597.8, 4157568.31, 22.99, 285473.62, 4158101.37, 33.48 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 285503.77, 4158000.0 ], [ 285500.0, 4158012.68 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/764907430", "name": null, "highway": "service", "lanes": null, "width": 4.5, "oneway": false, "surface": null, "footway": null, "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285750.0, 4158073.57 ], [ 285747.02, 4158047.64 ], [ 285746.23, 4158034.07 ], [ 285745.94, 4158018.62 ], [ 285746.02, 4158000.0 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1286647242", "name": null, "highway": "track", "lanes": null, "width": 2.5, "oneway": false, "surface": null, "footway": null, "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285623.94, 4158000.0 ], [ 285615.56, 4158096.13 ], [ 285609.85, 4158165.33 ], [ 285607.68, 4158205.97 ], [ 285607.24, 4158250.0 ] ] } }
+]
+}

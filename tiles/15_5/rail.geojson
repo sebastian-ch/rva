@@ -1,0 +1,18 @@
+{
+"type": "FeatureCollection",
+"name": "rail",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/921384166", "name": null, "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 284248.04, 4156156.63 ], [ 284250.0, 4156154.39 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/6032717", "name": null, "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 284159.97, 4156250.0 ], [ 284165.95, 4156246.56 ], [ 284177.91, 4156237.45 ], [ 284191.69, 4156225.59 ], [ 284201.99, 4156215.37 ], [ 284225.17, 4156186.68 ], [ 284234.37, 4156175.75 ], [ 284242.5, 4156167.16 ], [ 284250.0, 4156159.4 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/823768844", "name": null, "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 284250.0, 4156153.85 ], [ 284248.04, 4156156.63 ], [ 284225.17, 4156186.68 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/921384167", "name": null, "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 284201.99, 4156215.37 ], [ 284250.0, 4156165.86 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/921384162", "name": null, "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 284227.28, 4156207.89 ], [ 284231.68, 4156202.86 ], [ 284237.21, 4156194.99 ], [ 284244.34, 4156183.84 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/921384163", "name": null, "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 284077.96, 4156250.0 ], [ 284083.76, 4156243.03 ], [ 284106.96, 4156211.3 ], [ 284143.44, 4156156.92 ], [ 284169.82, 4156117.61 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/769431786", "name": "Richmond District", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 284173.91, 4156250.0 ], [ 284175.59, 4156248.82 ], [ 284185.47, 4156240.32 ], [ 284194.93, 4156231.35 ], [ 284242.9, 4156181.75 ], [ 284248.68, 4156174.67 ], [ 284250.0, 4156172.94 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/921384165", "name": null, "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 284152.9, 4156250.0 ], [ 284167.21, 4156238.85 ], [ 284174.15, 4156232.12 ], [ 284181.38, 4156223.75 ], [ 284195.44, 4156206.94 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/921384168", "name": null, "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 284193.59, 4156250.0 ], [ 284202.52, 4156242.07 ], [ 284209.98, 4156234.96 ], [ 284216.88, 4156227.4 ], [ 284223.28, 4156219.12 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/317290882", "name": "Richmond District", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 284250.0, 4156174.14 ], [ 284244.34, 4156183.84 ], [ 284233.13, 4156203.71 ], [ 284223.28, 4156219.12 ], [ 284210.33, 4156236.79 ], [ 284202.55, 4156247.79 ], [ 284201.13, 4156250.0 ] ] } }
+]
+}

@@ -1,0 +1,13 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "richmond_structure:292535", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286303.96, 4159956.3 ], [ 286308.93, 4159953.03 ], [ 286306.73, 4159950.73 ], [ 286301.7, 4159954.11 ], [ 286303.96, 4159956.3 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:289265", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286290.29, 4159957.34 ], [ 286292.41, 4159955.92 ], [ 286288.67, 4159950.18 ], [ 286286.17, 4159951.84 ], [ 286287.1, 4159953.26 ], [ 286287.45, 4159953.03 ], [ 286290.29, 4159957.34 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:289302", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286296.82, 4159967.87 ], [ 286292.86, 4159961.64 ], [ 286290.07, 4159963.73 ], [ 286294.34, 4159970.01 ], [ 286294.58, 4159970.36 ], [ 286296.82, 4159967.87 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:289068", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286300.23, 4159973.71 ], [ 286299.06, 4159974.53 ], [ 286302.29, 4159979.54 ], [ 286303.8, 4159978.66 ], [ 286300.23, 4159973.71 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:292552", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286311.53, 4159991.9 ], [ 286308.87, 4159993.41 ], [ 286311.93, 4159998.38 ], [ 286314.41, 4159996.87 ], [ 286311.53, 4159991.9 ] ] ] } }
+]
+}

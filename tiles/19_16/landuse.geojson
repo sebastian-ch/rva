@@ -1,0 +1,12 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "richmond_structure:287185", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285041.31, 4158750.0 ], [ 285040.44, 4158750.56 ], [ 285042.28, 4158752.83 ], [ 285037.88, 4158754.8 ], [ 285038.93, 4158755.93 ], [ 285042.64, 4158754.04 ], [ 285044.91, 4158756.4 ], [ 285047.2, 4158754.35 ], [ 285046.77, 4158754.7 ], [ 285042.88, 4158750.0 ], [ 285041.31, 4158750.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1486408906", "name": null, "kind": "cemetery", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285250.0, 4158750.0 ], [ 285233.7, 4158750.0 ], [ 285250.0, 4158770.04 ], [ 285250.0, 4158750.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/44659673", "name": "Shockoe Hill Cemetery", "kind": "cemetery", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285078.15, 4158750.0 ], [ 285010.44, 4158804.58 ], [ 285164.33, 4159000.0 ], [ 285185.49, 4159000.0 ], [ 285250.0, 4158949.02 ], [ 285250.0, 4158791.39 ], [ 285217.38, 4158750.0 ], [ 285078.15, 4158750.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:292068", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285248.45, 4158991.42 ], [ 285250.0, 4158990.21 ], [ 285250.0, 4158988.61 ], [ 285245.81, 4158985.17 ], [ 285243.71, 4158986.9 ], [ 285248.45, 4158991.42 ] ] ] } }
+]
+}

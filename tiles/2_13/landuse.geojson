@@ -1,0 +1,12 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/264469782", "name": "Byrd Park", "kind": "park", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280807.99, 4158250.0 ], [ 281000.0, 4158250.0 ], [ 281000.0, 4158000.0 ], [ 280750.0, 4158000.0 ], [ 280750.0, 4158099.73 ], [ 280793.99, 4158194.14 ], [ 280807.99, 4158250.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/823021028", "name": null, "kind": "industrial", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280833.42, 4158133.11 ], [ 280838.78, 4158158.36 ], [ 280871.61, 4158151.62 ], [ 280866.38, 4158126.54 ], [ 280833.42, 4158133.11 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/823018113", "name": null, "kind": "grass", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280771.22, 4158189.36 ], [ 280774.28, 4158186.67 ], [ 280774.53, 4158183.39 ], [ 280750.0, 4158127.38 ], [ 280750.0, 4158152.81 ], [ 280764.37, 4158186.36 ], [ 280768.13, 4158189.28 ], [ 280771.22, 4158189.36 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/823018114", "name": null, "kind": "grass", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280795.96, 4158228.69 ], [ 280798.06, 4158229.1 ], [ 280804.58, 4158217.49 ], [ 280809.49, 4158212.65 ], [ 280808.41, 4158209.59 ], [ 280791.41, 4158209.13 ], [ 280795.96, 4158228.69 ] ] ] } }
+]
+}

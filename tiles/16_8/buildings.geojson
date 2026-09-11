@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "buildings",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/1131774005", "name": null, "height": 16.17, "min_height": 0.0, "levels": null, "height_source": "lidar", "roof_shape": "skillion", "roof_height": 0.97, "roof_azimuth": 37.3, "roof_source": "lidar", "roof_color": "roof_red", "wall_color": "cream", "type": "yes", "landmark": null, "footprint_source": "osm", "source_updated": null, "is_part": false, "parent": null, "hidden": false, "addr": null, "wikidata": null, "website": null, "zoning": "DCC", "lidar_p90": 17.02, "ground_z": 12.72, "merged_count": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284305.19, 4156911.7 ], [ 284317.52, 4156909.32 ], [ 284315.13, 4156897.01 ], [ 284302.79, 4156899.4 ], [ 284305.19, 4156911.7 ] ] ] } }
+]
+}

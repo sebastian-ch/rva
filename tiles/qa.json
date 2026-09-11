@@ -1,0 +1,3808 @@
+{
+ "generated_at": "2026-09-11T22:52:21.623274+00:00",
+ "bbox_wgs84": [
+  -77.486,
+  37.517,
+  -77.418,
+  37.568
+ ],
+ "buildings": {
+  "total": 22655,
+  "height_source_hist": {
+   "lidar": 20741,
+   "zoning": 808,
+   "overture_height": 31,
+   "osm_levels": 865,
+   "osm_height": 189,
+   "landmark_hint": 16,
+   "default": 2,
+   "override": 3
+  },
+  "roof_shape_hist": {
+   "gable": 5105,
+   "flat": 16029,
+   "skillion": 1065,
+   "hip": 452,
+   "pyramidal": 2,
+   "dome": 2
+  },
+  "wall_color_hist": {
+   "terracotta": 4327,
+   "brick": 4899,
+   "sand": 4555,
+   "cream": 4364,
+   "concrete": 4063,
+   "brick_dark": 378,
+   "steel": 28,
+   "glass": 29,
+   "slate": 12
+  },
+  "default_count": 2,
+  "default_share": 8.828073273008166e-05,
+  "named_count": 1137,
+  "tall_buildings": [
+   {
+    "id": "override:CoStar Tower",
+    "name": "CoStar Tower",
+    "height": 155.0
+   }
+  ],
+  "small_footprint_count": 653,
+  "small_footprint_ids": [
+   "osm:way/755825918",
+   "osm:way/755825879",
+   "osm:way/755825634",
+   "richmond_structure:348419",
+   "richmond_structure:344617",
+   "osm:way/755825477",
+   "osm:way/755826046",
+   "richmond_structure:397621",
+   "osm:way/755825676",
+   "osm:way/755825459"
+  ],
+  "roof_azimuth_count": 5535
+ },
+ "per_tile": [
+  {
+   "id": "13_5",
+   "buildings": 3,
+   "default_share": 0.3333333333333333,
+   "roads": 57,
+   "has_terrain": true
+  },
+  {
+   "id": "19_12",
+   "buildings": 10,
+   "default_share": 0.1,
+   "roads": 115,
+   "has_terrain": true
+  },
+  {
+   "id": "0_1",
+   "buildings": 53,
+   "default_share": 0.0,
+   "roads": 5,
+   "has_terrain": true
+  },
+  {
+   "id": "0_2",
+   "buildings": 78,
+   "default_share": 0.0,
+   "roads": 21,
+   "has_terrain": true
+  },
+  {
+   "id": "0_3",
+   "buildings": 116,
+   "default_share": 0.0,
+   "roads": 24,
+   "has_terrain": true
+  },
+  {
+   "id": "0_4",
+   "buildings": 87,
+   "default_share": 0.0,
+   "roads": 19,
+   "has_terrain": true
+  },
+  {
+   "id": "0_5",
+   "buildings": 36,
+   "default_share": 0.0,
+   "roads": 12,
+   "has_terrain": true
+  },
+  {
+   "id": "0_6",
+   "buildings": 42,
+   "default_share": 0.0,
+   "roads": 13,
+   "has_terrain": true
+  },
+  {
+   "id": "0_9",
+   "buildings": 3,
+   "default_share": 0.0,
+   "roads": 11,
+   "has_terrain": true
+  },
+  {
+   "id": "0_10",
+   "buildings": 2,
+   "default_share": 0.0,
+   "roads": 19,
+   "has_terrain": true
+  },
+  {
+   "id": "0_12",
+   "buildings": 30,
+   "default_share": 0.0,
+   "roads": 47,
+   "has_terrain": true
+  },
+  {
+   "id": "0_13",
+   "buildings": 51,
+   "default_share": 0.0,
+   "roads": 54,
+   "has_terrain": true
+  },
+  {
+   "id": "0_14",
+   "buildings": 62,
+   "default_share": 0.0,
+   "roads": 18,
+   "has_terrain": true
+  },
+  {
+   "id": "0_15",
+   "buildings": 21,
+   "default_share": 0.0,
+   "roads": 20,
+   "has_terrain": true
+  },
+  {
+   "id": "0_16",
+   "buildings": 61,
+   "default_share": 0.0,
+   "roads": 33,
+   "has_terrain": true
+  },
+  {
+   "id": "0_17",
+   "buildings": 44,
+   "default_share": 0.0,
+   "roads": 41,
+   "has_terrain": true
+  },
+  {
+   "id": "0_18",
+   "buildings": 59,
+   "default_share": 0.0,
+   "roads": 37,
+   "has_terrain": true
+  },
+  {
+   "id": "0_19",
+   "buildings": 38,
+   "default_share": 0.0,
+   "roads": 18,
+   "has_terrain": true
+  },
+  {
+   "id": "0_20",
+   "buildings": 28,
+   "default_share": 0.0,
+   "roads": 18,
+   "has_terrain": true
+  },
+  {
+   "id": "0_21",
+   "buildings": 2,
+   "default_share": 0.0,
+   "roads": 10,
+   "has_terrain": true
+  },
+  {
+   "id": "0_22",
+   "buildings": 11,
+   "default_share": 0.0,
+   "roads": 45,
+   "has_terrain": true
+  },
+  {
+   "id": "0_23",
+   "buildings": 40,
+   "default_share": 0.0,
+   "roads": 16,
+   "has_terrain": true
+  },
+  {
+   "id": "0_24",
+   "buildings": 10,
+   "default_share": 0.0,
+   "roads": 18,
+   "has_terrain": true
+  },
+  {
+   "id": "1_1",
+   "buildings": 28,
+   "default_share": 0.0,
+   "roads": 7,
+   "has_terrain": true
+  },
+  {
+   "id": "1_2",
+   "buildings": 59,
+   "default_share": 0.0,
+   "roads": 20,
+   "has_terrain": true
+  },
+  {
+   "id": "1_3",
+   "buildings": 73,
+   "default_share": 0.0,
+   "roads": 14,
+   "has_terrain": true
+  },
+  {
+   "id": "1_4",
+   "buildings": 72,
+   "default_share": 0.0,
+   "roads": 24,
+   "has_terrain": true
+  },
+  {
+   "id": "1_5",
+   "buildings": 37,
+   "default_share": 0.0,
+   "roads": 25,
+   "has_terrain": true
+  },
+  {
+   "id": "1_6",
+   "buildings": 8,
+   "default_share": 0.0,
+   "roads": 17,
+   "has_terrain": true
+  },
+  {
+   "id": "1_9",
+   "buildings": 1,
+   "default_share": 0.0,
+   "roads": 24,
+   "has_terrain": true
+  },
+  {
+   "id": "1_10",
+   "buildings": 2,
+   "default_share": 0.0,
+   "roads": 17,
+   "has_terrain": true
+  },
+  {
+   "id": "1_11",
+   "buildings": 2,
+   "default_share": 0.0,
+   "roads": 30,
+   "has_terrain": true
+  },
+  {
+   "id": "1_12",
+   "buildings": 11,
+   "default_share": 0.0,
+   "roads": 76,
+   "has_terrain": true
+  },
+  {
+   "id": "1_13",
+   "buildings": 64,
+   "default_share": 0.0,
+   "roads": 79,
+   "has_terrain": true
+  },
+  {
+   "id": "1_14",
+   "buildings": 76,
+   "default_share": 0.0,
+   "roads": 41,
+   "has_terrain": true
+  },
+  {
+   "id": "1_15",
+   "buildings": 22,
+   "default_share": 0.0,
+   "roads": 43,
+   "has_terrain": true
+  },
+  {
+   "id": "1_16",
+   "buildings": 42,
+   "default_share": 0.0,
+   "roads": 66,
+   "has_terrain": true
+  },
+  {
+   "id": "1_17",
+   "buildings": 137,
+   "default_share": 0.0,
+   "roads": 75,
+   "has_terrain": true
+  },
+  {
+   "id": "1_18",
+   "buildings": 112,
+   "default_share": 0.0,
+   "roads": 64,
+   "has_terrain": true
+  },
+  {
+   "id": "1_19",
+   "buildings": 130,
+   "default_share": 0.0,
+   "roads": 30,
+   "has_terrain": true
+  },
+  {
+   "id": "1_20",
+   "buildings": 103,
+   "default_share": 0.0,
+   "roads": 32,
+   "has_terrain": true
+  },
+  {
+   "id": "1_21",
+   "buildings": 47,
+   "default_share": 0.0,
+   "roads": 77,
+   "has_terrain": true
+  },
+  {
+   "id": "1_22",
+   "buildings": 15,
+   "default_share": 0.0,
+   "roads": 93,
+   "has_terrain": true
+  },
+  {
+   "id": "1_23",
+   "buildings": 59,
+   "default_share": 0.0,
+   "roads": 134,
+   "has_terrain": true
+  },
+  {
+   "id": "1_24",
+   "buildings": 28,
+   "default_share": 0.0,
+   "roads": 9,
+   "has_terrain": true
+  },
+  {
+   "id": "2_1",
+   "buildings": 48,
+   "default_share": 0.0,
+   "roads": 11,
+   "has_terrain": true
+  },
+  {
+   "id": "2_2",
+   "buildings": 82,
+   "default_share": 0.0,
+   "roads": 33,
+   "has_terrain": true
+  },
+  {
+   "id": "2_3",
+   "buildings": 101,
+   "default_share": 0.0,
+   "roads": 20,
+   "has_terrain": true
+  },
+  {
+   "id": "2_4",
+   "buildings": 62,
+   "default_share": 0.0,
+   "roads": 12,
+   "has_terrain": true
+  },
+  {
+   "id": "2_5",
+   "buildings": 15,
+   "default_share": 0.0,
+   "roads": 7,
+   "has_terrain": true
+  },
+  {
+   "id": "2_9",
+   "buildings": 10,
+   "default_share": 0.0,
+   "roads": 21,
+   "has_terrain": true
+  },
+  {
+   "id": "2_10",
+   "buildings": 6,
+   "default_share": 0.0,
+   "roads": 32,
+   "has_terrain": true
+  },
+  {
+   "id": "2_11",
+   "buildings": 14,
+   "default_share": 0.0,
+   "roads": 44,
+   "has_terrain": true
+  },
+  {
+   "id": "2_13",
+   "buildings": 8,
+   "default_share": 0.0,
+   "roads": 30,
+   "has_terrain": true
+  },
+  {
+   "id": "2_14",
+   "buildings": 8,
+   "default_share": 0.0,
+   "roads": 64,
+   "has_terrain": true
+  },
+  {
+   "id": "2_15",
+   "buildings": 38,
+   "default_share": 0.0,
+   "roads": 39,
+   "has_terrain": true
+  },
+  {
+   "id": "2_16",
+   "buildings": 86,
+   "default_share": 0.0,
+   "roads": 85,
+   "has_terrain": true
+  },
+  {
+   "id": "2_17",
+   "buildings": 103,
+   "default_share": 0.0,
+   "roads": 61,
+   "has_terrain": true
+  },
+  {
+   "id": "2_18",
+   "buildings": 142,
+   "default_share": 0.0,
+   "roads": 20,
+   "has_terrain": true
+  },
+  {
+   "id": "2_19",
+   "buildings": 141,
+   "default_share": 0.0,
+   "roads": 16,
+   "has_terrain": true
+  },
+  {
+   "id": "2_20",
+   "buildings": 142,
+   "default_share": 0.0,
+   "roads": 32,
+   "has_terrain": true
+  },
+  {
+   "id": "2_21",
+   "buildings": 86,
+   "default_share": 0.0,
+   "roads": 41,
+   "has_terrain": true
+  },
+  {
+   "id": "2_22",
+   "buildings": 85,
+   "default_share": 0.0,
+   "roads": 62,
+   "has_terrain": true
+  },
+  {
+   "id": "2_23",
+   "buildings": 19,
+   "default_share": 0.0,
+   "roads": 85,
+   "has_terrain": true
+  },
+  {
+   "id": "2_24",
+   "buildings": 3,
+   "default_share": 0.0,
+   "roads": 10,
+   "has_terrain": true
+  },
+  {
+   "id": "3_1",
+   "buildings": 12,
+   "default_share": 0.0,
+   "roads": 30,
+   "has_terrain": true
+  },
+  {
+   "id": "3_2",
+   "buildings": 49,
+   "default_share": 0.0,
+   "roads": 37,
+   "has_terrain": true
+  },
+  {
+   "id": "3_3",
+   "buildings": 85,
+   "default_share": 0.0,
+   "roads": 22,
+   "has_terrain": true
+  },
+  {
+   "id": "3_4",
+   "buildings": 71,
+   "default_share": 0.0,
+   "roads": 17,
+   "has_terrain": true
+  },
+  {
+   "id": "3_8",
+   "buildings": 3,
+   "default_share": 0.0,
+   "roads": 66,
+   "has_terrain": true
+  },
+  {
+   "id": "3_9",
+   "buildings": 9,
+   "default_share": 0.0,
+   "roads": 14,
+   "has_terrain": true
+  },
+  {
+   "id": "3_11",
+   "buildings": 6,
+   "default_share": 0.0,
+   "roads": 32,
+   "has_terrain": true
+  },
+  {
+   "id": "3_12",
+   "buildings": 33,
+   "default_share": 0.0,
+   "roads": 22,
+   "has_terrain": true
+  },
+  {
+   "id": "3_13",
+   "buildings": 12,
+   "default_share": 0.0,
+   "roads": 25,
+   "has_terrain": true
+  },
+  {
+   "id": "3_14",
+   "buildings": 1,
+   "default_share": 0.0,
+   "roads": 43,
+   "has_terrain": true
+  },
+  {
+   "id": "3_15",
+   "buildings": 13,
+   "default_share": 0.0,
+   "roads": 69,
+   "has_terrain": true
+  },
+  {
+   "id": "3_16",
+   "buildings": 148,
+   "default_share": 0.0,
+   "roads": 63,
+   "has_terrain": true
+  },
+  {
+   "id": "3_17",
+   "buildings": 119,
+   "default_share": 0.0,
+   "roads": 74,
+   "has_terrain": true
+  },
+  {
+   "id": "3_18",
+   "buildings": 153,
+   "default_share": 0.0,
+   "roads": 29,
+   "has_terrain": true
+  },
+  {
+   "id": "3_19",
+   "buildings": 116,
+   "default_share": 0.0,
+   "roads": 17,
+   "has_terrain": true
+  },
+  {
+   "id": "3_20",
+   "buildings": 134,
+   "default_share": 0.0,
+   "roads": 23,
+   "has_terrain": true
+  },
+  {
+   "id": "3_21",
+   "buildings": 173,
+   "default_share": 0.0,
+   "roads": 9,
+   "has_terrain": true
+  },
+  {
+   "id": "3_22",
+   "buildings": 125,
+   "default_share": 0.0,
+   "roads": 34,
+   "has_terrain": true
+  },
+  {
+   "id": "3_23",
+   "buildings": 85,
+   "default_share": 0.0,
+   "roads": 45,
+   "has_terrain": true
+  },
+  {
+   "id": "3_24",
+   "buildings": 9,
+   "default_share": 0.0,
+   "roads": 16,
+   "has_terrain": true
+  },
+  {
+   "id": "4_2",
+   "buildings": 8,
+   "default_share": 0.0,
+   "roads": 23,
+   "has_terrain": true
+  },
+  {
+   "id": "4_3",
+   "buildings": 28,
+   "default_share": 0.0,
+   "roads": 9,
+   "has_terrain": true
+  },
+  {
+   "id": "4_4",
+   "buildings": 28,
+   "default_share": 0.0,
+   "roads": 19,
+   "has_terrain": true
+  },
+  {
+   "id": "4_7",
+   "buildings": 7,
+   "default_share": 0.0,
+   "roads": 10,
+   "has_terrain": true
+  },
+  {
+   "id": "4_8",
+   "buildings": 42,
+   "default_share": 0.0,
+   "roads": 36,
+   "has_terrain": true
+  },
+  {
+   "id": "4_9",
+   "buildings": 22,
+   "default_share": 0.0,
+   "roads": 37,
+   "has_terrain": true
+  },
+  {
+   "id": "4_10",
+   "buildings": 8,
+   "default_share": 0.0,
+   "roads": 34,
+   "has_terrain": true
+  },
+  {
+   "id": "4_12",
+   "buildings": 4,
+   "default_share": 0.0,
+   "roads": 19,
+   "has_terrain": true
+  },
+  {
+   "id": "4_13",
+   "buildings": 3,
+   "default_share": 0.0,
+   "roads": 22,
+   "has_terrain": true
+  },
+  {
+   "id": "4_14",
+   "buildings": 68,
+   "default_share": 0.0,
+   "roads": 29,
+   "has_terrain": true
+  },
+  {
+   "id": "4_15",
+   "buildings": 39,
+   "default_share": 0.0,
+   "roads": 64,
+   "has_terrain": true
+  },
+  {
+   "id": "4_16",
+   "buildings": 116,
+   "default_share": 0.0,
+   "roads": 71,
+   "has_terrain": true
+  },
+  {
+   "id": "4_17",
+   "buildings": 140,
+   "default_share": 0.0,
+   "roads": 34,
+   "has_terrain": true
+  },
+  {
+   "id": "4_18",
+   "buildings": 43,
+   "default_share": 0.0,
+   "roads": 56,
+   "has_terrain": true
+  },
+  {
+   "id": "4_19",
+   "buildings": 22,
+   "default_share": 0.0,
+   "roads": 76,
+   "has_terrain": true
+  },
+  {
+   "id": "4_20",
+   "buildings": 106,
+   "default_share": 0.0,
+   "roads": 45,
+   "has_terrain": true
+  },
+  {
+   "id": "4_21",
+   "buildings": 122,
+   "default_share": 0.0,
+   "roads": 21,
+   "has_terrain": true
+  },
+  {
+   "id": "4_22",
+   "buildings": 120,
+   "default_share": 0.0,
+   "roads": 55,
+   "has_terrain": true
+  },
+  {
+   "id": "4_23",
+   "buildings": 39,
+   "default_share": 0.0,
+   "roads": 78,
+   "has_terrain": true
+  },
+  {
+   "id": "4_24",
+   "buildings": 9,
+   "default_share": 0.0,
+   "roads": 11,
+   "has_terrain": true
+  },
+  {
+   "id": "5_1",
+   "buildings": 9,
+   "default_share": 0.0,
+   "roads": 19,
+   "has_terrain": true
+  },
+  {
+   "id": "5_2",
+   "buildings": 20,
+   "default_share": 0.0,
+   "roads": 17,
+   "has_terrain": true
+  },
+  {
+   "id": "5_3",
+   "buildings": 9,
+   "default_share": 0.0,
+   "roads": 15,
+   "has_terrain": true
+  },
+  {
+   "id": "5_4",
+   "buildings": 7,
+   "default_share": 0.0,
+   "roads": 46,
+   "has_terrain": true
+  },
+  {
+   "id": "5_7",
+   "buildings": 24,
+   "default_share": 0.0,
+   "roads": 19,
+   "has_terrain": true
+  },
+  {
+   "id": "5_8",
+   "buildings": 92,
+   "default_share": 0.0,
+   "roads": 51,
+   "has_terrain": true
+  },
+  {
+   "id": "5_9",
+   "buildings": 100,
+   "default_share": 0.0,
+   "roads": 37,
+   "has_terrain": true
+  },
+  {
+   "id": "5_10",
+   "buildings": 56,
+   "default_share": 0.0,
+   "roads": 36,
+   "has_terrain": true
+  },
+  {
+   "id": "5_11",
+   "buildings": 58,
+   "default_share": 0.0,
+   "roads": 74,
+   "has_terrain": true
+  },
+  {
+   "id": "5_12",
+   "buildings": 42,
+   "default_share": 0.0,
+   "roads": 35,
+   "has_terrain": true
+  },
+  {
+   "id": "5_13",
+   "buildings": 74,
+   "default_share": 0.0,
+   "roads": 37,
+   "has_terrain": true
+  },
+  {
+   "id": "5_14",
+   "buildings": 137,
+   "default_share": 0.0,
+   "roads": 44,
+   "has_terrain": true
+  },
+  {
+   "id": "5_15",
+   "buildings": 52,
+   "default_share": 0.0,
+   "roads": 63,
+   "has_terrain": true
+  },
+  {
+   "id": "5_16",
+   "buildings": 124,
+   "default_share": 0.0,
+   "roads": 42,
+   "has_terrain": true
+  },
+  {
+   "id": "5_17",
+   "buildings": 112,
+   "default_share": 0.0,
+   "roads": 26,
+   "has_terrain": true
+  },
+  {
+   "id": "5_18",
+   "buildings": 105,
+   "default_share": 0.0,
+   "roads": 22,
+   "has_terrain": true
+  },
+  {
+   "id": "5_19",
+   "buildings": 55,
+   "default_share": 0.0,
+   "roads": 37,
+   "has_terrain": true
+  },
+  {
+   "id": "5_20",
+   "buildings": 61,
+   "default_share": 0.0,
+   "roads": 51,
+   "has_terrain": true
+  },
+  {
+   "id": "5_21",
+   "buildings": 94,
+   "default_share": 0.0,
+   "roads": 33,
+   "has_terrain": true
+  },
+  {
+   "id": "5_22",
+   "buildings": 48,
+   "default_share": 0.0,
+   "roads": 94,
+   "has_terrain": true
+  },
+  {
+   "id": "5_23",
+   "buildings": 45,
+   "default_share": 0.0,
+   "roads": 67,
+   "has_terrain": true
+  },
+  {
+   "id": "5_24",
+   "buildings": 4,
+   "default_share": 0.0,
+   "roads": 14,
+   "has_terrain": true
+  },
+  {
+   "id": "6_1",
+   "buildings": 70,
+   "default_share": 0.0,
+   "roads": 46,
+   "has_terrain": true
+  },
+  {
+   "id": "6_2",
+   "buildings": 86,
+   "default_share": 0.0,
+   "roads": 39,
+   "has_terrain": true
+  },
+  {
+   "id": "6_3",
+   "buildings": 77,
+   "default_share": 0.0,
+   "roads": 23,
+   "has_terrain": true
+  },
+  {
+   "id": "6_4",
+   "buildings": 4,
+   "default_share": 0.0,
+   "roads": 23,
+   "has_terrain": true
+  },
+  {
+   "id": "6_7",
+   "buildings": 14,
+   "default_share": 0.0,
+   "roads": 33,
+   "has_terrain": true
+  },
+  {
+   "id": "6_8",
+   "buildings": 65,
+   "default_share": 0.0,
+   "roads": 33,
+   "has_terrain": true
+  },
+  {
+   "id": "6_9",
+   "buildings": 86,
+   "default_share": 0.0,
+   "roads": 27,
+   "has_terrain": true
+  },
+  {
+   "id": "6_10",
+   "buildings": 29,
+   "default_share": 0.0,
+   "roads": 50,
+   "has_terrain": true
+  },
+  {
+   "id": "6_11",
+   "buildings": 82,
+   "default_share": 0.0,
+   "roads": 37,
+   "has_terrain": true
+  },
+  {
+   "id": "6_12",
+   "buildings": 124,
+   "default_share": 0.0,
+   "roads": 50,
+   "has_terrain": true
+  },
+  {
+   "id": "6_13",
+   "buildings": 98,
+   "default_share": 0.0,
+   "roads": 54,
+   "has_terrain": true
+  },
+  {
+   "id": "6_14",
+   "buildings": 63,
+   "default_share": 0.0,
+   "roads": 45,
+   "has_terrain": true
+  },
+  {
+   "id": "6_15",
+   "buildings": 105,
+   "default_share": 0.0,
+   "roads": 75,
+   "has_terrain": true
+  },
+  {
+   "id": "6_16",
+   "buildings": 132,
+   "default_share": 0.0,
+   "roads": 72,
+   "has_terrain": true
+  },
+  {
+   "id": "6_17",
+   "buildings": 125,
+   "default_share": 0.0,
+   "roads": 41,
+   "has_terrain": true
+  },
+  {
+   "id": "6_18",
+   "buildings": 126,
+   "default_share": 0.0,
+   "roads": 19,
+   "has_terrain": true
+  },
+  {
+   "id": "6_19",
+   "buildings": 83,
+   "default_share": 0.0,
+   "roads": 42,
+   "has_terrain": true
+  },
+  {
+   "id": "6_20",
+   "buildings": 108,
+   "default_share": 0.0,
+   "roads": 39,
+   "has_terrain": true
+  },
+  {
+   "id": "6_21",
+   "buildings": 34,
+   "default_share": 0.0,
+   "roads": 117,
+   "has_terrain": true
+  },
+  {
+   "id": "6_22",
+   "buildings": 32,
+   "default_share": 0.0,
+   "roads": 58,
+   "has_terrain": true
+  },
+  {
+   "id": "6_23",
+   "buildings": 53,
+   "default_share": 0.0,
+   "roads": 39,
+   "has_terrain": true
+  },
+  {
+   "id": "6_24",
+   "buildings": 16,
+   "default_share": 0.0,
+   "roads": 11,
+   "has_terrain": true
+  },
+  {
+   "id": "7_1",
+   "buildings": 65,
+   "default_share": 0.0,
+   "roads": 37,
+   "has_terrain": true
+  },
+  {
+   "id": "7_2",
+   "buildings": 96,
+   "default_share": 0.0,
+   "roads": 46,
+   "has_terrain": true
+  },
+  {
+   "id": "7_3",
+   "buildings": 105,
+   "default_share": 0.0,
+   "roads": 33,
+   "has_terrain": true
+  },
+  {
+   "id": "7_4",
+   "buildings": 8,
+   "default_share": 0.0,
+   "roads": 9,
+   "has_terrain": true
+  },
+  {
+   "id": "7_9",
+   "buildings": 1,
+   "default_share": 0.0,
+   "roads": 30,
+   "has_terrain": true
+  },
+  {
+   "id": "7_10",
+   "buildings": 64,
+   "default_share": 0.0,
+   "roads": 27,
+   "has_terrain": true
+  },
+  {
+   "id": "7_11",
+   "buildings": 73,
+   "default_share": 0.0,
+   "roads": 51,
+   "has_terrain": true
+  },
+  {
+   "id": "7_12",
+   "buildings": 102,
+   "default_share": 0.0,
+   "roads": 61,
+   "has_terrain": true
+  },
+  {
+   "id": "7_13",
+   "buildings": 68,
+   "default_share": 0.0,
+   "roads": 77,
+   "has_terrain": true
+  },
+  {
+   "id": "7_14",
+   "buildings": 45,
+   "default_share": 0.0,
+   "roads": 101,
+   "has_terrain": true
+  },
+  {
+   "id": "7_15",
+   "buildings": 94,
+   "default_share": 0.0,
+   "roads": 120,
+   "has_terrain": true
+  },
+  {
+   "id": "7_16",
+   "buildings": 128,
+   "default_share": 0.0,
+   "roads": 78,
+   "has_terrain": true
+  },
+  {
+   "id": "7_17",
+   "buildings": 137,
+   "default_share": 0.0,
+   "roads": 58,
+   "has_terrain": true
+  },
+  {
+   "id": "7_18",
+   "buildings": 137,
+   "default_share": 0.0,
+   "roads": 25,
+   "has_terrain": true
+  },
+  {
+   "id": "7_19",
+   "buildings": 111,
+   "default_share": 0.0,
+   "roads": 30,
+   "has_terrain": true
+  },
+  {
+   "id": "7_20",
+   "buildings": 58,
+   "default_share": 0.0,
+   "roads": 94,
+   "has_terrain": true
+  },
+  {
+   "id": "7_21",
+   "buildings": 15,
+   "default_share": 0.0,
+   "roads": 39,
+   "has_terrain": true
+  },
+  {
+   "id": "7_22",
+   "buildings": 9,
+   "default_share": 0.0,
+   "roads": 35,
+   "has_terrain": true
+  },
+  {
+   "id": "7_23",
+   "buildings": 10,
+   "default_share": 0.0,
+   "roads": 75,
+   "has_terrain": true
+  },
+  {
+   "id": "7_24",
+   "buildings": 6,
+   "default_share": 0.0,
+   "roads": 9,
+   "has_terrain": true
+  },
+  {
+   "id": "8_1",
+   "buildings": 85,
+   "default_share": 0.0,
+   "roads": 38,
+   "has_terrain": true
+  },
+  {
+   "id": "8_2",
+   "buildings": 80,
+   "default_share": 0.0,
+   "roads": 38,
+   "has_terrain": true
+  },
+  {
+   "id": "8_3",
+   "buildings": 69,
+   "default_share": 0.0,
+   "roads": 29,
+   "has_terrain": true
+  },
+  {
+   "id": "8_4",
+   "buildings": 3,
+   "default_share": 0.0,
+   "roads": 7,
+   "has_terrain": true
+  },
+  {
+   "id": "8_7",
+   "buildings": 2,
+   "default_share": 0.0,
+   "roads": 27,
+   "has_terrain": true
+  },
+  {
+   "id": "8_9",
+   "buildings": 6,
+   "default_share": 0.0,
+   "roads": 27,
+   "has_terrain": true
+  },
+  {
+   "id": "8_10",
+   "buildings": 59,
+   "default_share": 0.0,
+   "roads": 45,
+   "has_terrain": true
+  },
+  {
+   "id": "8_11",
+   "buildings": 93,
+   "default_share": 0.0,
+   "roads": 51,
+   "has_terrain": true
+  },
+  {
+   "id": "8_12",
+   "buildings": 98,
+   "default_share": 0.0,
+   "roads": 88,
+   "has_terrain": true
+  },
+  {
+   "id": "8_13",
+   "buildings": 46,
+   "default_share": 0.0,
+   "roads": 55,
+   "has_terrain": true
+  },
+  {
+   "id": "8_14",
+   "buildings": 68,
+   "default_share": 0.0,
+   "roads": 129,
+   "has_terrain": true
+  },
+  {
+   "id": "8_15",
+   "buildings": 95,
+   "default_share": 0.0,
+   "roads": 88,
+   "has_terrain": true
+  },
+  {
+   "id": "8_16",
+   "buildings": 150,
+   "default_share": 0.0,
+   "roads": 68,
+   "has_terrain": true
+  },
+  {
+   "id": "8_17",
+   "buildings": 154,
+   "default_share": 0.0,
+   "roads": 77,
+   "has_terrain": true
+  },
+  {
+   "id": "8_18",
+   "buildings": 113,
+   "default_share": 0.0,
+   "roads": 40,
+   "has_terrain": true
+  },
+  {
+   "id": "8_19",
+   "buildings": 103,
+   "default_share": 0.0,
+   "roads": 50,
+   "has_terrain": true
+  },
+  {
+   "id": "8_20",
+   "buildings": 8,
+   "default_share": 0.0,
+   "roads": 61,
+   "has_terrain": true
+  },
+  {
+   "id": "8_21",
+   "buildings": 4,
+   "default_share": 0.0,
+   "roads": 44,
+   "has_terrain": true
+  },
+  {
+   "id": "8_22",
+   "buildings": 1,
+   "default_share": 0.0,
+   "roads": 8,
+   "has_terrain": true
+  },
+  {
+   "id": "8_23",
+   "buildings": 1,
+   "default_share": 0.0,
+   "roads": 11,
+   "has_terrain": true
+  },
+  {
+   "id": "9_1",
+   "buildings": 57,
+   "default_share": 0.0,
+   "roads": 31,
+   "has_terrain": true
+  },
+  {
+   "id": "9_2",
+   "buildings": 93,
+   "default_share": 0.0,
+   "roads": 54,
+   "has_terrain": true
+  },
+  {
+   "id": "9_3",
+   "buildings": 101,
+   "default_share": 0.0,
+   "roads": 43,
+   "has_terrain": true
+  },
+  {
+   "id": "9_4",
+   "buildings": 8,
+   "default_share": 0.0,
+   "roads": 23,
+   "has_terrain": true
+  },
+  {
+   "id": "9_8",
+   "buildings": 7,
+   "default_share": 0.0,
+   "roads": 18,
+   "has_terrain": true
+  },
+  {
+   "id": "9_9",
+   "buildings": 1,
+   "default_share": 0.0,
+   "roads": 13,
+   "has_terrain": true
+  },
+  {
+   "id": "9_10",
+   "buildings": 8,
+   "default_share": 0.0,
+   "roads": 17,
+   "has_terrain": true
+  },
+  {
+   "id": "9_11",
+   "buildings": 56,
+   "default_share": 0.0,
+   "roads": 50,
+   "has_terrain": true
+  },
+  {
+   "id": "9_12",
+   "buildings": 120,
+   "default_share": 0.0,
+   "roads": 86,
+   "has_terrain": true
+  },
+  {
+   "id": "9_13",
+   "buildings": 15,
+   "default_share": 0.0,
+   "roads": 74,
+   "has_terrain": true
+  },
+  {
+   "id": "9_14",
+   "buildings": 91,
+   "default_share": 0.0,
+   "roads": 110,
+   "has_terrain": true
+  },
+  {
+   "id": "9_15",
+   "buildings": 123,
+   "default_share": 0.0,
+   "roads": 69,
+   "has_terrain": true
+  },
+  {
+   "id": "9_16",
+   "buildings": 152,
+   "default_share": 0.0,
+   "roads": 67,
+   "has_terrain": true
+  },
+  {
+   "id": "9_17",
+   "buildings": 86,
+   "default_share": 0.0,
+   "roads": 71,
+   "has_terrain": true
+  },
+  {
+   "id": "9_18",
+   "buildings": 122,
+   "default_share": 0.0,
+   "roads": 51,
+   "has_terrain": true
+  },
+  {
+   "id": "9_19",
+   "buildings": 23,
+   "default_share": 0.0,
+   "roads": 98,
+   "has_terrain": true
+  },
+  {
+   "id": "9_20",
+   "buildings": 11,
+   "default_share": 0.0,
+   "roads": 75,
+   "has_terrain": true
+  },
+  {
+   "id": "9_21",
+   "buildings": 14,
+   "default_share": 0.0,
+   "roads": 28,
+   "has_terrain": true
+  },
+  {
+   "id": "9_22",
+   "buildings": 12,
+   "default_share": 0.0,
+   "roads": 23,
+   "has_terrain": true
+  },
+  {
+   "id": "9_23",
+   "buildings": 7,
+   "default_share": 0.0,
+   "roads": 16,
+   "has_terrain": true
+  },
+  {
+   "id": "10_1",
+   "buildings": 57,
+   "default_share": 0.0,
+   "roads": 18,
+   "has_terrain": true
+  },
+  {
+   "id": "10_2",
+   "buildings": 59,
+   "default_share": 0.0,
+   "roads": 26,
+   "has_terrain": true
+  },
+  {
+   "id": "10_3",
+   "buildings": 24,
+   "default_share": 0.0,
+   "roads": 43,
+   "has_terrain": true
+  },
+  {
+   "id": "10_4",
+   "buildings": 9,
+   "default_share": 0.0,
+   "roads": 61,
+   "has_terrain": true
+  },
+  {
+   "id": "10_5",
+   "buildings": 1,
+   "default_share": 0.0,
+   "roads": 45,
+   "has_terrain": true
+  },
+  {
+   "id": "10_8",
+   "buildings": 1,
+   "default_share": 0.0,
+   "roads": 29,
+   "has_terrain": true
+  },
+  {
+   "id": "10_11",
+   "buildings": 13,
+   "default_share": 0.0,
+   "roads": 34,
+   "has_terrain": true
+  },
+  {
+   "id": "10_12",
+   "buildings": 84,
+   "default_share": 0.0,
+   "roads": 49,
+   "has_terrain": true
+  },
+  {
+   "id": "10_13",
+   "buildings": 59,
+   "default_share": 0.0,
+   "roads": 94,
+   "has_terrain": true
+  },
+  {
+   "id": "10_14",
+   "buildings": 67,
+   "default_share": 0.0,
+   "roads": 96,
+   "has_terrain": true
+  },
+  {
+   "id": "10_15",
+   "buildings": 126,
+   "default_share": 0.0,
+   "roads": 75,
+   "has_terrain": true
+  },
+  {
+   "id": "10_16",
+   "buildings": 97,
+   "default_share": 0.0,
+   "roads": 116,
+   "has_terrain": true
+  },
+  {
+   "id": "10_17",
+   "buildings": 90,
+   "default_share": 0.0,
+   "roads": 61,
+   "has_terrain": true
+  },
+  {
+   "id": "10_18",
+   "buildings": 17,
+   "default_share": 0.0,
+   "roads": 93,
+   "has_terrain": true
+  },
+  {
+   "id": "10_19",
+   "buildings": 5,
+   "default_share": 0.0,
+   "roads": 32,
+   "has_terrain": true
+  },
+  {
+   "id": "10_20",
+   "buildings": 39,
+   "default_share": 0.0,
+   "roads": 39,
+   "has_terrain": true
+  },
+  {
+   "id": "10_21",
+   "buildings": 11,
+   "default_share": 0.0,
+   "roads": 29,
+   "has_terrain": true
+  },
+  {
+   "id": "10_22",
+   "buildings": 21,
+   "default_share": 0.0,
+   "roads": 37,
+   "has_terrain": true
+  },
+  {
+   "id": "10_23",
+   "buildings": 13,
+   "default_share": 0.0,
+   "roads": 23,
+   "has_terrain": true
+  },
+  {
+   "id": "11_1",
+   "buildings": 76,
+   "default_share": 0.0,
+   "roads": 19,
+   "has_terrain": true
+  },
+  {
+   "id": "11_2",
+   "buildings": 47,
+   "default_share": 0.0,
+   "roads": 15,
+   "has_terrain": true
+  },
+  {
+   "id": "11_3",
+   "buildings": 60,
+   "default_share": 0.0,
+   "roads": 70,
+   "has_terrain": true
+  },
+  {
+   "id": "11_4",
+   "buildings": 45,
+   "default_share": 0.0,
+   "roads": 69,
+   "has_terrain": true
+  },
+  {
+   "id": "11_5",
+   "buildings": 3,
+   "default_share": 0.0,
+   "roads": 22,
+   "has_terrain": true
+  },
+  {
+   "id": "11_8",
+   "buildings": 2,
+   "default_share": 0.0,
+   "roads": 22,
+   "has_terrain": true
+  },
+  {
+   "id": "11_9",
+   "buildings": 2,
+   "default_share": 0.0,
+   "roads": 14,
+   "has_terrain": true
+  },
+  {
+   "id": "11_10",
+   "buildings": 1,
+   "default_share": 0.0,
+   "roads": 18,
+   "has_terrain": true
+  },
+  {
+   "id": "11_11",
+   "buildings": 7,
+   "default_share": 0.0,
+   "roads": 11,
+   "has_terrain": true
+  },
+  {
+   "id": "11_12",
+   "buildings": 11,
+   "default_share": 0.0,
+   "roads": 54,
+   "has_terrain": true
+  },
+  {
+   "id": "11_13",
+   "buildings": 26,
+   "default_share": 0.0,
+   "roads": 59,
+   "has_terrain": true
+  },
+  {
+   "id": "11_14",
+   "buildings": 51,
+   "default_share": 0.0,
+   "roads": 95,
+   "has_terrain": true
+  },
+  {
+   "id": "11_15",
+   "buildings": 90,
+   "default_share": 0.0,
+   "roads": 86,
+   "has_terrain": true
+  },
+  {
+   "id": "11_16",
+   "buildings": 61,
+   "default_share": 0.0,
+   "roads": 63,
+   "has_terrain": true
+  },
+  {
+   "id": "11_17",
+   "buildings": 36,
+   "default_share": 0.0,
+   "roads": 79,
+   "has_terrain": true
+  },
+  {
+   "id": "11_18",
+   "buildings": 13,
+   "default_share": 0.0,
+   "roads": 49,
+   "has_terrain": true
+  },
+  {
+   "id": "11_19",
+   "buildings": 65,
+   "default_share": 0.0,
+   "roads": 37,
+   "has_terrain": true
+  },
+  {
+   "id": "11_20",
+   "buildings": 24,
+   "default_share": 0.0,
+   "roads": 17,
+   "has_terrain": true
+  },
+  {
+   "id": "11_21",
+   "buildings": 17,
+   "default_share": 0.0,
+   "roads": 17,
+   "has_terrain": true
+  },
+  {
+   "id": "11_22",
+   "buildings": 9,
+   "default_share": 0.0,
+   "roads": 29,
+   "has_terrain": true
+  },
+  {
+   "id": "11_23",
+   "buildings": 7,
+   "default_share": 0.0,
+   "roads": 32,
+   "has_terrain": true
+  },
+  {
+   "id": "11_24",
+   "buildings": 2,
+   "default_share": 0.0,
+   "roads": 5,
+   "has_terrain": true
+  },
+  {
+   "id": "12_1",
+   "buildings": 40,
+   "default_share": 0.0,
+   "roads": 35,
+   "has_terrain": true
+  },
+  {
+   "id": "12_2",
+   "buildings": 57,
+   "default_share": 0.0,
+   "roads": 74,
+   "has_terrain": true
+  },
+  {
+   "id": "12_3",
+   "buildings": 14,
+   "default_share": 0.0,
+   "roads": 86,
+   "has_terrain": true
+  },
+  {
+   "id": "12_4",
+   "buildings": 13,
+   "default_share": 0.0,
+   "roads": 93,
+   "has_terrain": true
+  },
+  {
+   "id": "12_5",
+   "buildings": 1,
+   "default_share": 0.0,
+   "roads": 25,
+   "has_terrain": true
+  },
+  {
+   "id": "12_6",
+   "buildings": 2,
+   "default_share": 0.0,
+   "roads": 28,
+   "has_terrain": true
+  },
+  {
+   "id": "12_8",
+   "buildings": 4,
+   "default_share": 0.0,
+   "roads": 17,
+   "has_terrain": true
+  },
+  {
+   "id": "12_9",
+   "buildings": 35,
+   "default_share": 0.0,
+   "roads": 76,
+   "has_terrain": true
+  },
+  {
+   "id": "12_10",
+   "buildings": 117,
+   "default_share": 0.0,
+   "roads": 40,
+   "has_terrain": true
+  },
+  {
+   "id": "12_11",
+   "buildings": 108,
+   "default_share": 0.0,
+   "roads": 49,
+   "has_terrain": true
+  },
+  {
+   "id": "12_12",
+   "buildings": 65,
+   "default_share": 0.0,
+   "roads": 77,
+   "has_terrain": true
+  },
+  {
+   "id": "12_13",
+   "buildings": 33,
+   "default_share": 0.0,
+   "roads": 77,
+   "has_terrain": true
+  },
+  {
+   "id": "12_14",
+   "buildings": 40,
+   "default_share": 0.0,
+   "roads": 92,
+   "has_terrain": true
+  },
+  {
+   "id": "12_15",
+   "buildings": 53,
+   "default_share": 0.0,
+   "roads": 54,
+   "has_terrain": true
+  },
+  {
+   "id": "12_16",
+   "buildings": 41,
+   "default_share": 0.0,
+   "roads": 81,
+   "has_terrain": true
+  },
+  {
+   "id": "12_17",
+   "buildings": 51,
+   "default_share": 0.0,
+   "roads": 134,
+   "has_terrain": true
+  },
+  {
+   "id": "12_18",
+   "buildings": 88,
+   "default_share": 0.0,
+   "roads": 53,
+   "has_terrain": true
+  },
+  {
+   "id": "12_19",
+   "buildings": 15,
+   "default_share": 0.0,
+   "roads": 70,
+   "has_terrain": true
+  },
+  {
+   "id": "12_20",
+   "buildings": 13,
+   "default_share": 0.0,
+   "roads": 56,
+   "has_terrain": true
+  },
+  {
+   "id": "12_21",
+   "buildings": 27,
+   "default_share": 0.0,
+   "roads": 42,
+   "has_terrain": true
+  },
+  {
+   "id": "12_22",
+   "buildings": 50,
+   "default_share": 0.0,
+   "roads": 33,
+   "has_terrain": true
+  },
+  {
+   "id": "12_23",
+   "buildings": 12,
+   "default_share": 0.0,
+   "roads": 22,
+   "has_terrain": true
+  },
+  {
+   "id": "13_0",
+   "buildings": 1,
+   "default_share": 0.0,
+   "roads": 5,
+   "has_terrain": true
+  },
+  {
+   "id": "13_1",
+   "buildings": 67,
+   "default_share": 0.0,
+   "roads": 81,
+   "has_terrain": true
+  },
+  {
+   "id": "13_2",
+   "buildings": 57,
+   "default_share": 0.0,
+   "roads": 88,
+   "has_terrain": true
+  },
+  {
+   "id": "13_3",
+   "buildings": 82,
+   "default_share": 0.0,
+   "roads": 105,
+   "has_terrain": true
+  },
+  {
+   "id": "13_4",
+   "buildings": 32,
+   "default_share": 0.0,
+   "roads": 115,
+   "has_terrain": true
+  },
+  {
+   "id": "13_7",
+   "buildings": 2,
+   "default_share": 0.0,
+   "roads": 18,
+   "has_terrain": true
+  },
+  {
+   "id": "13_9",
+   "buildings": 6,
+   "default_share": 0.0,
+   "roads": 76,
+   "has_terrain": true
+  },
+  {
+   "id": "13_10",
+   "buildings": 58,
+   "default_share": 0.0,
+   "roads": 64,
+   "has_terrain": true
+  },
+  {
+   "id": "13_11",
+   "buildings": 41,
+   "default_share": 0.0,
+   "roads": 56,
+   "has_terrain": true
+  },
+  {
+   "id": "13_12",
+   "buildings": 30,
+   "default_share": 0.0,
+   "roads": 82,
+   "has_terrain": true
+  },
+  {
+   "id": "13_13",
+   "buildings": 18,
+   "default_share": 0.0,
+   "roads": 89,
+   "has_terrain": true
+  },
+  {
+   "id": "13_14",
+   "buildings": 14,
+   "default_share": 0.0,
+   "roads": 105,
+   "has_terrain": true
+  },
+  {
+   "id": "13_15",
+   "buildings": 50,
+   "default_share": 0.0,
+   "roads": 104,
+   "has_terrain": true
+  },
+  {
+   "id": "13_16",
+   "buildings": 68,
+   "default_share": 0.0,
+   "roads": 97,
+   "has_terrain": true
+  },
+  {
+   "id": "13_17",
+   "buildings": 103,
+   "default_share": 0.0,
+   "roads": 86,
+   "has_terrain": true
+  },
+  {
+   "id": "13_18",
+   "buildings": 47,
+   "default_share": 0.0,
+   "roads": 51,
+   "has_terrain": true
+  },
+  {
+   "id": "13_19",
+   "buildings": 23,
+   "default_share": 0.0,
+   "roads": 18,
+   "has_terrain": true
+  },
+  {
+   "id": "13_20",
+   "buildings": 17,
+   "default_share": 0.0,
+   "roads": 78,
+   "has_terrain": true
+  },
+  {
+   "id": "13_21",
+   "buildings": 10,
+   "default_share": 0.0,
+   "roads": 61,
+   "has_terrain": true
+  },
+  {
+   "id": "13_22",
+   "buildings": 52,
+   "default_share": 0.0,
+   "roads": 41,
+   "has_terrain": true
+  },
+  {
+   "id": "13_23",
+   "buildings": 22,
+   "default_share": 0.0,
+   "roads": 24,
+   "has_terrain": true
+  },
+  {
+   "id": "14_0",
+   "buildings": 1,
+   "default_share": 0.0,
+   "roads": 5,
+   "has_terrain": true
+  },
+  {
+   "id": "14_1",
+   "buildings": 108,
+   "default_share": 0.0,
+   "roads": 11,
+   "has_terrain": true
+  },
+  {
+   "id": "14_2",
+   "buildings": 80,
+   "default_share": 0.0,
+   "roads": 51,
+   "has_terrain": true
+  },
+  {
+   "id": "14_3",
+   "buildings": 82,
+   "default_share": 0.0,
+   "roads": 58,
+   "has_terrain": true
+  },
+  {
+   "id": "14_4",
+   "buildings": 36,
+   "default_share": 0.0,
+   "roads": 105,
+   "has_terrain": true
+  },
+  {
+   "id": "14_5",
+   "buildings": 4,
+   "default_share": 0.0,
+   "roads": 78,
+   "has_terrain": true
+  },
+  {
+   "id": "14_6",
+   "buildings": 3,
+   "default_share": 0.0,
+   "roads": 32,
+   "has_terrain": true
+  },
+  {
+   "id": "14_8",
+   "buildings": 1,
+   "default_share": 0.0,
+   "roads": 23,
+   "has_terrain": true
+  },
+  {
+   "id": "14_9",
+   "buildings": 11,
+   "default_share": 0.0,
+   "roads": 51,
+   "has_terrain": true
+  },
+  {
+   "id": "14_10",
+   "buildings": 1,
+   "default_share": 0.0,
+   "roads": 27,
+   "has_terrain": true
+  },
+  {
+   "id": "14_11",
+   "buildings": 3,
+   "default_share": 0.0,
+   "roads": 44,
+   "has_terrain": true
+  },
+  {
+   "id": "14_12",
+   "buildings": 32,
+   "default_share": 0.0,
+   "roads": 85,
+   "has_terrain": true
+  },
+  {
+   "id": "14_13",
+   "buildings": 34,
+   "default_share": 0.0,
+   "roads": 105,
+   "has_terrain": true
+  },
+  {
+   "id": "14_14",
+   "buildings": 56,
+   "default_share": 0.0,
+   "roads": 98,
+   "has_terrain": true
+  },
+  {
+   "id": "14_15",
+   "buildings": 57,
+   "default_share": 0.0,
+   "roads": 98,
+   "has_terrain": true
+  },
+  {
+   "id": "14_16",
+   "buildings": 97,
+   "default_share": 0.0,
+   "roads": 145,
+   "has_terrain": true
+  },
+  {
+   "id": "14_17",
+   "buildings": 25,
+   "default_share": 0.0,
+   "roads": 43,
+   "has_terrain": true
+  },
+  {
+   "id": "14_18",
+   "buildings": 15,
+   "default_share": 0.0,
+   "roads": 14,
+   "has_terrain": true
+  },
+  {
+   "id": "14_19",
+   "buildings": 21,
+   "default_share": 0.0,
+   "roads": 34,
+   "has_terrain": true
+  },
+  {
+   "id": "14_20",
+   "buildings": 10,
+   "default_share": 0.0,
+   "roads": 38,
+   "has_terrain": true
+  },
+  {
+   "id": "14_21",
+   "buildings": 53,
+   "default_share": 0.0,
+   "roads": 64,
+   "has_terrain": true
+  },
+  {
+   "id": "14_22",
+   "buildings": 76,
+   "default_share": 0.0,
+   "roads": 57,
+   "has_terrain": true
+  },
+  {
+   "id": "14_23",
+   "buildings": 111,
+   "default_share": 0.0,
+   "roads": 34,
+   "has_terrain": true
+  },
+  {
+   "id": "15_1",
+   "buildings": 52,
+   "default_share": 0.0,
+   "roads": 27,
+   "has_terrain": true
+  },
+  {
+   "id": "15_2",
+   "buildings": 57,
+   "default_share": 0.0,
+   "roads": 25,
+   "has_terrain": true
+  },
+  {
+   "id": "15_3",
+   "buildings": 38,
+   "default_share": 0.0,
+   "roads": 59,
+   "has_terrain": true
+  },
+  {
+   "id": "15_4",
+   "buildings": 19,
+   "default_share": 0.0,
+   "roads": 57,
+   "has_terrain": true
+  },
+  {
+   "id": "15_5",
+   "buildings": 18,
+   "default_share": 0.0,
+   "roads": 46,
+   "has_terrain": true
+  },
+  {
+   "id": "15_6",
+   "buildings": 6,
+   "default_share": 0.0,
+   "roads": 11,
+   "has_terrain": true
+  },
+  {
+   "id": "15_8",
+   "buildings": 1,
+   "default_share": 0.0,
+   "roads": 21,
+   "has_terrain": true
+  },
+  {
+   "id": "15_9",
+   "buildings": 2,
+   "default_share": 0.0,
+   "roads": 40,
+   "has_terrain": true
+  },
+  {
+   "id": "15_10",
+   "buildings": 6,
+   "default_share": 0.0,
+   "roads": 74,
+   "has_terrain": true
+  },
+  {
+   "id": "15_11",
+   "buildings": 39,
+   "default_share": 0.0,
+   "roads": 93,
+   "has_terrain": true
+  },
+  {
+   "id": "15_12",
+   "buildings": 62,
+   "default_share": 0.0,
+   "roads": 102,
+   "has_terrain": true
+  },
+  {
+   "id": "15_13",
+   "buildings": 36,
+   "default_share": 0.0,
+   "roads": 146,
+   "has_terrain": true
+  },
+  {
+   "id": "15_14",
+   "buildings": 81,
+   "default_share": 0.0,
+   "roads": 108,
+   "has_terrain": true
+  },
+  {
+   "id": "15_15",
+   "buildings": 98,
+   "default_share": 0.0,
+   "roads": 92,
+   "has_terrain": true
+  },
+  {
+   "id": "15_16",
+   "buildings": 26,
+   "default_share": 0.0,
+   "roads": 63,
+   "has_terrain": true
+  },
+  {
+   "id": "15_17",
+   "buildings": 11,
+   "default_share": 0.0,
+   "roads": 45,
+   "has_terrain": true
+  },
+  {
+   "id": "15_18",
+   "buildings": 34,
+   "default_share": 0.0,
+   "roads": 32,
+   "has_terrain": true
+  },
+  {
+   "id": "15_19",
+   "buildings": 30,
+   "default_share": 0.0,
+   "roads": 42,
+   "has_terrain": true
+  },
+  {
+   "id": "15_20",
+   "buildings": 19,
+   "default_share": 0.0,
+   "roads": 44,
+   "has_terrain": true
+  },
+  {
+   "id": "15_21",
+   "buildings": 55,
+   "default_share": 0.0,
+   "roads": 81,
+   "has_terrain": true
+  },
+  {
+   "id": "15_22",
+   "buildings": 52,
+   "default_share": 0.0,
+   "roads": 76,
+   "has_terrain": true
+  },
+  {
+   "id": "15_23",
+   "buildings": 64,
+   "default_share": 0.0,
+   "roads": 81,
+   "has_terrain": true
+  },
+  {
+   "id": "16_1",
+   "buildings": 17,
+   "default_share": 0.0,
+   "roads": 26,
+   "has_terrain": true
+  },
+  {
+   "id": "16_2",
+   "buildings": 27,
+   "default_share": 0.0,
+   "roads": 26,
+   "has_terrain": true
+  },
+  {
+   "id": "16_3",
+   "buildings": 20,
+   "default_share": 0.0,
+   "roads": 61,
+   "has_terrain": true
+  },
+  {
+   "id": "16_4",
+   "buildings": 29,
+   "default_share": 0.0,
+   "roads": 93,
+   "has_terrain": true
+  },
+  {
+   "id": "16_5",
+   "buildings": 1,
+   "default_share": 0.0,
+   "roads": 27,
+   "has_terrain": true
+  },
+  {
+   "id": "16_8",
+   "buildings": 1,
+   "default_share": 0.0,
+   "roads": 36,
+   "has_terrain": true
+  },
+  {
+   "id": "16_9",
+   "buildings": 7,
+   "default_share": 0.0,
+   "roads": 89,
+   "has_terrain": true
+  },
+  {
+   "id": "16_10",
+   "buildings": 7,
+   "default_share": 0.0,
+   "roads": 87,
+   "has_terrain": true
+  },
+  {
+   "id": "16_11",
+   "buildings": 41,
+   "default_share": 0.0,
+   "roads": 101,
+   "has_terrain": true
+  },
+  {
+   "id": "16_12",
+   "buildings": 59,
+   "default_share": 0.0,
+   "roads": 73,
+   "has_terrain": true
+  },
+  {
+   "id": "16_13",
+   "buildings": 80,
+   "default_share": 0.0,
+   "roads": 85,
+   "has_terrain": true
+  },
+  {
+   "id": "16_14",
+   "buildings": 106,
+   "default_share": 0.0,
+   "roads": 77,
+   "has_terrain": true
+  },
+  {
+   "id": "16_15",
+   "buildings": 65,
+   "default_share": 0.0,
+   "roads": 83,
+   "has_terrain": true
+  },
+  {
+   "id": "16_16",
+   "buildings": 20,
+   "default_share": 0.0,
+   "roads": 93,
+   "has_terrain": true
+  },
+  {
+   "id": "16_17",
+   "buildings": 12,
+   "default_share": 0.0,
+   "roads": 59,
+   "has_terrain": true
+  },
+  {
+   "id": "16_18",
+   "buildings": 43,
+   "default_share": 0.0,
+   "roads": 65,
+   "has_terrain": true
+  },
+  {
+   "id": "16_19",
+   "buildings": 53,
+   "default_share": 0.0,
+   "roads": 65,
+   "has_terrain": true
+  },
+  {
+   "id": "16_20",
+   "buildings": 17,
+   "default_share": 0.0,
+   "roads": 32,
+   "has_terrain": true
+  },
+  {
+   "id": "16_21",
+   "buildings": 35,
+   "default_share": 0.0,
+   "roads": 17,
+   "has_terrain": true
+  },
+  {
+   "id": "16_22",
+   "buildings": 116,
+   "default_share": 0.0,
+   "roads": 42,
+   "has_terrain": true
+  },
+  {
+   "id": "16_23",
+   "buildings": 72,
+   "default_share": 0.0,
+   "roads": 30,
+   "has_terrain": true
+  },
+  {
+   "id": "17_1",
+   "buildings": 24,
+   "default_share": 0.0,
+   "roads": 19,
+   "has_terrain": true
+  },
+  {
+   "id": "17_2",
+   "buildings": 20,
+   "default_share": 0.0,
+   "roads": 48,
+   "has_terrain": true
+  },
+  {
+   "id": "17_3",
+   "buildings": 19,
+   "default_share": 0.0,
+   "roads": 38,
+   "has_terrain": true
+  },
+  {
+   "id": "17_4",
+   "buildings": 20,
+   "default_share": 0.0,
+   "roads": 61,
+   "has_terrain": true
+  },
+  {
+   "id": "17_5",
+   "buildings": 8,
+   "default_share": 0.0,
+   "roads": 39,
+   "has_terrain": true
+  },
+  {
+   "id": "17_8",
+   "buildings": 14,
+   "default_share": 0.0,
+   "roads": 88,
+   "has_terrain": true
+  },
+  {
+   "id": "17_9",
+   "buildings": 11,
+   "default_share": 0.0,
+   "roads": 124,
+   "has_terrain": true
+  },
+  {
+   "id": "17_10",
+   "buildings": 22,
+   "default_share": 0.0,
+   "roads": 94,
+   "has_terrain": true
+  },
+  {
+   "id": "17_11",
+   "buildings": 41,
+   "default_share": 0.0,
+   "roads": 96,
+   "has_terrain": true
+  },
+  {
+   "id": "17_12",
+   "buildings": 35,
+   "default_share": 0.0,
+   "roads": 88,
+   "has_terrain": true
+  },
+  {
+   "id": "17_13",
+   "buildings": 27,
+   "default_share": 0.0,
+   "roads": 79,
+   "has_terrain": true
+  },
+  {
+   "id": "17_14",
+   "buildings": 66,
+   "default_share": 0.0,
+   "roads": 80,
+   "has_terrain": true
+  },
+  {
+   "id": "17_15",
+   "buildings": 43,
+   "default_share": 0.0,
+   "roads": 95,
+   "has_terrain": true
+  },
+  {
+   "id": "17_16",
+   "buildings": 16,
+   "default_share": 0.0,
+   "roads": 93,
+   "has_terrain": true
+  },
+  {
+   "id": "17_17",
+   "buildings": 22,
+   "default_share": 0.0,
+   "roads": 51,
+   "has_terrain": true
+  },
+  {
+   "id": "17_18",
+   "buildings": 22,
+   "default_share": 0.0,
+   "roads": 26,
+   "has_terrain": true
+  },
+  {
+   "id": "17_19",
+   "buildings": 46,
+   "default_share": 0.0,
+   "roads": 16,
+   "has_terrain": true
+  },
+  {
+   "id": "17_20",
+   "buildings": 6,
+   "default_share": 0.0,
+   "roads": 32,
+   "has_terrain": true
+  },
+  {
+   "id": "17_21",
+   "buildings": 24,
+   "default_share": 0.0,
+   "roads": 11,
+   "has_terrain": true
+  },
+  {
+   "id": "17_22",
+   "buildings": 58,
+   "default_share": 0.0,
+   "roads": 69,
+   "has_terrain": true
+  },
+  {
+   "id": "17_23",
+   "buildings": 91,
+   "default_share": 0.0,
+   "roads": 32,
+   "has_terrain": true
+  },
+  {
+   "id": "18_0",
+   "buildings": 1,
+   "default_share": 0.0,
+   "roads": 3,
+   "has_terrain": true
+  },
+  {
+   "id": "18_1",
+   "buildings": 21,
+   "default_share": 0.0,
+   "roads": 15,
+   "has_terrain": true
+  },
+  {
+   "id": "18_2",
+   "buildings": 8,
+   "default_share": 0.0,
+   "roads": 36,
+   "has_terrain": true
+  },
+  {
+   "id": "18_3",
+   "buildings": 15,
+   "default_share": 0.0,
+   "roads": 39,
+   "has_terrain": true
+  },
+  {
+   "id": "18_4",
+   "buildings": 18,
+   "default_share": 0.0,
+   "roads": 22,
+   "has_terrain": true
+  },
+  {
+   "id": "18_5",
+   "buildings": 9,
+   "default_share": 0.0,
+   "roads": 32,
+   "has_terrain": true
+  },
+  {
+   "id": "18_6",
+   "buildings": 2,
+   "default_share": 0.0,
+   "roads": 21,
+   "has_terrain": true
+  },
+  {
+   "id": "18_8",
+   "buildings": 11,
+   "default_share": 0.0,
+   "roads": 94,
+   "has_terrain": true
+  },
+  {
+   "id": "18_9",
+   "buildings": 45,
+   "default_share": 0.0,
+   "roads": 66,
+   "has_terrain": true
+  },
+  {
+   "id": "18_10",
+   "buildings": 17,
+   "default_share": 0.0,
+   "roads": 93,
+   "has_terrain": true
+  },
+  {
+   "id": "18_11",
+   "buildings": 14,
+   "default_share": 0.0,
+   "roads": 87,
+   "has_terrain": true
+  },
+  {
+   "id": "18_12",
+   "buildings": 14,
+   "default_share": 0.0,
+   "roads": 82,
+   "has_terrain": true
+  },
+  {
+   "id": "18_13",
+   "buildings": 6,
+   "default_share": 0.0,
+   "roads": 28,
+   "has_terrain": true
+  },
+  {
+   "id": "18_14",
+   "buildings": 15,
+   "default_share": 0.0,
+   "roads": 109,
+   "has_terrain": true
+  },
+  {
+   "id": "18_15",
+   "buildings": 7,
+   "default_share": 0.0,
+   "roads": 61,
+   "has_terrain": true
+  },
+  {
+   "id": "18_16",
+   "buildings": 25,
+   "default_share": 0.0,
+   "roads": 92,
+   "has_terrain": true
+  },
+  {
+   "id": "18_17",
+   "buildings": 26,
+   "default_share": 0.0,
+   "roads": 45,
+   "has_terrain": true
+  },
+  {
+   "id": "18_19",
+   "buildings": 31,
+   "default_share": 0.0,
+   "roads": 7,
+   "has_terrain": true
+  },
+  {
+   "id": "18_20",
+   "buildings": 67,
+   "default_share": 0.0,
+   "roads": 10,
+   "has_terrain": true
+  },
+  {
+   "id": "18_21",
+   "buildings": 89,
+   "default_share": 0.0,
+   "roads": 23,
+   "has_terrain": true
+  },
+  {
+   "id": "18_22",
+   "buildings": 94,
+   "default_share": 0.0,
+   "roads": 75,
+   "has_terrain": true
+  },
+  {
+   "id": "18_23",
+   "buildings": 70,
+   "default_share": 0.0,
+   "roads": 19,
+   "has_terrain": true
+  },
+  {
+   "id": "19_0",
+   "buildings": 6,
+   "default_share": 0.0,
+   "roads": 6,
+   "has_terrain": true
+  },
+  {
+   "id": "19_1",
+   "buildings": 9,
+   "default_share": 0.0,
+   "roads": 13,
+   "has_terrain": true
+  },
+  {
+   "id": "19_2",
+   "buildings": 3,
+   "default_share": 0.0,
+   "roads": 22,
+   "has_terrain": true
+  },
+  {
+   "id": "19_3",
+   "buildings": 22,
+   "default_share": 0.0,
+   "roads": 13,
+   "has_terrain": true
+  },
+  {
+   "id": "19_4",
+   "buildings": 9,
+   "default_share": 0.0,
+   "roads": 8,
+   "has_terrain": true
+  },
+  {
+   "id": "19_5",
+   "buildings": 2,
+   "default_share": 0.0,
+   "roads": 11,
+   "has_terrain": true
+  },
+  {
+   "id": "19_6",
+   "buildings": 1,
+   "default_share": 0.0,
+   "roads": 9,
+   "has_terrain": true
+  },
+  {
+   "id": "19_7",
+   "buildings": 9,
+   "default_share": 0.0,
+   "roads": 60,
+   "has_terrain": true
+  },
+  {
+   "id": "19_8",
+   "buildings": 27,
+   "default_share": 0.0,
+   "roads": 120,
+   "has_terrain": true
+  },
+  {
+   "id": "19_9",
+   "buildings": 22,
+   "default_share": 0.0,
+   "roads": 78,
+   "has_terrain": true
+  },
+  {
+   "id": "19_10",
+   "buildings": 23,
+   "default_share": 0.0,
+   "roads": 130,
+   "has_terrain": true
+  },
+  {
+   "id": "19_11",
+   "buildings": 26,
+   "default_share": 0.0,
+   "roads": 94,
+   "has_terrain": true
+  },
+  {
+   "id": "19_13",
+   "buildings": 10,
+   "default_share": 0.0,
+   "roads": 116,
+   "has_terrain": true
+  },
+  {
+   "id": "19_14",
+   "buildings": 6,
+   "default_share": 0.0,
+   "roads": 75,
+   "has_terrain": true
+  },
+  {
+   "id": "19_15",
+   "buildings": 8,
+   "default_share": 0.0,
+   "roads": 28,
+   "has_terrain": true
+  },
+  {
+   "id": "19_16",
+   "buildings": 12,
+   "default_share": 0.0,
+   "roads": 32,
+   "has_terrain": true
+  },
+  {
+   "id": "19_17",
+   "buildings": 19,
+   "default_share": 0.0,
+   "roads": 36,
+   "has_terrain": true
+  },
+  {
+   "id": "19_18",
+   "buildings": 6,
+   "default_share": 0.0,
+   "roads": 5,
+   "has_terrain": true
+  },
+  {
+   "id": "19_19",
+   "buildings": 34,
+   "default_share": 0.0,
+   "roads": 17,
+   "has_terrain": true
+  },
+  {
+   "id": "19_20",
+   "buildings": 90,
+   "default_share": 0.0,
+   "roads": 16,
+   "has_terrain": true
+  },
+  {
+   "id": "19_21",
+   "buildings": 81,
+   "default_share": 0.0,
+   "roads": 27,
+   "has_terrain": true
+  },
+  {
+   "id": "19_22",
+   "buildings": 90,
+   "default_share": 0.0,
+   "roads": 36,
+   "has_terrain": true
+  },
+  {
+   "id": "19_23",
+   "buildings": 64,
+   "default_share": 0.0,
+   "roads": 12,
+   "has_terrain": true
+  },
+  {
+   "id": "20_0",
+   "buildings": 2,
+   "default_share": 0.0,
+   "roads": 3,
+   "has_terrain": true
+  },
+  {
+   "id": "20_1",
+   "buildings": 8,
+   "default_share": 0.0,
+   "roads": 6,
+   "has_terrain": true
+  },
+  {
+   "id": "20_2",
+   "buildings": 2,
+   "default_share": 0.0,
+   "roads": 11,
+   "has_terrain": true
+  },
+  {
+   "id": "20_4",
+   "buildings": 4,
+   "default_share": 0.0,
+   "roads": 15,
+   "has_terrain": true
+  },
+  {
+   "id": "20_6",
+   "buildings": 4,
+   "default_share": 0.0,
+   "roads": 10,
+   "has_terrain": true
+  },
+  {
+   "id": "20_7",
+   "buildings": 20,
+   "default_share": 0.0,
+   "roads": 46,
+   "has_terrain": true
+  },
+  {
+   "id": "20_8",
+   "buildings": 49,
+   "default_share": 0.0,
+   "roads": 113,
+   "has_terrain": true
+  },
+  {
+   "id": "20_9",
+   "buildings": 7,
+   "default_share": 0.0,
+   "roads": 74,
+   "has_terrain": true
+  },
+  {
+   "id": "20_10",
+   "buildings": 21,
+   "default_share": 0.0,
+   "roads": 100,
+   "has_terrain": true
+  },
+  {
+   "id": "20_11",
+   "buildings": 31,
+   "default_share": 0.0,
+   "roads": 80,
+   "has_terrain": true
+  },
+  {
+   "id": "20_12",
+   "buildings": 22,
+   "default_share": 0.0,
+   "roads": 80,
+   "has_terrain": true
+  },
+  {
+   "id": "20_13",
+   "buildings": 5,
+   "default_share": 0.0,
+   "roads": 53,
+   "has_terrain": true
+  },
+  {
+   "id": "20_15",
+   "buildings": 3,
+   "default_share": 0.0,
+   "roads": 25,
+   "has_terrain": true
+  },
+  {
+   "id": "20_16",
+   "buildings": 4,
+   "default_share": 0.0,
+   "roads": 49,
+   "has_terrain": true
+  },
+  {
+   "id": "20_17",
+   "buildings": 7,
+   "default_share": 0.0,
+   "roads": 15,
+   "has_terrain": true
+  },
+  {
+   "id": "20_18",
+   "buildings": 33,
+   "default_share": 0.0,
+   "roads": 13,
+   "has_terrain": true
+  },
+  {
+   "id": "20_19",
+   "buildings": 50,
+   "default_share": 0.0,
+   "roads": 10,
+   "has_terrain": true
+  },
+  {
+   "id": "20_20",
+   "buildings": 30,
+   "default_share": 0.0,
+   "roads": 17,
+   "has_terrain": true
+  },
+  {
+   "id": "20_21",
+   "buildings": 29,
+   "default_share": 0.0,
+   "roads": 15,
+   "has_terrain": true
+  },
+  {
+   "id": "20_22",
+   "buildings": 33,
+   "default_share": 0.0,
+   "roads": 21,
+   "has_terrain": true
+  },
+  {
+   "id": "20_23",
+   "buildings": 43,
+   "default_share": 0.0,
+   "roads": 6,
+   "has_terrain": true
+  },
+  {
+   "id": "21_1",
+   "buildings": 2,
+   "default_share": 0.0,
+   "roads": 13,
+   "has_terrain": true
+  },
+  {
+   "id": "21_2",
+   "buildings": 3,
+   "default_share": 0.0,
+   "roads": 12,
+   "has_terrain": true
+  },
+  {
+   "id": "21_6",
+   "buildings": 2,
+   "default_share": 0.0,
+   "roads": 50,
+   "has_terrain": true
+  },
+  {
+   "id": "21_7",
+   "buildings": 36,
+   "default_share": 0.0,
+   "roads": 122,
+   "has_terrain": true
+  },
+  {
+   "id": "21_8",
+   "buildings": 81,
+   "default_share": 0.0,
+   "roads": 85,
+   "has_terrain": true
+  },
+  {
+   "id": "21_9",
+   "buildings": 16,
+   "default_share": 0.0,
+   "roads": 93,
+   "has_terrain": true
+  },
+  {
+   "id": "21_10",
+   "buildings": 5,
+   "default_share": 0.0,
+   "roads": 23,
+   "has_terrain": true
+  },
+  {
+   "id": "21_11",
+   "buildings": 1,
+   "default_share": 0.0,
+   "roads": 23,
+   "has_terrain": true
+  },
+  {
+   "id": "21_12",
+   "buildings": 4,
+   "default_share": 0.0,
+   "roads": 12,
+   "has_terrain": true
+  },
+  {
+   "id": "21_13",
+   "buildings": 3,
+   "default_share": 0.0,
+   "roads": 3,
+   "has_terrain": true
+  },
+  {
+   "id": "21_14",
+   "buildings": 1,
+   "default_share": 0.0,
+   "roads": 1,
+   "has_terrain": true
+  },
+  {
+   "id": "21_15",
+   "buildings": 10,
+   "default_share": 0.0,
+   "roads": 7,
+   "has_terrain": true
+  },
+  {
+   "id": "21_16",
+   "buildings": 6,
+   "default_share": 0.0,
+   "roads": 31,
+   "has_terrain": true
+  },
+  {
+   "id": "21_17",
+   "buildings": 22,
+   "default_share": 0.0,
+   "roads": 23,
+   "has_terrain": true
+  },
+  {
+   "id": "21_18",
+   "buildings": 30,
+   "default_share": 0.0,
+   "roads": 47,
+   "has_terrain": true
+  },
+  {
+   "id": "21_19",
+   "buildings": 17,
+   "default_share": 0.0,
+   "roads": 35,
+   "has_terrain": true
+  },
+  {
+   "id": "21_20",
+   "buildings": 53,
+   "default_share": 0.0,
+   "roads": 34,
+   "has_terrain": true
+  },
+  {
+   "id": "21_21",
+   "buildings": 14,
+   "default_share": 0.0,
+   "roads": 20,
+   "has_terrain": true
+  },
+  {
+   "id": "21_22",
+   "buildings": 7,
+   "default_share": 0.0,
+   "roads": 10,
+   "has_terrain": true
+  },
+  {
+   "id": "21_23",
+   "buildings": 43,
+   "default_share": 0.0,
+   "roads": 18,
+   "has_terrain": true
+  },
+  {
+   "id": "22_0",
+   "buildings": 2,
+   "default_share": 0.0,
+   "roads": 3,
+   "has_terrain": true
+  },
+  {
+   "id": "22_1",
+   "buildings": 18,
+   "default_share": 0.0,
+   "roads": 5,
+   "has_terrain": true
+  },
+  {
+   "id": "22_2",
+   "buildings": 22,
+   "default_share": 0.0,
+   "roads": 18,
+   "has_terrain": true
+  },
+  {
+   "id": "22_3",
+   "buildings": 6,
+   "default_share": 0.0,
+   "roads": 5,
+   "has_terrain": true
+  },
+  {
+   "id": "22_6",
+   "buildings": 30,
+   "default_share": 0.0,
+   "roads": 126,
+   "has_terrain": true
+  },
+  {
+   "id": "22_7",
+   "buildings": 36,
+   "default_share": 0.0,
+   "roads": 103,
+   "has_terrain": true
+  },
+  {
+   "id": "22_8",
+   "buildings": 52,
+   "default_share": 0.0,
+   "roads": 87,
+   "has_terrain": true
+  },
+  {
+   "id": "22_9",
+   "buildings": 25,
+   "default_share": 0.0,
+   "roads": 54,
+   "has_terrain": true
+  },
+  {
+   "id": "22_10",
+   "buildings": 9,
+   "default_share": 0.0,
+   "roads": 57,
+   "has_terrain": true
+  },
+  {
+   "id": "22_11",
+   "buildings": 6,
+   "default_share": 0.0,
+   "roads": 27,
+   "has_terrain": true
+  },
+  {
+   "id": "22_12",
+   "buildings": 18,
+   "default_share": 0.0,
+   "roads": 18,
+   "has_terrain": true
+  },
+  {
+   "id": "22_13",
+   "buildings": 17,
+   "default_share": 0.0,
+   "roads": 21,
+   "has_terrain": true
+  },
+  {
+   "id": "22_14",
+   "buildings": 6,
+   "default_share": 0.0,
+   "roads": 68,
+   "has_terrain": true
+  },
+  {
+   "id": "22_15",
+   "buildings": 10,
+   "default_share": 0.0,
+   "roads": 37,
+   "has_terrain": true
+  },
+  {
+   "id": "22_16",
+   "buildings": 4,
+   "default_share": 0.0,
+   "roads": 24,
+   "has_terrain": true
+  },
+  {
+   "id": "22_17",
+   "buildings": 1,
+   "default_share": 0.0,
+   "roads": 46,
+   "has_terrain": true
+  },
+  {
+   "id": "22_18",
+   "buildings": 23,
+   "default_share": 0.0,
+   "roads": 38,
+   "has_terrain": true
+  },
+  {
+   "id": "22_19",
+   "buildings": 88,
+   "default_share": 0.0,
+   "roads": 37,
+   "has_terrain": true
+  },
+  {
+   "id": "22_20",
+   "buildings": 96,
+   "default_share": 0.0,
+   "roads": 34,
+   "has_terrain": true
+  },
+  {
+   "id": "22_21",
+   "buildings": 71,
+   "default_share": 0.0,
+   "roads": 59,
+   "has_terrain": true
+  },
+  {
+   "id": "22_22",
+   "buildings": 32,
+   "default_share": 0.0,
+   "roads": 19,
+   "has_terrain": true
+  },
+  {
+   "id": "22_23",
+   "buildings": 57,
+   "default_share": 0.0,
+   "roads": 36,
+   "has_terrain": true
+  },
+  {
+   "id": "23_0",
+   "buildings": 5,
+   "default_share": 0.0,
+   "roads": 3,
+   "has_terrain": true
+  },
+  {
+   "id": "23_1",
+   "buildings": 2,
+   "default_share": 0.0,
+   "roads": 16,
+   "has_terrain": true
+  },
+  {
+   "id": "23_2",
+   "buildings": 1,
+   "default_share": 0.0,
+   "roads": 14,
+   "has_terrain": true
+  },
+  {
+   "id": "23_4",
+   "buildings": 2,
+   "default_share": 0.0,
+   "roads": 51,
+   "has_terrain": true
+  },
+  {
+   "id": "23_5",
+   "buildings": 27,
+   "default_share": 0.0,
+   "roads": 69,
+   "has_terrain": true
+  },
+  {
+   "id": "23_6",
+   "buildings": 57,
+   "default_share": 0.0,
+   "roads": 115,
+   "has_terrain": true
+  },
+  {
+   "id": "23_7",
+   "buildings": 64,
+   "default_share": 0.0,
+   "roads": 104,
+   "has_terrain": true
+  },
+  {
+   "id": "23_8",
+   "buildings": 117,
+   "default_share": 0.0,
+   "roads": 134,
+   "has_terrain": true
+  },
+  {
+   "id": "23_9",
+   "buildings": 87,
+   "default_share": 0.0,
+   "roads": 95,
+   "has_terrain": true
+  },
+  {
+   "id": "23_10",
+   "buildings": 51,
+   "default_share": 0.0,
+   "roads": 66,
+   "has_terrain": true
+  },
+  {
+   "id": "23_11",
+   "buildings": 20,
+   "default_share": 0.0,
+   "roads": 83,
+   "has_terrain": true
+  },
+  {
+   "id": "23_12",
+   "buildings": 6,
+   "default_share": 0.0,
+   "roads": 28,
+   "has_terrain": true
+  },
+  {
+   "id": "23_13",
+   "buildings": 23,
+   "default_share": 0.0,
+   "roads": 127,
+   "has_terrain": true
+  },
+  {
+   "id": "23_14",
+   "buildings": 20,
+   "default_share": 0.0,
+   "roads": 54,
+   "has_terrain": true
+  },
+  {
+   "id": "23_15",
+   "buildings": 23,
+   "default_share": 0.0,
+   "roads": 41,
+   "has_terrain": true
+  },
+  {
+   "id": "23_16",
+   "buildings": 62,
+   "default_share": 0.0,
+   "roads": 60,
+   "has_terrain": true
+  },
+  {
+   "id": "23_17",
+   "buildings": 6,
+   "default_share": 0.0,
+   "roads": 37,
+   "has_terrain": true
+  },
+  {
+   "id": "23_19",
+   "buildings": 22,
+   "default_share": 0.0,
+   "roads": 32,
+   "has_terrain": true
+  },
+  {
+   "id": "23_20",
+   "buildings": 101,
+   "default_share": 0.0,
+   "roads": 58,
+   "has_terrain": true
+  },
+  {
+   "id": "23_21",
+   "buildings": 87,
+   "default_share": 0.0,
+   "roads": 66,
+   "has_terrain": true
+  },
+  {
+   "id": "23_22",
+   "buildings": 77,
+   "default_share": 0.0,
+   "roads": 31,
+   "has_terrain": true
+  },
+  {
+   "id": "23_23",
+   "buildings": 29,
+   "default_share": 0.0,
+   "roads": 26,
+   "has_terrain": true
+  },
+  {
+   "id": "24_5",
+   "buildings": 4,
+   "default_share": 0.0,
+   "roads": 29,
+   "has_terrain": true
+  },
+  {
+   "id": "24_6",
+   "buildings": 59,
+   "default_share": 0.0,
+   "roads": 38,
+   "has_terrain": true
+  },
+  {
+   "id": "24_7",
+   "buildings": 39,
+   "default_share": 0.0,
+   "roads": 45,
+   "has_terrain": true
+  },
+  {
+   "id": "24_8",
+   "buildings": 60,
+   "default_share": 0.0,
+   "roads": 64,
+   "has_terrain": true
+  },
+  {
+   "id": "24_9",
+   "buildings": 74,
+   "default_share": 0.0,
+   "roads": 62,
+   "has_terrain": true
+  },
+  {
+   "id": "24_10",
+   "buildings": 46,
+   "default_share": 0.0,
+   "roads": 48,
+   "has_terrain": true
+  },
+  {
+   "id": "24_11",
+   "buildings": 26,
+   "default_share": 0.0,
+   "roads": 58,
+   "has_terrain": true
+  },
+  {
+   "id": "24_12",
+   "buildings": 6,
+   "default_share": 0.0,
+   "roads": 37,
+   "has_terrain": true
+  },
+  {
+   "id": "24_13",
+   "buildings": 39,
+   "default_share": 0.0,
+   "roads": 49,
+   "has_terrain": true
+  },
+  {
+   "id": "24_14",
+   "buildings": 29,
+   "default_share": 0.0,
+   "roads": 30,
+   "has_terrain": true
+  },
+  {
+   "id": "24_15",
+   "buildings": 46,
+   "default_share": 0.0,
+   "roads": 15,
+   "has_terrain": true
+  },
+  {
+   "id": "24_16",
+   "buildings": 41,
+   "default_share": 0.0,
+   "roads": 20,
+   "has_terrain": true
+  },
+  {
+   "id": "24_17",
+   "buildings": 29,
+   "default_share": 0.0,
+   "roads": 37,
+   "has_terrain": true
+  },
+  {
+   "id": "24_18",
+   "buildings": 8,
+   "default_share": 0.0,
+   "roads": 12,
+   "has_terrain": true
+  },
+  {
+   "id": "24_19",
+   "buildings": 1,
+   "default_share": 0.0,
+   "roads": 8,
+   "has_terrain": true
+  },
+  {
+   "id": "24_20",
+   "buildings": 9,
+   "default_share": 0.0,
+   "roads": 4,
+   "has_terrain": true
+  },
+  {
+   "id": "24_21",
+   "buildings": 66,
+   "default_share": 0.0,
+   "roads": 47,
+   "has_terrain": true
+  },
+  {
+   "id": "24_22",
+   "buildings": 99,
+   "default_share": 0.0,
+   "roads": 19,
+   "has_terrain": true
+  },
+  {
+   "id": "24_23",
+   "buildings": 35,
+   "default_share": 0.0,
+   "roads": 14,
+   "has_terrain": true
+  }
+ ],
+ "roads": {
+  "total": 25569,
+  "null_width_count": 0,
+  "highway_hist": {
+   "footway": 13884,
+   "service": 5375,
+   "residential": 2310,
+   "primary": 1010,
+   "tertiary": 960,
+   "path": 420,
+   "secondary": 414,
+   "steps": 317,
+   "motorway": 304,
+   "motorway_link": 234
+  }
+ },
+ "landmarks": {
+  "in_first_slice_total": 12,
+  "matched": [
+   "virginia-state-capitol",
+   "main-street-station",
+   "the-jefferson-hotel",
+   "old-city-hall",
+   "carpenter-theatre-dominion-energy-center",
+   "federal-reserve-bank-of-richmond",
+   "james-monroe-building",
+   "dominion-energy-tower-600-canal-place",
+   "belle-isle-footbridge",
+   "mayo-bridge",
+   "canal-walk-tredegar-iron-works",
+   "maggie-l-walker-memorial"
+  ],
+  "unmatched": []
+ },
+ "coverage": {
+  "lidar_share": 0.9155153387773118,
+  "overture_share": 0.0013683513573162656
+ }
+}

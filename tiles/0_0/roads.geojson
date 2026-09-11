@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "roads",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/6040170", "name": "West 46th Street", "highway": "residential", "lanes": null, "width": 7.0, "oneway": false, "surface": "asphalt", "footway": null, "sidewalk_left": null, "sidewalk_right": null, "generated_sidewalk": true, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 280304.01, 4154893.43 ], [ 280317.26, 4154952.02 ], [ 280308.32, 4155000.0 ] ] } }
+]
+}

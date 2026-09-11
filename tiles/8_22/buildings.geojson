@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "buildings",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/1131760736", "name": null, "height": 3.96, "min_height": 0.0, "levels": null, "height_source": "lidar", "roof_shape": "flat", "roof_height": 0.0, "roof_azimuth": null, "roof_source": "lidar", "roof_color": "roof_dark", "wall_color": "brick", "type": "yes", "landmark": null, "footprint_source": "osm", "source_updated": null, "is_part": false, "parent": null, "hidden": false, "addr": null, "wikidata": null, "website": null, "zoning": "TOD-1", "lidar_p90": 4.1, "ground_z": 57.86, "merged_count": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282431.16, 4160321.06 ], [ 282438.06, 4160307.24 ], [ 282431.2, 4160303.84 ], [ 282424.31, 4160317.66 ], [ 282431.16, 4160321.06 ] ] ] } }
+]
+}

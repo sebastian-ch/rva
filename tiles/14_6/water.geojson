@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "water",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "noaa:Rivers:7", "name": "James River", "kind": "river", "water_z": null, "source": "noaa2025" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 283990.83, 4156498.61 ], [ 283988.18, 4156499.93 ], [ 283988.15, 4156500.0 ], [ 284000.0, 4156500.0 ], [ 284000.0, 4156494.95 ], [ 283994.63, 4156496.71 ], [ 283990.83, 4156498.61 ] ] ], [ [ [ 283769.84, 4156494.77 ], [ 283768.5, 4156493.44 ], [ 283756.56, 4156486.83 ], [ 283750.0, 4156482.38 ], [ 283750.0, 4156500.0 ], [ 283772.75, 4156500.0 ], [ 283772.72, 4156499.98 ], [ 283769.84, 4156494.77 ] ] ] ] } }
+]
+}

@@ -1,0 +1,12 @@
+{
+"type": "FeatureCollection",
+"name": "rail",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/114143932", "name": "Richmond District", "railway": "rail", "bridge": false, "ramp": true, "layer": 0, "deck": [ 284931.8, 4156710.74, 8.03, 285965.79, 4156071.18, 6.25 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 284931.8, 4156710.74 ], [ 284937.05, 4156715.12 ], [ 284942.66, 4156719.19 ], [ 284945.6, 4156720.86 ], [ 284946.51, 4156721.38 ], [ 284955.91, 4156726.7 ], [ 284971.1, 4156732.1 ], [ 284981.44, 4156734.53 ], [ 284999.72, 4156735.69 ], [ 285000.0, 4156735.68 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/114143919", "name": "Richmond District", "railway": "rail", "bridge": true, "ramp": false, "layer": 1, "deck": [ 284405.6, 4156113.8, 10.41, 284931.8, 4156710.7, 8.97 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 284754.82, 4156500.0 ], [ 284791.7, 4156544.33 ], [ 284875.08, 4156645.74 ], [ 284913.6, 4156692.09 ], [ 284931.8, 4156710.74 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/38180729", "name": "Rivanna Subdivision", "railway": "rail", "bridge": true, "ramp": false, "layer": 2, "deck": [ 284046.9, 4156923.3, 27.51, 285279.0, 4156645.6, 27.86 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 284817.0, 4156750.0 ], [ 284911.54, 4156728.68 ], [ 284940.84, 4156722.16 ], [ 285000.0, 4156708.77 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/880322646", "name": "Rivanna Subdivision", "railway": "rail", "bridge": true, "ramp": false, "layer": 2, "deck": [ 285278.0, 4156641.8, 27.88, 283660.1, 4156996.8, 27.04 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 285000.0, 4156704.91 ], [ 284939.37, 4156718.68 ], [ 284799.24, 4156750.0 ] ] } }
+]
+}

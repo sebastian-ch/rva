@@ -1,0 +1,14 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "richmond_structure:425346", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285159.04, 4159302.57 ], [ 285157.29, 4159302.87 ], [ 285158.43, 4159309.44 ], [ 285160.18, 4159309.14 ], [ 285159.04, 4159302.57 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:298191", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285211.63, 4159339.71 ], [ 285212.3, 4159342.49 ], [ 285231.08, 4159337.94 ], [ 285230.4, 4159335.16 ], [ 285211.63, 4159339.71 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:285874", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285182.62, 4159342.13 ], [ 285183.24, 4159345.14 ], [ 285188.48, 4159344.05 ], [ 285187.86, 4159341.05 ], [ 285182.62, 4159342.13 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:403514", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285004.17, 4159487.58 ], [ 285004.85, 4159490.7 ], [ 285006.27, 4159491.54 ], [ 285008.1, 4159491.55 ], [ 285009.35, 4159490.94 ], [ 285009.04, 4159486.8 ], [ 285004.17, 4159487.58 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1200850684", "name": null, "kind": "forest", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285009.54, 4159473.86 ], [ 285028.48, 4159469.02 ], [ 285035.09, 4159500.0 ], [ 285050.04, 4159500.0 ], [ 285030.19, 4159312.01 ], [ 285000.0, 4159321.4 ], [ 285000.0, 4159490.84 ], [ 285004.2, 4159491.1 ], [ 285009.54, 4159473.86 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/44884751", "name": "Barton Heights Cemetery", "kind": "cemetery", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285230.67, 4159500.0 ], [ 285226.85, 4159393.32 ], [ 285055.98, 4159417.15 ], [ 285060.28, 4159500.0 ], [ 285230.67, 4159500.0 ] ] ] } }
+]
+}

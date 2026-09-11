@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "rail",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/880021818", "name": "Richmond Terminal Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 282397.78, 4160500.0 ], [ 282382.34, 4160525.04 ], [ 282365.82, 4160554.99 ], [ 282314.13, 4160649.54 ], [ 282259.85, 4160750.0 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/114514444", "name": "Richmond Terminal Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 282403.58, 4160500.0 ], [ 282393.54, 4160514.99 ], [ 282362.98, 4160568.25 ], [ 282279.9, 4160722.24 ], [ 282264.84, 4160750.0 ] ] } }
+]
+}

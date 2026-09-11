@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/427297400", "name": null, "kind": "forest", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282565.31, 4156481.96 ], [ 282596.44, 4156500.0 ], [ 282614.61, 4156500.0 ], [ 282609.13, 4156495.4 ], [ 282570.79, 4156476.47 ], [ 282562.77, 4156472.95 ], [ 282557.63, 4156470.02 ], [ 282556.13, 4156468.7 ], [ 282553.23, 4156467.01 ], [ 282550.53, 4156466.95 ], [ 282541.66, 4156463.62 ], [ 282534.87, 4156462.05 ], [ 282515.29, 4156453.84 ], [ 282504.22, 4156451.74 ], [ 282500.0, 4156450.07 ], [ 282500.0, 4156467.61 ], [ 282523.7, 4156470.59 ], [ 282565.31, 4156481.96 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/822783215", "name": null, "kind": "forest", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282500.0, 4156483.16 ], [ 282500.0, 4156500.0 ], [ 282558.57, 4156500.0 ], [ 282517.06, 4156486.1 ], [ 282500.0, 4156483.16 ] ] ] } }
+]
+}

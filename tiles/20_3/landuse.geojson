@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/1098327923", "name": "FirstEnergy Terminal", "kind": "industrial", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285250.0, 4155678.78 ], [ 285317.76, 4155587.6 ], [ 285250.0, 4155563.86 ], [ 285250.0, 4155678.78 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/708251121", "name": null, "kind": "forest", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285464.57, 4155750.0 ], [ 285500.0, 4155750.0 ], [ 285500.0, 4155597.82 ], [ 285467.59, 4155739.53 ], [ 285464.57, 4155750.0 ] ] ] } }
+]
+}

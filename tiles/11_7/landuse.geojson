@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/1351371222", "name": null, "kind": "forest", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283152.23, 4156501.36 ], [ 283156.11, 4156503.67 ], [ 283158.1, 4156504.73 ], [ 283165.28, 4156508.27 ], [ 283171.6, 4156511.3 ], [ 283193.11, 4156517.77 ], [ 283250.0, 4156550.33 ], [ 283250.0, 4156500.0 ], [ 283150.11, 4156500.0 ], [ 283150.72, 4156500.39 ], [ 283152.23, 4156501.36 ] ] ] } }
+]
+}

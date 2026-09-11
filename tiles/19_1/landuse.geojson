@@ -1,0 +1,12 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "richmond_structure:426262", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285088.93, 4155061.21 ], [ 285100.17, 4155046.71 ], [ 285091.57, 4155040.51 ], [ 285080.37, 4155054.78 ], [ 285088.93, 4155061.21 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:354518", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285053.5, 4155106.31 ], [ 285081.39, 4155095.13 ], [ 285076.14, 4155082.54 ], [ 285052.45, 4155092.03 ], [ 285051.73, 4155089.65 ], [ 285047.41, 4155094.99 ], [ 285051.1, 4155103.64 ], [ 285052.2, 4155103.16 ], [ 285053.5, 4155106.31 ] ], [ [ 285058.71, 4155094.65 ], [ 285056.5, 4155095.56 ], [ 285055.64, 4155093.46 ], [ 285066.86, 4155088.86 ], [ 285067.74, 4155091.0 ], [ 285070.07, 4155090.05 ], [ 285071.03, 4155092.39 ], [ 285073.28, 4155091.47 ], [ 285074.19, 4155093.69 ], [ 285062.84, 4155098.34 ], [ 285061.94, 4155096.15 ], [ 285059.7, 4155097.07 ], [ 285058.71, 4155094.65 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:354517", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285047.01, 4155104.79 ], [ 285050.94, 4155103.27 ], [ 285047.41, 4155094.99 ], [ 285044.42, 4155098.5 ], [ 285047.01, 4155104.79 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "richmond_structure:354519", "name": null, "kind": "deck", "source": "richmond_structures", "source_updated": "2026-09-08T12:07:13.637000Z", "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285139.56, 4155149.24 ], [ 285141.32, 4155147.25 ], [ 285138.81, 4155145.1 ], [ 285136.89, 4155147.21 ], [ 285139.56, 4155149.24 ] ] ] } }
+]
+}

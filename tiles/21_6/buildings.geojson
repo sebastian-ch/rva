@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "buildings",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/225586230", "name": null, "height": 20.0, "min_height": 0.0, "levels": null, "height_source": "zoning", "roof_shape": "flat", "roof_height": 0.0, "roof_azimuth": null, "roof_source": "heuristic", "roof_color": "roof_flat", "wall_color": "cream", "type": "parking", "landmark": null, "footprint_source": "osm", "source_updated": null, "is_part": false, "parent": null, "hidden": false, "addr": "2101 East Cary Street", "wikidata": null, "website": null, "zoning": "B-5", "lidar_p90": 2.75, "ground_z": 7.95, "merged_count": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285725.35, 4156417.15 ], [ 285703.2, 4156389.55 ], [ 285639.24, 4156440.46 ], [ 285661.39, 4156468.06 ], [ 285725.35, 4156417.15 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/266955745", "name": "Edgeworth Building", "height": 22.86, "min_height": 0.0, "levels": null, "height_source": "osm_height", "roof_shape": "flat", "roof_height": 0.0, "roof_azimuth": null, "roof_source": "heuristic", "roof_color": "roof_flat", "wall_color": "cream", "type": "commercial", "landmark": null, "footprint_source": "osm", "source_updated": null, "is_part": false, "parent": null, "hidden": false, "addr": "2100 East Cary Street", "wikidata": null, "website": null, "zoning": "B-5", "lidar_p90": 26.46, "ground_z": 10.85, "merged_count": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285734.08, 4156427.97 ], [ 285672.31, 4156478.53 ], [ 285693.01, 4156504.86 ], [ 285735.05, 4156470.95 ], [ 285743.5, 4156481.71 ], [ 285764.59, 4156464.62 ], [ 285734.08, 4156427.97 ] ] ] } }
+]
+}

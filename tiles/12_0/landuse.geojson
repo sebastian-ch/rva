@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/45121685", "name": null, "kind": "industrial", "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283500.0, 4155000.0 ], [ 283500.0, 4154750.0 ], [ 283334.81, 4154750.0 ], [ 283314.8, 4155000.0 ], [ 283500.0, 4155000.0 ] ] ] } }
+]
+}
