@@ -48,7 +48,7 @@ python3 -m venv .venv && .venv/bin/pip install -r pipeline/requirements.txt
 .venv/bin/python pipeline/fetch_vgin_footprints.py --shp <path.shp>         # VGIN building footprints (gap-fill) -> data/raw/
 .venv/bin/python pipeline/dem_noaa.py [--zip data/raw/J1448888.zip]              # NOAA 2025 1 ft DEM tiles -> dem_<slug>.tif (1 m); run before fetch_lidar/build_tiles
 .venv/bin/python pipeline/fetch_lidar.py [--source noaa2025|usgs2014] [--dry-run]  # LiDAR EPT (2025 City of Richmond by default) -> ndsm.tif + point npz
-.venv/bin/python pipeline/build_tiles.py [--clean] [--no-merge] [--roads-only] # --roads-only preserves every other existing tile layer
+.venv/bin/python pipeline/build_tiles.py [--clean] [--no-merge] [--layers roads,crossings] [--no-cache] [--clear-cache]
 .venv/bin/python -m pytest                                                  # pipeline unit tests
 cd web && npm install && npm run dev                                        # viewer at http://localhost:5173 (serves ../data/tiles at /tiles)
 cd web && npm test && npm run typecheck                                     # vitest + tsc
@@ -63,6 +63,13 @@ Tile schema contract: `DATA_FORMAT.md`. Landmark registry: `assets/landmarks/lan
 ## Layout notes
 
 - `pipeline/heights.py` is pure functions (height/roof/color); `process.py` normalizes layers; `build_tiles.py` clips and writes.
+- Builds are cached at the layer boundary: `layer_cache.py` fingerprints every raw source, every layer-implementing
+  `pipeline/*.py` and the build options, and stores the processed layers as GeoParquet in `data/cache/`. Editing a
+  driver (`build_tiles.py`, `qa_report.py`, `tiles_inspect.py`, fetchers) is a cache hit; editing `process.py`,
+  `lidar.py` or any other layer module is a miss. `--no-cache` reprocesses, `--clear-cache` deletes the cache.
+- `--layers roads,crossings,rail` rewrites only those tile files. Only those three qualify: every other layer is
+  augmented after its processor runs (pois gains the tree merge, landuse city decks and canal banks, water the
+  surveyed shoreline, buildings drives search.json), so rewriting it alone would silently drop that content.
 - LiDAR is optional: `fetch_lidar.py` writes `data/raw/ndsm.tif` and `lidar_<slug>.npz`; `lidar.py` + `roofs.py` consume them.
   Default source is the 2025 City of Richmond cloud (NOAA Digital Coast EPT, flown Feb 2025, depth 8 ≈ 10 pts/m²); `--source usgs2014` is the old 3DEP cloud.
 - Terrain: `dem_noaa.py` builds `data/raw/dem_<slug>.tif` (1 m, EPSG:32618) from the NOAA Digital Coast 2025 1 ft DEM zip (`data/raw/J1448888.zip`, VA State Plane South ft); the 3DEP export from `fetch.py` is the fallback and is kept as `dem_<slug>.3dep.tif`. The 0.3 m DSM zip (`va2025_richmond_J1448889.zip`) is only for ad-hoc checks via `/vsizip/` + rasterio (mosaic the tiles, they split at lon -77.447).

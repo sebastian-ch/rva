@@ -146,8 +146,25 @@ landmark loading, and automated screenshot time separately. Distinguish software
 from the interactive GPU-backed viewer; improvements to one may not improve the other.
 
 Completed:
-- `build_tiles.py --roads-only` reprocesses and rewrites roads/crossings while preserving all other tile layers.
-  The expanded Richmond build fell from about 130 seconds for a full rebuild to 8–13 seconds for a road pass.
+- `build_tiles.py --layers roads,crossings,rail` (with `--roads-only` kept as an alias) rewrites only those tile
+  files while preserving all other tile layers: about 12 seconds. Every other layer is augmented after its
+  processor runs and is rejected by name rather than written half-finished.
+- The LiDAR roof surface is reduced once and cached (`lidar.py`): 310 M raw points become ~8 M top-of-cell points
+  inside the padded footprints, queried through a sorted cell-key index instead of a KD-tree over the whole cloud.
+  `process_buildings` fell from 90 s to 16 s; the cKDTree build alone had been 51 s of every run.
+- nDSM footprint statistics run in a process pool with a serial fallback: 5.3 s to 1.8 s, identical output.
+- `layer_cache.py` caches the processed layers as GeoParquet, fingerprinted on every raw source, every
+  layer-implementing module and the build options. A full Richmond build is 63 s cold and **20 s** when only the
+  tiling/QA/viewer side changed, against about 130 s before this work. Verified byte-identical against
+  `--no-cache` across all 3,683 tile files.
+
+Measured (2026-09-11, expanded Richmond, 24.4 k footprints):
+
+| stage | before | after |
+|---|---|---|
+| `process_buildings` | 90.2 s | 15.9 s |
+| all layers | 103.7 s | 29.1 s |
+| full build, layers unchanged | ~130 s | 20.0 s |
 - The viewer already builds tile geometry in four workers, transfers typed arrays without copying, streams two
   detail levels, merges each tile layer into one mesh, instances repeated props, and disposes unloaded geometry.
 
