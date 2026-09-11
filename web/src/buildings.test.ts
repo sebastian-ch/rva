@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
-import { rangeForFace, buildBuildingsMesh, isSevenEleven, type BuildingRange } from './buildings';
+import { rangeForFace, buildBuildingsMesh, isCaryMcDonalds, isSevenEleven, type BuildingRange } from './buildings';
 import type { BuildingProps, Feature, PolyGeom, RoofShape } from './types';
 import type { V2 } from './geomutil';
 
@@ -31,6 +31,13 @@ describe('isSevenEleven', () => {
     expect(isSevenEleven({ id: 'osm:way/236014923', name: null, addr: null, website: null })).toBe(true);
     expect(isSevenEleven({ id: 'other', name: '7-Eleven', addr: null, website: null })).toBe(true);
     expect(isSevenEleven({ id: 'other', name: 'Convenience store', addr: '3301 West Cary Street', website: null })).toBe(false);
+  });
+});
+
+describe('isCaryMcDonalds', () => {
+  it('limits the custom facade to 3410 West Cary Street', () => {
+    expect(isCaryMcDonalds({ id: 'osm:way/235998654' })).toBe(true);
+    expect(isCaryMcDonalds({ id: 'osm:way/755389457' })).toBe(false);
   });
 });
 

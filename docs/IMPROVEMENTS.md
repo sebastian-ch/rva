@@ -16,8 +16,8 @@ Weak spots, roughly in the order a viewer notices them:
 2. The ground is one flat colour with contours. No sidewalk texture, no lawns vs beds, no plazas, no parking
    stripes, no rail yards.
 3. Trees are two shapes, props are sparse, there are no people at street level in numbers.
-4. Roads are visually right at a distance but have no lane arrows, no median islands, no bus lanes, and
-   junction geometry is squared rather than curbed with radii.
+4. Roads now include bus lanes, topology-trimmed ribbons, evidence-based crossings and rounded junction fills,
+   but still lack lane arrows and source-derived median/curb polygons.
 5. Lighting is one sun; no ambient occlusion pass, no colour grading, no outline.
 6. Interaction is basic: no search, no deep links, no minimap, no time-of-day.
 
@@ -76,13 +76,13 @@ Weak spots, roughly in the order a viewer notices them:
 |---|---|---|---|
 | 1 | Render OSM `building:part` and `min_height` as separate extrusions | S | **Done 2026-09-09:** 126 parts, 42 covered outlines drawn as plinths; James Center's three towers now rise from their shared podium |
 | 2 | Screen-space AO + outline + colour grade post pass | M | **Done:** `postfx.ts` — depth-difference contact AO, depth-edge outline, warm/cool grade, vignette; `o` toggles it |
-| 3 | Prebuilt road and junction surface topology with curb radii | M | Replaces per-line ribbon overlap, stays stable across tile boundaries, and enables medians and turn lanes |
+| 3 | Prebuilt road and junction surface topology with curb radii | M | **In progress:** topology-aware trimming/fills and crossing attachment are live; canonical source-derived curb polygons, medians and turn lanes remain |
 | 4 | roofer-based LoD2 roofs replacing the two-plane fit | L | Real roof forms on every building; inputs already exist |
 | 5 | Facade grammar (geometry) for the ground floor: doors, storefront frames, awnings, steps | M | The plan's kit-of-parts, done where the camera sees it |
 | 6 | Ground detail: sidewalk paving tint, lawn vs bed, parking stripes, rail ballast | S | **Partly done:** world-space mottle on land/terrain (`groundDetail.ts`), painted stall lines on surface parking; paving tint and ballast open |
 | 7 | Pedestrians on sidewalk paths, trains on rails | M | **Half done:** walkers ping-pong along sidewalk strips and footpaths (`addWalkers`); trains open |
 | 8 | Search, deep links, minimap, time-of-day (ROADMAP Phase 5) | M | Shareability |
-| 9 | Widen to The Fan / Church Hill with per-district palettes (Phase 6) | M | Content |
+| 9 | Widen to The Fan / Church Hill with per-district palettes (Phase 6) | M | **Fan done 2026-09-10:** expanded data and QA coverage are live; Church Hill-specific palette/content pass remains |
 | 10 | CI with the smoke test and snapshot diffs (Phase 7) | S | Keeps the polish from regressing |
 
 ### Deferred street-level data additions

@@ -178,7 +178,7 @@
     "description": "Lavish 1928 movie palace on Cary Street with an original Wurlitzer organ, still operating as a single-screen cinema.",
     "district": "Carytown",
     "in_first_slice": false,
-    "model": null,
+    "model": "landmarks/byrd-theatre.glb",
     "height_hint_m": 18
   },
   {

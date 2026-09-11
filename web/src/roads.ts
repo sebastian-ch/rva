@@ -17,6 +17,23 @@ const TRAIL = new Set(['path', 'track']);
 const FOOT_MINOR = new Set(['footway', 'pedestrian', 'path']);
 /** Grade-separated roads and ramps: no sidewalk strips, no junction corner fills, only a narrow deck edge. */
 const NO_WALK = new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link', 'primary_link', 'secondary_link', 'tertiary_link']);
+const roadStep = (highway: string) => NO_WALK.has(highway) ? 4 : SEG;
+
+export function retainingProfile(road: number[], adjacentGround: number[], threshold = 0.45): { tops: number[]; active: boolean[] } {
+  const raw = road.map((y, i) => Math.max(y, adjacentGround[i] ?? y));
+  const tops = raw.map((_, i) => {
+    let total = 0, weight = 0;
+    for (let j = Math.max(0, i - 6); j <= Math.min(raw.length - 1, i + 6); j++) {
+      const w = 7 - Math.abs(j - i);
+      total += raw[j] * w; weight += w;
+    }
+    return Math.max(road[i], total / weight);
+  });
+  const cut = raw.map((y, i) => y - road[i] >= threshold);
+  // Close one-sample gaps so the wall starts and ends as a coherent run rather than isolated panels.
+  const active = cut.map((_, i) => cut.some((on, j) => on && Math.abs(i - j) <= 2));
+  return { tops, active };
+}
 
 function lines(g: LineGeom): V2[][] {
   return g.type === 'LineString' ? [g.coordinates as V2[]] : (g.coordinates as V2[][]);
@@ -222,7 +239,7 @@ export function buildRoads(
   const roadPaths: { path: THREE.Vector3[]; width: number }[] = [];
   const bridgeNeighbors = opts.bridges === false ? [] : feats.filter(f=>!f.properties.tunnel && !MINOR.has(f.properties.highway))
     .flatMap(f=>lines(f.geometry).map(line=>({id:f.properties.id,width:f.properties.width,
-      path:toPath(line,toLocal,groundAt,ROAD_Y+(f.properties.bridge ? bridgeLift(f.properties.layer) : 0),SEG,
+      path:toPath(line,toLocal,groundAt,ROAD_Y+(f.properties.bridge ? bridgeLift(f.properties.layer) : 0),roadStep(f.properties.highway),
         parseDeck(f.properties.deck),!!f.properties.ramp && !f.properties.bridge)})));
   const occupiedRoad = (id: string) => (v: THREE.Vector3) => bridgeNeighbors.some(other=>{
     if(other.id===id) return false;
@@ -240,7 +257,7 @@ export function buildRoads(
   // sidewalk width so they stop at the corner. Service alleys and parking aisles are paved roads here even
   // though they remain minor for traffic, markings and sidewalks.
   const junctions = new Map<string, { pt: THREE.Vector3; ends: { dir: THREE.Vector2; halfW: number; walk: boolean }[] }>();
-  const bridgeJunctions = new Map<string, { pt: THREE.Vector3; ends: { dir: THREE.Vector2; halfW: number; walk: boolean; highway: string; name: string | null }[] }>();
+  const bridgeJunctions = new Map<string, { pt: THREE.Vector3; ends: { dir: THREE.Vector2; halfW: number; walk: boolean; highway: string; name: string | null; ramp: boolean }[] }>();
   const key = (x: number, y: number) => `${x.toFixed(1)}|${y.toFixed(1)}`;
   const uniqueDirections = <T extends { dir: THREE.Vector2 }>(ends: T[]) =>
     ends.filter((e, i, all) => all.findIndex((o) => Math.abs(o.dir.dot(e.dir) - 1) < 0.002) === i);
@@ -266,12 +283,12 @@ export function buildRoads(
       }
     }
   }
-  // OSM commonly splits a bridge at every carriageway crossed below. Each piece then gets its own mitered
-  // ribbon, which leaves hairline wedges at slightly bent joins. Record straight, same-road deck joins so a
-  // small cap can stitch the pieces at their supplied elevation without creating a ground-level junction.
+  // OSM commonly splits elevated roads at bridge/ramp transitions and at carriageways crossed below. Each
+  // piece gets its own mitered ribbon, leaving wedges at joins. Record deck-bearing joins so a small cap can
+  // stitch the pieces at their supplied elevation without creating a ground-level junction.
   for (const f of feats) {
     const p = f.properties;
-    if (!p.bridge || p.tunnel || MINOR.has(p.highway)) continue;
+    if ((!p.bridge && !p.ramp) || p.tunnel || (MINOR.has(p.highway) && !FOOT_MINOR.has(p.highway))) continue;
     const deck = parseDeck(p.deck);
     if (!deck) continue;
     for (const l of lines(f.geometry)) {
@@ -286,7 +303,7 @@ export function buildRoads(
         j.ends.push({
           dir: new THREE.Vector2(next[0] - end[0], next[1] - end[1]).normalize(), halfW: p.width / 2,
           walk: carriesGeneratedSidewalk(p),
-          highway: p.highway, name: p.name,
+          highway: p.highway, name: p.name, ramp: !!p.ramp,
         });
         bridgeJunctions.set(k, j);
       }
@@ -355,7 +372,7 @@ export function buildRoads(
       const walk = carriesGeneratedSidewalk(p);
       if (p.bridge || p.ramp) {
         const rdeck = p.bridge ? deck : parseDeck(p.deck);
-        const base = toPath(l, toLocal, groundAt, ROAD_Y - 0.06 + lift, SEG, rdeck, !!p.ramp && !p.bridge);
+        const base = toPath(l, toLocal, groundAt, ROAD_Y - 0.06 + lift, roadStep(p.highway), rdeck, !!p.ramp && !p.bridge);
         const edge = walk && sidewalkSides(p).length ? WALK_W : DECK_EDGE;
         for (const side of [-1, 1]) {
           // Pavement supplies the deck surface. A wider concrete underlay can
@@ -411,14 +428,21 @@ export function buildRoads(
         const x = j.pt.x + Math.cos(a) * radius, z = j.pt.z + Math.sin(a) * radius;
         return new THREE.Vector3(x, groundLocal(x, z) + lift, z);
       });
-      for (let i = 0; i < ring.length; i++) mb.tri(center, ring[(i + 1) % ring.length], ring[i], color, UP, shade);
+      const emit = (a: THREE.Vector3, b: THREE.Vector3, c: THREE.Vector3) => mb.tri(a, b, c, color, UP, shade);
+      const surface = draped(lift);
+      for (let i = 0; i < ring.length; i++) {
+        conformTriangle(center, ring[(i + 1) % ring.length], ring[i], surface, emit);
+      }
     };
-    fill(halfW + 0.2, ROAD_Y + 0.015, asphalt, 1);
+    // Crossing through-roads already overlap at four-way nodes. A redundant circular cap makes an ordinary
+    // crossing resemble a roundabout; reserve the stitch for three-arm junctions with an ending approach.
+    if (uniqueRoad.length === 3) fill(halfW + 0.2, ROAD_Y + 0.015, asphalt, 1);
   }
   for (const j of bridgeJunctions.values()) {
     if (j.ends.length !== 2) continue;
     const [a, b] = j.ends;
-    if (a.highway !== b.highway || a.name !== b.name || Math.abs(a.halfW - b.halfW) > 0.3 || a.dir.dot(b.dir) > -0.98) continue;
+    const transition = a.ramp !== b.ramp;
+    if (a.highway !== b.highway || (!transition && a.name !== b.name) || Math.abs(a.halfW - b.halfW) > 0.3 || a.dir.dot(b.dir) > -0.94) continue;
     const fill = (radius: number, y: number, color: THREE.Color, shade: number) => {
       const center = j.pt.clone().setY(y);
       const ring = Array.from({ length: 12 }, (_, i) => {
@@ -427,7 +451,6 @@ export function buildRoads(
       });
       for (let i = 0; i < ring.length; i++) mb.tri(center, ring[(i + 1) % ring.length], ring[i], color, UP, shade);
     };
-    if (a.walk && b.walk) fill(a.halfW + WALK_W, j.pt.y + ROAD_Y - 0.06, concrete, 0.98);
     fill(a.halfW + 0.2, j.pt.y + ROAD_Y + 0.015, asphalt, 1);
   }
 
@@ -438,7 +461,7 @@ export function buildRoads(
     const lift = p.bridge ? bridgeLift(p.layer) : 0;
     const deck = p.bridge || p.ramp ? parseDeck(p.deck) : null;
     for (const l of lines(f.geometry)) {
-      let path = toPath(l, toLocal, groundAt, (minor ? ROAD_Y - 0.04 : ROAD_Y) + lift, SEG, deck, !!p.ramp && !p.bridge);
+      let path = toPath(l, toLocal, groundAt, (minor ? ROAD_Y - 0.04 : ROAD_Y) + lift, roadStep(p.highway), deck, !!p.ramp && !p.bridge);
       if (path.length < 2) continue;
       const carPath = path; // un-extended: endpoints sit on the OSM node so the traffic graph can join ways
       if ((!minor || PAVED_MINOR.has(p.highway)) && !deck) {
@@ -450,21 +473,20 @@ export function buildRoads(
         ? {fraction: Math.min(p.bus_lanes/p.lanes,1),side:p.bus_lane_side,color:busColor} : undefined;
       // Roadside sidewalk centerlines remain pedestrian paths, while the road emits the one visible curb strip.
       // Drawing both makes the intervening terrain verge read as a second sidewalk in the compact palette.
-      if (p.footway !== 'crossing' && p.footway !== 'sidewalk') ribbon(mb, path, p.width / 2, p.bus_only || p.highway === 'busway' ? busColor : minor && p.highway !== 'service' && p.highway !== 'living_street' ? (TRAIL.has(p.highway) ? dirt : sidewalk) : asphalt, minor ? 0.94 : 1, deck && p.bridge ? undefined : draped((minor ? ROAD_Y - 0.04 : ROAD_Y) + lift), busStripe);
+      if (p.footway !== 'crossing') ribbon(mb, path, p.width / 2, p.bus_only || p.highway === 'busway' ? busColor : minor && p.highway !== 'service' && p.highway !== 'living_street' ? (TRAIL.has(p.highway) && !p.bridge ? dirt : sidewalk) : asphalt, minor ? 0.94 : 1, deck && p.bridge ? undefined : draped((minor ? ROAD_Y - 0.04 : ROAD_Y) + lift), busStripe);
       // Sunken freeways otherwise expose the DEM's coarse, faceted shoulder. Add a short
       // retaining edge only where the adjacent ground rises materially above the pavement.
       if (!minor && !deck && ['motorway', 'motorway_link', 'trunk', 'trunk_link'].includes(p.highway)) {
         for (const side of [-1, 1]) {
           const edge = offsetPath(path, side * p.width / 2);
+          const outside = edge.map((point, i) => point.clone().sub(path[i]).setY(0).normalize());
+          const adjacent = edge.map((point, i) => groundLocal(point.x + outside[i].x * 6, point.z + outside[i].z * 6));
+          const profile = retainingProfile(edge.map(point => point.y), adjacent);
           for (let i = 0; i < edge.length - 1; i++) {
             const a = edge[i], b = edge[i + 1];
-            const oa = a.clone().sub(path[i]).setY(0).normalize();
-            const ob = b.clone().sub(path[i + 1]).setY(0).normalize();
-            const ga = groundLocal(a.x + oa.x * 6, a.z + oa.z * 6);
-            const gb = groundLocal(b.x + ob.x * 6, b.z + ob.z * 6);
-            const ta = Math.max(a.y, ga);
-            const tb = Math.max(b.y, gb);
-            if (ta - a.y < 0.45 && tb - b.y < 0.45) continue;
+            if (!profile.active[i] && !profile.active[i + 1]) continue;
+            const oa = outside[i], ob = outside[i + 1];
+            const ta = profile.tops[i], tb = profile.tops[i + 1];
             const aWall = a.clone().addScaledVector(oa, 0.18);
             const bWall = b.clone().addScaledVector(ob, 0.18);
             const aTop = aWall.clone().setY(ta + 0.06), bTop = bWall.clone().setY(tb + 0.06);
@@ -480,7 +502,10 @@ export function buildRoads(
         carMeta.push({ oneway: !!p.oneway, width: p.width, highway: p.highway, lanes: p.lanes ?? (p.oneway ? 1 : 2), bridge: !!p.bridge, ramp: !!p.ramp, wayId: p.id });
       }
       if (minor && FOOT_MINOR.has(p.highway)) walkPaths.push(path);
-      if ((p.bridge || p.ramp) && !minor && opts.bridges !== false) bridgeFurniture(mb, path, p.width / 2 + 2.2, (v) => groundAt(v.x + originX, -v.z + originY), concrete, occupiedRoad(p.id));
+      if ((p.bridge || p.ramp) && (!minor || FOOT_MINOR.has(p.highway)) && opts.bridges !== false) {
+        const furnitureHalfWidth = p.width / 2 + (minor ? 0.15 : 2.2);
+        bridgeFurniture(mb, path, furnitureHalfWidth, (v) => groundAt(v.x + originX, -v.z + originY), concrete, minor ? undefined : occupiedRoad(p.id));
+      }
     }
   }
 
@@ -491,16 +516,24 @@ export function buildRoads(
     const lift = p.bridge ? bridgeLift(p.layer) : 0;
     const deck = p.bridge || p.ramp ? parseDeck(p.deck) : null;
     for (const l of lines(f.geometry)) {
-      const path = toPath(l, toLocal, groundAt, ROAD_Y + 0.02 + lift, SEG, deck, !!p.ramp && !p.bridge);
-      if (path.length < 2) continue;
-      const lanes = p.lanes ?? (p.oneway ? 1 : 2);
-      if (!p.oneway && lanes >= 2) dashes(mb, path, 0.12, paint, 3, 6);
-      if (lanes >= 3) {
-        // lane dividers at +-laneW from the centre for 3-4 lanes
-        const laneW = Math.min(3.5, p.width / lanes);
-        for (const off of lanes >= 4 ? [laneW, -laneW] : [p.oneway ? 0 : laneW * 0.5]) {
-          if (off === 0) continue;
-          dashes(mb, offsetPath(path, off), 0.1, paint, 2, 4, 1);
+      const source = cleanRing(l);
+      for (const chunk of deck ? [source] : splitAtJunctions(source)) {
+        let path = toPath(chunk, toLocal, groundAt, ROAD_Y + 0.02 + lift, roadStep(p.highway), deck, !!p.ramp && !p.bridge);
+        if (path.length < 2) continue;
+        if (!deck) {
+          const [d0, d1] = endDirs(chunk);
+          path = adjustEnds(path, -otherClearance(chunk[0], p.width / 2, d0, 0.8),
+            -otherClearance(chunk[chunk.length - 1], p.width / 2, d1, 0.8));
+        }
+        const lanes = p.lanes ?? (p.oneway ? 1 : 2);
+        if (!p.oneway && lanes >= 2) dashes(mb, path, 0.12, paint, 3, 6);
+        if (lanes >= 3) {
+          // lane dividers at +-laneW from the centre for 3-4 lanes
+          const laneW = Math.min(3.5, p.width / lanes);
+          for (const off of lanes >= 4 ? [laneW, -laneW] : [p.oneway ? 0 : laneW * 0.5]) {
+            if (off === 0) continue;
+            dashes(mb, offsetPath(path, off), 0.1, paint, 2, 4, 1);
+          }
         }
       }
     }
@@ -528,6 +561,10 @@ export function buildRoads(
     const [x, y] = c.geometry.coordinates;
     const [lx, lz] = toLocal(x, y);
     const p = c.properties;
+    const markings = p.crossing_markings;
+    // Signals/control describe right-of-way, not paint. Without an explicit marking tag (or the older
+    // crossing=marked/zebra shorthand), retain pedestrian connectivity but do not invent road markings.
+    if (markings == null && p.crossing !== 'marked' && p.crossing !== 'zebra') continue;
     const hasTopology = p.road_x != null && p.road_y != null && p.road_width != null && p.road_dx != null && p.road_dy != null;
     const near = hasTopology
       ? (() => {
@@ -546,11 +583,11 @@ export function buildRoads(
     // A zebra consists of short, regularly spaced bars along the road direction,
     // each one spanning the road from curb to curb.
     const crossingDepth = Math.min(4.2, Math.max(2.8, near.width * 0.55));
-    const markings = c.properties.crossing_markings;
     // Only draw a zebra where OSM identifies one. Unknown/unspecified marked crossings use the neutral US
     // transverse pair instead of inventing dense zebra bars at every signalized intersection.
+    const zebra = markings === 'zebra' || p.crossing === 'zebra';
     const zebraBars = Math.max(4, Math.round(crossingDepth / 0.7));
-    const offsets = markings === 'zebra'
+    const offsets = zebra
       ? Array.from({ length: zebraBars }, (_, s) => (s - (zebraBars - 1) / 2) * 0.7)
       : markings === 'lines:paired'
         ? [-crossingDepth / 2, -crossingDepth / 2 + 0.35, crossingDepth / 2 - 0.35, crossingDepth / 2]
@@ -560,7 +597,7 @@ export function buildRoads(
       const centre = new THREE.Vector3(cx, gy, cz).add(off);
       const a = centre.clone().addScaledVector(side, -(near.width / 2 - 0.2));
       const b = centre.clone().addScaledVector(side, near.width / 2 - 0.2);
-      ribbon(mb, [a, b], markings === 'zebra' ? 0.28 : 0.12, paint);
+      ribbon(mb, [a, b], zebra ? 0.28 : 0.12, paint);
     }
     if (p.crossing_island && near.width >= 8) {
       const islandHalf = crossingDepth / 2 + 0.65;

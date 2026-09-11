@@ -98,6 +98,8 @@ def test_roads(terrain):
     roads, crossings = process_roads(FIXTURES / "osm" / "roads.parquet", terrain)
     assert len(roads) > 0
     assert (roads["width"] > 0).all()
+    assert str(roads["sidewalk_left"].dtype) == "boolean"
+    assert str(roads["sidewalk_right"].dtype) == "boolean"
     problems = _validate_all("roads", roads) + _validate_all("crossings", crossings)
     assert not problems, problems[:10]
 

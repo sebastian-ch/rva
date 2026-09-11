@@ -240,6 +240,73 @@ def carpenter_theatre(b, fp):
     b.band(fp["ring"], 12, 0.4, 0.8, "terracotta", 0.95)
 
 
+def _facade_pixels(b, f, text, front_u, center_v, z0, pixel, key, vertical=False):
+    """Chunky 3x5 sign lettering that stays legible after the landmark mesh is merged."""
+    glyphs = {
+        "B": ("110", "101", "110", "101", "110"),
+        "Y": ("101", "101", "010", "010", "010"),
+        "R": ("110", "101", "110", "101", "101"),
+        "D": ("110", "101", "101", "101", "110"),
+    }
+    runs = list(text) if vertical else [text]
+    for run_index, run in enumerate(runs):
+        width = (len(run) * 4 - 1) * pixel
+        base_z = z0 - run_index * pixel * 6 if vertical else z0
+        for letter_index, letter in enumerate(run):
+            for row, bits in enumerate(glyphs[letter]):
+                for col, bit in enumerate(bits):
+                    if bit == "0":
+                        continue
+                    v = center_v - width / 2 + (letter_index * 4 + col + 0.5) * pixel
+                    z = base_z + (4 - row) * pixel
+                    b.box(*f.P(front_u - 0.08, v), z, pixel * 0.78, 0.16, pixel * 0.78,
+                          key, rot=f.rot_v, shade=1.02, name="sign-letter")
+
+
+def byrd_theatre(b, fp):
+    """Cary Street façade: brick auditorium, limestone ornament, marquee and historic blade sign.
+
+    Visual references: the public-domain 2023 exterior photograph on Wikimedia Commons and the Byrd
+    Theatre Foundation's history/restoration pages, which identify the marquee and two-storey BYRD blade.
+    """
+    f = Frame(fp)
+    height = max(17.0, min(19.0, fp.get("height", 18.0)))
+    b.extrude(fp["ring"], -0.5, height, "brick_dark", 0.88, name="auditorium")
+    b.band(fp["ring"], height - 0.7, 0.35, 0.7, "brick", 0.78)
+    b.extrude(fp["ring"], height, height + 0.35, "roof_dark", 0.9, name="flat-roof")
+
+    front = -f.hl
+    facade_width = min(2 * f.hs - 0.8, 24.0)
+
+    def front_box(v, z, width, depth, tall, key, shade=1.0, name=None):
+        return b.box(*f.P(front - depth / 2, v), z, width, depth, tall, key,
+                     rot=f.rot_v, shade=shade, name=name)
+
+    # Pale upper-storey ornament and the three tall window compositions visible above the marquee.
+    front_box(0, 12.7, facade_width, 0.32, 0.65, "cream", 0.9, "ornament-band")
+    for v, width, tall in ((-6.2, 2.5, 5.0), (0, 3.3, 5.8), (6.2, 2.5, 5.0)):
+        front_box(v, 7.4, width + 0.7, 0.34, tall + 0.7, "cream", 0.92, "window-surround")
+        front_box(v, 7.75, width, 0.48, tall, "roof_dark", 0.82, "upper-window")
+        front_box(v, 9.8, 0.16, 0.52, tall - 0.8, "cream", 0.92, "window-mullion")
+
+    # Deep pressed-metal canopy, reader board, entrance glazing and the rooftop BYRD letters.
+    marquee_width = min(facade_width - 1.5, 18.0)
+    front_box(0, 3.35, marquee_width, 4.2, 0.65, "cream", 0.88, "marquee-canopy")
+    front_box(-2.0, 4.0, marquee_width * 0.72, 4.45, 2.7, "cream", 0.96, "reader-board")
+    front_box(-2.0, 4.25, marquee_width * 0.65, 4.62, 0.12, "roof_dark", 0.8, "reader-line")
+    front_box(-2.0, 5.9, marquee_width * 0.65, 4.62, 0.12, "roof_dark", 0.8, "reader-line")
+    _facade_pixels(b, f, "BYRD", front - 4.72, -2.0, 6.95, 0.38, "brick_dark")
+    for v in (-4.5, -2.25, 0, 2.25, 4.5):
+        front_box(v, 0.15, 1.75, 0.38, 3.0, "roof_dark", 0.72, "entrance-glass")
+        front_box(v, 0.15, 0.12, 0.52, 3.0, "cream", 0.9, "door-mullion")
+
+    # The restored historic profile includes a tall vertical sign; a narrow low-poly blade gives the
+    # landmark its recognisable silhouette without relying on a texture or external font.
+    blade_v = -min(f.hs - 2.0, 8.5)
+    front_box(blade_v, 7.0, 2.3, 1.0, 10.0, "brick_dark", 0.82, "byrd-blade")
+    _facade_pixels(b, f, "BYRD", front - 1.08, blade_v, 14.4, 0.28, "landmark_accent", vertical=True)
+
+
 def cabell_library(b, fp):
     f = Frame(fp)
     b.extrude(fp["ring"], -0.5, 13, "glass", 0.95, name="podium")
@@ -257,6 +324,7 @@ BUILDERS = {
     "dominion-energy-tower-600-canal-place": dominion_tower,
     "altria-theater": altria_theater,
     "carpenter-theatre-dominion-energy-center": carpenter_theatre,
+    "byrd-theatre": byrd_theatre,
     "vcu-cabell-library": cabell_library,
 }
 

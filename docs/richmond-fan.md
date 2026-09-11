@@ -109,7 +109,7 @@ duplicates and building/water conflicts. The wide-view browser check rendered al
 tree instances; the initial view also retained trees on reduced-detail tiles. This is a rendering
 check, not a claim that every real tree was surveyed or detected.
 
-Validation: 135 Python tests passed (seven fixture-dependent tests skipped), 180 frontend tests
+Validation: 139 Python tests passed (seven fixture-dependent tests skipped), 195 frontend tests
 passed, and generated-feature schema validation reported zero problems. Fan browser checks cover
 five locations, Hanover address search, five styles and mobile controls. The mobile selection card
 now sits above the toolbar, and unspecified `building=yes` records are labeled “Building”.
@@ -117,3 +117,10 @@ The downtown geometry review also passed; its Federal Reserve freeway and Shocko
 retain the earlier road-draping and footprint-contained roof corrections.
 Screenshots show stylized rowhouse volumes and measured canopy placement; detailed historic
 facades, species-specific crowns and exact roof ornamentation remain approximations.
+
+Two Carytown storefronts use full-detail procedural treatments tied to their exact OSM footprints:
+the 3301 West Cary Street 7-Eleven and the 3410 West Cary Street McDonald's. The latter follows the
+user-provided overhead, Cary-facing and east-elevation references; see `mcdonalds-cary-facade.md`.
+The Byrd Theatre now uses a dedicated low-poly landmark GLB based on its mapped footprint and public
+facade/history references. These additions improve recognition at normal map scale and do not claim
+surveyed facade dimensions.

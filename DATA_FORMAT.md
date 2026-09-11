@@ -63,7 +63,8 @@ Geometry is clipped to the tile bbox. All layers optional; missing = empty.
 
 Optional road attributes: `generated_sidewalk` (the pipeline's normalized curb-strip eligibility),
 `sidewalk_left` / `sidewalk_right` (boolean or null; false also covers
-an explicitly absent side; a mapped `separate` side is normalized true because its source line is navigation-only),
+an explicitly absent side or a side replaced by a parallel mapped sidewalk; mapped `footway=sidewalk` lines
+provide both the visible surface and pedestrian navigation),
 `footway` (OSM subtype, including crossing), `bus_only` (boolean),
 `bus_lanes` (count), and `bus_lane_side` (`left`/`right` or null). Count alone does not imply lane placement.
 Richmond downtown Broad Street's tagged one-way bus lanes use the documented curbside configuration.

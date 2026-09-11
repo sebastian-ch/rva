@@ -107,6 +107,20 @@ from at-grade sidewalk junction registration; do not extend supplied deck strips
 Both cases have focused regressions in [roads.test.ts](../web/src/roads.test.ts) and saved diagnostic
 locations in [review-geometry.mjs](../web/tools/review-geometry.mjs).
 
+OSM may split one sloping elevated route where a ground-supported ramp meets a bridge and change the way name
+at that boundary. Treat two deck-bearing segments with the same road class, nearly opposed directions and a
+shared endpoint as one elevated join even across that bridge/ramp or name transition. Stitch both pavement and
+the narrow pavement cap at the supplied endpoint height; separately mapped walkable edges remain independent.
+South 2nd Street and the I-95 northbound transition are
+Richmond regressions; this does not join nearby endpoints or roads at different elevations.
+
+Apply grade separation before surface-class shortcuts. An OSM pedestrian bridge can be tagged
+`highway=path`, `bridge=yes`, `layer=1` with a valid deck profile. Treating every path as a ground trail before
+checking `bridge` leaves the crossing visually at grade and omits its railings. Render paved bridge paths from
+their deck profile, stitch clipped deck segments, and add pedestrian-width bridge furniture. This preserves the
+recorded structure; it does not infer accessibility, stairs, or a surveyed railing design. The Parkwood Avenue
+footbridge over the Downtown Expressway is the Richmond regression, covered by [roads.test.ts](../web/src/roads.test.ts).
+
 ### Preserve road access and pedestrian subtypes
 
 Broad Street/I-95 still had duplicate beige edges because `sidewalk:left=no` and
@@ -129,8 +143,9 @@ order and runtime nearest-road ambiguity. `crossing=unmarked` remains pedestrian
 Complex plazas, divided carriageways and crossings without a nearby motor road can still require explicit
 way-node relationships; unmatched crossings retain the runtime fallback for older tile sets.
 Preserve `crossing:markings`: render zebra bars only for explicit `zebra`, honor explicit `no`, and use a
-neutral transverse pair when a marked or signalized crossing has no stated pattern. Treating every signalized
-crossing as zebra produces dense, misleading fans on divided approaches such as Broad Street near Gilmer.
+neutral transverse pair for an explicit `crossing=marked` without a stated pattern. Signal/control values such
+as `traffic_signals` and `uncontrolled` do not prove that paint exists; leave them unpainted when markings are
+absent. Invented bars produce dense, misleading fans at Floyd/Harvie and divided Broad Street approaches.
 Do not infer stop lines from a crossing node: those markings need their own source evidence, and adding
 two full-width bars to every crossing creates dense false markings at ordinary intersections.
 Render refuge islands only from `crossing:island=yes`; lane count alone does not prove that a median exists.
@@ -163,14 +178,29 @@ sidewalk underlay also works poorly because its exposed sectors resemble islands
 one until real curb polygons are available. Cary/Dooley and Floyd/Harvie are Richmond regressions for these
 limits. Nearly duplicated source arms can inflate a raw arm count, so classify junctions from distinct directions
 rather than count alone.
+Do not render a citywide paved-surface dataset as an unconditional terrain underlay without classifying and
+simplifying it first. Richmond's Roads polygons roughly tripled dense-tile triangles and painted highway-adjacent
+land because the source's paved extent and the viewer's semantic surface classes do not align one-for-one. Use
+the polygons to derive targeted junction masks or a canonical classified surface, with OSM retained for access,
+grade and pedestrian semantics.
 Separately mapped `footway=sidewalk` lines can exist beside roads whose sidewalk tags are absent rather than
 `sidewalk=separate`. Drawing both the generated curb strip and offset mapped ribbon produces a real duplicate;
-suppressing the curb strip still leaves a same-colour terrain verge that reads as a second sidewalk. In this
-compact low-poly style, keep mapped sidewalk lines as pedestrian navigation paths but omit their surface ribbon;
-draw one consistent visible sidewalk from the road. This trades exact verge/setback placement for clear street
-silhouettes and remains unsuitable where the precise pedestrian alignment must be visible. The South Meadow
-Street grid is the Richmond regression area. A nearby `footway=crossing` remains a distinct pedestrian connection
-and must not be treated as a roadside sidewalk.
+suppressing every mapped surface loses exact corners at fully mapped intersections. Measure parallel overlap on
+each road side: where a mapped sidewalk covers that side, suppress only the generated strip and render the mapped
+line; keep the generated strip on uncovered sides. A nearby `footway=crossing` remains a distinct pedestrian
+connection and must not count as roadside coverage. South Meadow Street and Floyd/Harvie are Richmond regressions.
+Keep those per-side flags as a nullable Boolean dtype through GeoJSON export. Mixing Python booleans and nulls in
+an object column caused Fiona to serialize `False` as the truthy string `"False"`; strict renderer comparisons then
+silently re-enabled every suppressed strip. Normalize to nullable booleans before writing and assert the processed
+schema, rather than teaching each consumer to recognize malformed strings.
+
+Lane-center dashes must stop at the same topology-derived junction boundary as sidewalks. Continuing two dashed
+centerlines through an oblique crossing creates a pale star that resembles a traffic island or roundabout even
+when the asphalt is correct. Floyd/Harvie is the regression location; this rule does not suppress explicit
+crosswalk or stop-line markings.
+At a four-arm crossing the trimmed road ribbons already cover the center. Adding the same circular cap used to
+close a three-arm T junction makes an ordinary intersection resemble a roundabout. Emit the cap only for the
+topology that needs it; true roundabouts remain mapped ways rather than inferred discs.
 Regressions: `pipeline/tests/test_process_helpers.py` covers topology matching;
 `pipeline/tests/test_build_tiles.py` covers reusable tile clipping; `web/src/roads.test.ts` covers topology
 placement, islands, rounded fills, centering, curb-pair deduplication, unmarked crossings, paved service-road T
@@ -188,10 +218,18 @@ bridge decks also use exposed concrete edge strips rather than overlapping full-
 otherwise different branch grades can expose large concrete wedges over the asphalt.
 OSM may divide one straight bridge into separate tagged ways at each carriageway below. Rendering every way
 as an independent mitered ribbon leaves thin wedges at their shared deck nodes. At a degree-two join, stitch
-the pieces with small concrete and asphalt caps only when their name, road class, width and direction agree;
+the pieces with a small pavement cap only when their name, road class, width and direction agree;
 place the caps at the supplied deck elevation. Do not cap branches, sharp turns, mismatched roads or untagged
 ground-level joins. South Meadow Street over the Downtown Expressway is the Richmond regression case.
 Regressions: `pipeline/tests/test_road_attributes.py`, `web/src/roads.test.ts`.
+
+Sunken freeway cuts expose every bend in a coarsely sampled road edge and retaining face. Resample freeway and
+link centerlines at 4 m before building pavement, markings and cut walls while ordinary streets retain the wider
+8 m step. Smooth the retaining crest over a broad longitudinal window and close isolated threshold gaps; using
+each adjacent DEM sample directly produces a sawtooth wall even with dense sampling. This smooths renderer
+geometry without inventing a surveyed retaining-wall outline, modifying the DEM, or changing the rail lines that
+may run beside the road. Cumberland Street and the Beltline Expressway below Monument Avenue are Richmond
+regressions, protected by spacing/profile checks in [roads.test.ts](../web/src/roads.test.ts).
 
 ## 4. Elevation sources must be replaced as a dependency chain
 
@@ -332,6 +370,9 @@ footprint than by a generic marketplace building. Preserve the source footprint 
 the high-signal massing and color cues visible at map scale, keep the treatment out of reduced-detail
 tiles, and avoid bundling reference photos as textures. The 3301 West Cary Street 7-Eleven uses this
 pattern in `web/src/buildings.ts`; its user-provided photo is documented in `docs/7-eleven-facade.md`.
+The 3410 West Cary Street McDonald's uses the same approach, with the short south end treated as the Cary
+storefront and the long east wall handled separately; assuming the OBB long edge was the front initially put the
+entrance treatment on the wrong face. Its references and limits are in `docs/mcdonalds-cary-facade.md`.
 This is suitable for one-off low commercial buildings; repeated chains should eventually use a
 shared asset definition rather than more address-specific branches.
 

@@ -564,6 +564,33 @@ def _road_width(row: pd.Series) -> float:
     return round(w, 1)
 
 
+def _mapped_sidewalk_sides(lines: gpd.GeoDataFrame) -> pd.DataFrame:
+    """Find road sides already represented by a nearby, parallel OSM sidewalk way."""
+    out = pd.DataFrame(False, index=lines.index, columns=["left", "right"])
+    if len(lines) == 0 or "footway" not in lines:
+        return out
+    mapped = lines[(lines["highway"] == "footway") & (lines["footway"] == "sidewalk")]
+    if len(mapped) == 0:
+        return out
+    index = mapped.sindex
+    for idx, row in lines.iterrows():
+        if not _generated_sidewalk(row) or row.geometry.is_empty:
+            continue
+        width = _road_width(row)
+        minimum = min(12.0, max(4.0, row.geometry.length * 0.2))
+        for side, sign in (("left", 1), ("right", -1)):
+            offset = row.geometry.offset_curve(sign * (width / 2 + 1.1))
+            if offset.is_empty:
+                continue
+            corridor = offset.buffer(2.2, cap_style="flat")
+            hits = list(index.query(corridor, predicate="intersects"))
+            if not hits:
+                continue
+            covered = sum(mapped.iloc[i].geometry.intersection(corridor).length for i in hits)
+            out.at[idx, side] = covered >= minimum
+    return out
+
+
 WATER_REL_Z = 2.0        # endpoints lower than this (m above base) are over the river, not on a bank
 LIDAR_TRUST_SAMPLES = 10  # nDSM cells inside the footprint before LiDAR outranks Overture
 CONNECTOR_MAX_M = 450.0  # non-bridge stretch between two bridge chains (an island, a pier) treated as deck
@@ -809,7 +836,7 @@ def process_roads(raw_path: Path, terrain=None) -> tuple[gpd.GeoDataFrame, gpd.G
         return empty, empty
     lines = raw[raw.geometry.geom_type.isin(["LineString", "MultiLineString"])].copy()
     lines = lines[~lines["highway"].isin(["proposed", "construction", "raceway", "corridor", "elevator", "bus_stop", "platform"])]
-    lines = lines.explode(index_parts=False)
+    lines = lines.explode(index_parts=False).reset_index(drop=True)
     if "area" in lines:
         lines = lines[lines["area"].fillna("no") != "yes"]
     deck, connectors = _deck_endpoints(lines, terrain)
@@ -818,6 +845,15 @@ def process_roads(raw_path: Path, terrain=None) -> tuple[gpd.GeoDataFrame, gpd.G
         bridge_flag = bridge_flag.copy()
         bridge_flag.loc[connectors] = True
     deck, ramp_flag = _ramp_decks(lines, deck, bridge_flag, terrain)
+    mapped_sides = _mapped_sidewalk_sides(lines)
+    sidewalk_left = lines.apply(lambda row: _render_sidewalk_side(row, "left"), axis=1)
+    sidewalk_right = lines.apply(lambda row: _render_sidewalk_side(row, "right"), axis=1)
+    sidewalk_left = sidewalk_left.mask(mapped_sides["left"], False)
+    sidewalk_right = sidewalk_right.mask(mapped_sides["right"], False)
+    # Object columns containing bool + None are serialized by Fiona as the strings "True"/"False".
+    # Preserve the nullable boolean contract so the renderer does not silently re-enable a disabled side.
+    sidewalk_left = sidewalk_left.astype("boolean")
+    sidewalk_right = sidewalk_right.astype("boolean")
     roads = gpd.GeoDataFrame({
         "id": lines.apply(_osm_id, axis=1),
         "name": lines["name"].map(_nn) if "name" in lines else None,
@@ -827,8 +863,8 @@ def process_roads(raw_path: Path, terrain=None) -> tuple[gpd.GeoDataFrame, gpd.G
         "oneway": (lines["oneway"].fillna("no") == "yes") if "oneway" in lines else False,
         "surface": lines["surface"].map(_nn) if "surface" in lines else None,
         "footway": lines["footway"].map(_nn) if "footway" in lines else None,
-        "sidewalk_left": lines.apply(lambda row: _render_sidewalk_side(row, "left"), axis=1),
-        "sidewalk_right": lines.apply(lambda row: _render_sidewalk_side(row, "right"), axis=1),
+        "sidewalk_left": sidewalk_left,
+        "sidewalk_right": sidewalk_right,
         "generated_sidewalk": lines.apply(_generated_sidewalk, axis=1),
         "bus_lanes": lines["lanes:bus"].map(parse_levels) if "lanes:bus" in lines else None,
         "bus_lane_side": lines.apply(lambda row: "right" if REGION == "richmond" and

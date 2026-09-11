@@ -6,7 +6,7 @@ import geopandas as gpd
 from shapely.geometry import LineString, Point
 
 from config import LANE_WIDTH
-from process import (_generated_sidewalk, _landuse_kind, _match_crossings_to_roads, _nn, _poi_kind,
+from process import (_generated_sidewalk, _landuse_kind, _mapped_sidewalk_sides, _match_crossings_to_roads, _nn, _poi_kind,
                      _render_sidewalk_side, _road_width)
 
 
@@ -93,6 +93,16 @@ def test_residential_road_retains_sidewalk_source_state():
     assert _render_sidewalk_side(pd.Series({"highway": "residential"}), "left") is None
     assert _render_sidewalk_side(pd.Series({"highway": "residential", "sidewalk:left": "no"}), "left") is False
     assert _render_sidewalk_side(pd.Series({"highway": "residential", "sidewalk:right": "separate"}), "right") is True
+
+
+def test_mapped_sidewalk_suppresses_only_the_matching_generated_side():
+    lines = gpd.GeoDataFrame([
+        {"highway": "residential", "footway": None, "geometry": LineString([(0, 0), (40, 0)])},
+        {"highway": "footway", "footway": "sidewalk", "geometry": LineString([(0, 4.6), (40, 4.6)])},
+    ], crs="EPSG:32618")
+    sides = _mapped_sidewalk_sides(lines)
+    assert sides.loc[0, "left"]
+    assert not sides.loc[0, "right"]
 
 
 def test_crossing_topology_prefers_road_perpendicular_to_crossing_footway():
