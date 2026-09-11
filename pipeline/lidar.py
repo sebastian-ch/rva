@@ -92,6 +92,20 @@ FOOTPRINT_PAD = 2.0  # m; keep cells this far outside a footprint so edge cells 
 CACHE_VERSION = 2
 
 
+def cloud_origin(d) -> tuple[float, float]:
+    """Coordinates in a lidar npz are float32 offsets from this origin.
+
+    Files written before that change store absolute UTM values, whose float32 northings near 4.15e6
+    quantize to 0.25 m; they still load, just at the old precision, and re-running `fetch_lidar.py`
+    rewrites them from the cached EPT nodes without downloading anything again.
+    """
+    files = d.files if hasattr(d, "files") else d
+    if "origin" in files:
+        ox, oy = d["origin"]
+        return float(ox), float(oy)
+    return 0.0, 0.0
+
+
 def surface_points(p: np.ndarray, cell: float = SURFACE_CELL) -> np.ndarray:
     """Top surface of a cloud: the highest point in each cell x cell bin. Removes facade returns and the
     density bias of dense clouds so the plane fits see one sample per roof cell."""
@@ -150,6 +164,7 @@ def _reduce_cloud(npz_path: Path, buildings: gpd.GeoDataFrame | None,
     """Whole-cloud top-per-cell surface, restricted to cells near a footprint when one is given."""
     d = np.load(npz_path)
     x, y, z = d["x"], d["y"], d["z"]
+    ox, oy = cloud_origin(d)
     cls = d["c"] if "c" in d.files else None
     mask = col0 = row0 = None
     if buildings is not None and len(buildings):
@@ -159,14 +174,16 @@ def _reduce_cloud(npz_path: Path, buildings: gpd.GeoDataFrame | None,
         e = min(s + chunk, len(x))
         keep = np.ones(e - s, bool) if cls is None else ~np.isin(cls[s:e], NON_ROOF_CLASSES)
         if mask is not None:
-            col = np.floor(x[s:e] / cell).astype(np.int64) - col0
-            row = np.floor(y[s:e] / cell).astype(np.int64) - row0
+            col = np.floor((x[s:e] + ox) / cell).astype(np.int64) - col0
+            row = np.floor((y[s:e] + oy) / cell).astype(np.int64) - row0
             inside = (col >= 0) & (col < mask.shape[1]) & (row >= 0) & (row < mask.shape[0])
             keep &= inside
             if keep.any():
                 keep[keep] = mask[row[keep], col[keep]]
         if keep.any():
-            kept.append(np.c_[x[s:e][keep], y[s:e][keep], z[s:e][keep]].astype(np.float64))
+            kept.append(np.c_[x[s:e][keep].astype(np.float64) + ox,
+                              y[s:e][keep].astype(np.float64) + oy,
+                              z[s:e][keep].astype(np.float64)])
     del d, x, y, z, cls
     if not kept:
         return np.zeros((0, 3), np.float64)

@@ -27,6 +27,7 @@ import numpy as np
 import requests
 
 from config import CRS_PROJ, DATA_RAW, DEFAULT_BBOX, bbox_slug
+from lidar import cloud_origin
 
 SOURCES = {
     # NOAA OCM InPort 80312, "2025 City of Richmond Lidar" (CC0). Depth 8 ~ 10 pts/m2 over the default bbox
@@ -128,6 +129,11 @@ def read_points(paths: list[Path], bbox_proj, src_crs: str = "EPSG:3857") -> dic
     tr = Transformer.from_crs(src_crs, CRS_PROJ, always_xy=True)
     xs, ys, zs, cs = [], [], [], []
     minx, miny, maxx, maxy = bbox_proj
+    # Store coordinates as offsets from this origin. A UTM northing near 4.15e6 held in float32 quantizes
+    # to a 0.25 m lattice -- coarser than the roof planes fitted from these points, and anisotropic, since
+    # eastings near 2.8e5 keep ~0.03 m. An offset under ~10 km resolves to well under a millimetre in the
+    # same four bytes. See pipeline/tests/test_lidar_index.py.
+    ox, oy = float(np.floor(minx)), float(np.floor(miny))
     for p in paths:
         try:
             las = laspy.read(p)
@@ -139,11 +145,14 @@ def read_points(paths: list[Path], bbox_proj, src_crs: str = "EPSG:3857") -> dic
         x, y = tr.transform(np.asarray(las.x)[keep], np.asarray(las.y)[keep])
         z = np.asarray(las.z)[keep]
         m = (x >= minx) & (x < maxx) & (y >= miny) & (y < maxy)
-        xs.append(x[m].astype(np.float32)); ys.append(y[m].astype(np.float32))
+        xs.append((x[m] - ox).astype(np.float32)); ys.append((y[m] - oy).astype(np.float32))
         zs.append(z[m].astype(np.float32)); cs.append(cls[keep][m])
+    origin = np.array([ox, oy], np.float64)
     if not xs:
-        return {"x": np.zeros(0, np.float32), "y": np.zeros(0, np.float32), "z": np.zeros(0, np.float32), "c": np.zeros(0, np.uint8)}
-    return {"x": np.concatenate(xs), "y": np.concatenate(ys), "z": np.concatenate(zs), "c": np.concatenate(cs)}
+        return {"x": np.zeros(0, np.float32), "y": np.zeros(0, np.float32), "z": np.zeros(0, np.float32),
+                "c": np.zeros(0, np.uint8), "origin": origin}
+    return {"x": np.concatenate(xs), "y": np.concatenate(ys), "z": np.concatenate(zs),
+            "c": np.concatenate(cs), "origin": origin}
 
 
 def detect_feet(z_ground_sample: np.ndarray, dem_sample: np.ndarray) -> bool:
@@ -191,8 +200,9 @@ def build_ndsm(pts: dict[str, np.ndarray], dem_path: Path, bbox_proj, out: Path)
         reproject(rasterio.band(src, 1), dem, dst_transform=transform, dst_crs=CRS_PROJ, dst_nodata=np.nan,
                   src_nodata=src.nodata, resampling=Resampling.bilinear)
 
-    col = ((pts["x"] - minx) / CELL).astype(np.int64)
-    row = ((miny + h * CELL - pts["y"]) / CELL).astype(np.int64)
+    ox, oy = cloud_origin(pts)
+    col = ((pts["x"] + (ox - minx)) / CELL).astype(np.int64)
+    row = (((miny + h * CELL) - (pts["y"] + oy)) / CELL).astype(np.int64)
     ok = (col >= 0) & (col < w) & (row >= 0) & (row < h)
     col, row, z = col[ok], row[ok], pts["z"][ok].astype(np.float64)
 

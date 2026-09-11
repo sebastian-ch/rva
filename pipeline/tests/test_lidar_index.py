@@ -16,6 +16,7 @@ def _cloud(rng, n=20000, origin=(280000.0, 4150000.0), span=200.0):
 
 
 def _write_npz(tmp_path, pts, cls=None):
+    tmp_path.mkdir(parents=True, exist_ok=True)
     p = tmp_path / "lidar_test.npz"
     kw = dict(x=pts[:, 0].astype(np.float32), y=pts[:, 1].astype(np.float32), z=pts[:, 2].astype(np.float32))
     if cls is not None:
@@ -108,3 +109,46 @@ def test_corrupt_cache_is_rebuilt_rather_than_raising(tmp_path):
     cache = tmp_path / "surface.npz"
     cache.write_bytes(b"not an npz")
     assert len(lidar.surface_cache(npz, _footprints(), cache)) > 0
+
+
+def test_offsets_preserve_northings_that_absolute_float32_loses():
+    """Why the npz stores offsets rather than absolute UTM coordinates."""
+    true_y = np.array([4150000.1, 4155018.63, 4152345.37])
+    assert np.spacing(np.float32(4155018.5)) == 0.25  # a quarter-metre lattice in y
+
+    absolute = true_y.astype(np.float32).astype(np.float64)
+    origin = 4150000.0
+    offsets = (true_y - origin).astype(np.float32).astype(np.float64) + origin
+
+    assert np.abs(absolute - true_y).max() > 0.05   # coarser than the roof planes fitted from it
+    assert np.abs(offsets - true_y).max() < 0.001   # same four bytes, sub-millimetre
+
+
+def test_an_offset_cloud_lands_at_the_right_absolute_coordinates(tmp_path):
+    rng = np.random.default_rng(7)
+    pts = _cloud(rng, 8000)
+    buildings = _footprints()
+    ox, oy = 280000.0, 4150000.0
+    np.savez_compressed(tmp_path / "lidar_test.npz",
+                        x=(pts[:, 0] - ox).astype(np.float32), y=(pts[:, 1] - oy).astype(np.float32),
+                        z=pts[:, 2].astype(np.float32), origin=np.array([ox, oy], np.float64))
+    pc = lidar.PointCloud(tmp_path / "lidar_test.npz", buildings, cell=1.0)
+
+    assert len(pc.xyz) > 0
+    from shapely import contains_xy
+
+    for geom in buildings.geometry:
+        got = pc.within(geom)
+        inside = got[contains_xy(geom, got[:, 0], got[:, 1])]
+        assert len(inside) > 0  # nothing lands here unless the origin was applied
+    # and the reduction still agrees with a direct one over the same absolute points
+    direct = lidar.surface_points(np.c_[(pts[:, 0] - ox).astype(np.float32).astype(np.float64) + ox,
+                                        (pts[:, 1] - oy).astype(np.float32).astype(np.float64) + oy,
+                                        pts[:, 2].astype(np.float32).astype(np.float64)])
+    assert {tuple(r) for r in pc.xyz} <= {tuple(r) for r in direct}
+
+
+def test_cloud_origin_defaults_to_zero_for_older_files(tmp_path):
+    npz = _write_npz(tmp_path, _cloud(np.random.default_rng(8), 100))
+    with np.load(npz) as d:
+        assert lidar.cloud_origin(d) == (0.0, 0.0)
