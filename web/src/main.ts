@@ -359,6 +359,12 @@ let manager: TileManager | null = null;
 let loggedFirst = false;
 async function boot() {
   ui.setLoading(true, 'Loading index…');
+  // Both files are needed before the first tile can be requested, so ask for them together rather than
+  // paying two serialized round trips. loadLandmarkTargets reuses this response instead of refetching.
+  const landmarksPending: Promise<Record<string, LandmarkTarget> | null> =
+    fetch(`${import.meta.env.BASE_URL}tiles/landmarks.json`)
+      .then((r) => (r.ok ? (r.json() as Promise<Record<string, LandmarkTarget>>) : null))
+      .catch(() => null);
   const index = (await (await fetch(`${import.meta.env.BASE_URL}tiles/index.json`)).json()) as TileIndex;
   tileIndex = index;
   world = new TileWorld(index, materials);
@@ -371,15 +377,15 @@ async function boot() {
   // Region targets use projected easting/northing and a world-space camera target height.
   const center = world.center();
   if (regionId === 'richmond') center.z -= 400; // local z = -north
-  try {
-    const lm = (await (await fetch(`${import.meta.env.BASE_URL}tiles/landmarks.json`)).json()) as Record<string, { x: number; y: number }>;
-    const cap = lm['virginia-state-capitol'];
-    if (cap) { const [lx, lz] = world.toLocal(cap.x, cap.y); center.set(lx, 0, lz); }
-  } catch { /* keep the fallback */ }
   if (region.initialTarget) {
     const [x, y, height] = region.initialTarget;
     const [lx, lz] = world.toLocal(x, y);
     center.set(lx, height, lz);
+  } else {
+    // Only a region without a configured target has to wait for landmarks.json; a missing or failed
+    // response keeps the fallback centre.
+    const cap = (await landmarksPending)?.['virginia-state-capitol'];
+    if (cap) { const [lx, lz] = world.toLocal(cap.x, cap.y); center.set(lx, 0, lz); }
   }
   iso.lookAt(center, region.cameraDistance);
   iso.camera.zoom = region.initialZoom;
@@ -452,17 +458,15 @@ async function boot() {
     },
   });
   manager.update(iso.camera, iso.camera.zoom, true);
-  void loadLandmarkTargets(index);
+  void landmarksPending.then(loadLandmarkTargets);
 }
 
 interface LandmarkTarget { name: string; kind: string; x: number; y: number; ground_z: number; how: string | null; in_first_slice: boolean }
 
 /** Pipeline-resolved positions for every landmark (buildings and non-buildings alike). */
-async function loadLandmarkTargets(index: TileIndex) {
+function loadLandmarkTargets(data: Record<string, LandmarkTarget> | null) {
+  if (!data) return;
   try {
-    const r = await fetch(`${import.meta.env.BASE_URL}tiles/landmarks.json`);
-    if (!r.ok) return;
-    const data = (await r.json()) as Record<string, LandmarkTarget>;
     for (const [slug, t] of Object.entries(data)) {
       if (!t.how || landmarkTargets.has(slug)) continue; // building targets from tiles are more precise
       const [lx, lz] = world!.toLocal(t.x, t.y);
@@ -471,9 +475,8 @@ async function loadLandmarkTargets(index: TileIndex) {
       labels.set(slug, t.name, pos);
       landmarkTileOf.set(slug, '*');
     }
-    void index;
   } catch (e) {
-    console.warn('landmarks.json failed', e);
+    console.warn('landmarks.json unusable', e);
   }
 }
 

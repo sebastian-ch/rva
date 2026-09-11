@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+// The glTF-specific decoder, served from our own origin: 64 kB gzipped against 90 kB for the
+// general-purpose build three reaches for by default, and no third-party CDN.
+import dracoWrapperUrl from 'three/examples/jsm/libs/draco/gltf/draco_wasm_wrapper.js?url';
+import dracoWasmUrl from 'three/examples/jsm/libs/draco/gltf/draco_decoder.wasm?url';
 import { buildBuildingsMesh, type BuildingRange } from './buildings';
 import { centroid, cleanRing, polygons } from './geomutil';
 import type { LoadedTile } from './tiles';
@@ -18,7 +22,7 @@ export class LandmarkModels {
   private detached = new WeakSet<object>();
   constructor(private toLocal: (x: number, y: number) => [number, number], private material: THREE.Material) {
     const draco = new DRACOLoader();
-    draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+    draco.setDecoderPath({ js: dracoWrapperUrl, wasm: dracoWasmUrl });
     this.loader.setDRACOLoader(draco);
     this.group.name = 'landmark-models';
   }

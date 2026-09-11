@@ -13,3 +13,4 @@ web/snapshots/
 *.laz
 *.tif
 .DS_Store
+data/cache/

@@ -351,6 +351,32 @@ when a fresh server download is correct. Compare local/live file hashes before b
 appends the fingerprint to model requests. A changed model therefore also changes the application
 bundle. Existing open sessions still need a refresh. This covers landmark assets, not tile-cache invalidation.
 
+## 7b. Build caches and partial rebuilds: a fingerprint is part of the contract
+
+Reducing a large source once and caching the result is usually the cheapest available speed-up, but the
+cache key has to name everything the result depends on. `lidar.py` reduces the 310 M point cloud to the
+top point per 1 m cell inside the padded footprints (~8 M points) and stores it beside the source npz;
+the key covers the npz, `lidar.py` itself, the cell size and a fingerprint of the footprint set, because
+a footprint added later needs cells that the previous reduction never kept. Do the reduction on the
+*whole* cloud before masking by cell, not on points pre-filtered by polygon: masking by cell keeps every
+point of a kept cell, so the per-cell winner is the same one a whole-cloud pass would choose. Break ties
+in that reduction deterministically (x, then y) or the cached answer depends on input order and roof
+classifications wobble between runs. Regression: `pipeline/tests/test_lidar_index.py`.
+
+`layer_cache.py` applies the same rule to the processed layers: the key covers every raw source, every
+`pipeline/*.py` that implements a layer, and the build options. Drivers that only consume finished layers
+(`build_tiles.py`, `qa_report.py`, `tiles_inspect.py`, the fetchers) are excluded on purpose — iterating on
+those is exactly what the cache is for. Verify a new cache by building twice, once with `--no-cache`, and
+diffing every tile file; the first version of this one silently dropped bridge `deck` lists, because
+parquet returns a list column as an ndarray and `_write_layer` only serialized `list`.
+
+A partial rebuild is only safe for a layer that nothing touches after its processor returns. In Richmond
+`pois` gains the tree merge, `landuse` gains city decks and canal banks, `water` gains the surveyed
+shoreline, and `buildings` drives `search.json` and the tree exclusions. Rewriting `pois` alone cut its
+tile features from 81,854 to 9,682 — every tree gone, with no error. Enumerate the layers that qualify
+and reject the rest by name instead of writing them half-finished. Regression:
+`pipeline/tests/test_layer_cache.py`.
+
 ## 8. Landmarks: correctness and draw calls both matter
 
 Inspect the exported model in the actual map, not just Blender. Check portico/pediment orientation,

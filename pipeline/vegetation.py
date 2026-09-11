@@ -54,9 +54,14 @@ def canopy_peaks(canopy, origin, cell=1.0):
 
 def lidar_canopies(npz_path, terrain):
     import rasterio
+    from lidar import cloud_origin
+
     with np.load(npz_path) as pts:
+        ox, oy = cloud_origin(pts)
         vegetation = np.isin(pts["c"], [4, 5])
-        x, y, z = pts["x"][vegetation], pts["y"][vegetation], pts["z"][vegetation]
+        x = pts["x"][vegetation].astype(np.float64) + ox
+        y = pts["y"][vegetation].astype(np.float64) + oy
+        z = pts["z"][vegetation]
     if not len(x):
         return gpd.GeoDataFrame(geometry=[], crs=CRS_PROJ)
     ds = terrain.ds

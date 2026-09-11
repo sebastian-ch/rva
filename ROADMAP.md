@@ -173,8 +173,9 @@ Today the client parses GeoJSON and builds ~1.2 M triangles on the main thread. 
 
 - Multi-bbox builds: `build_tiles.py --slice fan|carytown|church-hill|scotts-addition|manchester` with per-slice
   bboxes in `config.py`, writing into the same grid so tiles line up. (S)
-- Incremental builds: `--roads-only` is done (8–13 seconds versus about 130 seconds full); add fingerprinted
-  processed-layer caches and other selective layers only with explicit dependency invalidation. (S)
+- Incremental builds: **done 2026-09-11.** A fingerprinted processed-layer cache (`layer_cache.py`) plus the cached
+  LiDAR roof surface cut a full rebuild from about 130 seconds to 20 seconds when only the tiling side changed;
+  `--layers` generalizes `--roads-only` to the layers that can be rewritten safely (12 seconds). (S)
 - **Fan / VCU coverage done 2026-09-10** through the expanded Richmond build extent. Next: Carytown, Church Hill,
   Scott's Addition, and Manchester. Per-slice builds and input-hash incremental rebuilds remain open.
 

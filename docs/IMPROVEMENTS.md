@@ -146,14 +146,45 @@ landmark loading, and automated screenshot time separately. Distinguish software
 from the interactive GPU-backed viewer; improvements to one may not improve the other.
 
 Completed:
-- `build_tiles.py --roads-only` reprocesses and rewrites roads/crossings while preserving all other tile layers.
-  The expanded Richmond build fell from about 130 seconds for a full rebuild to 8–13 seconds for a road pass.
+- `build_tiles.py --layers roads,crossings,rail` (with `--roads-only` kept as an alias) rewrites only those tile
+  files while preserving all other tile layers: about 12 seconds. Every other layer is augmented after its
+  processor runs and is rejected by name rather than written half-finished.
+- The LiDAR roof surface is reduced once and cached (`lidar.py`): 310 M raw points become ~8 M top-of-cell points
+  inside the padded footprints, queried through a sorted cell-key index instead of a KD-tree over the whole cloud.
+  `process_buildings` fell from 90 s to 16 s; the cKDTree build alone had been 51 s of every run.
+- nDSM footprint statistics run in a process pool with a serial fallback: 5.3 s to 1.8 s, identical output.
+- `layer_cache.py` caches the processed layers as GeoParquet, fingerprinted on every raw source, every
+  layer-implementing module and the build options. A full Richmond build is 63 s cold and **20 s** when only the
+  tiling/QA/viewer side changed, against about 130 s before this work. Verified byte-identical against
+  `--no-cache` across all 3,683 tile files.
+
+Measured (2026-09-11, expanded Richmond, 24.4 k footprints):
+
+| stage | before | after |
+|---|---|---|
+| `process_buildings` | 90.2 s | 15.9 s |
+| all layers | 103.7 s | 29.1 s |
+| full build, layers unchanged | ~130 s | 20.0 s |
 - The viewer already builds tile geometry in four workers, transfers typed arrays without copying, streams two
   detail levels, merges each tile layer into one mesh, instances repeated props, and disposes unloaded geometry.
 
 Measured expanded-Richmond payload (625 tiles, 2026-09-10): 69.0 MB GeoJSON plus 5.8 MB JSON. POIs are
 24.5 MB, buildings 21.0 MB, roads 14.7 MB, land use 6.4 MB, terrain 3.4 MB, and crossings 1.8 MB. All ten
 landmark GLBs together are only 0.18 MB, so landmark compression is not a useful near-term target.
+
+Viewer startup (2026-09-11): the wire cost is not the problem -- the whole map is 8.3 MB gzipped (75.7 MB
+raw), and GitHub Pages does serve `.geojson` with `content-encoding: gzip`. The startup path was:
+- `boot()` awaited `index.json` and then `landmarks.json`, two serialized round trips before the first tile
+  could be requested, and `landmarks.json` was fetched a second time by `loadLandmarkTargets`. Both now come
+  from one in-flight request started before the index, and a region with a configured `initialTarget`
+  (Honolulu) never waits on it at all.
+- `landmarkModels.ts` pointed the Draco decoder at `gstatic.com`: a third-party DNS + TLS handshake for about
+  101 kB gzipped, while Vite was already bundling a decoder that nothing fetched. Dropping `setDecoderPath`
+  uses three's defaults, which resolve to our own base-relative `/rva/assets/` copies (~79 kB gzipped).
+- `index.html` preloads `tiles/index.json` and `tiles/landmarks.json`, so they overlap the 223 kB gzipped
+  bundle download instead of waiting for it to parse.
+Still unmeasured: frame time, worker geometry build time and the request waterfall, which need a browser
+profile rather than static analysis.
 
 Next candidates, in order:
 - Encode POIs/trees as a compact binary point table (quantized tile-local x/y, kind, height and crown fields).
