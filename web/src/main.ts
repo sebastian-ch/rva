@@ -209,6 +209,7 @@ window.addEventListener('hashchange', () => {
 function setNight(on: boolean) {
   night = on;
   const effectiveNight = on || MAP_STYLES[mapStyle].nightLighting;
+  props.setNight(effectiveNight);
   const t = effectiveNight ? NIGHT : DAY;
   (scene.background as THREE.Color).copy(t.sky);
   scene.fog!.color.copy(t.fog);

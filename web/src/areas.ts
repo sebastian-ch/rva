@@ -9,7 +9,7 @@ const UP = new THREE.Vector3(0, 1, 0);
 const LANDUSE_COLOR: Record<string, [string, number]> = {
   park: ['grass', 0.08], grass: ['grass', 0.07], forest: ['canopy', 0.08], cemetery: ['grass', 0.07],
   parking: ['concrete', 0.06], plaza: ['sidewalk', 0.08], industrial: ['sand', 0.05],
-  beach: ['sand', 0.08],
+  beach: ['sand', 0.08], deck: ['deck', 0.12],
 };
 const WATER_COLOR: Record<string, string> = { river: 'water', canal: 'water_deep', pond: 'water', ocean: 'water' };
 

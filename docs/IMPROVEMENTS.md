@@ -16,8 +16,8 @@ Weak spots, roughly in the order a viewer notices them:
 2. The ground is one flat colour with contours. No sidewalk texture, no lawns vs beds, no plazas, no parking
    stripes, no rail yards.
 3. Trees are two shapes, props are sparse, there are no people at street level in numbers.
-4. Roads are visually right at a distance but have no lane arrows, no median islands, no bus lanes, and
-   junction geometry is squared rather than curbed with radii.
+4. Roads now include bus lanes, topology-trimmed ribbons, evidence-based crossings and rounded junction fills,
+   but still lack lane arrows and source-derived median/curb polygons.
 5. Lighting is one sun; no ambient occlusion pass, no colour grading, no outline.
 6. Interaction is basic: no search, no deep links, no minimap, no time-of-day.
 
@@ -76,14 +76,31 @@ Weak spots, roughly in the order a viewer notices them:
 |---|---|---|---|
 | 1 | Render OSM `building:part` and `min_height` as separate extrusions | S | **Done 2026-09-09:** 126 parts, 42 covered outlines drawn as plinths; James Center's three towers now rise from their shared podium |
 | 2 | Screen-space AO + outline + colour grade post pass | M | **Done:** `postfx.ts` — depth-difference contact AO, depth-edge outline, warm/cool grade, vignette; `o` toggles it |
-| 3 | Junction areas as polygons (OSM2World style) with curb radii | M | Fixes the last road artefacts and enables medians and turn lanes |
+| 3 | Prebuilt road and junction surface topology with curb radii | M | **In progress:** topology-aware trimming/fills and crossing attachment are live; canonical source-derived curb polygons, medians and turn lanes remain |
 | 4 | roofer-based LoD2 roofs replacing the two-plane fit | L | Real roof forms on every building; inputs already exist |
 | 5 | Facade grammar (geometry) for the ground floor: doors, storefront frames, awnings, steps | M | The plan's kit-of-parts, done where the camera sees it |
 | 6 | Ground detail: sidewalk paving tint, lawn vs bed, parking stripes, rail ballast | S | **Partly done:** world-space mottle on land/terrain (`groundDetail.ts`), painted stall lines on surface parking; paving tint and ballast open |
 | 7 | Pedestrians on sidewalk paths, trains on rails | M | **Half done:** walkers ping-pong along sidewalk strips and footpaths (`addWalkers`); trains open |
 | 8 | Search, deep links, minimap, time-of-day (ROADMAP Phase 5) | M | Shareability |
-| 9 | Widen to The Fan / Church Hill with per-district palettes (Phase 6) | M | Content |
+| 9 | Widen to The Fan / Church Hill with per-district palettes (Phase 6) | M | **Fan done 2026-09-10:** expanded data and QA coverage are live; Church Hill-specific palette/content pass remains |
 | 10 | CI with the smoke test and snapshot diffs (Phase 7) | S | Keeps the polish from regressing |
+
+### Deferred street-level data additions
+
+After the streetlight pass, consider these additions in roughly this order:
+
+- Fire hydrants from `emergency=fire_hydrant`, preferring a Richmond municipal inventory when it is
+  more complete than OSM.
+- GRTC stop poles and shelters using `highway=bus_stop`, `public_transport=platform`, `shelter=*`,
+  `bench=*`, and `covered=*`; replace the current generic person marker.
+- Bicycle racks from `amenity=bicycle_parking`, including rack type and capacity where available.
+- Traffic-calming geometry from `traffic_calming=*`, especially raised tables, humps, and islands.
+- Bollards, waste baskets, parking meters, utility poles, and overhead lines at close detail only.
+- Murals, public art, memorials, and historic markers with distinct low-poly treatments.
+
+Treat OSM street-furniture coverage as opportunistic rather than complete. Compare counts and spatial
+coverage with Richmond open data before using absence as evidence, and keep dense small props out of
+reduced-detail tiles.
 
 ## 4. Measuring "better"
 
@@ -121,16 +138,35 @@ placement across detail transitions, no missing instances, correct unload/reload
 switching. This is a **future task, not implemented** as part of the current road/bus-lane fixes.
 
 
-## Deferred: faster local rendering and iteration (requested 2026-09-09)
+## Faster local rendering and iteration (reviewed 2026-09-10)
 
-Investigate ways to shorten the edit → rebuild → render → inspect loop. Profile before choosing changes:
+Profile before choosing changes:
 measure cold startup, data fetch/cache time, worker geometry construction, GPU upload, frame time,
 landmark loading, and automated screenshot time separately. Distinguish software-rendered browser QA
 from the interactive GPU-backed viewer; improvements to one may not improve the other.
 
-Candidates to evaluate:
-- Rebuild only changed layers/tiles instead of rerunning unrelated building/LiDAR processing.
-- Cache derived geometry using input and implementation fingerprints, with correct invalidation.
+Completed:
+- `build_tiles.py --roads-only` reprocesses and rewrites roads/crossings while preserving all other tile layers.
+  The expanded Richmond build fell from about 130 seconds for a full rebuild to 8–13 seconds for a road pass.
+- The viewer already builds tile geometry in four workers, transfers typed arrays without copying, streams two
+  detail levels, merges each tile layer into one mesh, instances repeated props, and disposes unloaded geometry.
+
+Measured expanded-Richmond payload (625 tiles, 2026-09-10): 69.0 MB GeoJSON plus 5.8 MB JSON. POIs are
+24.5 MB, buildings 21.0 MB, roads 14.7 MB, land use 6.4 MB, terrain 3.4 MB, and crossings 1.8 MB. All ten
+landmark GLBs together are only 0.18 MB, so landmark compression is not a useful near-term target.
+
+Next candidates, in order:
+- Encode POIs/trees as a compact binary point table (quantized tile-local x/y, kind, height and crown fields).
+  This attacks the largest payload and avoids parsing tens of thousands of repeated GeoJSON property names.
+- Bake reduced-detail tile meshes offline and apply meshopt compression plus quantized attributes. Keep the
+  current worker builder as the development/fallback path and retain small feature sidecars for picking.
+- Preserve indexed terrain geometry through the worker payload instead of expanding it to triangle soup. The
+  regular 26×26 grid has substantial vertex reuse; flat-shaded building and road meshes have less.
+- Generalize selective rebuilding only where dependencies are explicit. A fingerprinted processed-layer cache
+  should include source files, region/options and implementation files so stale LiDAR, hydro or city data cannot
+  silently survive a rebuild.
+- Add `renderer.info.render`/`renderer.info.memory`, frame-time percentiles, transferred bytes and JSON parse time
+  to the existing debug statistics before changing worker count, shadow quality or resident-tile limits.
 - Add saved focused preview views and a small local tile set for a single asset/intersection.
 - Offer an explicit draft preview quality preset for shadows, postprocessing and distant detail;
   keep full-quality verification before shipping.
@@ -138,4 +174,17 @@ Candidates to evaluate:
 - Track representative timing/memory baselines so faster iteration does not hide missing assets or
   change the final rendering semantics.
 
-This is a future investigation, not an implemented performance feature.
+References: Three.js recommends `InstancedMesh` to reduce draw calls and explicit disposal for streamed resources;
+its `BufferGeometry` supports indexed vertices. Three.js recommends glTF/GLB for runtime delivery and supports
+Draco, KTX2 and meshopt through `GLTFLoader`. Khronos recommends vertex/index reordering, quantization, mesh
+instancing and GPU-compressed textures for real-time glTF. Apply those techniques where the measurements justify
+their decoder and pipeline complexity.
+
+- [Three.js InstancedMesh](https://threejs.org/docs/pages/InstancedMesh.html)
+- [Three.js BufferGeometry](https://threejs.org/docs/pages/BufferGeometry.html)
+- [Three.js cleanup guide](https://threejs.org/manual/en/cleanup.html)
+- [Three.js glTF loading workflow](https://threejs.org/manual/en/loading-3d-models.html)
+- [Three.js GLTFLoader compression hooks](https://threejs.org/docs/pages/GLTFLoader.html)
+- [Khronos real-time asset creation guidelines](https://github.com/KhronosGroup/3DC-Asset-Creation/blob/main/asset-creation-guidelines/RealtimeAssetCreationGuidelines.md)
+- [Khronos meshopt compression guidance](https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_meshopt_compression/README.md)
+- [Khronos mesh quantization](https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_mesh_quantization/README.md)

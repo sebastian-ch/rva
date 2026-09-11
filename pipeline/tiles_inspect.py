@@ -38,13 +38,12 @@ def _load_landmarks() -> dict:
     return json.loads(p.read_text()) if p.exists() else {}
 
 
-def _tile_dirs() -> list[Path]:
-    return sorted((p for p in DATA_TILES.iterdir() if p.is_dir()), key=lambda p: p.name)
-
-
 def _iter_features(layer: str):
-    """Yield (tile_id, feature) for every feature of `layer` across all tiles."""
-    for tdir in _tile_dirs():
+    """Read only active manifest layers; incremental builds can leave stale files."""
+    for entry in _load_index()["tiles"]:
+        if layer not in entry["layers"]:
+            continue
+        tdir = DATA_TILES / entry["id"]
         fp = tdir / f"{layer}.geojson"
         if not fp.exists():
             continue

@@ -43,6 +43,13 @@ non-benign console error appears, or clicking a toolbar button produces a new
 error. On success it writes `snapshots/default.png`, `snapshots/capitol.png`,
 and `snapshots/river.png`. `snapshots/` is gitignored.
 
+## review-fan.mjs
+
+`node tools/review-fan.mjs` checks the expanded Richmond map at five Fan/VCU locations, Hanover
+address search, five rendering styles and mobile layout. Set `REVIEW_URL` for a nondefault server.
+Screenshots and counts are saved under `snapshots/fan/`. Projected coordinates are converted using
+the active tile manifest, so bbox changes do not shift these diagnostic locations.
+
 ## deploy.mjs
 
 ```

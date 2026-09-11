@@ -67,6 +67,15 @@ describe('scatterTile', () => {
     }
   });
 
+  it('aims a surveyed streetlight toward the nearest road', () => {
+    const road: Feature<LineGeom, RoadProps> = { type: 'Feature',
+      geometry: { type: 'LineString', coordinates: [[0, 50], [100, 50]] },
+      properties: { width: 8, highway: 'residential' } as RoadProps };
+    const out = scatterTile('lamp-facing', [poi('streetlight', 50, 55)], [], [road], [], bbox, identity, flatGround);
+    const lamp = out.find((p) => p.kind === 'streetlight' && p.x === 50 && p.z === 55);
+    expect(lamp?.rot).toBeCloseTo(-Math.PI / 2);
+  });
+
   it('rejects a POI that falls inside a building footprint', () => {
     const pois = [poi('fountain', 50, 50)];
     const buildings = [squareBuilding(50, 50, 10)];

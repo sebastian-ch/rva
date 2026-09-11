@@ -44,7 +44,7 @@ def _tags(row: pd.Series) -> dict[str, Any]:
 
 def _osm_id(row: pd.Series) -> str:
     el = row.get("element", "way")
-    if el in ("vgin", "cch"):
+    if el in ("vgin", "cch", "richmond_structure"):
         return f"{el}:{row.get('id')}"
     return f"osm:{el}/{row.get('id')}"
 
@@ -163,38 +163,85 @@ def _merge_rowhouses(b: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
 PART_COVER = 0.6  # parts covering this share of the outline hide the outline (rendered as a plinth)
 VGIN_MIN_AREA = 20.0  # m^2; smaller VGIN footprints are sheds/steps and add noise
+RICHMOND_STRUCTURE_MIN_AREA = 12.0
+
+
+def _source_date(v: Any) -> str | None:
+    if _nn(v) is None:
+        return None
+    try:
+        stamp = pd.to_datetime(v, unit="ms", utc=True) if isinstance(v, (int, float, np.integer, np.floating)) else pd.to_datetime(v, utc=True)
+        return stamp.isoformat().replace("+00:00", "Z")
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+
+def _add_gap_footprints(raw: gpd.GeoDataFrame, is_part: pd.Series, path: Path, *,
+                        source: str, element: str, min_area: float,
+                        subtype: int | None = None) -> tuple[gpd.GeoDataFrame, pd.Series]:
+    """Append source footprints that do not substantially overlap an existing building.
+
+    Area overlap, rather than the intersects predicate alone, allows attached buildings that share a wall.
+    """
+    city = gpd.read_parquet(path)
+    if len(city) == 0:
+        return raw, is_part
+    city = city.to_crs(raw.crs)
+    if subtype is not None and "Subtype" in city:
+        city = city[city["Subtype"] == subtype]
+    city = city[city.geometry.geom_type.isin(["Polygon", "MultiPolygon"])]
+    city = city[city.geometry.area >= min_area].copy()
+    if len(city) == 0:
+        return raw, is_part
+    hit = gpd.sjoin(city[["geometry"]], raw[["geometry"]], how="inner", predicate="intersects")
+    covered = set()
+    for ci, oi in zip(hit.index, hit["index_right"]):
+        overlap = city.at[ci, "geometry"].intersection(raw.at[oi, "geometry"]).area
+        if overlap >= 0.25 * min(city.at[ci, "geometry"].area, raw.at[oi, "geometry"].area):
+            covered.add(ci)
+    add = city[~city.index.isin(covered)].copy().reset_index(drop=True)
+    if len(add) == 0:
+        return raw, is_part
+    add["element"] = element
+    add["id"] = add["OBJECTID"].astype(str) if "OBJECTID" in add else [str(i) for i in add.index]
+    add["building"] = "yes"
+    add["footprint_source"] = source
+    add["source_updated"] = add["EditDate"].map(_source_date) if "EditDate" in add else None
+    add["geometry"] = add.geometry.simplify(SIMPLIFY_TOL, preserve_topology=True).buffer(0)
+    add = add[~add.geometry.is_empty]
+    start = raw.index.max() + 1 if len(raw) else 0
+    add.index = range(start, start + len(add))
+    for col in add.columns:
+        if col not in raw and col != "geometry":
+            raw[col] = None
+    out = gpd.GeoDataFrame(pd.concat([raw, add[[c for c in add.columns if c in raw.columns or c == "geometry"]]]), geometry="geometry", crs=raw.crs)
+    parts = pd.concat([is_part, pd.Series(False, index=add.index)])
+    print(f"  {source} footprints added: {len(add)} (of {len(city)} >= {min_area:g} m2 in bbox)")
+    return out, parts
 
 
 def _add_vgin_footprints(raw: gpd.GeoDataFrame, is_part: pd.Series, path: Path) -> tuple[gpd.GeoDataFrame, pd.Series]:
     """Append VGIN footprints that overlap no OSM footprint (gap-fill: garages, alley buildings, unmapped blocks)."""
-    v = gpd.read_parquet(path)
-    if len(v) == 0:
-        return raw, is_part
-    v = v.to_crs(raw.crs)
-    v = v[v.geometry.geom_type.isin(["Polygon", "MultiPolygon"])]
-    v = v[v.geometry.area >= VGIN_MIN_AREA].copy()
-    if len(v) == 0:
-        return raw, is_part
-    hit = gpd.sjoin(v[["geometry"]], raw[["geometry"]], how="left", predicate="intersects")
-    covered = set(hit.index[hit["index_right"].notna()])
-    add = v[~v.index.isin(covered)].copy()
-    if len(add) == 0:
-        return raw, is_part
-    add = add.reset_index(drop=True)
-    add["element"] = "vgin"
-    add["id"] = add["OBJECTID"].astype(str) if "OBJECTID" in add else [str(i) for i in add.index]
-    add["building"] = "yes"
-    add["footprint_source"] = "vgin"
-    add["geometry"] = add.geometry.simplify(SIMPLIFY_TOL, preserve_topology=True).buffer(0)
-    add = add[~add.geometry.is_empty]
-    add.index = range(raw.index.max() + 1, raw.index.max() + 1 + len(add))
-    out = gpd.GeoDataFrame(pd.concat([raw, add[[c for c in add.columns if c in raw.columns or c in ("geometry",)]]]), geometry="geometry", crs=raw.crs)
-    for col in ("building:part",):
-        if col not in out:
-            out[col] = None
-    parts = pd.concat([is_part, pd.Series(False, index=add.index)])
-    print(f"  VGIN footprints added: {len(add)} (of {len(v)} >= {VGIN_MIN_AREA} m2 in bbox)")
-    return out, parts
+    return _add_gap_footprints(raw, is_part, path, source="vgin", element="vgin", min_area=VGIN_MIN_AREA)
+
+
+def process_richmond_decks(path: Path) -> gpd.GeoDataFrame:
+    """Convert Richmond Structures subtype 3 deck/patio outlines to low terrain surfaces."""
+    city = _read(path)
+    if len(city) == 0 or "Subtype" not in city:
+        return gpd.GeoDataFrame(columns=["id", "name", "kind", "source", "source_updated", "geometry"], geometry="geometry", crs=CRS_PROJ)
+    city = city[(city["Subtype"] == 3) & city.geometry.geom_type.isin(["Polygon", "MultiPolygon"])].copy()
+    city = city[city.geometry.area >= 2.0]
+    city["geometry"] = city.geometry.simplify(0.2, preserve_topology=True).buffer(0)
+    city = city[~city.geometry.is_empty]
+    return gpd.GeoDataFrame({
+        "id": "richmond_structure:" + city["OBJECTID"].astype(str),
+        "name": None,
+        "kind": "deck",
+        "source": "richmond_structures",
+        "source_updated": city["EditDate"].map(_source_date) if "EditDate" in city else None,
+        "geometry": city.geometry,
+    }, crs=CRS_PROJ)
 
 
 def _assign_parts(raw: gpd.GeoDataFrame, is_part: pd.Series) -> tuple[dict, dict]:
@@ -286,7 +333,8 @@ def apply_overrides(b: gpd.GeoDataFrame, terrain=None, path: Path = OVERRIDES_PA
 
 def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True,
                       overture_path: Path | None = None, lidar_npz: Path | None = None,
-                      richmond_dir: Path | None = None, vgin_path: Path | None = None) -> gpd.GeoDataFrame:
+                      richmond_dir: Path | None = None, vgin_path: Path | None = None,
+                      richmond_structures_path: Path | None = None) -> gpd.GeoDataFrame:
     raw = _read(raw_path)
     if len(raw) == 0:
         return gpd.GeoDataFrame(geometry=[], crs=CRS_PROJ)
@@ -311,7 +359,11 @@ def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True
     if "footprint_source" not in raw:
         raw["footprint_source"] = "osm"
     raw["footprint_source"] = raw["footprint_source"].fillna("osm")
-    if vgin_path is not None and Path(vgin_path).exists():
+    if richmond_structures_path is not None and Path(richmond_structures_path).exists():
+        raw, is_part = _add_gap_footprints(raw, is_part, Path(richmond_structures_path),
+                                           source="richmond_structures", element="richmond_structure",
+                                           min_area=RICHMOND_STRUCTURE_MIN_AREA, subtype=1)
+    elif vgin_path is not None and Path(vgin_path).exists():
         raw, is_part = _add_vgin_footprints(raw, is_part, Path(vgin_path))
     raw = raw[raw.geometry.area >= MIN_FOOTPRINT_AREA]
     is_part = is_part.loc[raw.index]
@@ -417,6 +469,7 @@ def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True
             "type": str(tags.get("building") or tags.get("building:part") or "yes"),
             "landmark": None,
             "footprint_source": str(row.get("footprint_source") or "osm"),
+            "source_updated": _source_date(row.get("source_updated")) or _source_date(row.get("EditDate")),
             "is_part": bool(is_part.at[idx]),
             "parent": parent_of.get(idx),
             "hidden": bool(hidden.get(idx, False)),
@@ -476,6 +529,32 @@ def _sidewalk_side(row: pd.Series, side: str) -> bool | None:
     return value in ("yes", "both", side)
 
 
+NO_GENERATED_SIDEWALK = {
+    "footway", "path", "steps", "cycleway", "pedestrian", "service", "living_street", "track",
+    "motorway", "motorway_link", "trunk", "trunk_link", "primary_link", "secondary_link", "tertiary_link",
+}
+
+
+def _generated_sidewalk(row: pd.Series) -> bool:
+    """Normalize whether this road class receives the renderer's curb-aligned sidewalk."""
+    bus_only = row.get("highway") == "busway" or (
+        row.get("bus") in ("yes", "designated")
+        and (row.get("access") in ("no", "private") or row.get("motor_vehicle") == "no")
+    )
+    return row.get("highway") not in NO_GENERATED_SIDEWALK and not bus_only
+
+
+def _render_sidewalk_side(row: pd.Series, side: str) -> bool | None:
+    if not _generated_sidewalk(row):
+        return False
+    value = next((_nn(row.get(k)) for k in (f"sidewalk:{side}", "sidewalk:both", "sidewalk") if _nn(row.get(k)) is not None), None)
+    # Mapped sidewalk centerlines remain navigation paths but no longer draw a second surface ribbon, so the
+    # normalized road metadata keeps one curb-aligned visual strip on that explicitly identified side.
+    if value == "separate":
+        return True
+    return _sidewalk_side(row, side)
+
+
 def _road_width(row: pd.Series) -> float:
     hw = str(row.get("highway"))
     w = ROAD_WIDTH.get(hw, 6.0)
@@ -483,6 +562,33 @@ def _road_width(row: pd.Series) -> float:
     if lanes:
         w = max(w, lanes * LANE_WIDTH)
     return round(w, 1)
+
+
+def _mapped_sidewalk_sides(lines: gpd.GeoDataFrame) -> pd.DataFrame:
+    """Find road sides already represented by a nearby, parallel OSM sidewalk way."""
+    out = pd.DataFrame(False, index=lines.index, columns=["left", "right"])
+    if len(lines) == 0 or "footway" not in lines:
+        return out
+    mapped = lines[(lines["highway"] == "footway") & (lines["footway"] == "sidewalk")]
+    if len(mapped) == 0:
+        return out
+    index = mapped.sindex
+    for idx, row in lines.iterrows():
+        if not _generated_sidewalk(row) or row.geometry.is_empty:
+            continue
+        width = _road_width(row)
+        minimum = min(12.0, max(4.0, row.geometry.length * 0.2))
+        for side, sign in (("left", 1), ("right", -1)):
+            offset = row.geometry.offset_curve(sign * (width / 2 + 1.1))
+            if offset.is_empty:
+                continue
+            corridor = offset.buffer(2.2, cap_style="flat")
+            hits = list(index.query(corridor, predicate="intersects"))
+            if not hits:
+                continue
+            covered = sum(mapped.iloc[i].geometry.intersection(corridor).length for i in hits)
+            out.at[idx, side] = covered >= minimum
+    return out
 
 
 WATER_REL_Z = 2.0        # endpoints lower than this (m above base) are over the river, not on a bank
@@ -730,7 +836,7 @@ def process_roads(raw_path: Path, terrain=None) -> tuple[gpd.GeoDataFrame, gpd.G
         return empty, empty
     lines = raw[raw.geometry.geom_type.isin(["LineString", "MultiLineString"])].copy()
     lines = lines[~lines["highway"].isin(["proposed", "construction", "raceway", "corridor", "elevator", "bus_stop", "platform"])]
-    lines = lines.explode(index_parts=False)
+    lines = lines.explode(index_parts=False).reset_index(drop=True)
     if "area" in lines:
         lines = lines[lines["area"].fillna("no") != "yes"]
     deck, connectors = _deck_endpoints(lines, terrain)
@@ -739,6 +845,15 @@ def process_roads(raw_path: Path, terrain=None) -> tuple[gpd.GeoDataFrame, gpd.G
         bridge_flag = bridge_flag.copy()
         bridge_flag.loc[connectors] = True
     deck, ramp_flag = _ramp_decks(lines, deck, bridge_flag, terrain)
+    mapped_sides = _mapped_sidewalk_sides(lines)
+    sidewalk_left = lines.apply(lambda row: _render_sidewalk_side(row, "left"), axis=1)
+    sidewalk_right = lines.apply(lambda row: _render_sidewalk_side(row, "right"), axis=1)
+    sidewalk_left = sidewalk_left.mask(mapped_sides["left"], False)
+    sidewalk_right = sidewalk_right.mask(mapped_sides["right"], False)
+    # Object columns containing bool + None are serialized by Fiona as the strings "True"/"False".
+    # Preserve the nullable boolean contract so the renderer does not silently re-enable a disabled side.
+    sidewalk_left = sidewalk_left.astype("boolean")
+    sidewalk_right = sidewalk_right.astype("boolean")
     roads = gpd.GeoDataFrame({
         "id": lines.apply(_osm_id, axis=1),
         "name": lines["name"].map(_nn) if "name" in lines else None,
@@ -748,8 +863,9 @@ def process_roads(raw_path: Path, terrain=None) -> tuple[gpd.GeoDataFrame, gpd.G
         "oneway": (lines["oneway"].fillna("no") == "yes") if "oneway" in lines else False,
         "surface": lines["surface"].map(_nn) if "surface" in lines else None,
         "footway": lines["footway"].map(_nn) if "footway" in lines else None,
-        "sidewalk_left": lines.apply(lambda row: _sidewalk_side(row, "left"), axis=1),
-        "sidewalk_right": lines.apply(lambda row: _sidewalk_side(row, "right"), axis=1),
+        "sidewalk_left": sidewalk_left,
+        "sidewalk_right": sidewalk_right,
+        "generated_sidewalk": lines.apply(_generated_sidewalk, axis=1),
         "bus_lanes": lines["lanes:bus"].map(parse_levels) if "lanes:bus" in lines else None,
         "bus_lane_side": lines.apply(lambda row: "right" if REGION == "richmond" and
             row.get("name") in ("East Broad Street", "West Broad Street") and
@@ -770,12 +886,88 @@ def process_roads(raw_path: Path, terrain=None) -> tuple[gpd.GeoDataFrame, gpd.G
         pts = pts[pts["highway"] == "crossing"]
     else:
         pts = pts.iloc[0:0]
+    topology = _match_crossings_to_roads(pts, roads)
     crossings = gpd.GeoDataFrame({
         "id": pts.apply(_osm_id, axis=1) if len(pts) else [],
         "crossing": pts["crossing"].map(_nn).fillna("unmarked") if "crossing" in pts else "unmarked",
+        "crossing_markings": pts["crossing:markings"].map(_nn) if "crossing:markings" in pts else None,
+        "road_id": topology["road_id"],
+        "road_width": topology["road_width"],
+        "road_dx": topology["road_dx"],
+        "road_dy": topology["road_dy"],
+        "road_x": topology["road_x"],
+        "road_y": topology["road_y"],
+        "crossing_island": (pts["crossing:island"].fillna("no") == "yes").tolist() if "crossing:island" in pts else [False] * len(pts),
         "geometry": pts.geometry,
     }, crs=CRS_PROJ)
     return roads, crossings
+
+
+def _match_crossings_to_roads(points: gpd.GeoDataFrame, roads: gpd.GeoDataFrame) -> dict[str, list]:
+    """Attach each crossing to the road it crosses, using mapped crossing-footway direction when available."""
+    empty = {k: [None] * len(points) for k in ("road_id", "road_width", "road_dx", "road_dy", "road_x", "road_y")}
+    if len(points) == 0 or len(roads) == 0:
+        return empty
+    from shapely.geometry import LineString
+    from shapely.strtree import STRtree
+
+    minor = {"footway", "path", "steps", "cycleway", "pedestrian", "service", "living_street", "track"}
+    motor = roads[~roads["highway"].isin(minor) & ~roads["bridge"] & ~roads["tunnel"]].reset_index(drop=True)
+    foot = roads[roads["footway"] == "crossing"].reset_index(drop=True)
+    if len(motor) == 0:
+        return empty
+    motor_geoms = list(motor.geometry)
+    motor_tree = STRtree(motor_geoms)
+    foot_geoms = list(foot.geometry)
+    foot_tree = STRtree(foot_geoms) if foot_geoms else None
+
+    def tangent(geom, point: Point) -> tuple[float, float]:
+        coords = list(geom.coords)
+        best = (1.0, 0.0)
+        best_dist = float("inf")
+        for a, b in zip(coords, coords[1:]):
+            dx, dy = b[0] - a[0], b[1] - a[1]
+            length = math.hypot(dx, dy)
+            if length < 1e-6:
+                continue
+            dist = LineString([a, b]).distance(point)
+            if dist < best_dist:
+                best_dist = dist
+                best = (dx / length, dy / length)
+        return best
+
+    out = {k: [] for k in empty}
+    for point in points.geometry:
+        foot_dir = None
+        if foot_tree is not None:
+            nearest_foot = min(foot_tree.query(point.buffer(2)), key=lambda i: foot_geoms[i].distance(point), default=None)
+            if nearest_foot is not None and foot_geoms[nearest_foot].distance(point) <= 1.5:
+                foot_dir = tangent(foot_geoms[nearest_foot], point)
+        best = None
+        for i in motor_tree.query(point.buffer(15)):
+            row = motor.iloc[i]
+            geom = motor_geoms[i]
+            distance = geom.distance(point)
+            if distance > float(row["width"]) / 2 + 2:
+                continue
+            road_dir = tangent(geom, point)
+            parallel_penalty = abs(road_dir[0] * foot_dir[0] + road_dir[1] * foot_dir[1]) * 4 if foot_dir else 0
+            score = distance + parallel_penalty
+            if best is None or score < best[0]:
+                projected = geom.interpolate(geom.project(point))
+                best = (score, row, road_dir, projected)
+        if best is None:
+            for key in out:
+                out[key].append(None)
+            continue
+        _, row, (dx, dy), projected = best
+        out["road_id"].append(row["id"])
+        out["road_width"].append(round(float(row["width"]), 2))
+        out["road_dx"].append(round(dx, 6))
+        out["road_dy"].append(round(dy, 6))
+        out["road_x"].append(round(projected.x, 2))
+        out["road_y"].append(round(projected.y, 2))
+    return out
 
 
 def process_rail(raw_path: Path, terrain=None) -> gpd.GeoDataFrame:

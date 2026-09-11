@@ -21,10 +21,14 @@ python3 -m venv .venv
 .venv/bin/python pipeline/fetch_hydro.py        # NOAA river/pond boundaries and shoreline elevations
 .venv/bin/python pipeline/dem_noaa.py --download # Download NOAA 2025 DEM tiles and build 1 m terrain
 .venv/bin/python pipeline/fetch_lidar.py        # 2025 City of Richmond LiDAR -> heights + roofs
-.venv/bin/python pipeline/build_tiles.py
+.venv/bin/python pipeline/build_tiles.py --no-merge # Preserve individual rowhouses
+.venv/bin/python pipeline/build_tiles.py --roads-only # Fast road/crossing iteration using existing tiles
 ```
 
 The full command list, data conventions and layout notes live in `CLAUDE.md`.
+
+Richmond coverage extends from the Fan District through downtown and Shockoe Bottom, retaining
+the James River corridor. See [the Fan expansion notes](docs/richmond-fan.md) for data and visual QA.
 
 See [the style template](docs/map-styles.md) to add another rendering style.
 

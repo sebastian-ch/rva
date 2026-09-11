@@ -78,7 +78,7 @@ function capitalize(s: string): string {
 
 function fallbackName(type: string): string {
   const trimmed = type.trim();
-  if (trimmed.length === 0) return "Building";
+  if (trimmed.length === 0 || trimmed === "yes") return "Building";
   return `${capitalize(trimmed)} building`;
 }
 

@@ -1,14 +1,14 @@
 {
   "richmond": {
     "title": "Isometric Richmond",
-    "subtitle": "Downtown · Shockoe Bottom · Capitol Square",
+    "subtitle": "The Fan · Downtown · Shockoe Bottom · Capitol Square",
     "initialZoom": 1.1,
     "cameraAzimuth": 45,
     "cameraProjection": "orthographic",
     "cameraElevation": 35,
     "cameraDistance": 1800,
     "initialTarget": null,
-    "bbox": [-77.456, 37.517, -77.418, 37.548],
+    "bbox": [-77.486, 37.517, -77.418, 37.568],
     "crs": "EPSG:32618",
     "data": "data",
     "assets": "assets",

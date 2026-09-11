@@ -22,7 +22,7 @@ LANDMARKS_PATH = ASSETS / "landmarks" / "landmarks.json"
 CRS_WGS84 = "EPSG:4326"
 CRS_PROJ = PROFILE["crs"]
 
-# First slice: Downtown + Shockoe Bottom + Capitol Square. (west, south, east, north)
+# Active region bounds (west, south, east, north); Richmond includes the Fan and downtown.
 DEFAULT_BBOX = tuple(PROFILE["bbox"])
 
 TILE_SIZE = 250.0  # meters

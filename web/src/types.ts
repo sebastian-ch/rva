@@ -56,6 +56,7 @@ export interface BuildingProps {
   type: string;
   landmark: string | null;
   footprint_source?: string;
+  source_updated?: string | null;
   is_part?: boolean;
   parent?: string | null;
   hidden?: boolean;
@@ -67,14 +68,18 @@ export interface BuildingProps {
 }
 export interface RoadProps {
   id: string; name: string | null; highway: string; lanes: number | null; width: number;
-  footway?: string | null; sidewalk_left?: boolean | null; sidewalk_right?: boolean | null; bus_lanes?: number | null; bus_only?: boolean; bus_lane_side?: "left" | "right" | null;
+  footway?: string | null; sidewalk_left?: boolean | null; sidewalk_right?: boolean | null; generated_sidewalk?: boolean; bus_lanes?: number | null; bus_only?: boolean; bus_lane_side?: "left" | "right" | null;
   oneway: boolean; surface: string | null; sidewalk: boolean; bridge: boolean; ramp?: boolean; tunnel: boolean; layer: number;
   deck?: string | number[] | null;
 }
 export interface RailProps { id: string; name: string | null; railway: string; bridge: boolean; ramp?: boolean; layer: number; deck?: string | number[] | null }
-export interface AreaProps { id: string; name: string | null; kind: string; source?: string; water_z?: number | null; coastal?: boolean; base_z?: number | null; top_z?: number | null }
+export interface AreaProps { id: string; name: string | null; kind: string; source?: string; source_updated?: string | null; water_z?: number | null; coastal?: boolean; base_z?: number | null; top_z?: number | null }
 export interface PoiProps { id: string; name: string | null; kind: string; species?: string | null; source?: string; tree_height?: number; crown_radius?: number }
-export interface CrossingProps { id: string; crossing: string }
+export interface CrossingProps {
+  id: string; crossing: string; crossing_markings?: string | null;
+  road_id?: string | null; road_width?: number | null; road_dx?: number | null; road_dy?: number | null;
+  road_x?: number | null; road_y?: number | null; crossing_island?: boolean;
+}
 
 export interface Landmark {
   slug: string; name: string; lat: number; lon: number; kind: string; wikidata: string | null;

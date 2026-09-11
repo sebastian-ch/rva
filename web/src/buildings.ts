@@ -3,7 +3,7 @@ import palette from '../../assets/palette.json';
 import { hex } from './props';
 import { MeshBuilder, ccw, centroid, cleanRing, insetRing, minAreaOBB, polygons, signedArea, triangulate, type V2 } from './geomutil';
 import { facadeParams } from './facade';
-import { addRoofDetails } from './roofDetails';
+import { addBox, addRoofDetails } from './roofDetails';
 import { hashStr } from './geomutil';
 import type { BuildingProps, Feature, PolyGeom } from './types';
 
@@ -22,10 +22,152 @@ const AO_HEIGHT = 6;     // meters over which the gradient fades
  */
 export interface ExtrudeOptions { details?: boolean }
 
+export function isSevenEleven(p: Pick<BuildingProps, 'id' | 'name' | 'addr' | 'website'>): boolean {
+  return p.id === 'osm:way/236014923' || /7[- ]?eleven/i.test(`${p.name ?? ''} ${p.addr ?? ''} ${p.website ?? ''}`);
+}
+
+export function isCaryMcDonalds(p: Pick<BuildingProps, 'id'>): boolean {
+  return p.id === 'osm:way/235998654';
+}
+
+function addSevenElevenFacade(mb: MeshBuilder, outer: V2[], ground: number): void {
+  const obb = minAreaOBB(outer);
+  const [ax, az] = obb.axis;
+  const perp: V2 = [-az, ax];
+  let minU = Infinity, maxU = -Infinity, minV = Infinity, maxV = -Infinity;
+  for (const [x, z] of outer) {
+    const u = x * ax + z * az, v = x * perp[0] + z * perp[1];
+    minU = Math.min(minU, u); maxU = Math.max(maxU, u); minV = Math.min(minV, v); maxV = Math.max(maxV, v);
+  }
+  const uMid = (minU + maxU) * 0.5;
+  const rot = Math.atan2(az, ax);
+  const point = (u: number, v: number): V2 => [u * ax + v * perp[0], u * az + v * perp[1]];
+  // The store's customer-facing side is the south-facing long edge in the local map frame.
+  const southAtMax = point(uMid, maxV)[1] > point(uMid, minV)[1];
+  const side = southAtMax ? 1 : -1;
+  const vFront = side > 0 ? maxV : minV;
+  const box = (u: number, y: number, width: number, height: number, d: number, color: THREE.Color, vOffset = 0) => {
+    const [x, z] = point(u, vFront + side * (d * 0.5 + vOffset));
+    addBox(mb, x, ground + y, z, width, height, d, rot, color);
+  };
+  const orange = pal('seven_orange'), green = pal('seven_green'), red = pal('seven_red');
+  const brown = pal('seven_brown'), brick = pal('seven_brick'), glass = pal('seven_glass');
+  const white = pal('seven_white');
+  const width = Math.max(12, Math.min(20, maxU - minU - 1.2));
+  const left = uMid - width * 0.5, right = uMid + width * 0.5;
+  // Brick end wings and dark storefront glazing echo the supplied reference photo.
+  box(left + 2.0, 0.05, 4.0, 3.35, 0.10, brick, side * 0.02);
+  box(right - 2.0, 0.05, 4.0, 3.35, 0.10, brick, side * 0.02);
+  box(uMid, 0.85, width - 4.0, 1.85, 0.10, glass, side * 0.03);
+  // Deep brown projecting fascia and the three signature stripe bands.
+  box(uMid, 2.72, width, 0.72, 1.05, brown);
+  for (const [y, color] of [[2.92, red], [3.15, green], [3.38, red]] as const) {
+    const gap = 1.5;
+    box(uMid - gap * 0.5 - (width - 2.1) * 0.25, y, (width - 2.1) * 0.42, 0.11, 0.08, color, side * 0.56);
+    box(uMid + gap * 0.5 + (width - 2.1) * 0.25, y, (width - 2.1) * 0.42, 0.11, 0.08, color, side * 0.56);
+  }
+  // Central white sign with the red/green 7-Eleven color block motif.
+  box(uMid, 3.03, 1.55, 1.18, 0.22, white, side * 0.58);
+  box(uMid, 3.58, 0.78, 0.34, 0.04, red, side * 0.72);
+  box(uMid, 2.78, 0.16, 0.34, 0.04, red, side * 0.72);
+  box(uMid, 2.93, 0.64, 0.10, 0.04, green, side * 0.72);
+  // Small canopy lip above the customer doors.
+  box(uMid, 2.28, width - 3.2, 0.16, 0.9, orange);
+  // A slim pole sign gives the store a recognizable silhouette at map scale.
+  const signU = right - 0.9;
+  box(signU, 3.6, 0.16, 2.0, 0.16, brown, side * 0.15);
+  box(signU, 4.52, 0.9, 0.7, 0.22, white, side * 0.16);
+  box(signU, 4.78, 0.46, 0.18, 0.04, red, side * 0.29);
+  box(signU, 4.59, 0.10, 0.18, 0.04, red, side * 0.29);
+  box(signU, 4.50, 0.40, 0.08, 0.04, green, side * 0.29);
+}
+
+function addGoldenArches(mb: MeshBuilder, at: (horizontal: number, y: number) => THREE.Vector3, color: THREE.Color): void {
+  const stroke = 0.17;
+  const curves = [[-1, -0.5, 0], [0, 0.5, 1]] as const;
+  for (const [start, control, end] of curves) {
+    const points = Array.from({ length: 6 }, (_, i) => {
+      const t = i / 5, q = 1 - t;
+      return { h: q * q * start + 2 * q * t * control + t * t * end, y: 2 * q * t * 1.75 + t * t * 0.28 };
+    });
+    for (let i = 0; i < points.length - 1; i++) {
+      const a = points[i], b = points[i + 1], dh = b.h - a.h, dy = b.y - a.y;
+      const len = Math.hypot(dh, dy), oh = -dy / len * stroke, oy = dh / len * stroke;
+      const p0 = at(a.h + oh, a.y + oy), p1 = at(b.h + oh, b.y + oy);
+      const p2 = at(b.h - oh, b.y - oy), p3 = at(a.h - oh, a.y - oy);
+      mb.tri(p0, p1, p2, color); mb.tri(p0, p2, p3, color);
+      mb.tri(p0, p2, p1, color); mb.tri(p0, p3, p2, color);
+    }
+  }
+}
+
+function addCaryMcDonaldsFacade(mb: MeshBuilder, outer: V2[], ground: number): void {
+  const obb = minAreaOBB(outer);
+  const [ax, az] = obb.axis;
+  const perp: V2 = [-az, ax];
+  let minU = Infinity, maxU = -Infinity, minV = Infinity, maxV = -Infinity;
+  for (const [x, z] of outer) {
+    const u = x * ax + z * az, v = x * perp[0] + z * perp[1];
+    minU = Math.min(minU, u); maxU = Math.max(maxU, u); minV = Math.min(minV, v); maxV = Math.max(maxV, v);
+  }
+  const point = (u: number, v: number): V2 => [u * ax + v * perp[0], u * az + v * perp[1]];
+  const uMid = (minU + maxU) * 0.5, vMid = (minV + maxV) * 0.5;
+  // The footprint's long axis runs away from Cary Street. Its south-facing short end is the storefront.
+  // In web-local coordinates south is the larger z end.
+  const frontSide = point(maxU, vMid)[1] > point(minU, vMid)[1] ? 1 : -1;
+  const uFront = frontSide > 0 ? maxU : minU;
+  const rot = Math.atan2(az, ax);
+  const box = (u: number, v: number, y: number, sx: number, sy: number, sz: number, color: THREE.Color) => {
+    const [x, z] = point(u, v);
+    addBox(mb, x, ground + y, z, sx, sy, sz, rot, color);
+  };
+  const tower = pal('mcd_tower'), glass = pal('mcd_glass');
+  const trim = pal('mcd_trim'), gold = pal('mcd_gold'), stone = pal('mcd_stone');
+  const facadeWidth = Math.min(13, maxV - minV - 1);
+
+  // Cary Street elevation: dark storefront glass under the long white modern canopy.
+  box(uFront + frontSide * 0.08, vMid, 0.55, 0.16, 2.45, facadeWidth, glass);
+  box(uFront + frontSide * 0.72, vMid, 3.02, 1.55, 0.22, facadeWidth + 1.0, trim);
+  box(uFront + frontSide * 0.12, vMid, 3.36, 0.22, 0.18, facadeWidth + 1.4, trim);
+
+  // The taller charcoal sign tower sits at the west end of the Cary elevation.
+  const minVIsWest = point(uFront, minV)[0] < point(uFront, maxV)[0];
+  const towerV = minVIsWest ? minV + 2.4 : maxV - 2.4;
+  box(uFront + frontSide * 0.12, towerV, 0, 0.35, 5.5, 4.6, tower);
+  box(uFront + frontSide * 0.34, towerV, 5.3, 0.28, 0.18, 4.8, trim);
+
+  const frontMarkU = uFront + frontSide * 0.42;
+  addGoldenArches(mb, (h, y) => {
+    const [x, z] = point(frontMarkU, towerV + h);
+    return new THREE.Vector3(x, ground + 3.0 + y, z);
+  }, gold);
+
+  // Low stone patio enclosure and dark rail rhythm across the Cary frontage.
+  box(uFront + frontSide * 2.65, vMid, 0, 0.38, 0.72, facadeWidth * 0.75, stone);
+  for (let i = -3; i <= 3; i++) box(uFront + frontSide * 2.65, vMid + i * 1.25, 0.72, 0.10, 0.55, 0.10, tower);
+
+  // East wall: a second tower panel and sign match the supplied side view.
+  const eastV = point(uMid, minV)[0] > point(uMid, maxV)[0] ? minV : maxV;
+  const eastSide = eastV === minV ? -1 : 1;
+  const sideTowerU = uFront - frontSide * 3.2;
+  box(sideTowerU, eastV + eastSide * 0.12, 0, 6.4, 5.0, 0.35, tower);
+  const sideMarkV = eastV + eastSide * 0.42;
+  addGoldenArches(mb, (h, y) => {
+    const [x, z] = point(sideTowerU + h, sideMarkV);
+    return new THREE.Vector3(x, ground + 2.8 + y, z);
+  }, gold);
+  // Break up the remaining blank side wall with the photographed white canopy band.
+  const sideStoreU = sideTowerU - frontSide * 4.0;
+  const sideStoreWidth = Math.min(8.0, maxU - minU - 8);
+  box(sideStoreU, eastV + eastSide * 0.10, 0.55, sideStoreWidth, 2.15, 0.16, glass);
+  box(sideStoreU, eastV + eastSide * 0.18, 2.9, sideStoreWidth, 0.22, 0.28, trim);
+}
+
 export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, BuildingProps>, toLocal: (x: number, y: number) => V2, groundY: number, opts: ExtrudeOptions = {}): number {
   const p = feat.properties;
   const start = mb.triCount;
-  const wall = pal(p.wall_color), roof = pal(p.roof_color);
+  const caryMcDonalds = isCaryMcDonalds(p);
+  const wall = pal(caryMcDonalds ? 'mcd_wall' : p.wall_color), roof = pal(isSevenEleven(p) ? 'concrete' : caryMcDonalds ? 'mcd_tower' : p.roof_color);
   // outlines covered by their building:parts become a low plinth: still pickable, no facade, no roof
   const hidden = p.hidden === true;
   const base = groundY - 0.3 + p.min_height; // sink slightly so slopes don't show gaps
@@ -41,7 +183,7 @@ export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, Buildin
     const holes = rings.slice(1).map((r) => (signedArea(r) > 0 ? r.slice().reverse() : r));
 
     // walls
-    const fp = hidden ? { floor: 0, style: 0 } : facadeParams(p);
+    const fp = hidden || isSevenEleven(p) || caryMcDonalds ? { floor: 0, style: 0 } : facadeParams(p);
     const seed = (hashStr(p.id) % 1000) / 1000;
     for (const ring of [outer, ...holes]) {
       const n = ring.length;
@@ -94,7 +236,11 @@ export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, Buildin
       const done = (p.roof_shape === 'hip' || p.roof_shape === 'pyramidal') && addInsetRoof(mb, outer, top, roofH, roof, p.roof_shape === 'pyramidal');
       if (!done) addRoof(mb, outer, top, roofH, p.roof_shape, roof, wall, p.roof_azimuth ?? null, holes);
     }
-    if (opts.details !== false && !hidden) addRoofDetails(mb, outer, top, p, wall, roof);
+    if (opts.details !== false && !hidden) {
+      if (isSevenEleven(p)) addSevenElevenFacade(mb, outer, groundY);
+      if (caryMcDonalds) addCaryMcDonaldsFacade(mb, outer, groundY);
+      addRoofDetails(mb, outer, top, p, wall, roof);
+    }
   }
   return mb.triCount - start;
 }

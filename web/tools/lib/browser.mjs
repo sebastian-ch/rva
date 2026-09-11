@@ -57,13 +57,33 @@ export async function openViewer(browser, { url = 'http://localhost:5173/', time
 export async function waitForSettle(page, timeout = 180000) {
   await page
     .waitForFunction(
-      () => window.__iso && window.__iso.manager && window.__iso.manager() && window.__iso.tiles.length > 0 && !window.__iso.manager().busy,
+      () => window.__iso && window.__iso.manager && window.__iso.manager() && window.__iso.tiles.length > 0 && !window.__iso.iso.isAnimating && !window.__iso.manager().busy,
       null,
       { timeout },
     )
     .catch((e) => {
       throw new Error(`viewer did not settle within ${timeout}ms: ${e.message}`);
     });
+}
+
+/** Visit projected coordinates using the active manifest's local origin. */
+export async function visitProjected(page, { x, y, zoom = 3.3, height = 48 }) {
+  const origin = await page.evaluate(async () => {
+    const url = new URL('tiles/index.json', location.href);
+    return (await (await fetch(url)).json()).origin;
+  });
+  await page.evaluate(({ x, y, zoom, height, origin }) => {
+    const { iso, manager } = window.__iso;
+    const next = iso.controls.target.clone().set(x - origin[0], height, origin[1] - y);
+    iso.camera.position.add(next.clone().sub(iso.controls.target));
+    iso.controls.target.copy(next);
+    iso.camera.zoom = zoom;
+    iso.camera.updateProjectionMatrix();
+    iso.controls.update();
+    manager().update(iso.camera, zoom, true);
+  }, { x, y, zoom, height, origin });
+  await waitForSettle(page);
+  await page.waitForTimeout(800);
 }
 
 /** Evaluate window.__iso.stats() plus a few scene-level counters. */

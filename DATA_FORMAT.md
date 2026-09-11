@@ -49,7 +49,8 @@ Geometry is clipped to the tile bbox. All layers optional; missing = empty.
 | `wall_color` | string | palette key |
 | `type` | string | OSM `building=*` value |
 | `landmark` | string\|null | slug from `assets/landmarks/landmarks.json` |
-| `footprint_source` | `"osm"\|"vgin"\|"cch"\|"override"` | VGIN is gap-fill. Honolulu uses CCH city outlines, enriched with spatially matched OSM tags, plus non-overlapping OSM gap-fill |
+| `footprint_source` | `"osm"\|"richmond_structures"\|"vgin"\|"cch"\|"override"` | Richmond Structures is the current city gap-fill; VGIN is the offline fallback. Honolulu uses CCH city outlines, enriched with spatially matched OSM tags, plus non-overlapping OSM gap-fill |
+| `source_updated` | string\|null | ISO timestamp from the source feature edit field when available |
 | `is_part` | bool | OSM `building:part` (Simple 3D Buildings); rendered as its own extrusion |
 | `parent` | string\|null | id of the outline building containing a part; parts inherit name/addr/landmark from it |
 | `hidden` | bool | outline whose parts cover ≥ 60% of it; the viewer draws only a 0.6 m plinth (keeps picking and the info card) |
@@ -60,8 +61,11 @@ Geometry is clipped to the tile bbox. All layers optional; missing = empty.
 ### roads (LineString)
 `id`, `name`, `highway`, `lanes` (int), `width` (m), `oneway` (bool), `surface`, `sidewalk` (bool), `bridge` (bool), `ramp` (bool: a non-bridge way whose end meets an elevated deck; carries a `deck` so it climbs to it), `tunnel` (bool), `layer` (int), `deck` (bridges and ramps: `[x0,y0,z0,x1,y1,z1]`, the unclipped way's ends with deck elevations relative to `base_elevation`, computed per connected bridge chain from its land ends (chain nodes whose ground is at or above the interpolated deck become anchors too); the GeoJSON driver stores it as a real array)
 
-Optional road attributes: `sidewalk_left` / `sidewalk_right` (boolean or null; false also covers
-separately mapped sidewalks), `footway` (OSM subtype, including crossing), `bus_only` (boolean),
+Optional road attributes: `generated_sidewalk` (the pipeline's normalized curb-strip eligibility),
+`sidewalk_left` / `sidewalk_right` (boolean or null; false also covers
+an explicitly absent side or a side replaced by a parallel mapped sidewalk; mapped `footway=sidewalk` lines
+provide both the visible surface and pedestrian navigation),
+`footway` (OSM subtype, including crossing), `bus_only` (boolean),
 `bus_lanes` (count), and `bus_lane_side` (`left`/`right` or null). Count alone does not imply lane placement.
 Richmond downtown Broad Street's tagged one-way bus lanes use the documented curbside configuration.
 
@@ -69,7 +73,9 @@ Richmond downtown Broad Street's tagged one-way bus lanes use the documented cur
 `id`, `name`, `railway`, `bridge`, `layer`, `deck` (as for roads)
 
 ### landuse (Polygon)
-`id`, `name`, `kind`: `"park"|"grass"|"parking"|"cemetery"|"plaza"|"industrial"|"forest"|"beach"`
+`id`, `name`, `kind`: `"park"|"grass"|"parking"|"cemetery"|"plaza"|"industrial"|"forest"|"beach"|"deck"`.
+Richmond `deck` surfaces come from Structures subtype 3 and include `source: "richmond_structures"` plus the
+optional per-feature `source_updated` timestamp. They are draped 0.12 m above terrain because the source has no elevation.
 
 Elevations in every layer are real metres above `base_elevation`; the viewer multiplies them by `Z_SCALE` (1.6, `web/src/elevation.ts`) when a tile is loaded and divides back for anything shown to the user.
 
@@ -79,7 +85,10 @@ Elevations in every layer are real metres above `base_elevation`; the viewer mul
 pushed down to `water_z - 0.5` under those polygons so the surface is always visible.
 
 ### crossings (Point)
-`id`, `crossing` (raw OSM `crossing=*` value: `marked`, `unmarked`, `traffic_signals`, `uncontrolled`, `zebra`, …; missing tag → `unmarked`)
+`id`, `crossing` (raw OSM `crossing=*` value: `marked`, `unmarked`, `traffic_signals`, `uncontrolled`, `zebra`, …; missing tag → `unmarked`),
+`crossing_markings` (raw OSM `crossing:markings=*`; explicit `zebra` renders zebra bars, while unspecified marked crossings use a neutral transverse pair),
+`road_id`, `road_width`, `road_dx`, `road_dy`, `road_x`, `road_y` (the matched motor-road id, width, unit direction and projected centreline point; nullable when no safe match exists),
+`crossing_island` (true only for source `crossing:island=yes`)
 
 ### pois (Point)
 `id`, `name`, `kind`: `"tree"|"streetlight"|"bench"|"bus_stop"|"traffic_signals"|"fountain"|"monument"|"shop"|"restaurant"|"museum"`

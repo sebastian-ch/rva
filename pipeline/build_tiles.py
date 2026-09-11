@@ -19,12 +19,26 @@ from pyproj import Transformer
 from shapely.geometry import box
 
 from config import CRS_PROJ, DATA_RAW, DATA_TILES, DEFAULT_BBOX, TILE_SIZE, REGION, PROFILE, bbox_slug, snap_down
-from process import (process_buildings, process_landuse, process_pois, process_rail, process_roads,
-                     process_water)
+from process import (process_buildings, process_landuse, process_pois, process_rail, process_richmond_decks,
+                     process_roads, process_water)
 from terrain import Terrain
 from landmarks import resolve_landmarks
 
 POINT_LAYERS = {"pois", "crossings"}
+
+
+def _tile_layer(gdf: gpd.GeoDataFrame, spatial_index, name: str, tile_box):
+    """Apply the standard per-layer ownership and clipping rules for one tile."""
+    cand = gdf.iloc[list(spatial_index.query(tile_box, predicate="intersects"))]
+    if len(cand) == 0:
+        return cand
+    if name in POINT_LAYERS:
+        return cand
+    if name == "buildings":
+        minx, miny, maxx, maxy = tile_box.bounds
+        c = cand.geometry.centroid
+        return cand[(c.x >= minx) & (c.x < maxx) & (c.y >= miny) & (c.y < maxy)]
+    return gpd.clip(cand, tile_box, keep_geom_type=True)
 
 
 def _write_layer(gdf: gpd.GeoDataFrame, dst: Path) -> int:
@@ -75,6 +89,7 @@ def build(bbox, merge_rowhouses=True, clean=False) -> Path:
                                        overture_path=DATA_RAW / f"overture_{slug}.parquet",
                                        lidar_npz=DATA_RAW / f"lidar_{slug}.npz",
                                        richmond_dir=DATA_RAW / f"richmond_{slug}",
+                                       richmond_structures_path=DATA_RAW / f"richmond_{slug}" / "structures.parquet",
                                        vgin_path=DATA_RAW / f"vgin_{slug}.parquet"),
         "roads": roads,
         "crossings": crossings,
@@ -86,6 +101,9 @@ def build(bbox, merge_rowhouses=True, clean=False) -> Path:
     hydro = None
     surveyed_trees = False
     if REGION == "richmond":
+        city_decks = process_richmond_decks(DATA_RAW / f"richmond_{slug}" / "structures.parquet")
+        if len(city_decks):
+            layers["landuse"] = gpd.GeoDataFrame(pd.concat([layers["landuse"], city_decks], ignore_index=True), crs=CRS_PROJ)
         hydro_path = DATA_RAW / "richmond_hydro_2025.gpkg"
         if hydro_path.exists() and terrain:
             from hydro import load_hydro, merge_water
@@ -168,17 +186,7 @@ def build(bbox, merge_rowhouses=True, clean=False) -> Path:
             for name, gdf in layers.items():
                 if name not in sidx:
                     continue
-                cand = gdf.iloc[list(sidx[name].query(tile_box, predicate="intersects"))]
-                if len(cand) == 0:
-                    continue
-                if name in POINT_LAYERS:
-                    part = cand
-                elif name == "buildings":
-                    # assign whole footprints to the tile containing their centroid (no split buildings)
-                    c = cand.geometry.centroid
-                    part = cand[(c.x >= tminx) & (c.x < tminx + TILE_SIZE) & (c.y >= tminy) & (c.y < tminy + TILE_SIZE)]
-                else:
-                    part = gpd.clip(cand, tile_box, keep_geom_type=True)
+                part = _tile_layer(gdf, sidx[name], name, tile_box)
                 if len(part) == 0:
                     continue
                 tdir.mkdir(exist_ok=True)
@@ -258,13 +266,67 @@ def build(bbox, merge_rowhouses=True, clean=False) -> Path:
     return DATA_TILES / "index.json"
 
 
+def rebuild_road_tiles(bbox) -> Path:
+    """Reprocess and rewrite only roads/crossings while preserving every other tile layer."""
+    index_path = DATA_TILES / "index.json"
+    if not index_path.exists():
+        sys.exit("tile index missing: run a full pipeline/build_tiles.py build first")
+    index = json.loads(index_path.read_text())
+    if list(bbox) != index.get("bbox_wgs84"):
+        sys.exit("--roads-only requires the existing tile index to use the requested bounding box")
+
+    slug = bbox_slug(bbox)
+    raw_dir = DATA_RAW / f"osm_{slug}"
+    if not raw_dir.exists():
+        sys.exit(f"raw OSM dir missing: {raw_dir}. Run pipeline/fetch.py first.")
+    dem_path = DATA_RAW / f"dem_{slug}.tif"
+    terrain = Terrain(dem_path) if dem_path.exists() else None
+    t0 = time.time()
+    roads, crossings = process_roads(raw_dir / "roads.parquet", terrain)
+    layers = {"roads": roads, "crossings": crossings}
+    indexes = {name: layer.sindex for name, layer in layers.items() if len(layer)}
+
+    for meta in index["tiles"]:
+        tile_box = box(*meta["bbox"])
+        tdir = DATA_TILES / meta["id"]
+        for name, layer in layers.items():
+            dst = tdir / f"{name}.geojson"
+            part = _tile_layer(layer, indexes[name], name, tile_box) if name in indexes else layer
+            count = _write_layer(part, dst) if len(part) else 0
+            if not count and dst.exists():
+                dst.unlink()
+            if count:
+                if name not in meta["layers"]:
+                    meta["layers"].append(name)
+                meta["counts"][name] = count
+            else:
+                if name in meta["layers"]:
+                    meta["layers"].remove(name)
+                meta["counts"].pop(name, None)
+
+    index_path.write_text(json.dumps(index, indent=1))
+    if terrain:
+        terrain.close()
+    print(f"rewrote roads/crossings in {len(index['tiles'])} tiles in {time.time() - t0:.1f}s -> {DATA_TILES}")
+    try:
+        from qa_report import write_report
+        write_report(DATA_TILES)
+    except Exception as exc:
+        print(f"  [warn] QA report failed: {exc}")
+    return index_path
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--bbox", nargs=4, type=float, metavar=("W", "S", "E", "N"), default=DEFAULT_BBOX)
     ap.add_argument("--no-merge", action="store_true", help="do not merge touching rowhouse footprints")
     ap.add_argument("--clean", action="store_true", help="delete existing tile dirs first")
+    ap.add_argument("--roads-only", action="store_true", help="rewrite roads/crossings in existing tiles without rebuilding other layers")
     a = ap.parse_args(argv)
-    build(tuple(a.bbox), merge_rowhouses=not a.no_merge, clean=a.clean)
+    if a.roads_only:
+        rebuild_road_tiles(tuple(a.bbox))
+    else:
+        build(tuple(a.bbox), merge_rowhouses=not a.no_merge, clean=a.clean)
     return 0
 
 

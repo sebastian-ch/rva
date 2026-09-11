@@ -84,16 +84,20 @@ without `--force`/`--clean` reuses what's on disk in `data/raw/`.
 ```bash
 .venv/bin/python pipeline/fetch.py            # ~1 min
 .venv/bin/python pipeline/fetch_overture.py   # ~5 s
-.venv/bin/python pipeline/fetch_lidar.py      # ~1 min first run, seconds after (cached)
 .venv/bin/python pipeline/fetch_richmond.py   # ~1 min
-.venv/bin/python pipeline/build_tiles.py --clean   # ~10 s
+.venv/bin/python pipeline/fetch_hydro.py
+.venv/bin/python pipeline/dem_noaa.py --download
+.venv/bin/python pipeline/fetch_lidar.py      # Rebuild against the NOAA DEM
+.venv/bin/python pipeline/build_tiles.py --no-merge
 ```
 
-All five accept `--bbox W S E N` (west south east north, decimal degrees, WGS84); default is
-`DEFAULT_BBOX` in `pipeline/config.py` — currently `(-77.4560, 37.5170, -77.4180, 37.5480)`, the
-Downtown/Shockoe Bottom/Capitol Square/James River slice. Pass the same `--bbox` to every fetcher and
+The bbox-aware scripts accept `--bbox W S E N` (west south east north, decimal degrees, WGS84); default is
+`DEFAULT_BBOX` in `pipeline/config.py`, read from `regions.json` — currently
+`(-77.486, 37.517, -77.418, 37.568)`, including the Fan, downtown, Shockoe Bottom and James River.
+`fetch_hydro.py` caches the citywide package without a bbox argument. Pass the same `--bbox` to every other fetcher and
 to `build_tiles.py` when working a different area; each fetcher's output is keyed by that bbox's slug
-so different areas don't collide in `data/raw/`.
+so raw area caches remain separate. The derived `ndsm.tif` is shared within a region and must be
+rebuilt against the matching DEM before switching extents. See [Fan expansion notes](richmond-fan.md).
 
 What each step does:
 
@@ -102,13 +106,13 @@ What each step does:
   `data/raw/dem_<slug>.tif` (EPSG:32618, float32, ~2 m). Flags: `--force`, `--skip-dem`.
 - **`fetch_overture.py`** — Overture building footprints via the `overturemaps` CLI (GeoParquet from
   S3), a second height source. Writes `data/raw/overture_<slug>.parquet`. Flag: `--force`.
-- **`fetch_lidar.py`** — walks the USGS 3DEP EPT octree (`USGS_LPC_VA_Sandy_2014_LAS_2015`) for
-  nodes intersecting the bbox, downloads `.laz` into `data/raw/ept_<slug>/`, decodes with `laspy`,
+- **`fetch_lidar.py`** — defaults to NOAA's 2025 Richmond EPT octree at depth 8 (the older USGS
+  source is available with `--source usgs2014`). Downloads intersecting `.laz` nodes into a source/bbox cache, decodes with `laspy`,
   and rasterizes a 1 m normalized DSM. Writes `data/raw/lidar_<slug>.npz` (x, y, z, classification)
-  and `data/raw/ndsm.tif`. Flags: `--max-depth` (default 13, density vs. download size), `--dry-run`,
+  and `data/raw/ndsm.tif`. Flags: `--max-depth` (source-dependent density vs. download size), `--dry-run`,
   `--force`.
 - **`fetch_richmond.py`** — pages the City of Richmond's ArcGIS Hub feature services (`Addresses`,
-  `ZoningDistricts`) for the bbox. Writes `data/raw/richmond_<slug>/<layer>.parquet`. Flag: `--force`.
+  `ZoningDistricts`, live tree inventory) for the bbox. Writes `data/raw/richmond_<slug>/<layer>.parquet`. Flag: `--force`.
 - **`build_tiles.py --clean`** — joins everything, resolves heights/roofs/addresses/zoning, cuts
   250 m tiles, resolves landmarks, and runs the QA report. `--clean` deletes existing tile
   directories first; `--no-merge` skips merging touching rowhouse footprints. Writes

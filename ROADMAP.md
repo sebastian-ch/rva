@@ -12,7 +12,7 @@ Baseline numbers (2026-09-09):
 | Roof shapes not flat | 227 / 2,234 | most rowhouses show flat when they are gable. **Phase 1 done:** 417 non-flat, 722 LiDAR-fitted |
 | Named buildings | 547 | info cards are mostly empty. **1.6 done:** 80% of buildings now carry an address |
 | Landmarks matched to footprints | 9 / 12 in slice | bridges, canal walk, memorial unmatched. **1.5 done:** 12 / 12 resolved |
-| Triangles on screen | ~1.24 M, ~135 draw calls | fine now, will not scale to 6 districts. **Phase 4 done:** streamed by camera footprint, 0.66 M resident at the default view |
+| Triangles on screen | ~1.24 M, ~135 draw calls | **Streaming done; scale target open:** the expanded Richmond geometry QA view is now about 3.6 M resident triangles |
 | Tile payload | 6.8 MB GeoJSON | geometry is built on the main thread at load. **Phase 4 done:** built in 4 workers, main thread wraps in 0.2 ms per tile |
 
 Effort key: S = under a day, M = 1–3 days, L = a week or more. "Delegable" marks tasks a smaller model
@@ -46,11 +46,12 @@ The hook exists (`pipeline/lidar.py` reads `data/raw/ndsm.tif`). Fill it.
   buildings over 150 m, footprints under 15 m², roads with no width, tiles with no terrain.
 - Run it at the end of `build_tiles.py`. Acceptance: the report is generated and linked from the README.
 
-### 1.6 City of Richmond open data (S, delegable) — done for addresses + zoning; no footprint or street-tree services are published on the city hub
-- `pipeline/fetch_richmond.py` pulling the city's ArcGIS Hub feature services (GeoJSON query endpoints, open data
-  license): building footprints (cross-check OSM/Overture gaps), address points (fill `addr` on unnamed buildings),
-  street tree inventory (replace scattered trees with surveyed positions and species), zoning (better type
-  defaults). The Esri basemap tiles themselves are proprietary and stay reference-only, like Google and Mapbox.
+### 1.6 City of Richmond open data (S, delegable) — done
+- `pipeline/fetch_richmond.py` pulls the city's address points (fill `addr` on unnamed buildings), street-tree
+  inventory (replace scattered trees with surveyed positions and species), and zoning (better type defaults)
+  from ArcGIS feature services. The Esri basemap tiles themselves stay reference-only.
+- Bbox-clipped queries to Richmond's live `Structures` FeatureServer preserve edit dates and subtypes. Buildings
+  gap-fill OSM; decks/patios render as separate low surfaces. The manual VGIN import remains an offline fallback.
 - Acceptance: named/addressed buildings above 60%; surveyed trees replace scatter in the first slice.
 
 ### 1.5 Fix the three unmatched landmarks (S) — done (`pipeline/landmarks.py` → `data/tiles/landmarks.json`)
@@ -85,9 +86,17 @@ The plan's key visual step. Recommended approach: a procedural facade shader, no
 - Water: animated stylized rapids on `river` polygons near the fall line (scrolling noise in a shader).
 - Acceptance: buildings cast shadows on streets at the default view; 60 fps on an M-series laptop.
 
-### 2.4 Road network fidelity (M) — done (junction discs, dashed markings, bridge railings and piers)
-- Junction polygons instead of overlapping ribbons (union of buffered centerlines per intersection node).
-- Dashed lane markings, turn arrows at stop lines, aligned crosswalks from `roads` geometry instead of nearest-path guess.
+### 2.4 Road network fidelity (M) — in progress (rounded junction polygons and topology-linked crossings added 2026-09-10)
+- Rounded junction polygons now replace square corner fills. Full buffered-centerline unions, explicit curb walls,
+  turn pockets and source-backed median areas remain open.
+- Replace per-tile ribbon inference with a canonical surface-topology build before tiling: node the at-grade road
+  graph, buffer carriageway centerlines by their normalized widths, union compatible arms into one junction
+  polygon, and derive curb/sidewalk rings from that surface. Generate tiles with a geometry buffer and assign
+  one owner to seam geometry so clipping cannot change junction topology or double-render tile edges.
+- Dashed lane markings are done. Crossings now carry their matched road centre, direction and width from the
+  processing pipeline instead of relying on a runtime nearest-path guess. The canonical pass should clip each
+  marking to its matched carriageway polygon and use `crossing:markings`, `crossing:island` and separately mapped
+  islands when present. Turn arrows remain open; stop lines will render only when a source explicitly identifies them.
 - Bridge decks with piers and railings for Mayo Bridge, the I-95 viaduct and the rail trestles; skip tunnels but
   draw portals.
 - Acceptance: no z-fighting or seams at the Broad / 9th intersection; bridges are recognisable in the tour.
@@ -128,11 +137,23 @@ Today the client parses GeoJSON and builds ~1.2 M triangles on the main thread. 
 
 ### 4.2 Streaming and LOD (M) — done
 - Load tiles by distance from the camera target, unload beyond a radius, cap concurrent fetches.
-- LOD1 per tile: buildings only, roofs flattened, props dropped, used past a zoom threshold.
-- Acceptance: six districts loaded lazily stay under 2 M visible triangles.
+- LOD1 per tile: simplified buildings and roads, no facade/roof details or markings, and trees-only props past a
+  zoom threshold.
+- The original six-district acceptance target of 2 M visible triangles is not met; current expanded-region QA is
+  about 3.6 M and is tracked in 4.4.
 
 ### 4.3 Web worker geometry (M) — done
 - Run the tile builder in a worker, transfer `Float32Array`s. Acceptance: no frame over 50 ms during load.
+
+### 4.4 Compact payloads and measured runtime budgets (M) — next
+- Replace the 24.5 MB POI GeoJSON layer with a quantized binary point table; trees dominate the expanded-region
+  payload and need only a small fixed set of placement fields.
+- Bake meshopt-compressed LOD1 geometry offline before considering full-detail baked tiles. Preserve the current
+  worker builder for development and fallback.
+- Carry indexed terrain through worker transfer instead of expanding the regular grid to triangle soup.
+- Report renderer memory/draw statistics, frame-time percentiles, parse time and transferred bytes in debug QA.
+- Acceptance: document cold/hot load and mobile-class frame baselines; reduce expanded-region transferred tile
+  bytes and resident vertex memory by at least 40% without changing the saved geometry views.
 
 ---
 
@@ -152,8 +173,10 @@ Today the client parses GeoJSON and builds ~1.2 M triangles on the main thread. 
 
 - Multi-bbox builds: `build_tiles.py --slice fan|carytown|church-hill|scotts-addition|manchester` with per-slice
   bboxes in `config.py`, writing into the same grid so tiles line up. (S)
-- Incremental builds: skip tiles whose raw inputs are unchanged (hash of raw parquet + code version). (S)
-- The Fan / VCU first (dense rowhouses stress 1.3 and 2.2), then Carytown, Church Hill, Scott's Addition, Manchester.
+- Incremental builds: `--roads-only` is done (8–13 seconds versus about 130 seconds full); add fingerprinted
+  processed-layer caches and other selective layers only with explicit dependency invalidation. (S)
+- **Fan / VCU coverage done 2026-09-10** through the expanded Richmond build extent. Next: Carytown, Church Hill,
+  Scott's Addition, and Manchester. Per-slice builds and input-hash incremental rebuilds remain open.
 
 ---
 
@@ -186,8 +209,8 @@ Today the client parses GeoJSON and builds ~1.2 M triangles on the main thread. 
 Fixed from a close-up review:
 - Vehicles drove broadside: the car/bus body is modelled along +X but headings mapped travel onto +Z. Headings
   in `propPool.ts` and `scatter.ts` now use `atan2(-dz, dx)`; streetlight arms follow the same convention.
-- Road edges bulged at every shared endpoint because junction discs were drawn on plain continuations. Discs
-  now appear only where three or more ends meet, two ends turn by more than 12°, or widths differ.
+- Road edges bulged at every shared endpoint because junction discs were drawn on plain continuations. The
+  interim conditional discs were later replaced by rounded, terrain-draped polygons at three-arm junctions.
 - Crosswalks spanned a fixed 5 m; they now take the nearest road's width and orientation.
 - Elevation is hard to read on the flat-shaded ground: faint contour lines every 5 m on terrain and land, a
   Heights view (hypsometric tint by absolute height on every layer, legend with the live range, `h` key), and a
@@ -199,11 +222,11 @@ Second pass (same day):
   chain on its land ends (degree-1 nodes above the water level) and assigns every joint an inverse-distance
   weighted deck elevation (`deck` on roads/rail). The viewer runs each way straight between its deck ends
   (`bridgeLift`: 3.5 m, +3 m per extra `layer`); piers still drop to the terrain.
-- "Curved crosswalks" were the sidewalk junction discs bulging past side streets. Discs are gone: asphalt ends
-  extend into the junction by the crossing road's half width (square fills), sidewalk strips stop at the corner,
-  and a low corner fill covers the quadrant.
+- "Curved crosswalks" were the sidewalk junction discs bulging past side streets. The first fix used square
+  corner fills; the topology pass later replaced those with rounded sidewalk aprons and asphalt junction polygons.
 - Sidewalks are raised strips with a 15 cm curb face instead of a wide ribbon under the road.
-- Stop lines before each crosswalk on the approaching half of the road.
+- The first pass inferred stop lines from crosswalks; these were later removed because crossing nodes do not
+  establish a stop-controlled approach. Stop lines now require explicit source data.
 - Sawtooth edges where parks met roads on slopes: land drapes are now subdivided at 8 m (roads resample at 8 m
   too) and roads sit 0.28 m above terrain vs 0.08 m for land, so the road always wins.
 
