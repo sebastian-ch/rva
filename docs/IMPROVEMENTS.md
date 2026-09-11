@@ -172,6 +172,20 @@ Measured expanded-Richmond payload (625 tiles, 2026-09-10): 69.0 MB GeoJSON plus
 24.5 MB, buildings 21.0 MB, roads 14.7 MB, land use 6.4 MB, terrain 3.4 MB, and crossings 1.8 MB. All ten
 landmark GLBs together are only 0.18 MB, so landmark compression is not a useful near-term target.
 
+Viewer startup (2026-09-11): the wire cost is not the problem -- the whole map is 8.3 MB gzipped (75.7 MB
+raw), and GitHub Pages does serve `.geojson` with `content-encoding: gzip`. The startup path was:
+- `boot()` awaited `index.json` and then `landmarks.json`, two serialized round trips before the first tile
+  could be requested, and `landmarks.json` was fetched a second time by `loadLandmarkTargets`. Both now come
+  from one in-flight request started before the index, and a region with a configured `initialTarget`
+  (Honolulu) never waits on it at all.
+- `landmarkModels.ts` pointed the Draco decoder at `gstatic.com`: a third-party DNS + TLS handshake for about
+  101 kB gzipped, while Vite was already bundling a decoder that nothing fetched. Dropping `setDecoderPath`
+  uses three's defaults, which resolve to our own base-relative `/rva/assets/` copies (~79 kB gzipped).
+- `index.html` preloads `tiles/index.json` and `tiles/landmarks.json`, so they overlap the 223 kB gzipped
+  bundle download instead of waiting for it to parse.
+Still unmeasured: frame time, worker geometry build time and the request waterfall, which need a browser
+profile rather than static analysis.
+
 Next candidates, in order:
 - Encode POIs/trees as a compact binary point table (quantized tile-local x/y, kind, height and crown fields).
   This attacks the largest payload and avoids parsing tens of thousands of repeated GeoJSON property names.

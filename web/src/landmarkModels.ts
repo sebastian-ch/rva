@@ -17,9 +17,9 @@ export class LandmarkModels {
   private byTile = new Map<string, THREE.Object3D[]>();
   private detached = new WeakSet<object>();
   constructor(private toLocal: (x: number, y: number) => [number, number], private material: THREE.Material) {
-    const draco = new DRACOLoader();
-    draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
-    this.loader.setDRACOLoader(draco);
+    // No setDecoderPath: three's defaults point at the decoder Vite bundles with us, so the landmark
+    // GLBs decode without a DNS + TLS handshake to a third-party CDN (and keep working offline).
+    this.loader.setDRACOLoader(new DRACOLoader());
     this.group.name = 'landmark-models';
   }
 
