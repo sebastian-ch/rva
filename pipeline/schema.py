@@ -31,7 +31,7 @@ POI_KINDS: set[str] = {
     "fountain", "monument", "shop", "restaurant", "museum",
 }
 
-LANDUSE_KINDS: set[str] = {"park", "grass", "parking", "cemetery", "plaza", "industrial", "forest", "beach", "deck", "groyne", "breakwater", "seawall", "pier", "canal_bank"}
+LANDUSE_KINDS: set[str] = {"park", "grass", "pitch", "parking", "cemetery", "plaza", "industrial", "forest", "beach", "deck", "groyne", "breakwater", "seawall", "pier", "canal_bank"}
 
 WATER_KINDS: set[str] = {"river", "canal", "pond", "ocean"}
 
@@ -61,7 +61,7 @@ LAYER_KEYS: dict[str, set[str]] = {
         "id", "name", "railway", "bridge", "layer", "deck",
             "ramp",
     },
-    "landuse": {"id", "name", "kind"},
+    "landuse": {"id", "name", "kind", "sport", "surface", "pitch_layout"},
     "water": {"id", "name", "kind"},
     "crossings": {"id", "crossing", "crossing_markings", "road_id", "road_width", "road_dx", "road_dy", "road_x", "road_y", "crossing_island"},
     "pois": {"id", "name", "kind"},

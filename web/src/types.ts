@@ -76,7 +76,7 @@ export interface RoadProps {
   deck?: string | number[] | null;
 }
 export interface RailProps { id: string; name: string | null; railway: string; bridge: boolean; ramp?: boolean; layer: number; deck?: string | number[] | null }
-export interface AreaProps { id: string; name: string | null; kind: string; source?: string; source_updated?: string | null; water_z?: number | null; coastal?: boolean; base_z?: number | null; top_z?: number | null }
+export interface AreaProps { id: string; name: string | null; kind: string; sport?: string | null; surface?: string | null; pitch_layout?: string | null; source?: string; source_updated?: string | null; water_z?: number | null; coastal?: boolean; base_z?: number | null; top_z?: number | null }
 export interface PoiProps { id: string; name: string | null; kind: string; species?: string | null; source?: string; tree_height?: number; crown_radius?: number }
 export interface CrossingProps {
   id: string; crossing: string; crossing_markings?: string | null;

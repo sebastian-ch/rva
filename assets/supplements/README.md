@@ -8,6 +8,10 @@ automated source, so they always win.
 that beat the corresponding OSM geometry against classified 2025 LiDAR. Each feature names its exact
 target source ID, city object ID and before/after LiDAR proxy F1. Do not expand it from outline complexity
 alone: the older city source often preserves harmless edge serrations while losing newer building parts.
+The Shockoe review additionally rejects candidates that overlap a separately modeled building, fill a
+real courtyard, or retain a Roofer shell fitted to the old perimeter. The accepted Terrace at The Masonry,
+Canal Lofts Phase V and Trinity Methodist Church changes use procedural roofs that regenerate over the
+replacement outline.
 
 `richmond-massing.geojson` contains reviewed base and upper parts for large Richmond buildings whose
 single extrusion hides a broad, stable height tier in the 1 m normalized 2025 LiDAR. Every group names an

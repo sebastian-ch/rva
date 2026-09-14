@@ -6,6 +6,13 @@
 > buses run in the worker from day one; the junction virtual leader stops 1 m short of the node. Phase 4 items
 > (MOBIL lane changes, signals, stop signs) are still open.
 
+> **Density correction (2026-09-14):** initial population is seeded once on newly loaded edges. Ongoing arrivals
+> occur only on edges entering from a degree-one loaded-area boundary, at the class density multiplied by free-flow
+> speed; vehicles leave at degree-one exits. Replacing cars on every interior edge after they moved onward caused
+> the population to climb continuously and made short clipped road segments contribute at least one car each.
+> Runtime targets are now 8 vehicles/km for motorways, 7 trunk, 5 primary, 4 secondary, 3 tertiary, 2 major links,
+> and 1.25 for local roads. The older aspirational values below are retained as design history.
+
 ## Why
 
 Today (`web/src/propPool.ts`) cars are spawned per road polyline *as clipped to the tile*. Each polyline is a

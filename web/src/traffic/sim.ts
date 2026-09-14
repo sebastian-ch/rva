@@ -30,13 +30,13 @@ const SPAWN_INTERVAL = 1.0; // s between spawn attempts per edge
 /** target vehicles per km of edge by highway class */
 export function density(highway: string): number {
   switch (highway) {
-    case 'motorway': return 14;
-    case 'trunk': return 12;
-    case 'primary': return 9;
-    case 'secondary': return 7;
-    case 'tertiary': return 5;
-    case 'motorway_link': case 'trunk_link': case 'primary_link': return 4;
-    default: return 2.5;
+    case 'motorway': return 8;
+    case 'trunk': return 7;
+    case 'primary': return 5;
+    case 'secondary': return 4;
+    case 'tertiary': return 3;
+    case 'motorway_link': case 'trunk_link': case 'primary_link': return 2;
+    default: return 1.25;
   }
 }
 
@@ -109,6 +109,8 @@ export class TrafficSim {
   densityScale = 1;
   paused = false;
   private spawnClock = new Map<number, number>();
+  /** One-time interior population. Continuous replacement is restricted to loaded-area entrances. */
+  private seedRemaining = new Map<number, number>();
   private time = 0;
 
   constructor(seed = 1) {
@@ -125,14 +127,23 @@ export class TrafficSim {
       if (gone.has(v.edge)) this.despawn(v);
       else v.route = v.route.filter((id) => !gone.has(id));
     }
-    for (const id of ids) this.spawnClock.delete(id);
+    for (const id of ids) {
+      this.spawnClock.delete(id);
+      this.seedRemaining.delete(id);
+    }
   }
 
   addTile(tileId: string, paths: Float32Array[], meta: Parameters<RoadGraph['addTile']>[2]) {
     const ids = this.graph.addTile(tileId, paths, meta);
     // vehicles on edges that got split by the new tile's nodes keep going: their edge ids are unchanged,
     // only the new edges are new. Routes stay valid because edges are never mutated in place.
-    for (const id of ids) this.spawnClock.set(id, this.time - this.rand() * SPAWN_INTERVAL);
+    for (const id of ids) {
+      this.spawnClock.set(id, this.time - this.rand() * SPAWN_INTERVAL);
+      const e = this.graph.edges.get(id)!;
+      const target = (density(e.highway) * this.densityScale * e.length) / 1000;
+      const whole = Math.floor(target);
+      this.seedRemaining.set(id, whole + (this.rand() < target - whole ? 1 : 0));
+    }
   }
 
   private despawn(v: Vehicle) {
@@ -159,6 +170,9 @@ export class TrafficSim {
 
   /** Pick the next edge for a vehicle leaving `e` (weighted: straight and same class preferred). */
   private chooseNext(e: Edge): Edge | null {
+    // A dangling road end is the boundary of the loaded graph (or a real cul-de-sac). Let traffic leave
+    // there instead of selecting the reverse edge and keeping every vehicle in the simulation forever.
+    if (this.graph.arms(e.to) <= 1) return null;
     const opts = this.graph.outgoing(e);
     if (!opts.length) return null;
     if (opts.length === 1) return opts[0];
@@ -258,8 +272,12 @@ export class TrafficSim {
           } else v.released = e.to;
         } else v.waitS = 0;
       } else if (v.released && v.released !== e.to) v.released = null;
-      // dead end: stop at the end of the edge
-      if (!next) { const stopGap = dNode - 0.5; if (stopGap < gap) { gap = stopGap; dv = v.v; } }
+      // Stop at a disconnected interior end. A loaded-area boundary is an exit, so vehicles drive through it
+      // and are removed by the integration pass below.
+      if (!next && g.arms(e.to) > 1) {
+        const stopGap = dNode - 0.5;
+        if (stopGap < gap) { gap = stopGap; dv = v.v; }
+      }
       acc.set(v.slot, idmAccel(v.v, vAllowed, gap, dv, v.a, v.b, v.T));
     }
     // 2. integrate and move between edges
@@ -282,7 +300,7 @@ export class TrafficSim {
       }
     }
     for (const e of g.edges.values()) if (e.vehicles.length > 1) e.vehicles.sort((x, y) => this.vehicles.get(x)!.s - this.vehicles.get(y)!.s);
-    // 3. spawn toward density targets
+    // 3. seed newly loaded roads once, then admit replacement flow only at graph boundaries
     this.spawnStep();
   }
 
@@ -294,16 +312,20 @@ export class TrafficSim {
       if (this.time - due < SPAWN_INTERVAL) continue;
       this.spawnClock.set(id, this.time);
       const e = this.graph.edges.get(id);
-      if (!e || e.length < SPAWN_GAP) continue;
-      const target = (density(e.highway) * this.densityScale * e.length) / 1000;
-      if (e.vehicles.length >= Math.ceil(target)) continue;
-      if (this.rand() > target - e.vehicles.length) continue; // fractional target -> probability
-      // prefer entering at the start (boundary of the loaded area) when the start node has no other arms
-      const startFree = this.graph.arms(e.from) <= 1;
-      const s = startFree ? 1 : SPAWN_GAP / 2 + this.rand() * (e.length - SPAWN_GAP);
+      if (!e || e.length < SPAWN_GAP || this.densityScale <= 0) continue;
+      const seed = this.seedRemaining.get(id) ?? 0;
+      const entry = this.graph.arms(e.from) <= 1;
+      if (seed <= 0) {
+        if (!entry) continue;
+        // Density times free-flow speed gives a boundary arrival rate. This balances the cars leaving other
+        // graph boundaries instead of refilling every interior edge each time a car moves onward.
+        const arrivalChance = Math.min(1, (density(e.highway) * this.densityScale * e.v0 * SPAWN_INTERVAL) / 1000);
+        if (this.rand() >= arrivalChance) continue;
+      }
+      const s = seed > 0 ? SPAWN_GAP / 2 + this.rand() * (e.length - SPAWN_GAP) : 1;
       let ok = true;
       for (const slot of e.vehicles) { const u = this.vehicles.get(slot)!; if (Math.abs(u.s - s) < SPAWN_GAP) { ok = false; break; } }
-      if (ok && startFree) {
+      if (ok && entry && seed <= 0) {
         // also require a free gap on the edges feeding this start node (a merge from an unloaded neighbour)
         for (const inId of this.graph.nodes.get(e.from)?.in ?? []) {
           const inn = this.graph.edges.get(inId);
@@ -312,6 +334,7 @@ export class TrafficSim {
       }
       if (!ok) continue;
       if (!this.spawn(e, s)) return;
+      if (seed > 0) this.seedRemaining.set(id, seed - 1);
     }
   }
 

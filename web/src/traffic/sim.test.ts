@@ -21,21 +21,53 @@ describe('idmAccel', () => {
 });
 
 describe('TrafficSim', () => {
-  it('spawns toward the density target and never overlaps vehicles', () => {
+  it('seeds toward the density target and never overlaps vehicles', () => {
     const sim = new TrafficSim(7);
     // a 1 km loop of primary road (4 sides) so vehicles keep circulating
     const sq = [line([0, 0], [1000, 0]), line([1000, 0], [1000, 1000]), line([1000, 1000], [0, 1000]), line([0, 1000], [0, 0])];
     sim.addTile('a', sq, sq.map((_, i) => meta({ wayId: `s${i}` })));
     run(sim, 60);
     const n = sim.vehicles.size;
-    expect(n).toBeGreaterThan(15); // 4 km at 9/km, minus spawn gaps
-    expect(n).toBeLessThanOrEqual(40);
+    expect(n).toBeGreaterThan(10); // 4 km at 5/km, minus stochastic rounding and spawn gaps
+    expect(n).toBeLessThanOrEqual(24);
     for (const e of sim.graph.edges.values()) {
       for (let i = 1; i < e.vehicles.length; i++) {
         const a = sim.vehicles.get(e.vehicles[i - 1])!, b = sim.vehicles.get(e.vehicles[i])!;
         expect(b.s - a.s).toBeGreaterThan(b.length * 0.5);
       }
     }
+  });
+
+  it('does not refill every short interior edge until the network is saturated', () => {
+    const sim = new TrafficSim(17);
+    const roads: Float32Array[] = [];
+    const metadata: CarPathMeta[] = [];
+    const count = 100;
+    const radius = 1000;
+    for (let i = 0; i < count; i++) {
+      const a = (i / count) * Math.PI * 2;
+      const b = ((i + 1) / count) * Math.PI * 2;
+      roads.push(line([Math.cos(a) * radius, Math.sin(a) * radius], [Math.cos(b) * radius, Math.sin(b) * radius]));
+      metadata.push(meta({ wayId: `ring-${i}` }));
+    }
+    sim.addTile('ring', roads, metadata);
+    run(sim, 300);
+    // The 6.28 km ring targets about 31 cars. The old per-edge refill rule put one car on nearly every
+    // short segment and kept all of them circulating, producing roughly three times the intended density.
+    expect(sim.vehicles.size).toBeGreaterThan(15);
+    expect(sim.vehicles.size).toBeLessThan(50);
+  });
+
+  it('lets a vehicle leave at a loaded-area boundary instead of making a U-turn', () => {
+    const sim = new TrafficSim(19);
+    sim.densityScale = 0;
+    sim.addTile('a', [line([0, 0], [100, 0])], [meta({ oneway: false })]);
+    const outbound = [...sim.graph.edges.values()].find((e) => e.from === nodeKey(0, 0))!;
+    // @ts-expect-error private
+    const v = sim.spawn(outbound, 90)!;
+    v.v = 10;
+    run(sim, 3);
+    expect(sim.vehicles.size).toBe(0);
   });
 
   it('a platoon behind a stopped leader never produces a negative gap', () => {

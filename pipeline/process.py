@@ -11,6 +11,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 from shapely.geometry import MultiPolygon, Polygon
+from shapely.affinity import translate
 from shapely.ops import unary_union
 from shapely.geometry import Point
 from pyproj import Transformer
@@ -1108,7 +1109,9 @@ def _landuse_kind(row: pd.Series) -> str | None:
         return "beach"
     if le in ("park", "garden", "playground"):
         return "park"
-    if le == "pitch" or lu in ("grass", "recreation_ground") or na == "grassland":
+    if le == "pitch":
+        return "pitch"
+    if lu in ("grass", "recreation_ground") or na == "grassland":
         return "grass"
     if am == "parking":
         return "parking"
@@ -1123,6 +1126,51 @@ def _landuse_kind(row: pd.Series) -> str | None:
     return None
 
 
+def _pitch_layout(row: pd.Series) -> str | None:
+    """Stable full-pitch frame computed before tile clipping so markings agree across tile fragments."""
+    if row.get("kind") != "pitch" or row.geometry is None or row.geometry.is_empty:
+        return None
+    geom = max(row.geometry.geoms, key=lambda p: p.area) if isinstance(row.geometry, MultiPolygon) else row.geometry
+    origin = geom.centroid
+    # GEOS's oriented envelope loses precision (and warns) at large projected coordinates. Solve near zero,
+    # then translate the compact frame back to map coordinates.
+    local_rect = translate(geom, xoff=-origin.x, yoff=-origin.y).minimum_rotated_rectangle
+    rect = [(x + origin.x, y + origin.y) for x, y in list(local_rect.exterior.coords)[:4]]
+    edges = [(math.hypot(rect[(i + 1) % 4][0] - rect[i][0], rect[(i + 1) % 4][1] - rect[i][1]), i) for i in range(4)]
+    long_len, i = max(edges)
+    short_len = min(v for v, _ in edges)
+    if long_len < 1 or short_len < 1:
+        return None
+    a, b = rect[i], rect[(i + 1) % 4]
+    layout: dict[str, Any] = {
+        "cx": local_rect.centroid.x + origin.x, "cy": local_rect.centroid.y + origin.y,
+        "ax": (b[0] - a[0]) / long_len, "ay": (b[1] - a[1]) / long_len,
+        "hl": long_len / 2, "hs": short_len / 2,
+    }
+    if _nn(row.get("sport")) == "baseball":
+        hull = list(geom.convex_hull.exterior.coords)[:-1]
+        best: tuple[float, int] | None = None
+        for j, p in enumerate(hull):
+            q, r = hull[j - 1], hull[(j + 1) % len(hull)]
+            qa, qb = (q[0] - p[0], q[1] - p[1]), (r[0] - p[0], r[1] - p[1])
+            la, lb = math.hypot(*qa), math.hypot(*qb)
+            if la < 1 or lb < 1:
+                continue
+            angle = math.acos(max(-1, min(1, (qa[0] * qb[0] + qa[1] * qb[1]) / (la * lb))))
+            # Home plate is normally where the two long foul-line runs meet. The sharpest hull vertex is
+            # often just a short chord on the surveyed outfield arc, so reward adjacent run length while
+            # still preferring a square-ish corner over a shallow arc vertex.
+            score = min(la, lb) * max(0.15, (math.pi - angle) / math.pi)
+            if best is None or score > best[0]:
+                best = (score, j)
+        if best:
+            j = best[1]; p, q, r = hull[j], hull[j - 1], hull[(j + 1) % len(hull)]
+            lq, lr = math.dist(p, q), math.dist(p, r)
+            layout.update({"hx": p[0], "hy": p[1], "dax": (q[0] - p[0]) / lq, "day": (q[1] - p[1]) / lq,
+                           "dbx": (r[0] - p[0]) / lr, "dby": (r[1] - p[1]) / lr, "la": lq, "lb": lr})
+    return json.dumps(layout, separators=(",", ":"))
+
+
 def process_landuse(raw_path: Path) -> gpd.GeoDataFrame:
     raw = _read(raw_path)
     if len(raw) == 0:
@@ -1130,11 +1178,15 @@ def process_landuse(raw_path: Path) -> gpd.GeoDataFrame:
     polys = raw[raw.geometry.geom_type.isin(["Polygon", "MultiPolygon"])].copy()
     polys["kind"] = polys.apply(_landuse_kind, axis=1)
     polys = polys[polys["kind"].notna()]
+    polys["pitch_layout"] = polys.apply(_pitch_layout, axis=1)
     polys["geometry"] = polys.geometry.simplify(1.0, preserve_topology=True).buffer(0)
     return gpd.GeoDataFrame({
         "id": polys.apply(_osm_id, axis=1),
         "name": polys["name"].map(_nn) if "name" in polys else None,
         "kind": polys["kind"],
+        "sport": polys["sport"].map(_nn) if "sport" in polys else None,
+        "surface": polys["surface"].map(_nn) if "surface" in polys else None,
+        "pitch_layout": polys["pitch_layout"],
         "geometry": polys.geometry,
     }, crs=CRS_PROJ)
 

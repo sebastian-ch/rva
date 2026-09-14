@@ -1,5 +1,21 @@
 # Map-building playbook: lessons to carry to the next city
 
+Traffic density must be conserved across the loaded road graph. Seed each new edge only once, admit ongoing
+traffic at degree-one entry boundaries using a flow rate derived from density and free-flow speed, and despawn
+vehicles at degree-one exits. Re-filling every interior edge from its current occupancy double-counts vehicles
+as they move between edges; stochastic fractional per-edge targets also turn every short clipped segment into a
+one-vehicle minimum. `web/src/traffic/sim.test.ts` includes a 100-segment ring regression for this failure mode.
+
+Sports pitches need to retain their source `sport` and `surface` tags through processing. Mapping every
+`leisure=pitch` polygon to anonymous grass discards the information needed for recognizable courts and fields
+and can also make non-surveyed regions scatter park trees onto playing surfaces. Keep a distinct `pitch` kind.
+Compute the marking frame from the full source feature before tile clipping, then clip the decoration into each
+fragment; deriving orientation from each fragment produces seams and half-fields. Segment long paint strips so
+they follow terrain rather than sinking through it. Fall back to an unmarked sports surface for unsupported
+sports. Tennis complexes may contain several courts inside one outline. For baseball, find home where the two
+long foul-line boundary runs meet; the sharpest vertex may just be a short chord on the outfield arc. Regressions live in
+`pipeline/tests/test_sports_fields.py` and `web/src/areas.test.ts`.
+
 This is the reusable record of fixes learned while building Richmond and extending the regional map
 viewer. Read it before adding a region, replacing elevation sources, or changing geometry/rendering.
 Keep the general rules; recheck source-specific thresholds and assumptions for each place.
@@ -414,6 +430,11 @@ older multipatch often adds sub-metre edge serrations. Require exact source-ID m
 newer evidence before replacing an outline. A classified-LiDAR building-point proxy found five Richmond
 exceptions with 0.016–0.020 F1 gains; `apply_footprint_replacements` changes only their geometry and
 preserves current metadata and heights. Regression: `test_verified_footprint_replacement_keeps_source_row_metadata`.
+Before accepting a candidate, intersect the alternate-only area with every other current building and part.
+A strong score can mean that the alternate source merged several correctly separated buildings. Also reject
+an outline that fills a real courtyard or materially changes the footprint under an already accepted roof-only
+mesh. Shockoe's focused review accepted three procedural-roof cases and rejected the larger numerical gains for
+these reasons; its source IDs and measured scores are recorded in `assets/supplements/richmond-esri-outlines.geojson`.
 
 Model setbacks only when the height evidence contains broad, stable tiers. VMFA's perimeter was already
 as accurate as the city outline, while its single 9.6 m extrusion hid measured 6, 15.8, 19.5 and 21.5 m masses.

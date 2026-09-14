@@ -1,6 +1,6 @@
 # Better models and textures: what to do next, in order
 
-Written 2026-09-14, after roof colour from orthoimagery landed. Companion to
+Written and last reconciled 2026-09-14, after roof colour from orthoimagery landed. Companion to
 [docs/IMPROVEMENTS.md](IMPROVEMENTS.md), which surveys what other projects do; this file is the
 ordered build plan for *this* repo's model and surface quality.
 
@@ -16,15 +16,18 @@ Rank accordingly — do not spend effort re-deriving heights.
 |---|---|---|
 | 0 | Roof colour from NAIP orthoimagery | **done** — `pipeline/ortho.py`, [notes](ortho-roof-colour.md) |
 | 1 | Check for a published city LoD2 / multipatch dataset | **done 2026-09-14** — found and evaluated; insufficient as a city-wide roof replacement |
+| 1a | Targeted Esri footprint exception audit | **done 2026-09-14** — eight exact-ID replacements accepted after LiDAR and overlap checks |
 | 2 | LoD2 roofs from the 2025 LiDAR (`roofer`) | **done 2026-09-14** — 19,927 citywide roofs imported with measured and geometric quality gates |
-| 3 | Roof furniture from the 0.3 m DSM | not started |
+| 2a | Large-building setback / massing audit | **done 2026-09-14** — 1,175 candidates reviewed; seven stable multi-height cases modeled |
+| 2b | Sports-field surface geometry | **done 2026-09-14** — tennis, baseball, football and soccer surfaces and tile-stable markings |
+| 3 | Roof furniture from the 0.3 m DSM | **next** — begin with a precision-gated flat-roof pilot |
 | 4 | Ground cover from NAIP NDVI + nDSM | not started |
 | 5 | Split-grammar facade geometry, lower two floors | not started |
 | 6 | Wall colour and surveyed props from Mapillary | not started |
 | 7 | Landmarks from HABS drawings and own photogrammetry | not started |
 | 8 | CC0 prop libraries for vehicles and street furniture | not started |
 
-## Ranking
+## Original ranking
 
 | # | item | effort | payoff | why here |
 |---|---|---|---|---|
@@ -37,8 +40,25 @@ Rank accordingly — do not spend effort re-deriving heights.
 | 7 | Landmark modelling | L | high but narrow | 12 landmarks out of thousands of buildings. Art time, not pipeline time. Do it when the ordinary buildings stop being the weak link. |
 | 8 | CC0 prop libraries | S | medium | Cheap, but props are not what a viewer notices first. |
 
-Items 2–5 are independent and can proceed in any order or in parallel; 6 depends on a licensing
-decision, not on code.
+The remaining items 3–5 are independent, although the order above still reflects expected visual payoff.
+Item 6 depends on a licensing decision, not on code.
+
+## Immediate next step
+
+Build a **roof-furniture pilot** before processing the city. Use 20–30 large, mostly flat roofs with
+clear DSM residuals, including downtown towers, institutional buildings and industrial roofs. For each
+candidate, normalize the 0.3 m DSM against the accepted Roofer plane or flat roof height, detect connected
+components at least 1 m high and roughly 4 m², and compare the proposed boxes with the source DSM before
+emitting anything. The pilot is successful when real penthouses and HVAC groups appear in the correct
+positions, tree crowns and roof edges are rejected, and buildings with ambiguous evidence remain unchanged.
+
+After the pilot:
+
+1. Add compact surveyed roof-prop records and render them through `roofDetails.ts`, retaining procedural
+   details only where no surveyed result exists.
+2. Run the detector citywide with per-building and per-tile caps, then profile near-tile worker time.
+3. Move to ground-cover polygons from NAIP NDVI and nDSM; this is the next largest scene-wide visual gain.
+4. Prototype lower-floor facade geometry on one downtown block before considering a citywide grammar.
 
 ---
 
@@ -88,6 +108,13 @@ LiDAR building-point proxy F1 improved from 0.902 to 0.918 for the grouped VCU C
 in `assets/supplements/richmond-esri-outlines.geojson`; current metadata, heights and styles remain in
 place. VMFA's city and OSM outlines were effectively tied (0.972 versus 0.971), so its visible deficit
 was height massing rather than its perimeter.
+
+A focused Shockoe riverfront review added three more exact-ID replacements: Terrace at The Masonry,
+Canal Lofts Phase V and Trinity Methodist Church. Their classified-2025-LiDAR proxy F1 scores improve
+from 0.927 to 0.970, 0.869 to 0.897 and 0.892 to 0.920. Candidates were rejected when the city outline
+merged separately modeled buildings, filled a courtyard, overlapped a neighbor, or would mismatch an
+accepted Roofer shell. These checks matter more than the raw score: the largest apparent gains in the
+area were mostly segmentation differences rather than missing architecture.
 
 A citywide audit of 1,175 large, tall or named buildings then reviewed broad nDSM height clusters against
 the current footprint overlaps and OSM parts. Seven stable massing cases are now explicit base and upper

@@ -85,7 +85,11 @@ Richmond downtown Broad Street's tagged one-way bus lanes use the documented cur
 `id`, `name`, `railway`, `bridge`, `layer`, `deck` (as for roads)
 
 ### landuse (Polygon)
-`id`, `name`, `kind`: `"park"|"grass"|"parking"|"cemetery"|"plaza"|"industrial"|"forest"|"beach"|"deck"`.
+`id`, `name`, `kind`: `"park"|"grass"|"pitch"|"parking"|"cemetery"|"plaza"|"industrial"|"forest"|"beach"|"deck"`.
+Sports pitches retain optional OSM `sport` and `surface` values. The renderer currently draws distinct
+tennis, baseball, American-football and soccer surfaces and markings; other sports use the pitch base.
+`pitch_layout` stores the full unclipped pitch's oriented frame as compact JSON so markings remain aligned
+when a field crosses tile boundaries.
 Richmond `deck` surfaces come from Structures subtype 3 and include `source: "richmond_structures"` plus the
 optional per-feature `source_updated` timestamp. They are draped 0.12 m above terrain because the source has no elevation.
 
