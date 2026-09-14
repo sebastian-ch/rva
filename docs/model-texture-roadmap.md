@@ -16,7 +16,7 @@ Rank accordingly — do not spend effort re-deriving heights.
 |---|---|---|
 | 0 | Roof colour from NAIP orthoimagery | **done** — `pipeline/ortho.py`, [notes](ortho-roof-colour.md) |
 | 1 | Check for a published city LoD2 / multipatch dataset | **done 2026-09-14** — found and evaluated; insufficient as a city-wide roof replacement |
-| 2 | LoD2 roofs from the 2025 LiDAR (`roofer`) | **done 2026-09-14** — 21,708 citywide roofs imported with measured and geometric quality gates |
+| 2 | LoD2 roofs from the 2025 LiDAR (`roofer`) | **done 2026-09-14** — 19,927 citywide roofs imported with measured and geometric quality gates |
 | 3 | Roof furniture from the 0.3 m DSM | not started |
 | 4 | Ground cover from NAIP NDVI + nDSM | not started |
 | 5 | Split-grammar facade geometry, lower two floors | not started |
@@ -115,10 +115,11 @@ The Fan browser QA passed without roof/wall seams or console errors; full-tile w
 points/m², median no-data 32% and median LoD2.2 RMSE 1.04 m. Fetching depth 9 raised density to 22.6
 points/m², reduced no-data to 3% and reduced RMSE to 0.55 m. Of 25,486 reconstruction units, 22,238
 clear the attribute gate: recognized/usable roof, density ≥5 points/m², no-data ≤45%, and RMSE ≤1.25 m.
-After geometry validation and source-ID joining, 21,708 of the map's 25,533 building records use the
-measured roof; the remaining 3,825 retain the existing roof. The geometry gate rejects 87 shells over
-20 m tall and another 369 shells covering less than half of their footprint; both cases expose unsupported
-walls or large flat gaps in the hybrid renderer. Detailed meshes are rendered only in the
+After geometry validation and source-ID joining, 19,927 of the map's 25,533 building records use the
+measured roof; the remaining 5,606 retain the existing roof. The geometry gate rejects 87 shells over
+20 m tall, 106 shells containing roof planes over 70°, 369 shells covering less than half of their footprint,
+and 1,675 small-building shells with more than three fitted ridgelines. These cases expose unsupported
+walls, triangular spikes, over-segmented houses, or large flat gaps in the hybrid renderer. Detailed meshes are rendered only in the
 near tile level, while distant tiles use the procedural shape to cap geometry and worker cost. Browser
 QA passed across the Fan, Monroe Park, Capitol Square, all styles, and mobile layout. Upper Fan tile
 worker p95 remained 28 ms. These gates live in `pipeline/lod2.py` and should be recalibrated for new data.

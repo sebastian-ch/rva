@@ -24,7 +24,7 @@ def _write_cityjsonseq(path, *, success=True):
             "osm:way/1": {"type": "Building", "attributes": {
                 "rf_success": success, "source_id": "osm:way/1", "rf_pointcloud_unusable": False,
                 "rf_roof_type": "slanted", "rf_pt_density": 20.0, "rf_nodata_frac": 0.1,
-                "rf_rmse_lod22": 0.4,
+                "rf_rmse_lod22": 0.4, "rf_h_ground": 10.0,
             }},
             "osm:way/1-0": {
                 "type": "BuildingPart",
@@ -56,8 +56,8 @@ def test_attaches_by_source_id_and_keeps_fallbacks(tmp_path):
     source.mkdir()
     _write_cityjsonseq(source / "roof.city.jsonl")
     buildings = gpd.GeoDataFrame([
-        {"id": "osm:way/1", "hidden": False, "roof_source": "lidar", "roof_height": 1.0, "geometry": box(100, 200, 110, 210)},
-        {"id": "osm:way/2", "hidden": False, "roof_source": "heuristic", "roof_height": 0.0, "geometry": box(120, 200, 130, 210)},
+        {"id": "osm:way/1", "hidden": False, "height": 5.0, "roof_source": "lidar", "roof_height": 1.0, "geometry": box(100, 200, 110, 210)},
+        {"id": "osm:way/2", "hidden": False, "height": 5.0, "roof_source": "heuristic", "roof_height": 0.0, "geometry": box(120, 200, 130, 210)},
     ], crs="EPSG:32618")
     out = attach_roofs(buildings, source, "EPSG:32618")
     assert out.iloc[0].roof_source == "lod2"
@@ -112,7 +112,7 @@ def test_partial_roof_keeps_existing_procedural_roof(tmp_path):
     source.mkdir()
     _write_cityjsonseq(source / "roof.city.jsonl")
     buildings = gpd.GeoDataFrame([{
-        "id": "osm:way/1", "hidden": False, "roof_source": "lidar", "roof_height": 1.0,
+        "id": "osm:way/1", "hidden": False, "height": 5.0, "roof_source": "lidar", "roof_height": 1.0,
         "geometry": box(100, 200, 130, 230),
     }], crs="EPSG:32618")
     out = attach_roofs(buildings, source, "EPSG:32618")
@@ -147,3 +147,66 @@ def test_later_batch_replaces_older_mesh(tmp_path):
     mesh = json.loads(read_roofs([old, new], "EPSG:32618")["osm:way/1"])
     assert len(mesh["v"]) == 4
     assert min(vertex[0] for vertex in mesh["v"]) == 120.0
+
+
+def test_low_addition_does_not_lift_the_main_roof(tmp_path):
+    source = tmp_path / "lod2"
+    source.mkdir()
+    _write_cityjsonseq(source / "roof.city.jsonl")
+    buildings = gpd.GeoDataFrame([{
+        "id": "osm:way/1", "hidden": False, "height": 7.0,
+        "roof_source": "lidar", "roof_height": 1.0,
+        "geometry": box(100, 200, 110, 210),
+    }], crs="EPSG:32618")
+    out = attach_roofs(buildings, source, "EPSG:32618")
+    mesh = json.loads(out.iloc[0].lod2_roof)
+    assert min(vertex[2] for vertex in mesh["v"]) == 0.0
+    assert max(vertex[2] for vertex in mesh["v"]) == 0.0
+
+
+def test_short_wall_does_not_leave_a_gap_below_roof(tmp_path):
+    source = tmp_path / "lod2"
+    source.mkdir()
+    _write_cityjsonseq(source / "roof.city.jsonl")
+    buildings = gpd.GeoDataFrame([{
+        "id": "osm:way/1", "hidden": False, "height": 3.0,
+        "roof_source": "lidar", "roof_height": 1.0,
+        "geometry": box(100, 200, 110, 210),
+    }], crs="EPSG:32618")
+    out = attach_roofs(buildings, source, "EPSG:32618")
+    mesh = json.loads(out.iloc[0].lod2_roof)
+    assert min(vertex[2] for vertex in mesh["v"]) == 0.0
+    assert max(vertex[2] for vertex in mesh["v"]) == 2.0
+
+
+def test_near_vertical_roof_plane_is_ignored(tmp_path):
+    path = tmp_path / "spike.city.jsonl"
+    _write_cityjsonseq(path)
+    lines = path.read_text().splitlines()
+    feature = json.loads(lines[1])
+    feature["vertices"][2][1] = 100
+    feature["vertices"][3][1] = 100
+    feature["vertices"][2][2] = 900
+    feature["vertices"][3][2] = 900
+    path.write_text(lines[0] + "\n" + json.dumps(feature) + "\n")
+    assert read_roofs([path], "EPSG:32618") == {}
+
+
+def test_oversegmented_small_roof_keeps_procedural_fallback(tmp_path):
+    source = tmp_path / "lod2"
+    source.mkdir()
+    path = source / "roof.city.jsonl"
+    _write_cityjsonseq(path)
+    lines = path.read_text().splitlines()
+    feature = json.loads(lines[1])
+    building = next(o for o in feature["CityObjects"].values() if o["type"] == "Building")
+    building["attributes"]["rf_ridgelines"] = 6
+    path.write_text(lines[0] + "\n" + json.dumps(feature) + "\n")
+    buildings = gpd.GeoDataFrame([{
+        "id": "osm:way/1", "hidden": False, "height": 5.0,
+        "roof_source": "lidar", "roof_height": 1.0,
+        "geometry": box(100, 200, 110, 210),
+    }], crs="EPSG:32618")
+    out = attach_roofs(buildings, source, "EPSG:32618")
+    assert out.iloc[0].roof_source == "lidar"
+    assert out.iloc[0].lod2_roof is None

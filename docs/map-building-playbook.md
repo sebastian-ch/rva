@@ -394,6 +394,20 @@ same-source records within one CityJSONSeq batch, let later files replace older 
 result once. Regressions: `test_multipart_records_in_one_batch_are_combined` and the multipart case in
 `web/src/buildings.test.ts`.
 
+Normalizing every Roofer shell to its lowest roof vertex can lift the main ridge by several metres when
+a porch or rear addition supplies that lowest point. The symptom is a rowhouse roof stretched into a tall
+triangular wedge even though its RMSE is low. Preserve Roofer's lowest-roof height above its ground datum;
+when that eave is below the procedural wall top, lower the whole shell by the difference and clamp the
+buried portion at the wall top. Never raise a shell above the wall, because that opens a visible gap.
+Regression: `test_low_addition_does_not_lift_the_main_roof` in `pipeline/tests/test_lod2.py`.
+
+RMSE also does not prevent over-segmentation. In the Richmond residential output, repeated odd triangles
+came from examples such as `osm:way/369321554`, where Roofer fit 15 planes and 6 ridgelines to a 139 m²
+house. Reject roof-labelled planes over 70°, and let footprints below 300 m² fall back when Roofer reports
+more than three ridgelines. These limits apply to the current stylized hybrid; reassess them for a viewer
+that renders Roofer's full solid. Regressions: `test_near_vertical_roof_plane_is_ignored` and
+`test_oversegmented_small_roof_keeps_procedural_fallback`.
+
 When a city footprint layer gap-fills OSM, an `intersects` join alone is too aggressive: attached
 buildings often share a boundary with an OSM footprint and have zero overlap area. Treat a candidate as
 a duplicate only when their intersection covers a meaningful fraction of the smaller polygon. Preserve

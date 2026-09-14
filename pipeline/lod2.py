@@ -8,6 +8,7 @@ indexed geometry stored as JSON in ``lod2_roof``.
 from __future__ import annotations
 
 import json
+import math
 import re
 from pathlib import Path
 from typing import Iterable
@@ -21,7 +22,10 @@ MIN_POINT_DENSITY = 5.0
 MAX_NODATA_FRACTION = 0.45
 MAX_RMSE_M = 1.25
 MAX_ROOF_RELIEF_M = 20.0
+MAX_ROOF_SLOPE_DEG = 70.0
 MIN_FOOTPRINT_COVERAGE = 0.5
+MAX_SMALL_BUILDING_RIDGES = 3
+SMALL_BUILDING_AREA_M2 = 300.0
 ROOF_TYPES = {"slanted", "horizontal", "multiple horizontal"}
 
 
@@ -66,7 +70,8 @@ def _roof_mesh(feature: dict, scale: list[float], translate: list[float], transf
     # Roofer can serialize a nominally successful solid from sparse or incomplete
     # points. Keep the older procedural roof unless the fit clears explicit,
     # measured quality thresholds established by the Richmond depth-9 run.
-    quality = [attrs.get("rf_pt_density"), attrs.get("rf_nodata_frac"), attrs.get("rf_rmse_lod22")]
+    quality = [attrs.get("rf_pt_density"), attrs.get("rf_nodata_frac"), attrs.get("rf_rmse_lod22"),
+               attrs.get("rf_h_ground")]
     if (attrs.get("rf_pointcloud_unusable") is True
             or attrs.get("rf_roof_type") not in ROOF_TYPES
             or any(not isinstance(v, (int, float)) or not float("-inf") < v < float("inf") for v in quality)
@@ -112,6 +117,23 @@ def _roof_mesh(feature: dict, scale: list[float], translate: list[float], transf
         return x, y, z
 
     roof_floor = min(world(i)[2] for i in roof_vertex_ids)
+    # A tiny near-vertical fitted plane can create a conspicuous triangular spike
+    # even when the aggregate RMSE is low. Roofer labels genuine step closures as
+    # walls, so reject roof-labelled surfaces beyond a conservative 70-degree pitch.
+    for face in faces:
+        points = [world(i) for i in face[0]]
+        normal = [0.0, 0.0, 0.0]
+        area2 = 0.0
+        for i, a in enumerate(points):
+            b = points[(i + 1) % len(points)]
+            normal[0] += (a[1] - b[1]) * (a[2] + b[2])
+            normal[1] += (a[2] - b[2]) * (a[0] + b[0])
+            normal[2] += (a[0] - b[0]) * (a[1] + b[1])
+            area2 += a[0] * b[1] - b[0] * a[1]
+        horizontal = abs(area2) * 0.5
+        slope = math.degrees(math.atan2(math.hypot(normal[0], normal[1]), abs(normal[2])))
+        if horizontal >= 0.5 and slope > MAX_ROOF_SLOPE_DEG:
+            return None
     # Internal vertical faces close dormers and roof steps. Exclude interior or
     # party walls that descend below the roof because the styled extrusion owns them.
     for rings in closure_candidates:
@@ -133,21 +155,49 @@ def _roof_mesh(feature: dict, scale: list[float], translate: list[float], transf
     return {
         "v": out_vertices,
         "f": [[[remap[i] for i in ring] for ring in face] for face in faces],
+        # Roofer's measured lowest roof height above its own ground datum. The
+        # attachment step uses this to avoid lifting a main roof when a porch or
+        # rear addition supplies the shell's lowest vertex.
+        "e": round(roof_floor - attrs["rf_h_ground"], 2),
+        "r": int(attrs.get("rf_ridgelines") or 0),
     }
 
 
 def _merge_meshes(first: dict, second: dict) -> dict:
     """Combine Roofer components emitted separately for one multipart source."""
+    eave = min(first["e"], second["e"])
+    first_vertices = [[x, y, round(z + first["e"] - eave, 2)] for x, y, z in first["v"]]
+    second_vertices = [[x, y, round(z + second["e"] - eave, 2)] for x, y, z in second["v"]]
     offset = len(first["v"])
     return {
-        "v": first["v"] + second["v"],
+        "v": first_vertices + second_vertices,
         "f": first["f"] + [[[i + offset for i in ring] for ring in face] for face in second["f"]],
+        "e": eave,
+        "r": int(first.get("r", 0)) + int(second.get("r", 0)),
     }
+
+
+def _align_to_wall(encoded: str, wall_height: float) -> str:
+    """Lower a multi-level shell to its measured position without opening a wall gap."""
+    mesh = json.loads(encoded)
+    shift = min(0.0, float(mesh.pop("e")) - float(wall_height))
+    mesh["v"] = [[x, y, round(max(0.0, z + shift), 2)] for x, y, z in mesh["v"]]
+    return json.dumps(mesh, separators=(",", ":"))
+
+
+def _finalize_mesh(encoded: str) -> str:
+    """Remove importer-only quality metadata before writing tile properties."""
+    mesh = json.loads(encoded)
+    mesh.pop("r", None)
+    return json.dumps(mesh, separators=(",", ":"))
 
 
 def _covers_footprint(encoded: str, footprint) -> bool:
     """Reject partial shells that would suppress most of the procedural roof."""
     mesh = json.loads(encoded)
+    if footprint is not None and footprint.area < SMALL_BUILDING_AREA_M2 \
+            and int(mesh.get("r", 0)) > MAX_SMALL_BUILDING_RIDGES:
+        return False
     surfaces = []
     for face in mesh["f"]:
         try:
@@ -210,15 +260,18 @@ def attach_roofs(buildings: gpd.GeoDataFrame, source: Path, target_crs: str) -> 
         return out
     roofs = read_roofs(files, target_crs)
     matched = out["id"].astype(str).map(roofs)
+    matched = matched.combine(out["height"], lambda raw, height:
+                              _align_to_wall(raw, height) if isinstance(raw, str) else raw)
     hidden = out["hidden"].fillna(False) if "hidden" in out else False
     plausible = matched.combine(out.geometry, lambda raw, geom: isinstance(raw, str) and _covers_footprint(raw, geom))
     use = matched.notna() & plausible & ~hidden
     if not use.any():
         print(f"  lod2 roofs: 0/{len(out)} buildings ({len(roofs)} valid reconstructions; no matching source IDs)")
         return out
-    out.loc[use, "lod2_roof"] = matched[use]
+    accepted = matched[use].map(_finalize_mesh)
+    out.loc[use, "lod2_roof"] = accepted
     out.loc[use, "roof_source"] = "lod2"
-    heights = matched[use].map(lambda raw: float(max(v[2] for v in json.loads(raw)["v"]))).astype(float)
+    heights = accepted.map(lambda raw: float(max(v[2] for v in json.loads(raw)["v"]))).astype(float)
     out.loc[use, "roof_height"] = heights
     print(f"  lod2 roofs: {int(use.sum())}/{len(out)} buildings ({len(roofs)} valid reconstructions)")
     return out

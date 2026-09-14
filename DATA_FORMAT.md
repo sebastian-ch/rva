@@ -34,7 +34,10 @@ must match processed building IDs. When present, the building step preserves ind
 footprints and the `lod2_roofs` step attaches each valid reconstruction independently. A mesh is
 accepted only when Roofer reports a recognized roof type, usable point coverage, density ≥5 points/m²,
 no-data ≤45%, and LoD2.2 RMSE ≤1.25 m. The imported roof must also cover at least 50% of its
-source footprint and have no more than 20 m of vertical relief; other buildings retain their procedural roof.
+source footprint, have no more than 20 m of vertical relief or a 70° roof plane, and avoid more than three
+fitted ridgelines on a footprint smaller than 300 m². Roof vertices are lowered from Roofer's measured
+eave datum when a lower addition would otherwise lift the entire shell. Other buildings retain their
+procedural roof.
 
 ### buildings (Polygon / MultiPolygon)
 | property | type | notes |
