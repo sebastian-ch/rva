@@ -31,7 +31,7 @@ POI_KINDS: set[str] = {
     "fountain", "monument", "shop", "restaurant", "museum",
 }
 
-LANDUSE_KINDS: set[str] = {"park", "grass", "pitch", "parking", "cemetery", "plaza", "industrial", "forest", "beach", "deck", "groyne", "breakwater", "seawall", "pier", "canal_bank"}
+LANDUSE_KINDS: set[str] = {"park", "grass", "pitch", "parking", "cemetery", "plaza", "industrial", "forest", "beach", "deck", "groyne", "breakwater", "seawall", "pier", "canal_bank", "groundcover_lawn", "groundcover_paved", "groundcover_bare"}
 
 WATER_KINDS: set[str] = {"river", "canal", "pond", "ocean"}
 
@@ -47,7 +47,7 @@ LAYER_KEYS: dict[str, set[str]] = {
     "buildings": {
         "id", "name", "height", "min_height", "levels", "height_source",
         "roof_shape", "roof_height", "roof_azimuth", "roof_source",
-        "roof_color", "roof_color_source", "wall_color", "type", "landmark", "addr",
+        "roof_color", "roof_color_source", "lod2_roof", "roof_props", "wall_color", "type", "landmark", "addr",
         "wikidata", "website", "zoning", "lidar_p90", "ground_z",
             "is_part", "parent", "hidden",
             "footprint_source", "source_updated",

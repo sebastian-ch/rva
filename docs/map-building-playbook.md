@@ -16,6 +16,18 @@ sports. Tennis complexes may contain several courts inside one outline. For base
 long foul-line boundary runs meet; the sharpest vertex may just be a short chord on the outfield arc. Regressions live in
 `pipeline/tests/test_sports_fields.py` and `web/src/areas.test.ts`.
 
+Ground-cover extraction needs complementary imagery rather than the sharpest image alone. VGIN's Richmond
+RGB is sharper and leaf-off, so it supplies clean lot and material boundaries; NAIP's coarser four-band image
+supplies NIR, which separates vegetation more reliably; LiDAR nDSM removes roofs and tree crowns. Classify on
+a coarse grid, clean it morphologically, simplify hard and reject small components before polygonizing. Preserve
+mapped parks, pitches, parking and plazas, and mask buildings, road widths and water; imagery-derived classes
+fill gaps and may refine generic industrial land. Run the surveyed shoreline difference after extraction because
+the base OSM water polygon may not cover the full river. The Richmond settings use a 3 m grid, 1.5 m simplification
+and 90–120 m² minimum areas. They produced 7,647 polygons and kept tile-worker p95 under 50 ms. Implementation:
+`pipeline/groundcover.py`, `pipeline/fetch_vbmp.py` and `web/src/areas.ts`. Regressions:
+`pipeline/tests/test_groundcover.py` and `web/src/areas.test.ts`. Thresholds depend on flight season, band order,
+image tone and LiDAR date; recalibrate them for every region.
+
 This is the reusable record of fixes learned while building Richmond and extending the regional map
 viewer. Read it before adding a region, replacing elevation sources, or changing geometry/rendering.
 Keep the general rules; recheck source-specific thresholds and assumptions for each place.
@@ -454,6 +466,18 @@ Center Annex, The Virginia Home, the Trani Center for Life Sciences, BioTech 6 a
 `apply_massing_parts` keeps the parent as a selectable plinth and renders each tier over its recorded
 height interval. Regression: `test_verified_massing_hides_outline_and_adds_tiers`.
 
+Dense roof residuals can turn cars, trees, parapets, roof edges and setback tiers into fake rooftop
+equipment. The symptom is large or floating boxes that disagree with the visible roof. Fit the dominant
+roof plane, inset the footprint before component labeling, gate component area, height, compactness and
+aspect ratio, then compare its absolute base with the modeled wall or accepted Roofer shell. Emit only
+reviewed exact-ID records and leave uncertain buildings unchanged. GeoJSON writers may decode a serialized
+record array, so the renderer must accept both a JSON string and an array; otherwise measured objects vanish
+and procedural HVAC silently returns. Implementation: `pipeline/roof_furniture.py`,
+`assets/supplements/richmond-roof-furniture.json` and `web/src/roofDetails.ts`. Regressions:
+`pipeline/tests/test_roof_furniture.py` and `web/src/roofDetails.test.ts`. The current thresholds were tuned
+for Richmond's 0.35 m 2025 classified cloud and mostly flat roofs; remeasure them for other resolutions,
+roof types or cities.
+
 When a city footprint layer gap-fills OSM, an `intersects` join alone is too aggressive: attached
 buildings often share a boundary with an OSM footprint and have zero overlap area. Treat a candidate as
 a duplicate only when their intersection covers a meaningful fraction of the smaller polygon. Preserve
@@ -563,6 +587,13 @@ storefront and the long east wall handled separately; assuming the OBB long edge
 entrance treatment on the wrong face. Its references and limits are in `docs/mcdonalds-cary-facade.md`.
 This is suitable for one-off low commercial buildings; repeated chains should eventually use a
 shared asset definition rather than more address-specific branches.
+
+Large identity signs can use the same exact-ID procedural approach when text and silhouette matter more
+than facade detail. Attach them to the actual visible upper building part, derive known dimensions from the
+source, and render double-faced text with the back face mirrored. Verify at the roof's world elevation;
+terrain exaggeration can make a camera aimed at the raw source elevation inspect the wrong roof. The John
+Marshall marquee is implemented in `web/src/buildings.ts`, documented in `docs/richmond-fan.md`, and covered
+in `web/src/buildings.test.ts`.
 
 When a landmark looks too short, compare eaves, ridge, width and adjacent elevated infrastructure
 separately. A correct peak with low eaves and an undersized footprint can still read too small.

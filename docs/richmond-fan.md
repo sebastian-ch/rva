@@ -78,6 +78,14 @@ Park using projected coordinates. It exercises Hanover address search, five styl
 Both wait for camera animation and tile loading. Screenshots and scene counts go to
 `web/snapshots/fan/` and `web/snapshots/richmond/`.
 
+The Residences at John Marshall now carries its restored three-line `HOTEL / JOHN / MARSHALL`
+rooftop sign. Holiday Signs' [restoration case study](https://holidaysigns.com/signage-restoration-restoring-a-richmond-landmark/)
+documents 34 seven-foot letters—17 letters on each illuminated face—and shows the open steel frame.
+The low-poly version uses those letter heights, mirrors the back face so both sides read correctly, and
+attaches only to highest mapped part `osm:way/365155760`. Attaching it to the hidden parent footprint would
+put it on the lower nominal roof and can duplicate it across parts. The frame and block lettering are a
+map-scale interpretation; their exact member spacing and surveyed roof anchor are approximate.
+
 The expansion exposed an incorrect registry anchor for The Diamond: the old coordinate near
 Chamberlayne Avenue assigned the stadium slug to Richmond Police Department's 4th Precinct
 (`osm:way/553957352`). The registry now uses the stadium coordinates from
@@ -117,6 +125,13 @@ The downtown geometry review also passed; its Federal Reserve freeway and Shocko
 retain the earlier road-draping and footprint-contained roof corrections.
 Screenshots show stylized rowhouse volumes and measured canopy placement; detailed historic
 facades, species-specific crowns and exact roof ornamentation remain approximations.
+
+Ground cover now combines the leaf-off VGIN VBMP RGB mosaic, NAIP NIR and the 2025 LiDAR nDSM on a 3 m
+classification grid. The build added 7,647 unique simplified polygons: 4,369 lawn, 3,083 paved and 195 bare
+ground, covering 6.42 km². Existing mapped landuse and surveyed hydro retain priority. Checks at VCU, Shockoe,
+the riverfront and the Fan showed useful yard, campus, lot and industrial-surface separation without photo
+draping; tile-worker p95 remained below 50 ms. The VGIN mosaic is cached locally as
+`data/raw/vbmp_m77p4860_37p5170_m77p4180_37p5680.tif` and can be recreated with `pipeline/fetch_vbmp.py`.
 
 Two Carytown storefronts use full-detail procedural treatments tied to their exact OSM footprints:
 the 3301 West Cary Street 7-Eleven and the 3410 West Cary Street McDonald's. The latter follows the

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { hex } from './props';
 import { MeshBuilder, centroid, hashStr, minAreaOBB, pointInRing, ringBounds, rng, signedArea, type V2 } from './geomutil';
-import type { BuildingProps } from './types';
+import type { BuildingProps, SurveyedRoofProp } from './types';
 
 /** Emit a closed box (6 faces, outward normals) centered at (cx, cz) with base at cy0, rotated rotY about Y. */
 export function addBox(
@@ -209,16 +209,42 @@ export function addRoofDetails(
   props: BuildingProps,
   wallColor: THREE.Color,
   _roofColor: THREE.Color,
+  proceduralHvac = true,
 ): void {
   const rand = rng(hashStr(props.id));
 
   if (props.roof_shape === 'flat' && props.height > 12) {
     addParapet(mb, outer, top, wallColor);
   }
-  if (props.roof_shape === 'flat' && ringArea(outer) > 400) {
+  if (proceduralHvac && props.roof_shape === 'flat' && ringArea(outer) > 400) {
     addHvac(mb, outer, top, rand);
   }
   if (props.roof_shape === 'gable' && props.height < 12) {
     addChimney(mb, outer, top, props);
   }
+}
+
+/** Add exact-position reviewed roof objects. Returns true when the building owns a surveyed record, even
+ * when its center lies in another tile fragment, so procedural HVAC stays suppressed across the split. */
+export function addSurveyedRoofDetails(
+  mb: MeshBuilder,
+  outer: V2[],
+  top: number,
+  props: BuildingProps,
+  toLocal: (x: number, y: number) => V2,
+): boolean {
+  if (!props.roof_props) return false;
+  let items: SurveyedRoofProp[];
+  if (Array.isArray(props.roof_props)) items = props.roof_props;
+  else try { items = JSON.parse(props.roof_props) as SurveyedRoofProp[]; } catch { return false; }
+  if (!Array.isArray(items)) return false;
+  const steel = hex('steel');
+  for (const item of items) {
+    if (![item.x, item.y, item.w, item.d, item.h, item.a, item.b].every(Number.isFinite)) continue;
+    if (item.w <= 0 || item.d <= 0 || item.h <= 0) continue;
+    const [x, z] = toLocal(item.x, item.y);
+    if (!pointInRing([x, z], outer)) continue;
+    addBox(mb, x, top + item.b, z, item.w, item.h, item.d, -item.a, steel);
+  }
+  return true;
 }

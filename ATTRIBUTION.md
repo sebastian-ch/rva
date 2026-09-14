@@ -41,17 +41,14 @@ See [the expansion notes](docs/richmond-fan.md) for extent, acquisition counts a
 
 ## USGS/USDA NAIP Imagery
 
-- **What we use it for:** Roof colour. `pipeline/fetch_naip.py` exports the USGS `USGSNAIPPlus` image server to `data/raw/ortho_<slug>.tif` (0.6 m, 4-band R/G/B/NIR, working CRS); `pipeline/ortho.py` samples it inside each footprint and classifies the result into a palette key (`roof_color_source = "ortho"`). The NIR band is used to reject tree crowns over roofs, not rendered.
+- **What we use it for:** Roof colour and the vegetation signal for ground-cover polygons. `pipeline/fetch_naip.py` exports the USGS `USGSNAIPPlus` image server to `data/raw/ortho_<slug>.tif` (0.6 m, 4-band R/G/B/NIR, working CRS); `pipeline/ortho.py` samples it inside each footprint and classifies the result into a palette key (`roof_color_source = "ortho"`). `pipeline/groundcover.py` combines its NIR band with VGIN RGB and LiDAR nDSM. Imagery is classified into palette geometry and is not rendered directly.
 - **License:** Public domain
 - **Required attribution:** USGS/USDA
 - **URL:** https://www.usgs.gov
 
-Land cover from NAIP (lawn/bed masks, impervious surfaces) is **not** implemented yet; see
-[docs/model-texture-roadmap.md](docs/model-texture-roadmap.md).
-
 ## Virginia Geographic Information Network (VGIN)
 
-- **What we use it for:** Statewide LiDAR point clouds and VBMP orthoimagery (~6 in resolution). The `VBMP_Imagery/MostRecentImagery_WGS` MapServer (Spring 2022/2023/2025, whichever is newest per area) is the visual reference for hand-traced footprints in `assets/supplements/overrides.json`, e.g. the Allianz Amphitheater seating bowl (traced 2026-09-09). Copyright text on the service: "Virginia Geographic Information Network (VGIN)".
+- **What we use it for:** Statewide LiDAR point clouds and VBMP orthoimagery. `pipeline/fetch_vbmp.py` exports Richmond at 0.6 m for ground-cover boundary and material classification; the source is leaf-off true-color imagery collected in Spring 2022, 2023 or 2025, whichever is newest for the area, and is combined with NAIP NIR and LiDAR nDSM. The same service remains the visual reference for hand-traced footprints in `assets/supplements/overrides.json`, e.g. the Allianz Amphitheater seating bowl (traced 2026-09-09). Copyright text on the service: "Virginia Geographic Information Network (VGIN)".
 - **License:** Open data; check current terms
 - **Required attribution:** Check current terms
 - **URL:** https://vgin.vdem.virginia.gov

@@ -13,7 +13,7 @@ from schema import LAYER_KEYS, validate_feature
 GOOD_BUILDING = {
     "id": "osm:way/1", "name": "Test Building", "height": 12.5, "min_height": 0.0, "levels": 4,
     "height_source": "osm_levels", "roof_shape": "flat", "roof_height": 0.0, "roof_azimuth": None,
-    "roof_source": "heuristic", "roof_color": "roof_flat", "roof_color_source": "ortho", "lod2_roof": None, "wall_color": "brick", "type": "yes",
+    "roof_source": "heuristic", "roof_color": "roof_flat", "roof_color_source": "ortho", "lod2_roof": None, "roof_props": None, "wall_color": "brick", "type": "yes",
     "landmark": None, "is_part": False, "footprint_source": "osm", "parent": None, "hidden": False, "addr": "100 Main Street", "wikidata": None, "website": None,
     "zoning": "B-3", "lidar_p90": None, "ground_z": 30.0, "source_updated": None,
 }

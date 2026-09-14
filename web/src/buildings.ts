@@ -3,7 +3,7 @@ import palette from '../../assets/palette.json';
 import { hex } from './props';
 import { MeshBuilder, ccw, centroid, cleanRing, insetRing, minAreaOBB, polygons, signedArea, triangulate, type V2 } from './geomutil';
 import { facadeParams } from './facade';
-import { addBox, addRoofDetails } from './roofDetails';
+import { addBox, addRoofDetails, addSurveyedRoofDetails } from './roofDetails';
 import { hashStr } from './geomutil';
 import type { BuildingProps, Feature, PolyGeom } from './types';
 
@@ -79,6 +79,77 @@ export function isSevenEleven(p: Pick<BuildingProps, 'id' | 'name' | 'addr' | 'w
 
 export function isCaryMcDonalds(p: Pick<BuildingProps, 'id'>): boolean {
   return p.id === 'osm:way/235998654';
+}
+
+export function isJohnMarshallSign(p: Pick<BuildingProps, 'id'>): boolean {
+  // Highest mapped building:part of the Residences at John Marshall.
+  return p.id === 'osm:way/365155760';
+}
+
+const SIGN_GLYPHS: Record<string, string[]> = {
+  A: ['01110', '10001', '10001', '11111', '10001', '10001', '10001'],
+  E: ['11111', '10000', '10000', '11110', '10000', '10000', '11111'],
+  H: ['10001', '10001', '10001', '11111', '10001', '10001', '10001'],
+  J: ['11111', '00001', '00001', '00001', '00001', '10001', '01110'],
+  L: ['10000', '10000', '10000', '10000', '10000', '10000', '11111'],
+  M: ['10001', '11011', '10101', '10101', '10001', '10001', '10001'],
+  N: ['10001', '11001', '11001', '10101', '10011', '10011', '10001'],
+  O: ['01110', '10001', '10001', '10001', '10001', '10001', '01110'],
+  R: ['11110', '10001', '10001', '11110', '10100', '10010', '10001'],
+  S: ['01111', '10000', '10000', '01110', '00001', '00001', '11110'],
+  T: ['11111', '00100', '00100', '00100', '00100', '00100', '00100'],
+};
+
+/** Three-line, double-faced HOTEL / JOHN / MARSHALL rooftop marquee. */
+function addJohnMarshallSign(mb: MeshBuilder, outer: V2[], top: number): void {
+  const obb = minAreaOBB(outer);
+  const [ax, az] = obb.axis;
+  const [cx, cz] = obb.center;
+  const nx = -az, nz = ax;
+  const rot = Math.atan2(az, ax);
+  const steel = pal('shadow'), letters = pal('cream');
+  const cell = 2.13 / 7; // the restored letters are seven feet tall
+  const gap = cell;
+  const faceOffset = 0.72;
+  const point = (u: number, v: number): V2 => [cx + ax * u + nx * v, cz + az * u + nz * v];
+  const box = (u: number, v: number, y: number, sx: number, sy: number, sz: number, color: THREE.Color) => {
+    const [x, z] = point(u, v);
+    addBox(mb, x, top + y, z, sx, sy, sz, rot, color);
+  };
+
+  const frameWidth = 13.5, frameHeight = 8.1;
+  for (const face of [-faceOffset, faceOffset]) {
+    for (let u = -frameWidth / 2; u <= frameWidth / 2 + 0.01; u += 2.25) {
+      box(u, face, 0.35, 0.11, frameHeight, 0.11, steel);
+    }
+    for (const y of [0.35, 2.72, 5.08, 8.34]) {
+      box(0, face, y, frameWidth + 0.4, 0.11, 0.11, steel);
+    }
+  }
+  // Four short cross-depth feet keep the frame visibly attached to the penthouse roof.
+  for (const u of [-5.4, -1.8, 1.8, 5.4]) box(u, 0, 0, 0.14, 0.55, faceOffset * 2 + 0.25, steel);
+
+  const drawWord = (word: string, baseY: number) => {
+    const glyphWidth = 5 * cell;
+    const width = word.length * glyphWidth + (word.length - 1) * gap;
+    const start = -width / 2;
+    for (let letter = 0; letter < word.length; letter++) {
+      const glyph = SIGN_GLYPHS[word[letter]];
+      if (!glyph) continue;
+      for (let row = 0; row < 7; row++) for (let col = 0; col < 5; col++) {
+        if (glyph[row][col] !== '1') continue;
+        const u = start + letter * (glyphWidth + gap) + (col + 0.5) * cell;
+        const y = baseY + (6 - row) * cell;
+        for (const face of [-faceOffset - 0.08, faceOffset + 0.08]) {
+          // Reverse the back face along the sign axis so both outward faces read left-to-right.
+          box(face < 0 ? -u : u, face, y, cell * 0.88, cell * 0.88, 0.12, letters);
+        }
+      }
+    }
+  };
+  drawWord('MARSHALL', 0.68);
+  drawWord('JOHN', 3.04);
+  drawWord('HOTEL', 5.40);
 }
 
 function addSevenElevenFacade(mb: MeshBuilder, outer: V2[], ground: number): void {
@@ -298,7 +369,9 @@ export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, Buildin
     if (opts.details !== false && !hidden) {
       if (isSevenEleven(p)) addSevenElevenFacade(mb, outer, groundY);
       if (caryMcDonalds) addCaryMcDonaldsFacade(mb, outer, groundY);
-      if (!lod2) addRoofDetails(mb, outer, top, p, wall, roof);
+      if (isJohnMarshallSign(p)) addJohnMarshallSign(mb, outer, top);
+      const surveyed = addSurveyedRoofDetails(mb, outer, top, p, toLocal);
+      if (!lod2) addRoofDetails(mb, outer, top, p, wall, roof, !surveyed);
     }
   }
   return mb.triCount - start;

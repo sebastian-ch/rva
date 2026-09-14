@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
-import { rangeForFace, buildBuildingsMesh, isCaryMcDonalds, isSevenEleven, type BuildingRange } from './buildings';
+import { rangeForFace, buildBuildingsMesh, isCaryMcDonalds, isJohnMarshallSign, isSevenEleven, type BuildingRange } from './buildings';
 import type { BuildingProps, Feature, PolyGeom, RoofShape } from './types';
 import type { V2 } from './geomutil';
 
@@ -38,6 +38,13 @@ describe('isCaryMcDonalds', () => {
   it('limits the custom facade to 3410 West Cary Street', () => {
     expect(isCaryMcDonalds({ id: 'osm:way/235998654' })).toBe(true);
     expect(isCaryMcDonalds({ id: 'osm:way/755389457' })).toBe(false);
+  });
+});
+
+describe('isJohnMarshallSign', () => {
+  it('limits the rooftop sign to the highest John Marshall building part', () => {
+    expect(isJohnMarshallSign({ id: 'osm:way/365155760' })).toBe(true);
+    expect(isJohnMarshallSign({ id: 'osm:way/236488141' })).toBe(false);
   });
 });
 
@@ -84,6 +91,19 @@ function assertNoNaN(arr: ArrayLike<number>) {
 }
 
 describe('buildBuildingsMesh', () => {
+  it('adds the John Marshall marquee above its roof', () => {
+    const feat = makeFeature('flat');
+    feat.properties.id = 'osm:way/365155760';
+    const withSign = buildBuildingsMesh([feat], toLocal, groundAt, material());
+    const withoutDetails = buildBuildingsMesh([feat], toLocal, groundAt, material(), { details: false });
+    const signed = withSign.mesh.geometry.getAttribute('position') as THREE.BufferAttribute;
+    const plain = withoutDetails.mesh.geometry.getAttribute('position') as THREE.BufferAttribute;
+    let maxY = -Infinity;
+    for (let i = 0; i < signed.count; i++) maxY = Math.max(maxY, signed.getY(i));
+    expect(signed.count).toBeGreaterThan(plain.count);
+    expect(maxY).toBeCloseTo(23.45, 2);
+  });
+
   it('uses an attached Roofer roof mesh above the existing walls', () => {
     const feat = makeFeature('gable');
     feat.properties.roof_source = 'lod2';

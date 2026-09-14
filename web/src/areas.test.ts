@@ -33,6 +33,16 @@ it('renders Richmond deck and patio surfaces above terrain', () => {
   for (let i = 0; i < positions.count; i++) expect(positions.getY(i)).toBeCloseTo(2.12);
 });
 
+it.each(['groundcover_lawn', 'groundcover_paved', 'groundcover_bare'])('renders imagery-derived %s polygons', (kind) => {
+  const { land } = buildAreas([{
+    type: 'Feature', properties: { id: kind, name: null, kind, source: 'vgin_vbmp+naip+lidar2025' },
+    geometry: { type: 'Polygon', coordinates: [[[0, 0], [12, 0], [12, 9], [0, 9], [0, 0]]] },
+  }], [], (x, y) => [x, -y], () => 2, 0);
+  const positions = land.getAttribute('position');
+  expect(positions.count).toBeGreaterThan(0);
+  for (let i = 0; i < positions.count; i++) expect(positions.getY(i)).toBeGreaterThan(2.05);
+});
+
 it.each([
   ['tennis', [[[0, 0], [24, 0], [24, 11], [0, 11], [0, 0]]]],
   ['american_football', [[[0, 0], [110, 0], [110, 49], [0, 49], [0, 0]]]],

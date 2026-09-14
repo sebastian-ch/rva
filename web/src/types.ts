@@ -40,6 +40,9 @@ export type LineGeom = { type: 'LineString'; coordinates: Ring } | { type: 'Mult
 export type PointGeom = { type: 'Point'; coordinates: [number, number] };
 
 export type RoofShape = 'flat' | 'gable' | 'hip' | 'pyramidal' | 'skillion' | 'dome';
+export interface SurveyedRoofProp {
+  x: number; y: number; w: number; d: number; h: number; a: number; b: number;
+}
 export interface BuildingProps {
   id: string;
   name: string | null;
@@ -55,6 +58,8 @@ export interface BuildingProps {
   roof_color_source?: string;
   /** Roofer mesh JSON: projected xyz vertices (z above eave) and indexed surface rings. */
   lod2_roof?: string | null;
+  /** Reviewed LiDAR roof objects in projected coordinates: x/y center, width/depth/height, angle and base offset. */
+  roof_props?: string | SurveyedRoofProp[] | null;
   wall_color: string;
   type: string;
   landmark: string | null;

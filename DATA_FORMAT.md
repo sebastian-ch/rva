@@ -58,6 +58,7 @@ procedural roof.
 | `roof_color` | string | palette key |
 | `roof_color_source` | `"osm"\|"ortho"\|"heuristic"\|"override"\|"landmark"` | resolution order: OSM `roof:colour`, NAIP orthoimagery classification (`pipeline/ortho.py`), seeded type/height guess; `landmark` = the stylized flat-roof treatment, `override` = supplements file |
 | `lod2_roof` | string\|null | compact Roofer mesh JSON: `v` holds projected `[x,y,z]` vertices with `z` above the eave; `f` holds indexed surface rings. The viewer keeps the existing footprint walls and palette and uses this measured roof shell when `roof_source=lod2` |
+| `roof_props` | string\|null | reviewed LiDAR roof objects as compact JSON `{x,y,w,d,h,a,b}` records: projected center, dimensions, radians from east, and base offset above the wall top |
 | `wall_color` | string | palette key |
 | `type` | string | OSM `building=*` value |
 | `landmark` | string\|null | slug from `assets/landmarks/landmarks.json` |
@@ -85,13 +86,16 @@ Richmond downtown Broad Street's tagged one-way bus lanes use the documented cur
 `id`, `name`, `railway`, `bridge`, `layer`, `deck` (as for roads)
 
 ### landuse (Polygon)
-`id`, `name`, `kind`: `"park"|"grass"|"pitch"|"parking"|"cemetery"|"plaza"|"industrial"|"forest"|"beach"|"deck"`.
+`id`, `name`, `kind`: `"park"|"grass"|"pitch"|"parking"|"cemetery"|"plaza"|"industrial"|"forest"|"beach"|"deck"|"groundcover_lawn"|"groundcover_paved"|"groundcover_bare"`.
 Sports pitches retain optional OSM `sport` and `surface` values. The renderer currently draws distinct
 tennis, baseball, American-football and soccer surfaces and markings; other sports use the pitch base.
 `pitch_layout` stores the full unclipped pitch's oriented frame as compact JSON so markings remain aligned
 when a field crosses tile boundaries.
 Richmond `deck` surfaces come from Structures subtype 3 and include `source: "richmond_structures"` plus the
 optional per-feature `source_updated` timestamp. They are draped 0.12 m above terrain because the source has no elevation.
+Richmond imagery-derived ground cover uses `source: "vgin_vbmp+naip+lidar2025"`. VGIN RGB supplies
+leaf-off boundaries and material cues, NAIP NIR separates vegetation, and LiDAR nDSM removes elevated
+objects. Existing mapped landuse, buildings, roads and water take priority over these simplified polygons.
 
 Elevations in every layer are real metres above `base_elevation`; the viewer multiplies them by `Z_SCALE` (1.6, `web/src/elevation.ts`) when a tile is loaded and divides back for anything shown to the user.
 

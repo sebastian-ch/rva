@@ -11,6 +11,8 @@ const LANDUSE_COLOR: Record<string, [string, number]> = {
   pitch: ['sports_turf', 0.075],
   parking: ['concrete', 0.06], plaza: ['sidewalk', 0.08], industrial: ['sand', 0.05],
   beach: ['sand', 0.08], deck: ['deck', 0.12],
+  groundcover_lawn: ['rough_grass', 0.065], groundcover_paved: ['paving', 0.064],
+  groundcover_bare: ['bare_ground', 0.063],
 };
 const WATER_COLOR: Record<string, string> = { river: 'water', canal: 'water_deep', pond: 'water', ocean: 'water' };
 

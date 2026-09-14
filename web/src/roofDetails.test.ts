@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { MeshBuilder, ringBounds, type V2 } from './geomutil';
-import { addRoofDetails } from './roofDetails';
+import { addRoofDetails, addSurveyedRoofDetails } from './roofDetails';
 import type { BuildingProps } from './types';
 
 function makeProps(overrides: Partial<BuildingProps>): BuildingProps {
@@ -83,5 +83,37 @@ describe('addRoofDetails', () => {
     addRoofDetails(mb, outer, top, props, new THREE.Color('#888888'), new THREE.Color('#333333'));
 
     expect(mb.triCount).toBe(0);
+  });
+
+  it('places reviewed projected roof objects once in the owning tile fragment', () => {
+    const props = makeProps({ roof_props: JSON.stringify([
+      { x: 105, y: 205, w: 4, d: 2, h: 1.5, a: 0, b: 0.8 },
+    ]) });
+    const toLocal = (x: number, y: number): V2 => [x - 100, 200 - y];
+    const mb = new MeshBuilder();
+
+    expect(addSurveyedRoofDetails(mb, rect(10, 10).map(([x, z]) => [x, z - 10]), 20, props, toLocal)).toBe(true);
+    expect(mb.triCount).toBe(12);
+    const ys = mb.pos.filter((_, i) => i % 3 === 1);
+    expect(Math.min(...ys)).toBeCloseTo(20.8);
+    expect(Math.max(...ys)).toBeCloseTo(22.3);
+
+    const otherFragment = new MeshBuilder();
+    expect(addSurveyedRoofDetails(otherFragment, rect(4, 4), 20, props, toLocal)).toBe(true);
+    expect(otherFragment.triCount).toBe(0);
+  });
+
+  it('accepts reviewed objects from decoded GeoJSON arrays', () => {
+    const props = makeProps({ roof_props: [
+      { x: 105, y: 205, w: 15.5, d: 9.2, h: 4.8, a: -2.25, b: 0 },
+    ] });
+    const mb = new MeshBuilder();
+    const toLocal = (x: number, y: number): V2 => [x - 100, 210 - y];
+
+    expect(addSurveyedRoofDetails(mb, rect(10, 10), 40, props, toLocal)).toBe(true);
+    expect(mb.triCount).toBe(12);
+    const ys = mb.pos.filter((_, i) => i % 3 === 1);
+    expect(Math.min(...ys)).toBeCloseTo(40);
+    expect(Math.max(...ys)).toBeCloseTo(44.8);
   });
 });

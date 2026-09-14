@@ -19,6 +19,13 @@ exact processed `target_id` and includes a `base` part that covers the source ou
 their extrusion interval with `min_height` and `height`. Do not derive these from a blind citywide threshold:
 courtyards, neighbouring towers, ramps, pitched roofs and rooftop equipment all produce similar histograms.
 
+`richmond-roof-furniture.json` contains exact-position rooftop structures accepted from the dense
+classified 2025 Richmond LiDAR cloud. Records use projected `{x,y}` centers, oriented `{w,d}` dimensions,
+height `h`, angle `a` in radians from east, and base offset `b` above the modeled wall top. The first
+precision-gated pilot reviewed 30 named flat roofs and accepted 20 objects on five buildings. Keep ambiguous
+roofs unchanged; cars, trees, parapets, roof edges and broad setback tiers can all resemble equipment in a
+surface residual. A reviewed record replaces procedural HVAC for that building.
+
 `overrides.json` is a list of entries:
 
 ```json

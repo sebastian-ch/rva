@@ -20,8 +20,8 @@ Rank accordingly — do not spend effort re-deriving heights.
 | 2 | LoD2 roofs from the 2025 LiDAR (`roofer`) | **done 2026-09-14** — 19,927 citywide roofs imported with measured and geometric quality gates |
 | 2a | Large-building setback / massing audit | **done 2026-09-14** — 1,175 candidates reviewed; seven stable multi-height cases modeled |
 | 2b | Sports-field surface geometry | **done 2026-09-14** — tennis, baseball, football and soccer surfaces and tile-stable markings |
-| 3 | Roof furniture from the 0.3 m DSM | **next** — begin with a precision-gated flat-roof pilot |
-| 4 | Ground cover from NAIP NDVI + nDSM | not started |
+| 3 | Roof furniture from dense LiDAR | **pilot done 2026-09-14** — 20 measured objects on five of 30 reviewed buildings; citywide expansion next |
+| 4 | Ground cover from VGIN RGB + NAIP NIR + nDSM | **done 2026-09-14** — 7,647 simplified lawn, paving and bare-ground polygons |
 | 5 | Split-grammar facade geometry, lower two floors | not started |
 | 6 | Wall colour and surveyed props from Mapillary | not started |
 | 7 | Landmarks from HABS drawings and own photogrammetry | not started |
@@ -33,32 +33,29 @@ Rank accordingly — do not spend effort re-deriving heights.
 |---|---|---|---|---|
 | 1 | City LoD2 dataset check | XS | possibly huge | Half an hour that might make #2 unnecessary. Never build what a source already publishes. |
 | 2 | LoD2 roofs from LiDAR | L | highest geometry win | Data is already on disk; `roofs.py`'s two-plane fit uses a fraction of a 0.35 m-spacing cloud. |
-| 3 | Roof furniture from the DSM | M | high per unit of work | The 0.3 m DSM zip is already downloaded and used only for ad-hoc checks. Real HVAC, penthouses, water towers at real positions. |
-| 4 | Ground cover from NAIP | M | high | The flat ground is weak spot #2 in IMPROVEMENTS.md. NAIP is already fetched for #0, NIR band included; NDVI is then free. |
+| 3 | Roof furniture from dense LiDAR | M | high per unit of work | The existing 0.35 m classified point cloud resolves real HVAC, penthouses and water towers at real positions. |
+| 4 | Ground cover from VGIN RGB + NAIP NIR + nDSM | M | high | The flat ground is weak spot #2 in IMPROVEMENTS.md. The three sources separate sharp boundaries, vegetation and elevated objects. |
 | 5 | Facade grammar | M–L | high, city-wide | Applies to every building, not just landmarks. Gives the AO/outline pass in `postfx.ts` something to bite into. |
 | 6 | Mapillary walls and props | M | medium | The only legal source that sees a facade — but CC BY-SA is share-alike, so settle that before building on it. |
 | 7 | Landmark modelling | L | high but narrow | 12 landmarks out of thousands of buildings. Art time, not pipeline time. Do it when the ordinary buildings stop being the weak link. |
 | 8 | CC0 prop libraries | S | medium | Cheap, but props are not what a viewer notices first. |
 
-The remaining items 3–5 are independent, although the order above still reflects expected visual payoff.
+The remaining items 3 and 5 are independent, although the order above still reflects expected visual payoff.
 Item 6 depends on a licensing decision, not on code.
 
 ## Immediate next step
 
-Build a **roof-furniture pilot** before processing the city. Use 20–30 large, mostly flat roofs with
-clear DSM residuals, including downtown towers, institutional buildings and industrial roofs. For each
-candidate, normalize the 0.3 m DSM against the accepted Roofer plane or flat roof height, detect connected
-components at least 1 m high and roughly 4 m², and compare the proposed boxes with the source DSM before
-emitting anything. The pilot is successful when real penthouses and HVAC groups appear in the correct
-positions, tree crowns and roof edges are rejected, and buildings with ambiguous evidence remain unchanged.
+Expand the reviewed roof-furniture pass beyond the pilot. The pilot screened 30 large named flat roofs,
+accepted 20 compact objects on five buildings, and left the other 25 unchanged. `pipeline/roof_furniture.py`
+now detects candidates from the existing dense classified cloud, while the build reads only exact-ID records
+from `assets/supplements/richmond-roof-furniture.json`. `roofDetails.ts` renders those measurements and
+suppresses procedural HVAC on reviewed buildings.
 
-After the pilot:
+Next:
 
-1. Add compact surveyed roof-prop records and render them through `roofDetails.ts`, retaining procedural
-   details only where no surveyed result exists.
-2. Run the detector citywide with per-building and per-tile caps, then profile near-tile worker time.
-3. Move to ground-cover polygons from NAIP NDVI and nDSM; this is the next largest scene-wide visual gain.
-4. Prototype lower-floor facade geometry on one downtown block before considering a citywide grammar.
+1. Run the detector over the remaining eligible flat roofs with the existing per-building cap, review the
+   proposed objects against the dense surface, and profile near-tile worker time after acceptance.
+2. Prototype lower-floor facade geometry on one downtown block before considering a citywide grammar.
 
 ---
 
@@ -205,13 +202,13 @@ geometry appears. Keep the two-plane fit as the fallback for footprints it decli
 **Done when:** QA report shows a `roof_source` histogram with `lod2` as the plurality, and a Fan
 rowhouse block renders with distinguishable dormers.
 
-## 3. Roof furniture from the 0.3 m DSM
+## 3. Roof furniture from dense LiDAR
 
-**Why:** `web/src/roofDetails.ts` scatters HVAC boxes procedurally. The 0.3 m DSM
-(`va2025_richmond_J1448889.zip`, already downloaded, currently used only for ad-hoc checks via
-`/vsizip/`) sees the actual boxes, penthouses, elevator overruns and water towers.
+**Why:** `web/src/roofDetails.ts` scatters HVAC boxes procedurally. The existing 0.35 m classified
+2025 point cloud sees actual boxes, penthouses, elevator overruns and water towers. The previously noted
+0.3 m DSM archive is not present locally; the pilot used the denser and already cached point source directly.
 
-**Approach:** normalize the DSM against the roof plane fitted in #2 (or against the current
+**Approach:** normalize the dense top surface against the roof plane fitted in #2 (or against the current
 `roof_height`), threshold residuals above ~1 m, connected-component the blobs, and emit each as an
 oriented bounding box in building-local coordinates.
 
@@ -224,28 +221,44 @@ oriented bounding box in building-local coordinates.
 **Risk:** it is easy to produce noise. Require a minimum footprint area (~4 m²) and height (~1 m) per
 blob, and remember these are seen from an isometric camera — anything under a metre will never read.
 
-## 4. Ground cover from NAIP
+**Pilot result, 2026-09-14:** 30 named flat roofs between 800 and 7,500 m² were screened. Model-alignment,
+edge-inset, size, compactness and height gates accepted 20 objects on SunTrust Mortgage, University Student
+Commons, Maggie L. Walker High School, The Edge at ATC and Richmond Public Library. A Federal Building
+candidate was rejected because an existing higher building part covers it.
+The renderer accepts both compact serialized records and decoded GeoJSON arrays, emits each object only in
+the tile fragment containing its center, and disables procedural HVAC for every fragment of an accepted
+building. Tests: `pipeline/tests/test_roof_furniture.py` and `web/src/roofDetails.test.ts`.
+
+## 4. Ground cover from imagery and LiDAR
 
 **Why:** IMPROVEMENTS.md weak spot #2 — "the ground is one flat colour with contours". No texture
 fixes this well; **resist draping a photograph**, which would destroy the flat-shaded look in one
 commit. Derive polygons instead and colour them from `palette.json`.
 
-**Inputs:** `data/raw/ortho_<slug>.tif` (already fetched for roof colour, NIR band included) and the
-LiDAR nDSM.
+**Inputs:** `data/raw/vbmp_<slug>.tif` for sharper leaf-off RGB boundaries, the NIR band in
+`data/raw/ortho_<slug>.tif`, and the LiDAR nDSM.
 
 **Approach:**
 - NDVI from the NIR band separates vegetation from paving with no classifier at all.
-- nDSM height splits vegetation into canopy (already handled by `vegetation.lidar_canopies`) and
-  ground-level growth: lawn versus bed versus rough grass.
-- Low NDVI plus low nDSM is impervious: parking aprons, plazas, rail yards. Intersect with city
-  parcels to find parking lots that OSM has not mapped.
+- nDSM removes canopy and other elevated objects already handled by buildings or vegetation.
+- Low NDVI plus low nDSM identifies impervious and bare surfaces such as parking aprons, plazas and
+  rail yards; VGIN RGB separates brown bare ground from paving.
 - Polygonize with `rasterio.features.shapes`, simplify hard, and append to `landuse` as new kinds.
 
-**Implementation sketch:** `pipeline/groundcover.py` plus a `Step` reading `landuse` and `water`;
+**Implementation:** `pipeline/groundcover.py` plus a cached `groundcover` step reading buildings, roads,
+landuse and water;
 extend `schema.LANDUSE_KINDS`; add palette keys and area colours in `web/src/areas.ts`.
 
-**Risk:** over-fragmentation. Simplify aggressively and drop polygons under ~20 m² — this is a
+**Risk:** over-fragmentation. Simplify aggressively and drop polygons under 90–120 m² — this is a
 stylized map, not a land-cover product.
+
+**Result, 2026-09-14:** the Richmond pass uses a 3 m classification grid, morphological cleanup,
+1.5 m polygon simplification and 90–120 m² minimum areas. It emitted 4,369 lawn, 3,083 paved and 195
+bare-ground polygons covering 6.42 km². Existing mapped landuse, buildings, roads and surveyed water
+mask the derived classes. A holdout check against mapped areas classified 91.6% of answered parking/plaza
+pixels as paving and 73.9% of answered park/grass/cemetery pixels as lawn; parks also contain paths,
+trees and structures, so their remaining answered pixels are not all errors. Browser QA across VCU,
+Shockoe, the riverfront and the Fan kept tile-worker p95 below 50 ms with no console errors.
 
 ## 5. Split-grammar facade geometry
 

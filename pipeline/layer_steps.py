@@ -126,6 +126,19 @@ def _lod2(ctx: StepContext, layers: dict):
         layers["buildings"], DATA_RAW / f"lod2_{ctx.slug}", CRS_PROJ)}
 
 
+def _roof_furniture(ctx: StepContext, layers: dict):
+    from roof_furniture import attach
+    return {"buildings": attach(layers["buildings"], ASSETS / "supplements" / "richmond-roof-furniture.json")}
+
+
+def _groundcover(ctx: StepContext, layers: dict):
+    from groundcover import derive_groundcover
+    cover = derive_groundcover(
+        DATA_RAW / f"vbmp_{ctx.slug}.tif", DATA_RAW / f"ortho_{ctx.slug}.tif", DATA_RAW / "ndsm.tif",
+        layers["buildings"], layers["roads"], layers["landuse"], layers["water"])
+    return {"landuse": _concat(layers["landuse"], cover) if len(cover) else layers["landuse"]}
+
+
 def _roads(ctx: StepContext, layers: dict):
     from process import process_roads
     roads, crossings = process_roads(ctx.raw_dir / "roads.parquet", ctx.terrain)
@@ -244,6 +257,12 @@ def steps_for(region: str) -> list[Step]:
              sources=lambda c: [c.raw_dir / "pois.parquet"]),
         Step("lod2_roofs", ("buildings",), _lod2, modules=("lod2",), reads=("buildings",),
              sources=_lod2_sources, regions=("richmond",)),
+        Step("roof_furniture", ("buildings",), _roof_furniture, modules=("roof_furniture",), reads=("buildings",),
+             sources=lambda c: [ASSETS / "supplements" / "richmond-roof-furniture.json"], regions=("richmond",)),
+        Step("groundcover", ("landuse",), _groundcover, modules=("groundcover",),
+             reads=("buildings", "roads", "landuse", "water"), sources=lambda c: [
+                 DATA_RAW / f"vbmp_{c.slug}.tif", DATA_RAW / f"ortho_{c.slug}.tif", DATA_RAW / "ndsm.tif"],
+             regions=("richmond",)),
         Step("city_decks", ("landuse",), _city_decks, entries=(process.process_richmond_decks,), reads=("landuse",),
              sources=lambda c: [c.richmond("structures.parquet")], regions=("richmond",)),
         Step("hydro_shoreline", ("water", "landuse"), _hydro_shoreline, entries=(hydro.merge_water, hydro.load_hydro),
