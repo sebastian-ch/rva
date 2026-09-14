@@ -224,6 +224,8 @@ export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, Buildin
   const base = groundY - 0.3 + p.min_height; // sink slightly so slopes don't show gaps
   const top = groundY + (hidden ? 0.6 : p.height);
   const roofH = hidden || p.roof_shape === 'flat' ? 0 : p.roof_height;
+  let lod2 = false;
+  let lod2Attempted = false;
 
   for (const poly of polygons(feat.geometry)) {
     const rings = poly.map((r) => cleanRing(r).map(([x, y]) => toLocal(x, y))).filter((r) => r.length >= 3);
@@ -283,7 +285,12 @@ export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, Buildin
       mb.tri(a, b, c, capColor, UP, roofH > 0 ? 0.9 : 1);
     }
 
-    const lod2 = opts.lod2 !== false && p.roof_source === 'lod2' && addLod2Roof(mb, p.lod2_roof, toLocal, top, roof);
+    // A multipart footprint still owns one attached mesh. Roofer may encode all
+    // components together; emitting it once per polygon duplicates the roof.
+    if (!lod2Attempted) {
+      lod2Attempted = true;
+      lod2 = opts.lod2 !== false && p.roof_source === 'lod2' && addLod2Roof(mb, p.lod2_roof, toLocal, top, roof);
+    }
     if (roofH > 0 && !lod2) {
       const done = (p.roof_shape === 'hip' || p.roof_shape === 'pyramidal') && addInsetRoof(mb, outer, top, roofH, roof, p.roof_shape === 'pyramidal');
       if (!done) addRoof(mb, outer, top, roofH, p.roof_shape, roof, wall, p.roof_azimuth ?? null, holes);

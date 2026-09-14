@@ -94,3 +94,56 @@ def test_low_quality_fit_is_ignored(tmp_path):
     building["attributes"]["rf_rmse_lod22"] = 1.26
     path.write_text(lines[0] + "\n" + json.dumps(feature) + "\n")
     assert read_roofs([path], "EPSG:32618") == {}
+
+
+def test_implausibly_tall_roof_is_ignored(tmp_path):
+    path = tmp_path / "tall.city.jsonl"
+    _write_cityjsonseq(path)
+    lines = path.read_text().splitlines()
+    feature = json.loads(lines[1])
+    feature["vertices"][2][2] = 2600
+    feature["vertices"][3][2] = 2600
+    path.write_text(lines[0] + "\n" + json.dumps(feature) + "\n")
+    assert read_roofs([path], "EPSG:32618") == {}
+
+
+def test_partial_roof_keeps_existing_procedural_roof(tmp_path):
+    source = tmp_path / "lod2"
+    source.mkdir()
+    _write_cityjsonseq(source / "roof.city.jsonl")
+    buildings = gpd.GeoDataFrame([{
+        "id": "osm:way/1", "hidden": False, "roof_source": "lidar", "roof_height": 1.0,
+        "geometry": box(100, 200, 130, 230),
+    }], crs="EPSG:32618")
+    out = attach_roofs(buildings, source, "EPSG:32618")
+    assert out.iloc[0].roof_source == "lidar"
+    assert out.iloc[0].lod2_roof is None
+
+
+def test_multipart_records_in_one_batch_are_combined(tmp_path):
+    path = tmp_path / "multipart.city.jsonl"
+    _write_cityjsonseq(path)
+    lines = path.read_text().splitlines()
+    second = json.loads(lines[1])
+    second["id"] = "component-2"
+    for vertex in second["vertices"]:
+        vertex[0] += 2000
+    path.write_text(lines[0] + "\n" + lines[1] + "\n" + json.dumps(second) + "\n")
+    mesh = json.loads(read_roofs([path], "EPSG:32618")["osm:way/1"])
+    assert len(mesh["v"]) == 8
+    assert mesh["f"][1] == [[4, 5, 6, 7]]
+
+
+def test_later_batch_replaces_older_mesh(tmp_path):
+    old = tmp_path / "old.city.jsonl"
+    new = tmp_path / "new.city.jsonl"
+    _write_cityjsonseq(old)
+    _write_cityjsonseq(new)
+    lines = new.read_text().splitlines()
+    feature = json.loads(lines[1])
+    for vertex in feature["vertices"]:
+        vertex[0] += 2000
+    new.write_text(lines[0] + "\n" + json.dumps(feature) + "\n")
+    mesh = json.loads(read_roofs([old, new], "EPSG:32618")["osm:way/1"])
+    assert len(mesh["v"]) == 4
+    assert min(vertex[0] for vertex in mesh["v"]) == 120.0

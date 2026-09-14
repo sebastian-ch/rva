@@ -378,6 +378,22 @@ type, usable cloud, density ≥5 points/m², no-data ≤45%, and LoD2.2 RMSE ≤
 Render measured roof meshes only at the near tile level. The same building should use its procedural
 roof in distant tiles so citywide LoD2 coverage does not inflate geometry that cannot be seen.
 
+A low-RMSE roof can still be unusable in a hybrid wall/roof renderer. The first Richmond citywide import
+accepted 87 mixed-height shells with more than 20 m of vertical relief, including a 49.25 m shell on a
+6.4 m wall, and 369 partial shells covering less than half of their source footprint. These produced
+unsupported upper walls or a small measured patch surrounded by a flat cap. Require projected roof
+coverage of at least 50% and relief no greater than 20 m when retaining procedural exterior walls.
+This rule applies to the hybrid importer; a renderer that keeps Roofer's complete exterior walls can
+reassess it. Regressions: `test_implausibly_tall_roof_is_ignored` and
+`test_partial_roof_keeps_existing_procedural_roof` in `pipeline/tests/test_lod2.py`.
+
+Emit an attached roof mesh once per building feature, outside the per-polygon roof loop. Roofer can emit
+multiple records for one multipart source and the viewer can receive a MultiPolygon. Keeping only the
+last record loses components; drawing the combined mesh per polygon duplicates every component. Merge
+same-source records within one CityJSONSeq batch, let later files replace older batches, and render the
+result once. Regressions: `test_multipart_records_in_one_batch_are_combined` and the multipart case in
+`web/src/buildings.test.ts`.
+
 When a city footprint layer gap-fills OSM, an `intersects` join alone is too aggressive: attached
 buildings often share a boundary with an OSM footprint and have zero overlap area. Treat a candidate as
 a duplicate only when their intersection covers a meaningful fraction of the smaller polygon. Preserve

@@ -33,7 +33,8 @@ Optional Roofer CityJSONSeq input lives in `data/raw/lod2_<bbox-slug>/*.city.jso
 must match processed building IDs. When present, the building step preserves individual rowhouse
 footprints and the `lod2_roofs` step attaches each valid reconstruction independently. A mesh is
 accepted only when Roofer reports a recognized roof type, usable point coverage, density ≥5 points/m²,
-no-data ≤45%, and LoD2.2 RMSE ≤1.25 m; other buildings retain their procedural roof.
+no-data ≤45%, and LoD2.2 RMSE ≤1.25 m. The imported roof must also cover at least 50% of its
+source footprint and have no more than 20 m of vertical relief; other buildings retain their procedural roof.
 
 ### buildings (Polygon / MultiPolygon)
 | property | type | notes |

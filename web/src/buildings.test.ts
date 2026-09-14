@@ -114,6 +114,24 @@ describe('buildBuildingsMesh', () => {
     expect(maxY).toBeCloseTo(19, 2);
   });
 
+  it('emits one attached roof mesh for a multipart footprint', () => {
+    const feat = makeFeature('flat');
+    feat.geometry = { type: 'MultiPolygon', coordinates: [
+      [[[995, 1995], [1005, 1995], [1005, 2005], [995, 2005], [995, 1995]]],
+      [[[1015, 1995], [1025, 1995], [1025, 2005], [1015, 2005], [1015, 1995]]],
+    ] };
+    feat.properties.roof_source = 'lod2';
+    feat.properties.lod2_roof = JSON.stringify({
+      v: [[995, 1995, 0], [1005, 1995, 0], [1005, 2005, 0], [995, 2005, 0]],
+      f: [[[0, 1, 2, 3]]],
+    });
+    const withRoof = buildBuildingsMesh([feat], toLocal, groundAt, material(), { details: false });
+    const fallback = buildBuildingsMesh([feat], toLocal, groundAt, material(), { details: false, lod2: false });
+    const withCount = (withRoof.mesh.geometry.getAttribute('position') as THREE.BufferAttribute).count / 3;
+    const fallbackCount = (fallback.mesh.geometry.getAttribute('position') as THREE.BufferAttribute).count / 3;
+    expect(withCount - fallbackCount).toBe(2);
+  });
+
   it('builds a gable-roofed box within the expected height bounds', () => {
     const feat = makeFeature('gable');
     const { mesh, ranges } = buildBuildingsMesh([feat], toLocal, groundAt, material());

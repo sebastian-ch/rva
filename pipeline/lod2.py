@@ -14,10 +14,14 @@ from typing import Iterable
 
 import geopandas as gpd
 from pyproj import Transformer
+from shapely.geometry import Polygon
+from shapely.ops import unary_union
 
 MIN_POINT_DENSITY = 5.0
 MAX_NODATA_FRACTION = 0.45
 MAX_RMSE_M = 1.25
+MAX_ROOF_RELIEF_M = 20.0
+MIN_FOOTPRINT_COVERAGE = 0.5
 ROOF_TYPES = {"slanted", "horizontal", "multiple horizontal"}
 
 
@@ -62,14 +66,13 @@ def _roof_mesh(feature: dict, scale: list[float], translate: list[float], transf
     # Roofer can serialize a nominally successful solid from sparse or incomplete
     # points. Keep the older procedural roof unless the fit clears explicit,
     # measured quality thresholds established by the Richmond depth-9 run.
+    quality = [attrs.get("rf_pt_density"), attrs.get("rf_nodata_frac"), attrs.get("rf_rmse_lod22")]
     if (attrs.get("rf_pointcloud_unusable") is True
             or attrs.get("rf_roof_type") not in ROOF_TYPES
-            or not isinstance(attrs.get("rf_pt_density"), (int, float))
-            or attrs["rf_pt_density"] < MIN_POINT_DENSITY
-            or not isinstance(attrs.get("rf_nodata_frac"), (int, float))
-            or attrs["rf_nodata_frac"] > MAX_NODATA_FRACTION
-            or not isinstance(attrs.get("rf_rmse_lod22"), (int, float))
-            or attrs["rf_rmse_lod22"] > MAX_RMSE_M):
+            or any(not isinstance(v, (int, float)) or not float("-inf") < v < float("inf") for v in quality)
+            or quality[0] < MIN_POINT_DENSITY
+            or quality[1] > MAX_NODATA_FRACTION
+            or quality[2] > MAX_RMSE_M):
         return None
     parts = [o for o in objects.values() if o.get("type") == "BuildingPart"]
     vertices = feature.get("vertices") or []
@@ -122,7 +125,10 @@ def _roof_mesh(feature: dict, scale: list[float], translate: list[float], transf
         x, y, z = world(i)
         out_vertices.append([round(x, 2), round(y, 2), round(z - roof_floor, 2)])
     height = max(v[2] for v in out_vertices)
-    if not (0 <= height <= 80):
+    # Taller relief generally means Roofer folded a mixed-height complex into one
+    # shell. Our hybrid retains only the source footprint's exterior walls, so
+    # those upper tiers would be left unsupported.
+    if not (0 <= height <= MAX_ROOF_RELIEF_M):
         return None
     return {
         "v": out_vertices,
@@ -130,10 +136,39 @@ def _roof_mesh(feature: dict, scale: list[float], translate: list[float], transf
     }
 
 
+def _merge_meshes(first: dict, second: dict) -> dict:
+    """Combine Roofer components emitted separately for one multipart source."""
+    offset = len(first["v"])
+    return {
+        "v": first["v"] + second["v"],
+        "f": first["f"] + [[[i + offset for i in ring] for ring in face] for face in second["f"]],
+    }
+
+
+def _covers_footprint(encoded: str, footprint) -> bool:
+    """Reject partial shells that would suppress most of the procedural roof."""
+    mesh = json.loads(encoded)
+    surfaces = []
+    for face in mesh["f"]:
+        try:
+            rings = [[(mesh["v"][i][0], mesh["v"][i][1]) for i in ring] for ring in face]
+            surface = Polygon(rings[0], rings[1:])
+        except (IndexError, TypeError, ValueError):
+            continue
+        # Vertical closure faces have zero projected area and do not contribute.
+        if surface.is_valid and surface.area > 0.01:
+            surfaces.append(surface)
+    if not surfaces or footprint is None or footprint.is_empty or footprint.area <= 0:
+        return False
+    roof_area = unary_union(surfaces).intersection(footprint).area
+    return roof_area / footprint.area >= MIN_FOOTPRINT_COVERAGE
+
+
 def read_roofs(paths: Iterable[Path], target_crs: str) -> dict[str, str]:
     """Read Roofer CityJSONSeq files as ``source_id -> compact mesh JSON``."""
     roofs: dict[str, str] = {}
     for path in paths:
+        file_roofs: dict[str, dict] = {}
         with Path(path).open() as stream:
             header = json.loads(next(stream))
             transform = header.get("transform") or {}
@@ -157,7 +192,11 @@ def read_roofs(paths: Iterable[Path], target_crs: str) -> dict[str, str]:
                     building = next((o for o in (feature.get("CityObjects") or {}).values()
                                      if o.get("type") == "Building"), {})
                     source_id = (building.get("attributes") or {}).get("source_id") or feature.get("id")
-                    roofs[str(source_id)] = json.dumps(mesh, separators=(",", ":"))
+                    key = str(source_id)
+                    file_roofs[key] = _merge_meshes(file_roofs[key], mesh) if key in file_roofs else mesh
+        # A later file is treated as a newer batch, while multipart records inside
+        # one CityJSONSeq file are combined.
+        roofs.update({key: json.dumps(mesh, separators=(",", ":")) for key, mesh in file_roofs.items()})
     return roofs
 
 
@@ -172,7 +211,8 @@ def attach_roofs(buildings: gpd.GeoDataFrame, source: Path, target_crs: str) -> 
     roofs = read_roofs(files, target_crs)
     matched = out["id"].astype(str).map(roofs)
     hidden = out["hidden"].fillna(False) if "hidden" in out else False
-    use = matched.notna() & ~hidden
+    plausible = matched.combine(out.geometry, lambda raw, geom: isinstance(raw, str) and _covers_footprint(raw, geom))
+    use = matched.notna() & plausible & ~hidden
     if not use.any():
         print(f"  lod2 roofs: 0/{len(out)} buildings ({len(roofs)} valid reconstructions; no matching source IDs)")
         return out
