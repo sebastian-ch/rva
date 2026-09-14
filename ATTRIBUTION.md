@@ -82,6 +82,13 @@ Main Street Parking Garage, Richmond Dairy Apartments, 1113 Moore Street and 1 W
 The package remains a comparison source elsewhere because its mostly flat geometry is older than both
 the current OSM building parts and the 2025 survey.
 
+Richmond City Hall uses the city's sole BIM-flagged object (`OBJECTID 68275`, `Building_71606`) from the
+public [`urban_BuildingMultipatch` SceneServer](https://www.arcgis.com/home/item.html?id=ad66d2b8f88f46e4a0803205dc37e5f1),
+accessed 2026-09-14. `pipeline/import_richmond_city_hall.py` converts that exact I3S leaf mesh to the local
+stylized landmark GLB; the renderer does not use the service's texture resources. Preserve City of Richmond
+credit. The same service's general LiDAR-derived building mesh remains a comparison source rather than a
+citywide production input.
+
 **Road geometry evaluated 2026-09-10:** `Roads/FeatureServer/0` supplies paved-surface polygons maintained
 by the city from orthophotography, site plans and development review sources; its reported data edit is
 2023-12-08. `CarriagewayCenterlines/FeatureServer/0` supplies routable road-bed centerlines and represents

@@ -1,7 +1,7 @@
 # Landmarks
 
-`landmarks.json` is a hand-curated array of the 18 landmarks from `PLAN.md`
-section 2d, the first pass for hand-modeling in Blender.
+`landmarks.json` is the hand-curated landmark registry. It began with the 18 landmarks from `PLAN.md`
+section 2d and now also contains reviewed additions such as Richmond City Hall.
 
 ## Schema
 
@@ -28,3 +28,8 @@ checking that the footprint centroid falls near `lat`/`lon`. A match sets
 `landmark` on the building feature (see `DATA_FORMAT.md`) to the landmark's
 `slug`, which the web app uses to swap in the hand-modeled glTF from `model`
 in place of the procedural extrusion.
+
+Richmond City Hall is the exception to the Blender-authored workflow. Its GLB is converted from the city's
+public BIM-flagged I3S object by `pipeline/import_richmond_city_hall.py`. The converter fixes the exact source
+node and centers the output on the matched OSM parent footprint; update both together if the source object or
+footprint changes.

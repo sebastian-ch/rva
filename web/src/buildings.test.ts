@@ -95,13 +95,17 @@ describe('buildBuildingsMesh', () => {
     const feat = makeFeature('flat');
     feat.properties.id = 'osm:way/365155760';
     const withSign = buildBuildingsMesh([feat], toLocal, groundAt, material());
-    const withoutDetails = buildBuildingsMesh([feat], toLocal, groundAt, material(), { details: false });
+    const reduced = buildBuildingsMesh([feat], toLocal, groundAt, material(), { details: false });
+    const plainFeat = makeFeature('flat');
+    const plain = buildBuildingsMesh([plainFeat], toLocal, groundAt, material(), { details: false });
     const signed = withSign.mesh.geometry.getAttribute('position') as THREE.BufferAttribute;
-    const plain = withoutDetails.mesh.geometry.getAttribute('position') as THREE.BufferAttribute;
+    const reducedSigned = reduced.mesh.geometry.getAttribute('position') as THREE.BufferAttribute;
+    const unsigned = plain.mesh.geometry.getAttribute('position') as THREE.BufferAttribute;
     let maxY = -Infinity;
     for (let i = 0; i < signed.count; i++) maxY = Math.max(maxY, signed.getY(i));
-    expect(signed.count).toBeGreaterThan(plain.count);
-    expect(maxY).toBeCloseTo(23.45, 2);
+    expect(signed.count).toBeGreaterThan(unsigned.count);
+    expect(reducedSigned.count).toBeGreaterThan(unsigned.count);
+    expect(maxY).toBeCloseTo(20.60, 2);
   });
 
   it('uses an attached Roofer roof mesh above the existing walls', () => {

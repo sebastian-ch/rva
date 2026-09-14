@@ -16,6 +16,13 @@ sports. Tennis complexes may contain several courts inside one outline. For base
 long foul-line boundary runs meet; the sharpest vertex may just be a short chord on the outfield arc. Regressions live in
 `pipeline/tests/test_sports_fields.py` and `web/src/areas.test.ts`.
 
+An enclosing park polygon can still show through a correctly preserved pitch when the park's vertical lift is
+higher. Give pitch surfaces explicit priority above parks, then put paint above the pitch. Treat a surface tag as
+a material unless it actually includes a color: `tartan` and `rubber` do not imply red. Richmond's blue Cary
+court IDs are a reviewed VGIN exception in `web/src/areas.ts`; recheck imagery rather than carrying those IDs or
+colors to another region. A baseball dirt fill should follow a rounded arc between the two foul directions. A
+four-corner home/first/second/third polygon reads as an artificial square and leaves turf wedges around second.
+
 Ground-cover extraction needs complementary imagery rather than the sharpest image alone. VGIN's Richmond
 RGB is sharper and leaf-off, so it supplies clean lot and material boundaries; NAIP's coarser four-band image
 supplies NIR, which separates vegetation more reliably; LiDAR nDSM removes roofs and tree crowns. Classify on
@@ -603,6 +610,28 @@ source, and render double-faced text with the back face mirrored. Verify at the 
 terrain exaggeration can make a camera aimed at the raw source elevation inspect the wrong roof. The John
 Marshall marquee is implemented in `web/src/buildings.ts`, documented in `docs/richmond-fan.md`, and covered
 in `web/src/buildings.test.ts`.
+
+Thin open-frame lettering can exist in the mesh yet disappear at normal map scale. Keep skyline identifiers in
+reduced-detail tiles, reduce internal scaffolding, and use a shallow contrasting panel when exact open steelwork
+turns into visual noise. Test both geometry presence and a representative browser view. The Richmond sign uses
+large `JMB` initials as a legibility-first approximation; this treatment is for distant identifiers, not signs
+whose exact typography or transparency must survive a close architectural view.
+
+Scene-layer flags can expose the few architectural exceptions hidden inside a mostly procedural city model.
+Count and locate `BIM` and `CustomMultipatch` values before crawling meshes. Treat a BIM record as one import
+candidate; group custom records by their source building because one site may be split into several masses.
+When the current map has an outline plus inherited building parts, assign the landmark identity to the parent
+before processing so the model swap removes every overlapping procedural mass. Normalize the imported mesh
+to the current ground datum and center it on the matched parent footprint. Richmond City Hall is the reference
+case in `pipeline/import_richmond_city_hall.py`; a source flag alone is not proof that other custom objects are
+newer or more accurate than current LiDAR.
+
+Treat publisher-labeled rendering examples as demonstrations until their component layers are measured.
+Inspect scene visibility, source-layer extents, feature counts, vertex counts, textures and any accuracy note
+in the scene itself. Richmond's Manchester example mixes a detailed streetscape layer with texture swatches
+and low-detail planning masses, and explicitly says its geometry is not fully correct. That makes it useful as
+a style/reference inventory, not a wholesale geometry source. Record the layer-level decision in the region
+notes so a polished screenshot does not later override better surveyed inputs.
 
 When a landmark looks too short, compare eaves, ridge, width and adjacent elevated infrastructure
 separately. A correct peak with low eaves and an undersized footprint can still read too small.

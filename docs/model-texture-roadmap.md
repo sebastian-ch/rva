@@ -129,6 +129,32 @@ older flat-topped extrusion product with feature edits through July 2020, not th
 source behind the SceneServer. It is useful for archaeology and coverage checks, not the production
 geometry path.
 
+**Detailed-object follow-up, 2026-09-14:** the citywide SceneServer contains one `BIM=Yes` object and 20
+`CustomMultipatch=Yes` records. The BIM object is Richmond City Hall (`OBJECTID 68275`, `Building_71606`);
+its exact 152-triangle architectural mesh is now the `richmond-city-hall` landmark, replacing the overlapping
+OSM base and tower extrusions together. The 20 custom records form five sites rather than 20 independent
+buildings: Children’s Hospital of Richmond at VCU, the VCU Health Outpatient Facility, the VCU College of
+Health Professions area, Gateway Plaza, and Dominion Energy HQ. Review those groups individually before
+import because several records are separate massing pieces and their `CustomMultipatch` flag does not by
+itself establish that they beat the current 2025-LiDAR/OSM model.
+
+The Richmond ArcGIS organization also exposes a small `Manchester Test 2` project. Its Existing Buildings
+scene contains 1,142 features with about 64,000 vertices, while the `Objects Paste` scene is a highly detailed,
+textured design-model layer over roughly one block. The latter is project content, not an authoritative
+citywide building source. Both scenes were mirrored on 2026-09-14 under
+`data/raw/manchester_test_2/` (about 2.94 GiB total), including node pages, geometry, shared materials,
+textures and item/service metadata. Raw caches remain gitignored.
+
+The public [Manchester ArcGIS Urban and CityEngine](https://www.arcgis.com/home/item.html?id=1712ec210fb94a3eb4e5471818ad3a23)
+Web Scene also contains a hidden group named
+`Rendering Example (geometry not fully correct)`. It combines the already-cached `Objects Paste` layer with
+`Random` (two texture-test features, 20 triangles total) and `Spaces` (833 low-detail planning masses and
+5,771 triangles across four meshes). The scene definition itself is cached under
+`data/raw/manchester_test_2/rendering_example/`.
+`Random` is a material demonstration and `Spaces` is scenario massing; neither improves the current building
+geometry. Keep `Objects Paste` as a reference for selective streetscape assets, and do not substitute the
+three-layer rendering example for surveyed footprints or LiDAR roofs.
+
 ## 2. LoD2 roofs from the 2025 LiDAR
 
 **Why:** `pipeline/roofs.py` fits two planes and reports flat / gable / hip / skillion. The 2025 City

@@ -8,13 +8,33 @@ const UP = new THREE.Vector3(0, 1, 0);
 
 const LANDUSE_COLOR: Record<string, [string, number]> = {
   park: ['grass', 0.08], grass: ['grass', 0.07], forest: ['canopy', 0.08], cemetery: ['grass', 0.07],
-  pitch: ['sports_turf', 0.075],
+  // Pitches often sit inside a mapped park/recreation polygon. Keep them above that
+  // base surface or its triangles show through courts and infields.
+  pitch: ['sports_turf', 0.105],
   parking: ['concrete', 0.06], plaza: ['sidewalk', 0.08], industrial: ['sand', 0.05],
   beach: ['sand', 0.08], deck: ['deck', 0.12],
   groundcover_lawn: ['rough_grass', 0.065], groundcover_paved: ['paving', 0.064],
   groundcover_bare: ['bare_ground', 0.063],
 };
 const WATER_COLOR: Record<string, string> = { river: 'water', canal: 'water_deep', pond: 'water', ocean: 'water' };
+
+// Reviewed against Richmond's VGIN imagery. OSM either omits the surface on the VCU
+// Cary Street courts or records the material (tartan), which does not encode its blue color.
+const RICHMOND_BLUE_TENNIS_COURTS = new Set([
+  'osm:way/1215879874', 'osm:way/1215879875', 'osm:way/1215879876',
+  'osm:way/1432779830', 'osm:way/1432779831', 'osm:way/1432779832', 'osm:way/1432779833',
+  'osm:way/1432779834', 'osm:way/1432779835', 'osm:way/1432779836', 'osm:way/1432779837',
+  'osm:way/1442671113', 'osm:way/1442671114', 'osm:way/1442671115', 'osm:way/1442671116',
+  'osm:way/1442671117', 'osm:way/1442671118', 'osm:way/1442671119', 'osm:way/1442671120',
+  'osm:way/44740504',
+]);
+
+export function pitchSurfaceColor(p: Pick<AreaProps, 'id' | 'kind' | 'sport' | 'surface'>): string {
+  if (p.kind !== 'pitch' || p.sport !== 'tennis') return LANDUSE_COLOR[p.kind]?.[0] ?? 'sports_turf';
+  if (RICHMOND_BLUE_TENNIS_COURTS.has(p.id) || /blue/i.test(p.surface ?? '')) return 'court_blue';
+  if (/clay|red/i.test(p.surface ?? '')) return 'court_red';
+  return 'court_green';
+}
 
 /** Drape polygons onto terrain; interior is subdivided on a grid so big parks follow relief. */
 function drape(mb: MeshBuilder, feat: Feature<PolyGeom, AreaProps>, color: THREE.Color, lift: number,
@@ -73,9 +93,7 @@ export function buildAreas(
     }
     const spec = LANDUSE_COLOR[f.properties.kind];
     if (!spec) continue;
-    const pitchColor = f.properties.kind === 'pitch' && f.properties.sport === 'tennis'
-      ? (/clay|tartan|rubber/.test(f.properties.surface ?? '') ? 'court_red' : 'court_green')
-      : spec[0];
+    const pitchColor = pitchSurfaceColor(f.properties);
     drape(land, f, hex(pitchColor as never), spec[1], toLocal, groundAt, null);
     if (f.properties.kind === 'parking') parkingStripes(land, f, toLocal, groundAt, spec[1] + 0.02);
     if (f.properties.kind === 'pitch') sportsMarkings(land, f, toLocal, groundAt, spec[1] + 0.025);
@@ -261,12 +279,27 @@ function sportsMarkings(mb: MeshBuilder, feat: Feature<PolyGeom, AreaProps>,
         maxA = Math.hypot(A[0] - H[0], A[1] - H[1]); maxB = Math.hypot(B[0] - H[0], B[1] - H[1]);
       }
       const base = Math.min(27.43, maxA * 0.65, maxB * 0.65);
-      if (base < 10) continue;
+      // Youth diamonds and clipped source outlines can have a surveyed foul-line
+      // run just under 15 m. Keep those small infields instead of dropping all
+      // baseball detail; shorter geometry is too ambiguous to decorate safely.
+      if (base < 7) continue;
       const first: V2 = [H[0] + da[0] * base, H[1] + da[1] * base];
       const third: V2 = [H[0] + db[0] * base, H[1] + db[1] * base];
       const second: V2 = [first[0] + db[0] * base, first[1] + db[1] * base];
       const xs = ring.map((p) => p[0]), ys = ring.map((p) => p[1]);
-      const dirt = clipPolygonBox([H, first, second, third], Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys));
+      // A baseball skin follows an arc between the foul lines. The former four-corner
+      // fill looked like a square and left conspicuous turf wedges around second base.
+      const angleA = Math.atan2(da[1], da[0]), angleB = Math.atan2(db[1], db[0]);
+      let sweep = angleB - angleA;
+      while (sweep <= -Math.PI) sweep += Math.PI * 2;
+      while (sweep > Math.PI) sweep -= Math.PI * 2;
+      const skinRadius = Math.min(base * 1.12, maxA * 0.72, maxB * 0.72);
+      const skin: V2[] = [H];
+      for (let i = 0; i <= 12; i++) {
+        const a = angleA + sweep * (i / 12);
+        skin.push([H[0] + Math.cos(a) * skinRadius, H[1] + Math.sin(a) * skinRadius]);
+      }
+      const dirt = clipPolygonBox(skin, Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys));
       if (dirt.length >= 3) surfaceFill(mb, dirt, hex('baseball_dirt'), toLocal, groundAt, lift - 0.008);
       line(H, A, 0.16); line(H, B, 0.16); line(H, first, 0.11); line(first, second, 0.11); line(second, third, 0.11); line(third, H, 0.11);
     }

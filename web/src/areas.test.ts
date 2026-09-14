@@ -1,6 +1,7 @@
 import { expect, it } from 'vitest';
 import * as THREE from 'three';
-import { buildAreas } from './areas';
+import { buildAreas, pitchSurfaceColor } from './areas';
+import type { PolyGeom } from './types';
 
 it('keeps coastal decks above water with outward-facing solid sides', () => {
   const { land } = buildAreas([{
@@ -43,6 +44,24 @@ it.each(['groundcover_lawn', 'groundcover_paved', 'groundcover_bare'])('renders 
   for (let i = 0; i < positions.count; i++) expect(positions.getY(i)).toBeGreaterThan(2.05);
 });
 
+it('uses the reviewed blue surface for the Cary tennis courts', () => {
+  expect(pitchSurfaceColor({ id: 'osm:way/1432779830', kind: 'pitch', sport: 'tennis', surface: null })).toBe('court_blue');
+  expect(pitchSurfaceColor({ id: 'elsewhere', kind: 'pitch', sport: 'tennis', surface: 'clay' })).toBe('court_red');
+});
+
+it('keeps a pitch above an overlapping park surface', () => {
+  const geometry: PolyGeom = { type: 'Polygon', coordinates: [[[0, 0], [20, 0], [20, 12], [0, 12], [0, 0]]] };
+  const { land } = buildAreas([
+    { type: 'Feature', properties: { id: 'park', name: null, kind: 'park' }, geometry },
+    { type: 'Feature', properties: { id: 'court', name: null, kind: 'pitch', sport: 'tennis' }, geometry },
+  ], [], (x, y) => [x, -y], () => 2, 0);
+  const positions = land.getAttribute('position');
+  const heights = Array.from({ length: positions.count }, (_, i) => positions.getY(i));
+  expect(Math.max(...heights)).toBeCloseTo(2.13, 2); // pitch plus its painted markings
+  expect(heights.some((y) => Math.abs(y - 2.105) < 0.001)).toBe(true);
+  expect(heights.some((y) => Math.abs(y - 2.08) < 0.001)).toBe(true);
+});
+
 it.each([
   ['tennis', [[[0, 0], [24, 0], [24, 11], [0, 11], [0, 0]]]],
   ['american_football', [[[0, 0], [110, 0], [110, 49], [0, 49], [0, 0]]]],
@@ -69,6 +88,21 @@ it('keeps a baseball infield visible when the pitch is split across tiles', () =
   const { land } = buildAreas([{
     type: 'Feature', properties: { id: 'fragment', name: null, kind: 'pitch', sport: 'baseball', pitch_layout: pitchLayout },
     geometry: { type: 'Polygon', coordinates: [[[0, 0], [15, 0], [15, 80], [0, 80], [0, 0]]] },
+  }], [], (x, y) => [x, -y], () => 2, 0);
+  const colors = land.getAttribute('color');
+  const unique = new Set(Array.from({ length: colors.count }, (_, i) =>
+    `${colors.getX(i).toFixed(3)},${colors.getY(i).toFixed(3)},${colors.getZ(i).toFixed(3)}`));
+  expect(unique.size).toBeGreaterThanOrEqual(3); // turf, dirt, and paint
+});
+
+it('decorates a small youth baseball diamond', () => {
+  const pitchLayout = JSON.stringify({
+    cx: 15, cy: 15, ax: 1, ay: 0, hl: 15, hs: 15,
+    hx: 0, hy: 0, dax: 1, day: 0, dbx: 0, dby: 1, la: 14.7, lb: 31,
+  });
+  const { land } = buildAreas([{
+    type: 'Feature', properties: { id: 'youth-diamond', name: null, kind: 'pitch', sport: 'baseball', pitch_layout: pitchLayout },
+    geometry: { type: 'Polygon', coordinates: [[[0, 0], [31, 0], [31, 31], [0, 31], [0, 0]]] },
   }], [], (x, y) => [x, -y], () => 2, 0);
   const colors = land.getAttribute('color');
   const unique = new Set(Array.from({ length: colors.count }, (_, i) =>

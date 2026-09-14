@@ -72,6 +72,23 @@
     "height_hint_m": 38
   },
   {
+    "slug": "richmond-city-hall",
+    "name": "Richmond City Hall",
+    "osm_name_hints": [
+      "Richmond City Hall"
+    ],
+    "lat": 37.541,
+    "lon": -77.433,
+    "kind": "building",
+    "wikidata": "Q137260560",
+    "website": "https://www.rva.gov/",
+    "description": "Richmond's modern City Hall tower on East Broad Street, represented by the city's public BIM scene object.",
+    "district": "Capitol Square",
+    "in_first_slice": true,
+    "model": "landmarks/richmond-city-hall.glb",
+    "height_hint_m": 107.4
+  },
+  {
     "slug": "carpenter-theatre-dominion-energy-center",
     "name": "Carpenter Theatre / Dominion Energy Center",
     "osm_name_hints": [

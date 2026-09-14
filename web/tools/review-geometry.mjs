@@ -26,6 +26,7 @@ try {
   ['fan-junction-broad-gilmer',283722.27,4158688.34,8.068,0],
   ['downtown-sidewalk-edge',284004.97,4157577.72,6.716,0],
   ['downtown-ramp-connection',285593.75,4157526.06,7.302,0],
+  ['richmond-city-hall',285051.20,4157670.45,4.2,115],
   ['fan-service-junction-meadow',281506.39,4157052.19,5.915,0],
  ]) {
   if (process.env.QA_VIEW && process.env.QA_VIEW !== name) continue;

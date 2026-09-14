@@ -78,18 +78,24 @@ Park using projected coordinates. It exercises Hanover address search, five styl
 Both wait for camera animation and tile loading. Screenshots and scene counts go to
 `web/snapshots/fan/` and `web/snapshots/richmond/`.
 
-The Residences at John Marshall now carries its restored three-line `HOTEL / JOHN / MARSHALL`
-rooftop sign. Holiday Signs' [restoration case study](https://holidaysigns.com/signage-restoration-restoring-a-richmond-landmark/)
-documents 34 seven-foot letters—17 letters on each illuminated face—and shows the open steel frame.
-The low-poly version uses those letter heights, mirrors the back face so both sides read correctly, and
-attaches only to highest mapped part `osm:way/365155760`. Attaching it to the hidden parent footprint would
-put it on the lower nominal roof and can duplicate it across parts. The frame and block lettering are a
-map-scale interpretation; their exact member spacing and surveyed roof anchor are approximate.
+The Residences at John Marshall carries a large double-faced `JMB` rooftop identifier. Holiday Signs'
+[restoration case study](https://holidaysigns.com/signage-restoration-restoring-a-richmond-landmark/)
+shows the restored open steel frame; the model simplifies that structure to a shallow contrasting panel and
+large initials so it stays readable at the normal isometric scale. It remains present in reduced-detail tiles
+and attaches only to highest mapped part `osm:way/365155760`. Attaching it to the hidden parent footprint would
+put it on the lower nominal roof and can duplicate it across parts. Its exact typography, member spacing and
+surveyed roof anchor are approximate.
 
 The expansion exposed an incorrect registry anchor for The Diamond: the old coordinate near
 Chamberlayne Avenue assigned the stadium slug to Richmond Police Department's 4th Precinct
 (`osm:way/553957352`). The registry now uses the stadium coordinates from
 [Wikidata Q7730070](https://www.wikidata.org/wiki/Q7730070), 37.571806, −77.463733, north of this map.
+
+Richmond City Hall uses the only BIM-flagged feature in the city's public 2022 building SceneServer:
+`OBJECTID 68275`, `Building_71606`. `pipeline/import_richmond_city_hall.py` converts its exact I3S mesh to a
+152-triangle landmark GLB, normalized to the mapped City Hall ground and centered on the OSM parent outline.
+Both the base outline and inherited tower part receive the landmark slug, so the asynchronous model swap
+removes both procedural masses rather than leaving an overlapping tower.
 Its absence from the built extent is intentional; nearby buildings must not stand in for it.
 
 ```sh
@@ -132,6 +138,15 @@ ground, covering 6.42 km². Existing mapped landuse and surveyed hydro retain pr
 the riverfront and the Fan showed useful yard, campus, lot and industrial-surface separation without photo
 draping; tile-worker p95 remained below 50 ms. The VGIN mosaic is cached locally as
 `data/raw/vbmp_m77p4860_37p5170_m77p4180_37p5680.tif` and can be recreated with `pipeline/fetch_vbmp.py`.
+
+VGIN imagery also resolves two sports styling ambiguities. The individual tennis polygons at VCU Cary Street
+Field and the western Cary/Byrd Park complex are blue even where OSM omits color or records only `tartan` as
+the material, so their exact reviewed IDs use the blue court palette. Pitches render above enclosing park
+polygons to prevent green triangles from showing through. Baseball infield skins use a rounded foul-line arc
+rather than the former square fill; their field orientation still comes from OSM geometry rather than a survey.
+Two smaller Cary diamonds have source-derived base paths below 10 m, so baseball decoration accepts valid
+infields down to 7 m instead of silently rendering those pitches as plain grass. Geometry below that remains
+undecorated because its orientation is too ambiguous.
 
 Two Carytown storefronts use full-detail procedural treatments tied to their exact OSM footprints:
 the 3301 West Cary Street 7-Eleven and the 3410 West Cary Street McDonald's. The latter follows the

@@ -88,6 +88,7 @@ export function isJohnMarshallSign(p: Pick<BuildingProps, 'id'>): boolean {
 
 const SIGN_GLYPHS: Record<string, string[]> = {
   A: ['01110', '10001', '10001', '11111', '10001', '10001', '10001'],
+  B: ['11110', '10001', '10001', '11110', '10001', '10001', '11110'],
   E: ['11111', '10000', '10000', '11110', '10000', '10000', '11111'],
   H: ['10001', '10001', '10001', '11111', '10001', '10001', '10001'],
   J: ['11111', '00001', '00001', '00001', '00001', '10001', '01110'],
@@ -100,29 +101,32 @@ const SIGN_GLYPHS: Record<string, string[]> = {
   T: ['11111', '00100', '00100', '00100', '00100', '00100', '00100'],
 };
 
-/** Three-line, double-faced HOTEL / JOHN / MARSHALL rooftop marquee. */
+/** Large, double-faced JMB rooftop initials, simplified for legibility at map scale. */
 function addJohnMarshallSign(mb: MeshBuilder, outer: V2[], top: number): void {
   const obb = minAreaOBB(outer);
   const [ax, az] = obb.axis;
   const [cx, cz] = obb.center;
   const nx = -az, nz = ax;
   const rot = Math.atan2(az, ax);
-  const steel = pal('shadow'), letters = pal('cream');
-  const cell = 2.13 / 7; // the restored letters are seven feet tall
+  const steel = pal('steel'), panel = pal('shadow'), letters = pal('cream');
+  const cell = 0.64;
   const gap = cell;
-  const faceOffset = 0.72;
+  const faceOffset = 0.58;
   const point = (u: number, v: number): V2 => [cx + ax * u + nx * v, cz + az * u + nz * v];
   const box = (u: number, v: number, y: number, sx: number, sy: number, sz: number, color: THREE.Color) => {
     const [x, z] = point(u, v);
     addBox(mb, x, top + y, z, sx, sy, sz, rot, color);
   };
 
-  const frameWidth = 13.5, frameHeight = 8.1;
+  const frameWidth = 12.4, frameHeight = 5.25;
+  // The real sign is open steelwork, but a dark shallow panel preserves the
+  // initials at the viewer's normal isometric scale.
+  box(0, 0, 0.48, frameWidth - 0.35, frameHeight - 0.25, faceOffset * 2 - 0.12, panel);
   for (const face of [-faceOffset, faceOffset]) {
-    for (let u = -frameWidth / 2; u <= frameWidth / 2 + 0.01; u += 2.25) {
+    for (const u of [-frameWidth / 2, frameWidth / 2]) {
       box(u, face, 0.35, 0.11, frameHeight, 0.11, steel);
     }
-    for (const y of [0.35, 2.72, 5.08, 8.34]) {
+    for (const y of [0.35, 5.49]) {
       box(0, face, y, frameWidth + 0.4, 0.11, 0.11, steel);
     }
   }
@@ -142,14 +146,12 @@ function addJohnMarshallSign(mb: MeshBuilder, outer: V2[], top: number): void {
         const y = baseY + (6 - row) * cell;
         for (const face of [-faceOffset - 0.08, faceOffset + 0.08]) {
           // Reverse the back face along the sign axis so both outward faces read left-to-right.
-          box(face < 0 ? -u : u, face, y, cell * 0.88, cell * 0.88, 0.12, letters);
+          box(face < 0 ? -u : u, face, y, cell * 0.9, cell * 0.9, 0.28, letters);
         }
       }
     }
   };
-  drawWord('MARSHALL', 0.68);
-  drawWord('JOHN', 3.04);
-  drawWord('HOTEL', 5.40);
+  drawWord('JMB', 0.72);
 }
 
 function addSevenElevenFacade(mb: MeshBuilder, outer: V2[], ground: number): void {
@@ -366,10 +368,11 @@ export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, Buildin
       const done = (p.roof_shape === 'hip' || p.roof_shape === 'pyramidal') && addInsetRoof(mb, outer, top, roofH, roof, p.roof_shape === 'pyramidal');
       if (!done) addRoof(mb, outer, top, roofH, p.roof_shape, roof, wall, p.roof_azimuth ?? null, holes);
     }
+    // This sign is a skyline identifier and remains cheap enough for reduced-detail tiles.
+    if (!hidden && isJohnMarshallSign(p)) addJohnMarshallSign(mb, outer, top);
     if (opts.details !== false && !hidden) {
       if (isSevenEleven(p)) addSevenElevenFacade(mb, outer, groundY);
       if (caryMcDonalds) addCaryMcDonaldsFacade(mb, outer, groundY);
-      if (isJohnMarshallSign(p)) addJohnMarshallSign(mb, outer, top);
       const surveyed = addSurveyedRoofDetails(mb, outer, top, p, toLocal);
       if (!lod2) addRoofDetails(mb, outer, top, p, wall, roof, !surveyed);
     }
