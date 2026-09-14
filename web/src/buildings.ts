@@ -20,7 +20,7 @@ const AO_HEIGHT = 6;     // meters over which the gradient fades
  * Extrude one footprint into `mb`. Coordinates are web-local (x east, z = -north). groundY is the terrain height.
  * Returns the number of triangles appended.
  */
-export interface ExtrudeOptions { details?: boolean }
+export interface ExtrudeOptions { details?: boolean; lod2?: boolean }
 
 interface Lod2Roof { v: [number, number, number][]; f: number[][][] }
 
@@ -283,7 +283,7 @@ export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, Buildin
       mb.tri(a, b, c, capColor, UP, roofH > 0 ? 0.9 : 1);
     }
 
-    const lod2 = p.roof_source === 'lod2' && addLod2Roof(mb, p.lod2_roof, toLocal, top, roof);
+    const lod2 = opts.lod2 !== false && p.roof_source === 'lod2' && addLod2Roof(mb, p.lod2_roof, toLocal, top, roof);
     if (roofH > 0 && !lod2) {
       const done = (p.roof_shape === 'hip' || p.roof_shape === 'pyramidal') && addInsetRoof(mb, outer, top, roofH, roof, p.roof_shape === 'pyramidal');
       if (!done) addRoof(mb, outer, top, roofH, p.roof_shape, roof, wall, p.roof_azimuth ?? null, holes);
@@ -500,7 +500,7 @@ export function buildBuildingsMesh(
   toLocal: (x: number, y: number) => V2,
   groundAt: (x: number, y: number) => number,
   material: THREE.Material,
-  opts: { details?: boolean; facade?: boolean } = {},
+  opts: { details?: boolean; facade?: boolean; lod2?: boolean } = {},
 ): { mesh: THREE.Mesh; ranges: BuildingRange[] } {
   const mb = new MeshBuilder(opts.facade !== false);
   const ranges: BuildingRange[] = [];
@@ -510,7 +510,7 @@ export function buildBuildingsMesh(
     const c = centroid(outer);
     const g = Number.isFinite(f.properties.ground_z) ? f.properties.ground_z : groundAt(c[0], c[1]);
     const start = mb.triCount;
-    const count = extrudeBuilding(mb, f, toLocal, g, { details: opts.details });
+    const count = extrudeBuilding(mb, f, toLocal, g, { details: opts.details, lod2: opts.lod2 });
     if (count > 0) ranges.push({ start, count, props: f.properties });
   }
   const mesh = new THREE.Mesh(mb.build(), material);

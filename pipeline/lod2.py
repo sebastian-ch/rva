@@ -15,6 +15,11 @@ from typing import Iterable
 import geopandas as gpd
 from pyproj import Transformer
 
+MIN_POINT_DENSITY = 5.0
+MAX_NODATA_FRACTION = 0.45
+MAX_RMSE_M = 1.25
+ROOF_TYPES = {"slanted", "horizontal", "multiple horizontal"}
+
 
 def cityjsonseq_files(path: Path) -> list[Path]:
     """Return CityJSONSeq files below *path*, or the file itself."""
@@ -51,7 +56,20 @@ def _surface_kind(geometry: dict, shell_index: int, surface_index: int) -> dict 
 def _roof_mesh(feature: dict, scale: list[float], translate: list[float], transformer: Transformer | None) -> dict | None:
     objects = feature.get("CityObjects") or {}
     building = next((o for o in objects.values() if o.get("type") == "Building"), None)
-    if building is None or (building.get("attributes") or {}).get("rf_success") is not True:
+    attrs = (building or {}).get("attributes") or {}
+    if building is None or attrs.get("rf_success") is not True:
+        return None
+    # Roofer can serialize a nominally successful solid from sparse or incomplete
+    # points. Keep the older procedural roof unless the fit clears explicit,
+    # measured quality thresholds established by the Richmond depth-9 run.
+    if (attrs.get("rf_pointcloud_unusable") is True
+            or attrs.get("rf_roof_type") not in ROOF_TYPES
+            or not isinstance(attrs.get("rf_pt_density"), (int, float))
+            or attrs["rf_pt_density"] < MIN_POINT_DENSITY
+            or not isinstance(attrs.get("rf_nodata_frac"), (int, float))
+            or attrs["rf_nodata_frac"] > MAX_NODATA_FRACTION
+            or not isinstance(attrs.get("rf_rmse_lod22"), (int, float))
+            or attrs["rf_rmse_lod22"] > MAX_RMSE_M):
         return None
     parts = [o for o in objects.values() if o.get("type") == "BuildingPart"]
     vertices = feature.get("vertices") or []

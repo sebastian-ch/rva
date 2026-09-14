@@ -21,7 +21,11 @@ def _write_cityjsonseq(path, *, success=True):
             [0, 0, 0], [1000, 0, 0], [1000, 0, 500], [0, 0, 500],
         ],
         "CityObjects": {
-            "osm:way/1": {"type": "Building", "attributes": {"rf_success": success, "source_id": "osm:way/1"}},
+            "osm:way/1": {"type": "Building", "attributes": {
+                "rf_success": success, "source_id": "osm:way/1", "rf_pointcloud_unusable": False,
+                "rf_roof_type": "slanted", "rf_pt_density": 20.0, "rf_nodata_frac": 0.1,
+                "rf_rmse_lod22": 0.4,
+            }},
             "osm:way/1-0": {
                 "type": "BuildingPart",
                 "geometry": [{
@@ -79,3 +83,14 @@ def test_bad_vertex_reference_falls_back_per_building(tmp_path):
     path.write_text(lines[0] + "\n" + json.dumps(damaged) + "\n" + lines[1] + "\n")
     roofs = read_roofs([path], "EPSG:32618")
     assert list(roofs) == ["osm:way/1"]
+
+
+def test_low_quality_fit_is_ignored(tmp_path):
+    path = tmp_path / "sparse.city.jsonl"
+    _write_cityjsonseq(path)
+    lines = path.read_text().splitlines()
+    feature = json.loads(lines[1])
+    building = next(o for o in feature["CityObjects"].values() if o["type"] == "Building")
+    building["attributes"]["rf_rmse_lod22"] = 1.26
+    path.write_text(lines[0] + "\n" + json.dumps(feature) + "\n")
+    assert read_roofs([path], "EPSG:32618") == {}

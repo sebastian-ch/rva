@@ -110,7 +110,11 @@ export function buildTilePayload(meta: TileMeta, layers: TileLayers, origin: [nu
   if (layers.terrain) geoms.terrain = arrays(soup(buildTerrainMesh(layers.terrain, toLocal)));
   const dummy = new THREE.MeshBasicMaterial();
   if (layers.buildings?.features.length) {
-    const r = buildBuildingsMesh(layers.buildings.features, toLocal, groundAt, dummy, { details: lod === 0, facade: lod === 0 });
+    const r = buildBuildingsMesh(layers.buildings.features, toLocal, groundAt, dummy, {
+      details: lod === 0,
+      facade: lod === 0,
+      lod2: lod === 0,
+    });
     geoms.buildings = arrays(r.mesh.geometry);
     ranges = r.ranges;
   }

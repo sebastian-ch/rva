@@ -369,6 +369,15 @@ per building. The city multipatch is a segmentation/check source here, not the r
 nearly all of its citywide objects are labelled flat. Implementation: [lod2.py](../pipeline/lod2.py)
 and [buildings.ts](../web/src/buildings.ts). Regression: `test_lod2.py` and `buildings.test.ts`.
 
+Do not equate Roofer's `rf_success` with production quality. Richmond depth-8 output serialized most
+buildings while flagging 24,212 of 25,486 units as insufficient coverage; its median RMSE was 1.04 m.
+Depth 9 improved median density/no-data/RMSE from 7.0 points/m², 32%, and 1.04 m to 22.6 points/m²,
+3%, and 0.55 m. Gate each mesh using the reconstruction attributes, retain the previous roof when it
+fails, and recalibrate thresholds for a new survey. Richmond currently requires a recognized roof
+type, usable cloud, density ≥5 points/m², no-data ≤45%, and LoD2.2 RMSE ≤1.25 m.
+Render measured roof meshes only at the near tile level. The same building should use its procedural
+roof in distant tiles so citywide LoD2 coverage does not inflate geometry that cannot be seen.
+
 When a city footprint layer gap-fills OSM, an `intersects` join alone is too aggressive: attached
 buildings often share a boundary with an OSM footprint and have zero overlap area. Treat a candidate as
 a duplicate only when their intersection covers a meaningful fraction of the smaller polygon. Preserve
