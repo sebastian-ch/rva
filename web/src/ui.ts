@@ -24,6 +24,7 @@ export interface UICallbacks {
   onTour(): void; // starts/advances a guided tour
   onCloseInfo(): void;
   onToggleHeights?(on: boolean): void;
+  onToggleAircraft?(on: boolean): void;
   onStyle?(style: MapStyle): void;
 }
 
@@ -41,6 +42,7 @@ export interface UI {
   setTourLabel(label: string): void; // e.g. "Tour: Capitol (2/9)"
   setNight(on: boolean): void; // sync button state + body.night
   setHeights(on: boolean): void; // sync button state + body.heights
+  setAircraft(on: boolean): void;
   setHeightsLegend(spec: HeightsLegendSpec | null): void;
   setReadout(text: string | null): void;
   setMap(on: boolean): void;
@@ -100,6 +102,7 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
   let pauseOn = false;
   let mapOn = false;
   let heightsOn = false;
+  let aircraftOn = regionId === 'richmond';
 
   // ---- Title badge ----
   const titleBadge = document.createElement("div");
@@ -142,6 +145,9 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
   const mapBtn = makeButton("\u{1F5FA}", "Map");
   const tourBtn = makeButton("\u{1F3DB}", "Tour");
   const heightsBtn = makeButton("\u{1F4D0}", "Heights");
+  const aircraftBtn = makeButton("✈", "Aircraft");
+  aircraftBtn.classList.toggle('active', aircraftOn);
+  aircraftBtn.setAttribute('aria-pressed', String(aircraftOn));
   const stylePicker = document.createElement('label');
   stylePicker.className = 'style-picker';
   stylePicker.textContent = 'Style';
@@ -201,11 +207,19 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
     cb.onToggleHeights?.(heightsOn);
   });
 
+  aircraftBtn.addEventListener('click', () => {
+    aircraftOn = !aircraftOn;
+    aircraftBtn.classList.toggle('active', aircraftOn);
+    aircraftBtn.setAttribute('aria-pressed', String(aircraftOn));
+    cb.onToggleAircraft?.(aircraftOn);
+  });
+
   toolbar.appendChild(nightBtn);
   toolbar.appendChild(pauseBtn);
   toolbar.appendChild(mapBtn);
   // toolbar.appendChild(tourBtn); // Tour hidden for now (button still wired; re-add to show it)
   toolbar.appendChild(heightsBtn);
+  if (regionId === 'richmond') toolbar.appendChild(aircraftBtn);
   toolbar.appendChild(stylePicker);
 
   root.appendChild(toolbar);
@@ -369,6 +383,11 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
       attribution.append(document.createTextNode(' · ')); const link = document.createElement('a');
       link.textContent = title; link.href = url; link.target = '_blank'; link.rel = 'noopener noreferrer'; attribution.append(link);
     }
+    attribution.append(document.createTextNode(' · '));
+    const aircraftLink = document.createElement('a');
+    aircraftLink.textContent = 'Live aircraft: ADSB.lol · ODbL';
+    aircraftLink.href = 'https://www.adsb.lol/'; aircraftLink.target = '_blank'; aircraftLink.rel = 'noopener noreferrer';
+    attribution.append(aircraftLink);
   }
 
   function applyNightState(on: boolean): void {
@@ -484,6 +503,12 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
     applyHeightsState(on);
   }
 
+  function setAircraft(on: boolean): void {
+    aircraftOn = on;
+    aircraftBtn.classList.toggle('active', on);
+    aircraftBtn.setAttribute('aria-pressed', String(on));
+  }
+
   function setHeightsLegend(spec: HeightsLegendSpec | null): void {
     if (spec === null) {
       delete legendPanel.dataset.hasSpec;
@@ -567,6 +592,7 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
     setTourLabel,
     setNight,
     setHeights,
+    setAircraft,
     setHeightsLegend,
     setReadout,
     setStyle,

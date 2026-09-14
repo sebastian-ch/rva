@@ -28,6 +28,15 @@ and 90–120 m² minimum areas. They produced 7,647 polygons and kept tile-worke
 `pipeline/tests/test_groundcover.py` and `web/src/areas.test.ts`. Thresholds depend on flight season, band order,
 image tone and LiDAR date; recalibrate them for every region.
 
+Live moving objects belong in a persistent scene group rather than streamed map tiles. Treat the feed timestamp,
+expiry, coordinates, heading, speed and altitude as one contract; do not invent altitude for incomplete records.
+Predict motion only for a short bounded interval, blend the next received correction, and keep reported positions
+for reduced-motion users. Convert coordinates into the region projection and altitude into the same vertical frame
+as terrain before rendering. Pause must freeze both translation and model animation. The Richmond implementation
+uses the cached `rva-live` aircraft endpoint in `web/src/aircraft.ts`; its current text-only altitude is handled by
+a strict compatibility parser until the backend publishes numeric altitude and reference fields. Regressions live
+in `web/src/aircraft.test.ts`. Other live feeds may use different time, altitude and coordinate semantics.
+
 This is the reusable record of fixes learned while building Richmond and extending the regional map
 viewer. Read it before adding a region, replacing elevation sources, or changing geometry/rendering.
 Keep the general rules; recheck source-specific thresholds and assumptions for each place.

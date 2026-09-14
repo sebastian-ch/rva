@@ -53,6 +53,13 @@ See [the expansion notes](docs/richmond-fan.md) for extent, acquisition counts a
 - **Required attribution:** Check current terms
 - **URL:** https://vgin.vdem.virginia.gov
 
+## ADSB.lol Aircraft Data
+
+- **What we use it for:** Near-real-time aircraft positions, headings, ground speeds, classes and reported altitudes in the Richmond 3D viewer. The browser reads the cached `rva-live` feed at `https://api.sebastianhancock.com/api/feed?types=aircraft`; positions expire after the source timestamp and motion between reports is a bounded estimate.
+- **License:** Open Data Commons Open Database License 1.0
+- **Required attribution:** ADSB.lol contributors
+- **URL:** https://www.adsb.lol/
+
 ## City of Richmond GIS Open Data Portal
 
 - **What we use it for:** Building footprints, parcels, zoning, address points, street tree inventory.

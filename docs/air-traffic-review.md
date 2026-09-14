@@ -1,7 +1,7 @@
 # Aircraft over the isometric map: feasibility review
 
-Reviewed 2026-09-09 after completing the Richmond geometry fixes. This is a proposal; no aircraft
-layer or remote backend change has been implemented.
+Reviewed 2026-09-09 after completing the Richmond geometry fixes; first viewer pass implemented
+2026-09-14 using the existing `rva-live` API.
 
 ## Existing integration worth reusing
 
@@ -12,17 +12,18 @@ layer or remote backend change has been implemented.
   great-circle prediction from speed/track, capped at 45 seconds, with smooth correction to new reports.
 - [Map rendering](https://github.com/chance-labs/rva/blob/HEAD/src/MapView.tsx):
   two-second position blending, separate plane/helicopter icons, reduced-motion support and expiry.
-- The backend exposes `/api/feed?types=aircraft`; it currently has CORS enabled. A deployed backend URL
-  still needs to be established for this viewer; repository access is not proof of an available service.
+- The deployed backend exposes `https://api.sebastianhancock.com/api/feed?types=aircraft` with CORS enabled.
 - [ADSB.lol API documentation](https://www.adsb.lol/docs/open-data/api/) says its API is public and
   licensed ODbL 1.0. Preserve source/license attribution. The existing adapter identifies its requests
   with a User-Agent and does not require a key.
 
 ## Missing for actual 3D flight
 
-The adapter currently formats altitude into body/details text. Its normalized model preserves heading,
+The deployed adapter currently formats altitude into body/details text. Its normalized model preserves heading,
 ground speed and kind, but not numeric altitude, altitude reference, vertical rate or an explicit ground
-flag. Extend the adapter, `makeItem` whitelist and shared types together. Do not parse the display string.
+flag. The viewer accepts numeric altitude fields first and isolates a strict parser for the current labeled
+`Altitude` detail as a compatibility bridge. Extend the backend adapter, `makeItem` whitelist and shared types
+together, then remove that bridge.
 Preserve barometric and geometric altitude separately, plus their provenance and timestamps. Barometric
 altitude is not terrain-relative height; GNSS altitude also needs a compatible vertical datum before
 comparison with the map's NAVD88 terrain. Unknown altitude should not become a made-up low flight.
@@ -48,13 +49,16 @@ Use the existing backend's cached feed, with numeric fields added, or a small eq
 The current isometric site is static; do not bundle the unrelated police/news/browser-scraping backend.
 Deployment needs a reachable feed/proxy and failure/expiry handling, not a new authentication system.
 
-## Suggested first pass
+## First-pass result
 
-1. Numeric aircraft contract + parser/expiry tests, with helicopter/unknown/on-ground cases.
-2. Region projection, altitude conversion and bounded motion, tested with recorded fixtures.
-3. Opt-in Aircraft layer with simple models, rotor animation, camera culling and hover details.
-4. Live feed integration and browser checks: update jumps, stale feed, Pause, all styles and tile changes.
+`web/src/aircraft.ts` polls the deployed feed every 30 seconds, expires stale positions, predicts motion for
+at most 45 seconds and blends corrections over two seconds. It projects WGS84 positions into UTM 18N, converts
+reported feet to the terrain's vertically exaggerated metre frame, and keeps the scene group independent of
+streamed tiles. The Richmond toolbar controls lightweight airplane/helicopter models; Pause freezes motion and
+the helicopter rotor, and reduced-motion preferences use reported positions. Aircraft outside the map extent
+or without usable altitude remain hidden. `web/src/aircraft.test.ts` covers altitude compatibility, projection,
+bounded prediction and expiry. The source is configurable with `VITE_AIRCRAFT_API_URL`.
 
-Technically feasible. Rendering a modest number of lightweight aircraft should be small compared with
-the existing city geometry; altitude handling, live-data semantics and camera visibility are the main
-integration work. No performance claim has been benchmarked for aircraft yet.
+Still needed: add structured altitude/reference/ground fields to `rva-backend`, click/hover details, and browser
+checks for refresh correction, all styles and camera visibility. No aircraft performance claim has been
+benchmarked yet.

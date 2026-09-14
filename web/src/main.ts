@@ -26,6 +26,7 @@ import { fetchWikiSummary } from './wiki';
 import { BuildingEffects } from './buildingEffects';
 import { MAP_STYLES } from './styles';
 import { TrafficTrails } from './trafficTrails';
+import { AircraftLayer } from './aircraft';
 import { createNavigation, decodeView, persistView, type MapStyle, type SearchPlace, type ViewState } from './navigation';
 import type { Landmark, TileIndex } from './types';
 
@@ -112,6 +113,7 @@ props.group.traverse((o) => { if ((o as THREE.Mesh).isMesh) { o.castShadow = tru
 scene.add(props.group);
 let landmarkModels: LandmarkModels | null = null;
 let buildingEffects: BuildingEffects | null = null;
+let aircraft: AircraftLayer | null = null;
 
 const iso = new IsoCamera(canvas, window.innerWidth / window.innerHeight);
 const postfx = createPostFX(renderer, scene, iso.camera);
@@ -125,13 +127,13 @@ const labels = new LandmarkLabels();
 const labelScene = new THREE.Scene();
 labelScene.add(labels.group);
 
-let night = false, paused = false, heightsOn = false;
+let night = false, paused = false, heightsOn = false, aircraftEnabled = regionId === 'richmond';
 let mapStyle: MapStyle = 'classic';
 let pendingSelection: string | null = null;
 let tileIndex: TileIndex | null = null;
 const ui = createUI(document.getElementById('ui')!, {
   onToggleNight(on) { setNight(on); },
-  onTogglePause(on) { paused = on; props.paused = on; traffic.setPaused(on); },
+  onTogglePause(on) { paused = on; props.paused = on; traffic.setPaused(on); aircraft?.setPaused(on); },
   onToggleMap(on) { iso.setMapMode(on); },
   onTour() { nextTourStop(); },
   onToggleHeights(on) {
@@ -143,6 +145,7 @@ const ui = createUI(document.getElementById('ui')!, {
   },
   onCloseInfo() { clearSelection(); },
   onStyle(style) { setMapStyle(style); },
+  onToggleAircraft(on) { aircraftEnabled = on; aircraft?.setEnabled(on); },
 });
 
 function setMapStyle(style: MapStyle) {
@@ -224,6 +227,7 @@ function setNight(on: boolean) {
   facade.setNight(effectiveNight);
   water.setNight(effectiveNight);
   postfx.setNight(effectiveNight);
+  aircraft?.setNight(effectiveNight);
   ui.setNight(on);
 }
 
@@ -369,6 +373,14 @@ async function boot() {
   const index = (await (await fetch(`${import.meta.env.BASE_URL}tiles/index.json`)).json()) as TileIndex;
   tileIndex = index;
   world = new TileWorld(index, materials);
+  if (regionId === 'richmond') {
+    const endpoint = import.meta.env.VITE_AIRCRAFT_API_URL || 'https://api.sebastianhancock.com/api/feed';
+    aircraft = new AircraftLayer(index, endpoint);
+    scene.add(aircraft.group);
+    aircraft.setNight(night || MAP_STYLES[mapStyle].nightLighting);
+    if (!aircraftEnabled) aircraft.setEnabled(false);
+    aircraft.start();
+  }
   landmarkModels = new LandmarkModels(world.toLocal, materials.buildings);
   scene.add(landmarkModels.group);
   buildingEffects = new BuildingEffects(world.toLocal);
@@ -509,6 +521,7 @@ function frame() {
   iso.update(dt);
   if (tropicalSky) tropicalSky.position.copy(iso.camera.position);
   if (!paused) { props.update(dt); traffic.apply(props); trails.update(dt); traffic.apply(trails); waterTime += dt; water.update(waterTime); }
+  aircraft?.update(Date.now(), dt);
   updateSunShadow();
   manager?.update(iso.camera, iso.camera.zoom);
   labels.update(iso.camera.zoom, night || MAP_STYLES[mapStyle].nightLighting);
@@ -525,4 +538,4 @@ boot().catch((e) => { console.error(e); ui.setLoading(true, 'Failed to load tile
 
 // expose for debugging
 const debug = createDebug({ iso, tiles, manager: () => manager, landmarkTargets, propCounts: () => props.counts_(), traffic: () => ({ ...traffic.stats, drawn: props.trafficCount() }) });
-Object.assign(window, { __iso: { scene, tiles, iso, props, traffic, palette, night: () => night, stats: () => manager?.summary(), manager: () => manager, postfx, ...debug } });
+Object.assign(window, { __iso: { scene, tiles, iso, props, traffic, aircraft: () => aircraft?.stats(), palette, night: () => night, stats: () => manager?.summary(), manager: () => manager, postfx, ...debug } });

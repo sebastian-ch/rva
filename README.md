@@ -48,6 +48,10 @@ npm install
 npm run dev
 ```
 
+Richmond's live aircraft layer reads
+`https://api.sebastianhancock.com/api/feed?types=aircraft` by default. Set
+`VITE_AIRCRAFT_API_URL` when building the viewer to use another compatible feed endpoint.
+
 ## Repository Layout
 
 | Directory | Purpose |
@@ -65,7 +69,7 @@ npm run dev
 
 See `ATTRIBUTION.md` for full attribution details and license terms for all data sources.
 
-**Data sources:** OpenStreetMap, Overture Maps, VGIN, USGS/USDA NAIP, NOAA, city open GIS data, and Mapillary; preserve the source terms and attribution documented in `ATTRIBUTION.md`. Google Photorealistic 3D Tiles, Street View, and Mapbox Satellite imagery are used only as visual reference for hand-modeling — their terms prohibit deriving datasets.
+**Data sources:** OpenStreetMap, Overture Maps, VGIN, USGS/USDA NAIP, NOAA, ADSB.lol, city open GIS data, and Mapillary; preserve the source terms and attribution documented in `ATTRIBUTION.md`. Google Photorealistic 3D Tiles, Street View, and Mapbox Satellite imagery are used only as visual reference for hand-modeling — their terms prohibit deriving datasets.
 
 ## Honolulu prototype (local)
 
