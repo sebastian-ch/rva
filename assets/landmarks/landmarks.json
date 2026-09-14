@@ -309,6 +309,23 @@
     "height_hint_m": 22
   },
   {
+    "slug": "virginia-museum-of-fine-arts",
+    "name": "Virginia Museum of Fine Arts",
+    "osm_name_hints": [
+      "Virginia Museum of Fine Arts"
+    ],
+    "lat": 37.55602,
+    "lon": -77.4749,
+    "kind": "building",
+    "wikidata": "Q3560954",
+    "website": "https://vmfa.museum/",
+    "description": "State art museum campus on Arthur Ashe Boulevard, represented with measured multi-height wings and roof setbacks from the 2025 Richmond LiDAR.",
+    "district": "Museum District",
+    "in_first_slice": false,
+    "model": "landmarks/virginia-museum-of-fine-arts.glb",
+    "height_hint_m": 21.5
+  },
+  {
     "slug": "maggie-l-walker-memorial",
     "name": "Maggie L. Walker memorial",
     "osm_name_hints": [

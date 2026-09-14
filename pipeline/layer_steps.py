@@ -106,7 +106,9 @@ def _buildings_sources(ctx: StepContext) -> list[Path]:
              DATA_RAW / f"overture_{ctx.slug}.parquet", DATA_RAW / f"lidar_{ctx.slug}.npz",
              DATA_RAW / "ndsm.tif", DATA_RAW / f"ortho_{ctx.slug}.tif",
              DATA_RAW / f"vgin_{ctx.slug}.parquet", DATA_RAW / f"cch_{ctx.slug}.parquet",
-             ASSETS / "supplements" / "overrides.json", ASSETS / "landmarks" / "landmarks.json"]
+             ASSETS / "supplements" / "overrides.json",
+             ASSETS / "supplements" / "richmond-esri-outlines.geojson",
+             ASSETS / "landmarks" / "landmarks.json"]
     paths += sorted((DATA_RAW / f"richmond_{ctx.slug}").glob("*.parquet"))
     paths += _lod2_sources(ctx)
     return paths

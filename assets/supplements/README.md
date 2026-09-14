@@ -4,6 +4,11 @@ Hand-maintained corrections for buildings the open sources have not caught up wi
 construction when the 2014 LiDAR flew, wrong tags). Applied last in `pipeline/process.py`, after every
 automated source, so they always win.
 
+`richmond-esri-outlines.geojson` contains a small, explicit set of City of Richmond multipatch outlines
+that beat the corresponding OSM geometry against classified 2025 LiDAR. Each feature names its exact
+target source ID, city object ID and before/after LiDAR proxy F1. Do not expand it from outline complexity
+alone: the older city source often preserves harmless edge serrations while losing newer building parts.
+
 `overrides.json` is a list of entries:
 
 ```json

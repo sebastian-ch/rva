@@ -68,6 +68,13 @@ completeness capture, and is maintained from site plans and other sources. The s
 2026-09-08 edit when accessed 2026-09-10. Its public item provides City disclaimers rather than a named
 standard license; preserve City of Richmond credit. The Esri Community basemap tiles are not used.
 
+Five large-building outline corrections in `assets/supplements/richmond-esri-outlines.geojson` come
+from the city's public 2020 `Building_multipatch.lpkx`. They are used only where classified 2025 LiDAR
+improved the building-point proxy F1 over the corresponding OSM outline: VCU College of Engineering,
+Main Street Parking Garage, Richmond Dairy Apartments, 1113 Moore Street and 1 West Jackson Street.
+The package remains a comparison source elsewhere because its mostly flat geometry is older than both
+the current OSM building parts and the 2025 survey.
+
 **Road geometry evaluated 2026-09-10:** `Roads/FeatureServer/0` supplies paved-surface polygons maintained
 by the city from orthophotography, site plans and development review sources; its reported data edit is
 2023-12-08. `CarriagewayCenterlines/FeatureServer/0` supplies routable road-bed centerlines and represents

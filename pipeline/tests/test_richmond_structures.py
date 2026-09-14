@@ -6,7 +6,7 @@ import pandas as pd
 from shapely.geometry import box
 
 from config import CRS_PROJ
-from process import _add_gap_footprints, process_richmond_decks
+from process import _add_gap_footprints, apply_footprint_replacements, process_richmond_decks
 
 
 def _write_structures(path):
@@ -43,3 +43,23 @@ def test_richmond_decks_keep_only_subtype_three(tmp_path):
     assert decks.iloc[0]["id"] == "richmond_structure:3"
     assert decks.iloc[0]["kind"] == "deck"
     assert decks.iloc[0]["source"] == "richmond_structures"
+
+
+def test_verified_footprint_replacement_keeps_source_row_metadata(tmp_path):
+    raw = gpd.GeoDataFrame({
+        "id": [10, 20], "element": ["way", "way"], "building": ["school", "house"],
+        "name": ["Keep this name", "Neighbour"], "footprint_source": ["osm", "osm"],
+        "source_updated": [None, None],
+    }, geometry=[box(0, 0, 10, 10), box(20, 0, 30, 10)], crs=CRS_PROJ)
+    path = tmp_path / "replacements.geojson"
+    gpd.GeoDataFrame({
+        "target_id": ["osm:way/10"], "source_updated": ["2020-07-01"],
+    }, geometry=[box(-1, -1, 11, 11)], crs=CRS_PROJ).to_file(path, driver="GeoJSON")
+
+    result = apply_footprint_replacements(raw, path)
+
+    assert result.loc[0, "name"] == "Keep this name"
+    assert result.loc[0, "building"] == "school"
+    assert result.loc[0, "geometry"].equals(box(-1, -1, 11, 11))
+    assert result.loc[0, "footprint_source"] == "richmond_multipatch"
+    assert result.loc[1, "geometry"].equals(raw.loc[1, "geometry"])

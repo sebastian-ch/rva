@@ -81,6 +81,14 @@ cases, our outline did so in 24, and 86 were within one corner. Median simplifie
 corners for the city versus six for ours. Adopt a city outline only when its added bay, wing or setback
 has independent LiDAR support; the measured general win is segmentation, not vertex count.
 
+A follow-up large-building exception audit found five useful outline replacements. Classified 2025
+LiDAR building-point proxy F1 improved from 0.902 to 0.918 for the grouped VCU College of Engineering,
+0.906 to 0.926 for Main Street Parking Garage, 0.657 to 0.673 for Richmond Dairy Apartments, 0.899 to
+0.917 at 1113 Moore Street, and 0.847 to 0.865 at 1 West Jackson Street. These exact-ID corrections live
+in `assets/supplements/richmond-esri-outlines.geojson`; current metadata, heights and styles remain in
+place. VMFA's city and OSM outlines were effectively tied (0.972 versus 0.971), so its visible deficit
+was height massing rather than its perimeter.
+
 There is also a public 2020
 [`Building_multipatch.lpkx`](https://www.arcgis.com/home/item.html?id=ca6b4ff707fc47a3b3715d3cc9e673c3)
 (140 MB). It contains 162,691 GDAL-readable 3D TIN features in a FileGDB, but inspection showed an
@@ -123,6 +131,13 @@ walls, triangular spikes, over-segmented houses, or large flat gaps in the hybri
 near tile level, while distant tiles use the procedural shape to cap geometry and worker cost. Browser
 QA passed across the Fan, Monroe Park, Capitol Square, all styles, and mobile layout. Upper Fan tile
 worker p95 remained 28 ms. These gates live in `pipeline/lod2.py` and should be recalibrated for new data.
+
+**VMFA exception:** its otherwise strong Roofer result measured 22.1 points/m², 1.1% no-data and 0.69 m
+RMSE, but correctly spanned more than 20 m of roof relief. That is unsafe for the roof-only hybrid because
+its upper tiers would lack walls. A five-part landmark model instead uses nested 2025 LiDAR height masks:
+a 6 m low perimeter, 15.8 m main mass, 19.5 m north wing and 21.5 m upper volume. This is the right scope for
+setbacks: large recognizable buildings with clear, stable height zones. Applying the same segmentation
+to ordinary buildings would add noise, excess geometry and false architectural detail.
 
 **Import/render, 2026-09-14:** `pipeline/lod2.py` reads Roofer CityJSONSeq, reprojects its source CRS,
 keeps LoD2.2 roof surfaces and short internal closure faces, and joins each compact indexed mesh by

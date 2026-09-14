@@ -61,7 +61,7 @@ procedural roof.
 | `wall_color` | string | palette key |
 | `type` | string | OSM `building=*` value |
 | `landmark` | string\|null | slug from `assets/landmarks/landmarks.json` |
-| `footprint_source` | `"osm"\|"richmond_structures"\|"vgin"\|"cch"\|"override"` | Richmond Structures is the current city gap-fill; VGIN is the offline fallback. Honolulu uses CCH city outlines, enriched with spatially matched OSM tags, plus non-overlapping OSM gap-fill |
+| `footprint_source` | `"osm"\|"richmond_structures"\|"richmond_multipatch"\|"vgin"\|"cch"\|"override"` | Richmond Structures is the current city gap-fill; `richmond_multipatch` marks the small set of exact-ID outline replacements verified against newer LiDAR; VGIN is the offline fallback. Honolulu uses CCH city outlines, enriched with spatially matched OSM tags, plus non-overlapping OSM gap-fill |
 | `source_updated` | string\|null | ISO timestamp from the source feature edit field when available |
 | `is_part` | bool | OSM `building:part` (Simple 3D Buildings); rendered as its own extrusion |
 | `parent` | string\|null | id of the outline building containing a part; parts inherit name/addr/landmark from it |

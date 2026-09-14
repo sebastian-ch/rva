@@ -274,7 +274,35 @@ def _assign_parts(raw: gpd.GeoDataFrame, is_part: pd.Series) -> tuple[dict, dict
 
 
 OVERRIDES_PATH = ASSETS / "supplements" / "overrides.json"
+FOOTPRINT_REPLACEMENTS_PATH = ASSETS / "supplements" / "richmond-esri-outlines.geojson"
 OVERRIDE_FIELDS = ("name", "height", "levels", "type", "roof_shape", "roof_height", "wall_color", "roof_color", "wikidata", "website")
+
+
+def apply_footprint_replacements(raw: gpd.GeoDataFrame, path: Path = FOOTPRINT_REPLACEMENTS_PATH) -> gpd.GeoDataFrame:
+    """Replace only source IDs whose alternate outline was verified against newer LiDAR."""
+    if not path.exists() or len(raw) == 0:
+        return raw
+    replacements = gpd.read_file(path).to_crs(raw.crs)
+    if len(replacements) == 0:
+        return raw
+    out = raw.copy()
+    ids = out.apply(_osm_id, axis=1)
+    applied = 0
+    for _, replacement in replacements.iterrows():
+        target_id = str(replacement.get("target_id") or "")
+        matches = ids[ids == target_id].index
+        geometry = replacement.geometry
+        if len(matches) != 1 or geometry is None or geometry.is_empty or not geometry.is_valid:
+            print(f"  [warn] footprint replacement '{target_id}' was not applied")
+            continue
+        target = matches[0]
+        out.at[target, "geometry"] = geometry
+        out.at[target, "footprint_source"] = "richmond_multipatch"
+        out.at[target, "source_updated"] = replacement.get("source_updated")
+        applied += 1
+    if applied:
+        print(f"  verified city footprints applied: {applied}/{len(replacements)}")
+    return out
 
 
 def apply_overrides(b: gpd.GeoDataFrame, terrain=None, path: Path = OVERRIDES_PATH) -> gpd.GeoDataFrame:
@@ -371,6 +399,8 @@ def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True
                                            min_area=RICHMOND_STRUCTURE_MIN_AREA, subtype=1)
     elif vgin_path is not None and Path(vgin_path).exists():
         raw, is_part = _add_vgin_footprints(raw, is_part, Path(vgin_path))
+    if REGION == "richmond":
+        raw = apply_footprint_replacements(raw)
     raw = raw[raw.geometry.area >= MIN_FOOTPRINT_AREA]
     is_part = is_part.loc[raw.index]
     raw["geometry"] = raw.geometry.simplify(SIMPLIFY_TOL, preserve_topology=True).buffer(0)

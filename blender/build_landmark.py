@@ -9,6 +9,7 @@ Origin = footprint centroid on the ground; Blender X = east, Y = north, Z = up (
 from __future__ import annotations
 
 import math
+import json
 import sys
 from pathlib import Path
 
@@ -314,6 +315,21 @@ def cabell_library(b, fp):
     b.box(*f.P(f.hl - 30, -f.hs + 14), 13, 30, 8, 6, "concrete", rot=f.rot_u, shade=0.9)  # cantilevered reading room
 
 
+def virginia_museum_of_fine_arts(b, fp):
+    """LiDAR-derived campus massing: low perimeter wings plus three measured setback tiers."""
+    source = json.loads((ROOT / "assets/landmarks/virginia-museum-of-fine-arts-massing.json").read_text())
+    cx, cy = fp["centroid_proj"]
+    b.extrude(fp["ring"], -0.5, 6.0, "concrete", 0.92, name="low-wings")
+    z0 = 5.8
+    materials = {"mid": "cream", "upper": "glass", "top": "steel"}
+    for tier in source["tiers"]:
+        z1 = float(tier["height_m"])
+        for n, ring in enumerate(tier["rings"]):
+            local = [(x - cx, y - cy) for x, y in ring]
+            b.extrude(local, z0, z1, materials[tier["name"]], name=f"{tier['name']}-{n}")
+        z0 = z1 - 0.2
+
+
 BUILDERS = {
     "virginia-state-capitol": capitol,
     "main-street-station": main_street_station,
@@ -326,6 +342,7 @@ BUILDERS = {
     "carpenter-theatre-dominion-energy-center": carpenter_theatre,
     "byrd-theatre": byrd_theatre,
     "vcu-cabell-library": cabell_library,
+    "virginia-museum-of-fine-arts": virginia_museum_of_fine_arts,
 }
 
 

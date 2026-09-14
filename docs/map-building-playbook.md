@@ -408,6 +408,20 @@ more than three ridgelines. These limits apply to the current stylized hybrid; r
 that renders Roofer's full solid. Regressions: `test_near_vertical_roof_plane_is_ignored` and
 `test_oversegmented_small_roof_keeps_procedural_fallback`.
 
+An aggregate footprint comparison can hide the few buildings where an alternate source is materially
+better. Rank large-building exceptions separately, but do not treat extra corners as accuracy: Richmond's
+older multipatch often adds sub-metre edge serrations. Require exact source-ID matching and independent
+newer evidence before replacing an outline. A classified-LiDAR building-point proxy found five Richmond
+exceptions with 0.016–0.020 F1 gains; `apply_footprint_replacements` changes only their geometry and
+preserves current metadata and heights. Regression: `test_verified_footprint_replacement_keeps_source_row_metadata`.
+
+Model setbacks only when the height evidence contains broad, stable tiers. VMFA's perimeter was already
+as accurate as the city outline, while its single 9.6 m extrusion hid measured 6, 15.8, 19.5 and 21.5 m masses.
+Nested polygons derived from classified 2025 LiDAR now drive its landmark model. Keep this treatment to
+large campuses, podium towers and recognizable civic buildings; a citywide threshold pass would turn
+roof equipment, trees and reconstruction noise into invented architecture. Implementation:
+`assets/landmarks/virginia-museum-of-fine-arts-massing.json` and `blender/build_landmark.py`.
+
 When a city footprint layer gap-fills OSM, an `intersects` join alone is too aggressive: attached
 buildings often share a boundary with an OSM footprint and have zero overlap area. Treat a candidate as
 a duplicate only when their intersection covers a meaningful fraction of the smaller polygon. Preserve
