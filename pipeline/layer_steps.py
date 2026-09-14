@@ -94,13 +94,15 @@ def _buildings(ctx: StepContext, layers: dict):
         lidar_npz=DATA_RAW / f"lidar_{ctx.slug}.npz",
         richmond_dir=DATA_RAW / f"richmond_{ctx.slug}",
         richmond_structures_path=ctx.richmond("structures.parquet"),
-        vgin_path=DATA_RAW / f"vgin_{ctx.slug}.parquet")}
+        vgin_path=DATA_RAW / f"vgin_{ctx.slug}.parquet",
+        ortho_path=DATA_RAW / f"ortho_{ctx.slug}.tif")}
 
 
 def _buildings_sources(ctx: StepContext) -> list[Path]:
     paths = [ctx.raw_dir / "buildings.parquet", ctx.dem_path,
              DATA_RAW / f"overture_{ctx.slug}.parquet", DATA_RAW / f"lidar_{ctx.slug}.npz",
-             DATA_RAW / "ndsm.tif", DATA_RAW / f"vgin_{ctx.slug}.parquet", DATA_RAW / f"cch_{ctx.slug}.parquet",
+             DATA_RAW / "ndsm.tif", DATA_RAW / f"ortho_{ctx.slug}.tif",
+             DATA_RAW / f"vgin_{ctx.slug}.parquet", DATA_RAW / f"cch_{ctx.slug}.parquet",
              ASSETS / "supplements" / "overrides.json", ASSETS / "landmarks" / "landmarks.json"]
     paths += sorted((DATA_RAW / f"richmond_{ctx.slug}").glob("*.parquet"))
     return paths

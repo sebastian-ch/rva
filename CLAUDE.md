@@ -7,7 +7,9 @@ Stylized isometric 3D model of Richmond, VA. Procedurally generated from open ge
 Read [docs/map-building-playbook.md](docs/map-building-playbook.md) when adding a region or changing
 map geometry/data/rendering. Record new failure modes and fixes there with code/test references.
 Richmond source details live in [docs/richmond-trees-riverfront.md](docs/richmond-trees-riverfront.md);
-styles use [docs/map-styles.md](docs/map-styles.md).
+styles use [docs/map-styles.md](docs/map-styles.md). Roof colour from imagery:
+[docs/ortho-roof-colour.md](docs/ortho-roof-colour.md). Ranked plan for model/surface quality:
+[docs/model-texture-roadmap.md](docs/model-texture-roadmap.md).
 
 ## Tech stack
 
@@ -33,6 +35,7 @@ web/             three.js app
 - Hand corrections live in `assets/supplements/overrides.json` (applied last; see its README). Use it for buildings newer than the sources.
 - `building:part` polygons are separate buildings (`is_part`, `parent`, `hidden` on the outline); see DATA_FORMAT.md.
 - Roof resolution order: OSM `roof:shape` → Overture `roof_shape` → LiDAR two-plane fit (`pipeline/roofs.py`) → type heuristic.
+- Roof colour resolution order: OSM `roof:colour` → NAIP orthoimagery (`pipeline/ortho.py`, recorded as `roof_color_source`) → seeded type/height guess in `heights.resolve_colors`. The ortho classifier answers `None` for tree-covered, shadowed or too-small footprints on purpose — a wrong confident colour looks surveyed. Wall colour is still the seeded guess: nadir imagery cannot see facades.
 - Tiles are ~250 m squares, named by tile index (`x_y`).
 - The base scene palette lives in `assets/palette.json`; artistic style palettes and settings live in `web/src/styles/`. Add styles through its registry.
 - Automated sources include OSM, Overture, VGIN, USGS/NAIP, NOAA, city open GIS data, and Mapillary; preserve their terms and attribution. Google and Mapbox imagery are visual reference only — their terms forbid derived datasets.
@@ -46,6 +49,7 @@ python3 -m venv .venv && .venv/bin/pip install -r pipeline/requirements.txt
 .venv/bin/python pipeline/fetch_overture.py                                 # Overture buildings (2nd height source) -> data/raw/
 .venv/bin/python pipeline/fetch_richmond.py                                 # City of Richmond addresses + zoning -> data/raw/
 .venv/bin/python pipeline/fetch_vgin_footprints.py --shp <path.shp>         # VGIN building footprints (gap-fill) -> data/raw/
+.venv/bin/python pipeline/fetch_naip.py [--resolution 0.6] [--dry-run]      # NAIP orthoimagery (roof colour) -> ortho_<slug>.tif
 .venv/bin/python pipeline/dem_noaa.py [--zip data/raw/J1448888.zip]              # NOAA 2025 1 ft DEM tiles -> dem_<slug>.tif (1 m); run before fetch_lidar/build_tiles
 .venv/bin/python pipeline/fetch_lidar.py [--source noaa2025|usgs2014] [--dry-run]  # LiDAR EPT (2025 City of Richmond by default) -> ndsm.tif + point npz
 .venv/bin/python pipeline/build_tiles.py [--clean] [--no-merge] [--no-cache] [--clear-cache]   # incremental: cached steps + dirty tiles only
@@ -63,6 +67,7 @@ Tile schema contract: `DATA_FORMAT.md`. Landmark registry: `assets/landmarks/lan
 ## Layout notes
 
 - `pipeline/heights.py` is pure functions (height/roof/color); `process.py` normalizes layers; `build_tiles.py` clips and writes.
+- `pipeline/ortho.py` reads `data/raw/ortho_<slug>.tif` per footprint (masked window → vegetation/shadow rejection → CIE L*a*b* classification) and runs inside the buildings step, after heights exist: the inward buffer that corrects orthorectification lean scales with building height.
 - Every build is incremental. The layer stage is a list of steps (`layer_steps.py`: the six processors plus the
   augmentations: city decks, hydro shoreline, canal banks, tree merge, Honolulu coast), each cached in `data/cache/`
   on its own key: the raw sources it declares, the code it runs (`deps.py` resolves the functions a step calls and

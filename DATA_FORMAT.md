@@ -46,6 +46,7 @@ Geometry is clipped to the tile bbox. All layers optional; missing = empty.
 | `lidar_p90` | number\|null | 90th percentile nDSM inside the footprint, m |
 | `ground_z` | number | terrain height under the footprint centroid, m above `base_elevation` |
 | `roof_color` | string | palette key |
+| `roof_color_source` | `"osm"\|"ortho"\|"heuristic"\|"override"\|"landmark"` | resolution order: OSM `roof:colour`, NAIP orthoimagery classification (`pipeline/ortho.py`), seeded type/height guess; `landmark` = the stylized flat-roof treatment, `override` = supplements file |
 | `wall_color` | string | palette key |
 | `type` | string | OSM `building=*` value |
 | `landmark` | string\|null | slug from `assets/landmarks/landmarks.json` |

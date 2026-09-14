@@ -38,10 +38,13 @@ See [the expansion notes](docs/richmond-fan.md) for extent, acquisition counts a
 
 ## USGS/USDA NAIP Imagery
 
-- **What we use it for:** Public-domain aerial imagery for roof color sampling and land cover.
+- **What we use it for:** Roof colour. `pipeline/fetch_naip.py` exports the USGS `USGSNAIPPlus` image server to `data/raw/ortho_<slug>.tif` (0.6 m, 4-band R/G/B/NIR, working CRS); `pipeline/ortho.py` samples it inside each footprint and classifies the result into a palette key (`roof_color_source = "ortho"`). The NIR band is used to reject tree crowns over roofs, not rendered.
 - **License:** Public domain
 - **Required attribution:** USGS/USDA
 - **URL:** https://www.usgs.gov
+
+Land cover from NAIP (lawn/bed masks, impervious surfaces) is **not** implemented yet; see
+[docs/model-texture-roadmap.md](docs/model-texture-roadmap.md).
 
 ## Virginia Geographic Information Network (VGIN)
 
@@ -97,7 +100,9 @@ These NOAA sources carry CC0. Credit: City of Richmond, Sanborn Map Company, NOA
 
 ## Mapillary
 
-- **What we use it for:** Street-level imagery for machine extraction and visual reference.
+- **What we use it for:** Nothing automated yet — visual reference only. Facade colour and surveyed
+  street-furniture positions are planned (see [docs/model-texture-roadmap.md](docs/model-texture-roadmap.md));
+  note that CC BY-SA 4.0 is share-alike, so a derived dataset carries the licence with it.
 - **License:** CC BY-SA 4.0
 - **Required attribution:** Mapillary contributors
 - **URL:** https://www.mapillary.com
