@@ -16,8 +16,9 @@ from shapely.geometry import Point
 from pyproj import Transformer
 
 from config import ASSETS, CRS_PROJ, DATA_RAW, LANDMARKS_PATH, LANE_WIDTH, LEVEL_HEIGHT, ROAD_WIDTH, REGION
-from heights import cap_small_footprint, looks_demolished, parse_levels, resolve_colors, resolve_height, resolve_min_height, resolve_roof
+from heights import ROOF_KEYS, cap_small_footprint, looks_demolished, parse_levels, resolve_colors, resolve_height, resolve_min_height, resolve_roof, snap_color
 from lidar import classify_roofs, sample_ndsm_stats
+from ortho import apply_roof_colors
 from overture import load_overture, match_overture
 from richmond import _read as _read_rva, join_addresses, join_zoning, zoning_height
 
@@ -146,6 +147,8 @@ def _merge_rowhouses(b: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         first["levels"] = int(sub["levels"].dropna().median()) if sub["levels"].notna().any() else None
         first["merged_count"] = len(members)
         first["ground_z"] = round(float(sub["ground_z"].mean()), 2)
+        first["roof_color"] = sub["roof_color"].mode().iat[0]
+        first["roof_color_source"] = sub.loc[sub["roof_color"] == first["roof_color"], "roof_color_source"].iat[0]
         # keep a shared ridge azimuth only if the members agree (rowhouse blocks usually do)
         az = pd.to_numeric(sub["roof_azimuth"], errors="coerce").dropna().to_numpy()
         if len(az) and (np.ptp(np.where(az > 90, az - 180, az)) < 15 or np.ptp(az) < 15):
@@ -296,7 +299,8 @@ def apply_overrides(b: gpd.GeoDataFrame, terrain=None, path: Path = OVERRIDES_PA
             gz = float(terrain.sample(np.array([geom.centroid.x]), np.array([geom.centroid.y]))[0]) if terrain is not None else 0.0
             row = {c: None for c in b.columns}
             row.update({"id": f"override:{e.get('name', len(b))}", "height": 10.0, "min_height": 0.0, "height_source": "override",
-                        "roof_shape": "flat", "roof_height": 0.0, "roof_source": "override", "roof_color": "roof_flat", "wall_color": "concrete",
+                        "roof_shape": "flat", "roof_height": 0.0, "roof_source": "override", "roof_color": "roof_flat",
+                        "roof_color_source": "override", "wall_color": "concrete",
                         "type": "yes", "footprint_source": "override", "is_part": False, "hidden": False, "ground_z": round(gz, 2), "geometry": geom})
             new_idx = int(b.index.max()) + 1
             b = gpd.GeoDataFrame(pd.concat([b, gpd.GeoDataFrame([row], index=[new_idx], crs=b.crs)]), geometry="geometry", crs=b.crs)
@@ -321,6 +325,8 @@ def apply_overrides(b: gpd.GeoDataFrame, terrain=None, path: Path = OVERRIDES_PA
                 b.at[target, k] = e[k]
         if "height" in e:
             b.at[target, "height_source"] = "override"
+        if e.get("roof_color") is not None:
+            b.at[target, "roof_color_source"] = "override"
         if "roof_shape" in e:
             b.at[target, "roof_source"] = "override"
             if e["roof_shape"] == "flat":
@@ -334,7 +340,7 @@ def apply_overrides(b: gpd.GeoDataFrame, terrain=None, path: Path = OVERRIDES_PA
 def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True,
                       overture_path: Path | None = None, lidar_npz: Path | None = None,
                       richmond_dir: Path | None = None, vgin_path: Path | None = None,
-                      richmond_structures_path: Path | None = None) -> gpd.GeoDataFrame:
+                      richmond_structures_path: Path | None = None, ortho_path: Path | None = None) -> gpd.GeoDataFrame:
     raw = _read(raw_path)
     if len(raw) == 0:
         return gpd.GeoDataFrame(geometry=[], crs=CRS_PROJ)
@@ -465,6 +471,7 @@ def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True
             "roof_azimuth": roof_az,
             "roof_source": roof_src,
             "roof_color": roof,
+            "roof_color_source": "osm" if snap_color(tags.get("roof:colour"), ROOF_KEYS) else "heuristic",
             "wall_color": wall,
             "type": str(tags.get("building") or tags.get("building:part") or "yes"),
             "landmark": None,
@@ -482,6 +489,7 @@ def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True
             "geometry": row.geometry,
         })
     b = gpd.GeoDataFrame(rows, geometry="geometry", crs=CRS_PROJ)
+    apply_roof_colors(b, ortho_path)
     landmarks = load_landmarks()
     outlines = b[~b["is_part"]]
     b["landmark"] = None
@@ -507,6 +515,7 @@ def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True
         b.at[i, "wall_color"] = "cream"
         if b.at[i, "roof_shape"] == "flat":
             b.at[i, "roof_color"] = "roof_flat"
+            b.at[i, "roof_color_source"] = "landmark"
     if phantoms:
         print(f"  dropped {phantoms} stale footprints (LiDAR surface at ground, no OSM height)")
     b = apply_overrides(b, terrain)

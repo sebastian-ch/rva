@@ -67,6 +67,7 @@ def write_report(tiles_dir: Path = DATA_TILES, landmarks_path: Path = LANDMARKS_
     height_source_hist: Counter[str] = Counter()
     roof_shape_hist: Counter[str] = Counter()
     wall_color_hist: Counter[str] = Counter()
+    roof_color_source_hist: Counter[str] = Counter()
     named_count = 0
     tall_buildings: list[dict[str, Any]] = []
     small_footprint_ids: list[str] = []
@@ -102,6 +103,7 @@ def write_report(tiles_dir: Path = DATA_TILES, landmarks_path: Path = LANDMARKS_
 
             roof_shape_hist[props.get("roof_shape")] += 1
             wall_color_hist[props.get("wall_color")] += 1
+            roof_color_source_hist[props.get("roof_color_source")] += 1
 
             if props.get("name"):
                 named_count += 1
@@ -191,6 +193,7 @@ def write_report(tiles_dir: Path = DATA_TILES, landmarks_path: Path = LANDMARKS_
             "height_source_hist": dict(height_source_hist),
             "roof_shape_hist": dict(roof_shape_hist),
             "wall_color_hist": dict(wall_color_hist),
+            "roof_color_source_hist": dict(roof_color_source_hist),
             "default_count": default_count,
             "default_share": default_share_overall,
             "named_count": named_count,
@@ -260,6 +263,14 @@ def _render_markdown(report: dict) -> str:
     lines.append("|---|---|")
     for k, v in sorted(b["roof_shape_hist"].items(), key=lambda kv: -kv[1]):
         lines.append(f"| {k} | {v} |")
+    lines.append("")
+
+    lines.append("### roof_color_source")
+    lines.append("")
+    lines.append("| source | count | share |")
+    lines.append("|---|---|---|")
+    for k, v in sorted(b.get("roof_color_source_hist", {}).items(), key=lambda kv: -kv[1]):
+        lines.append(f"| {k} | {v} | {_pct(v, total)} |")
     lines.append("")
 
     lines.append("### wall_color")

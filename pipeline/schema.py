@@ -22,6 +22,10 @@ HEIGHT_SOURCES: set[str] = {
 
 ROOF_SOURCES: set[str] = {"osm", "overture", "lidar", "heuristic", "override"}
 
+# Where roof_color came from. "ortho" is the NAIP classification in ortho.py; "heuristic" is the
+# seeded guess in heights.resolve_colors that it replaces when the imagery is readable.
+ROOF_COLOR_SOURCES: set[str] = {"osm", "ortho", "heuristic", "override", "landmark"}
+
 POI_KINDS: set[str] = {
     "tree", "streetlight", "bench", "bus_stop", "traffic_signals",
     "fountain", "monument", "shop", "restaurant", "museum",
@@ -43,7 +47,7 @@ LAYER_KEYS: dict[str, set[str]] = {
     "buildings": {
         "id", "name", "height", "min_height", "levels", "height_source",
         "roof_shape", "roof_height", "roof_azimuth", "roof_source",
-        "roof_color", "wall_color", "type", "landmark", "addr",
+        "roof_color", "roof_color_source", "wall_color", "type", "landmark", "addr",
         "wikidata", "website", "zoning", "lidar_p90", "ground_z",
             "is_part", "parent", "hidden",
             "footprint_source", "source_updated",
@@ -116,6 +120,9 @@ def validate_feature(layer: str, props: dict[str, Any]) -> list[str]:
         rsrc = props.get("roof_source")
         if rsrc is not None and rsrc not in ROOF_SOURCES:
             problems.append(f"{fid}: unknown roof_source {rsrc!r}")
+        rcsrc = props.get("roof_color_source")
+        if rcsrc is not None and rcsrc not in ROOF_COLOR_SOURCES:
+            problems.append(f"{fid}: unknown roof_color_source {rcsrc!r}")
 
     if layer in ("roads", "rail"):
         _check_deck(props, problems, fid)

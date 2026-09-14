@@ -304,6 +304,32 @@ the grown buffer correctly. Regression: `propPool.test.ts`. Check expected place
 rendered instances at a wide zoom; `tools/review-tree-loading.mjs` does this and verifies model URLs.
 This fixes rendering omissions, not missing source observations or the intentional building/water filters.
 
+## 6b. Imagery: a classifier that always answers is worse than one that abstains
+
+Nadir orthoimagery is the only automated source that sees a roof, and it is the right source for roof
+colour — but three things corrupt the reading, and each needs an explicit answer rather than a hope.
+Orthorectification is against bare earth, so a roof leans off its own footprint by roughly
+`height × tan(off-nadir)`; shrink the footprint inward by that estimate before sampling, and accept
+that footprints too small to survive the shrink return nothing. A tree crown is greener than any roof;
+reject vegetation pixels by NDVI when a NIR band exists, excess green otherwise, and abstain entirely
+when most of the footprint is canopy. A neighbour's shadow drags the median dark; drop pixels far
+below the footprint's *own* median luminance, never an absolute threshold, or every genuinely dark
+roof gets rejected as shadow.
+
+Classify by rule in a perceptual space rather than snapping to the nearest stylized swatch. A
+photograph is nowhere near a stylized palette's saturation, so swatch distances are all large and
+their ranking is noise — and nearest-neighbour has no way to say "I cannot tell", which is the most
+valuable output when the pixel is a tree. Record the provenance in its own field so the QA histogram
+shows coverage moving back to the guess when something regresses, and keep surveyed tags (OSM
+`roof:colour`) ranked above the photograph.
+
+Do not extend this to ground or wall *texture*. Derive polygons and colour them from the palette; a
+photo drape reads as a different map and defeats the style registry.
+
+**Implementation:** [ortho.py](../pipeline/ortho.py), [fetch_naip.py](../pipeline/fetch_naip.py),
+[notes](ortho-roof-colour.md).
+**Regression:** [test_ortho.py](../pipeline/tests/test_ortho.py).
+
 ## 7. Downloads and caches: missing is not empty
 
 A failed Overpass request does not mean there are no benches, lamps or fountains. Preserve completed

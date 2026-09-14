@@ -52,6 +52,7 @@ export interface BuildingProps {
   roof_azimuth?: number | null;
   roof_source?: string;
   roof_color: string;
+  roof_color_source?: string;
   wall_color: string;
   type: string;
   landmark: string | null;
