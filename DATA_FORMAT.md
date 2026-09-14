@@ -47,12 +47,12 @@ procedural roof.
 | `height` | number | meters, roof-line height above ground |
 | `min_height` | number | meters, default 0 |
 | `levels` | int\|null | |
-| `height_source` | `"cch_height"\|"osm_height"\|"osm_levels"\|"overture_height"\|"overture_levels"\|"lidar"\|"zoning"\|"default"\|"landmark_hint"\|"override"` | resolution order: OSM height, OSM levels, CCH maximum height (Honolulu only), LiDAR (≥ 10 nDSM cells; eave for pitched roofs), Overture height, Overture levels, sparse LiDAR, zoning, type default; `override` = supplements file. Footprints whose LiDAR surface is at ground (p90 < 1.2 m, ≥ 8 cells) with no OSM height are dropped as stale; LiDAR heights on footprints < 80 m² are capped at 4·√area |
+| `height_source` | `"cch_height"\|"osm_height"\|"osm_levels"\|"overture_height"\|"overture_levels"\|"lidar"\|"lidar_massing"\|"zoning"\|"default"\|"landmark_hint"\|"override"` | resolution order: OSM height, OSM levels, CCH maximum height (Honolulu only), LiDAR (≥ 10 nDSM cells; eave for pitched roofs), Overture height, Overture levels, sparse LiDAR, zoning, type default; `lidar_massing` = a reviewed broad height tier from the regional massing supplement; `override` = supplements file. Footprints whose LiDAR surface is at ground (p90 < 1.2 m, ≥ 8 cells) with no OSM height are dropped as stale; LiDAR heights on footprints < 80 m² are capped at 4·√area |
 | `zoning` | string\|null | City of Richmond zoning district at the footprint |
 | `roof_shape` | `"flat"\|"gable"\|"hip"\|"pyramidal"\|"skillion"\|"dome"` | |
 | `roof_height` | number | meters of roof above `height`, 0 for flat |
 | `roof_azimuth` | number\|null | ridge direction, degrees clockwise from north (0..180); null unless LiDAR-fitted |
-| `roof_source` | `"osm"\|"overture"\|"lidar"\|"lod2"\|"heuristic"\|"override"` | `lod2` uses a Roofer reconstruction from classified LiDAR |
+| `roof_source` | `"osm"\|"overture"\|"lidar"\|"lidar_massing"\|"lod2"\|"heuristic"\|"override"` | `lod2` uses a Roofer reconstruction from classified LiDAR; `lidar_massing` is a reviewed flat tier |
 | `lidar_p90` | number\|null | 90th percentile nDSM inside the footprint, m |
 | `ground_z` | number | terrain height under the footprint centroid, m above `base_elevation` |
 | `roof_color` | string | palette key |

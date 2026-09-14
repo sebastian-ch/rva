@@ -275,6 +275,7 @@ def _assign_parts(raw: gpd.GeoDataFrame, is_part: pd.Series) -> tuple[dict, dict
 
 OVERRIDES_PATH = ASSETS / "supplements" / "overrides.json"
 FOOTPRINT_REPLACEMENTS_PATH = ASSETS / "supplements" / "richmond-esri-outlines.geojson"
+MASSING_PARTS_PATH = ASSETS / "supplements" / "richmond-massing.geojson"
 OVERRIDE_FIELDS = ("name", "height", "levels", "type", "roof_shape", "roof_height", "wall_color", "roof_color", "wikidata", "website")
 
 
@@ -303,6 +304,68 @@ def apply_footprint_replacements(raw: gpd.GeoDataFrame, path: Path = FOOTPRINT_R
     if applied:
         print(f"  verified city footprints applied: {applied}/{len(replacements)}")
     return out
+
+
+def apply_massing_parts(b: gpd.GeoDataFrame, path: Path = MASSING_PARTS_PATH) -> gpd.GeoDataFrame:
+    """Replace verified single extrusions with LiDAR-derived base and upper building parts.
+
+    The supplement uses exact processed IDs so a nearby building can never receive the massing by
+    accident. Each target must include a ground-level ``base`` part covering nearly all of its
+    outline; the original outline is then retained as a selectable 0.6 m plinth.
+    """
+    if not path.exists() or len(b) == 0:
+        return b
+    parts = gpd.read_file(path).to_crs(b.crs)
+    required = {"target_id", "part_id", "height", "min_height"}
+    if not required.issubset(parts.columns):
+        raise ValueError(f"{path.name} is missing {sorted(required - set(parts.columns))}")
+
+    additions = []
+    by_id = b.reset_index().set_index("id")
+    for target_id, group in parts.groupby("target_id", sort=False):
+        if target_id not in by_id.index:
+            print(f"  [warn] massing target {target_id!r} matched no building")
+            continue
+        parent_index = by_id.at[target_id, "index"]
+        if isinstance(parent_index, pd.Series):
+            raise ValueError(f"massing target {target_id!r} is not unique")
+        outline = b.at[parent_index, "geometry"]
+        base = group[group["part_id"] == "base"]
+        base_cover = unary_union(base.geometry.values).intersection(outline).area if len(base) else 0.0
+        if base_cover < 0.9 * outline.area:
+            raise ValueError(f"massing target {target_id!r} has no base covering its outline")
+
+        b.at[parent_index, "hidden"] = True
+        parent = b.loc[parent_index].to_dict()
+        for _, part in group.iterrows():
+            geom = part.geometry.intersection(outline).buffer(0)
+            if geom.is_empty or geom.area < MIN_FOOTPRINT_AREA:
+                continue
+            row = dict(parent)
+            row.update({
+                "id": f"richmond_massing:{target_id.replace(':', '_').replace('/', '_')}:{part['part_id']}",
+                "height": round(float(part["height"]), 2),
+                "min_height": round(float(part["min_height"]), 2),
+                "levels": None,
+                "height_source": "lidar_massing",
+                "roof_shape": "flat",
+                "roof_height": 0.0,
+                "roof_azimuth": None,
+                "roof_source": "lidar_massing",
+                "lod2_roof": None,
+                "is_part": True,
+                "parent": target_id,
+                "hidden": False,
+                "footprint_source": "lidar_massing",
+                "source_updated": _source_date(part.get("source_date")) or "2025-03-01",
+                "geometry": geom,
+            })
+            additions.append(row)
+    if not additions:
+        return b
+    print(f"  LiDAR massing parts applied: {len(additions)} parts on {len(set(r['parent'] for r in additions))} buildings")
+    added = gpd.GeoDataFrame(additions, geometry="geometry", crs=b.crs)
+    return gpd.GeoDataFrame(pd.concat([b, added], ignore_index=True), geometry="geometry", crs=b.crs)
 
 
 def apply_overrides(b: gpd.GeoDataFrame, terrain=None, path: Path = OVERRIDES_PATH) -> gpd.GeoDataFrame:
@@ -550,6 +613,8 @@ def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True
     if phantoms:
         print(f"  dropped {phantoms} stale footprints (LiDAR surface at ground, no OSM height)")
     b = apply_overrides(b, terrain)
+    if REGION == "richmond":
+        b = apply_massing_parts(b)
     if merge_rowhouses:
         b = _merge_rowhouses(b)
     # mixed None/float object columns would be written as strings by the GeoJSON driver

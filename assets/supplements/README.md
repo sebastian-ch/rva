@@ -9,6 +9,12 @@ that beat the corresponding OSM geometry against classified 2025 LiDAR. Each fea
 target source ID, city object ID and before/after LiDAR proxy F1. Do not expand it from outline complexity
 alone: the older city source often preserves harmless edge serrations while losing newer building parts.
 
+`richmond-massing.geojson` contains reviewed base and upper parts for large Richmond buildings whose
+single extrusion hides a broad, stable height tier in the 1 m normalized 2025 LiDAR. Every group names an
+exact processed `target_id` and includes a `base` part that covers the source outline. Upper parts record
+their extrusion interval with `min_height` and `height`. Do not derive these from a blind citywide threshold:
+courtyards, neighbouring towers, ramps, pitched roofs and rooftop equipment all produce similar histograms.
+
 `overrides.json` is a list of entries:
 
 ```json

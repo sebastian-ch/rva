@@ -422,6 +422,15 @@ large campuses, podium towers and recognizable civic buildings; a citywide thres
 roof equipment, trees and reconstruction noise into invented architecture. Implementation:
 `assets/landmarks/virginia-museum-of-fine-arts-massing.json` and `blender/build_landmark.py`.
 
+A Richmond-wide follow-up demonstrates the required review step. A two-band scan flagged 158 of 1,175
+large, tall or named footprints, but many signals were courtyards, a separate overlapping tower, sloped
+roofs, garage ramps or mechanical penthouses. Add general-purpose parts only after checking the spatial
+height mask, current overlaps and existing OSM parts. Six verified cases now use exact-ID base and upper
+parts in `assets/supplements/richmond-massing.geojson`: Delta Hotels, the Greater Richmond Convention
+Center Annex, The Virginia Home, the Trani Center for Life Sciences, BioTech 6 and the Pocahontas Building.
+`apply_massing_parts` keeps the parent as a selectable plinth and renders each tier over its recorded
+height interval. Regression: `test_verified_massing_hides_outline_and_adds_tiers`.
+
 When a city footprint layer gap-fills OSM, an `intersects` join alone is too aggressive: attached
 buildings often share a boundary with an OSM footprint and have zero overlap area. Treat a candidate as
 a duplicate only when their intersection covers a meaningful fraction of the smaller polygon. Preserve

@@ -89,6 +89,13 @@ in `assets/supplements/richmond-esri-outlines.geojson`; current metadata, height
 place. VMFA's city and OSM outlines were effectively tied (0.972 versus 0.971), so its visible deficit
 was height massing rather than its perimeter.
 
+A citywide audit of 1,175 large, tall or named buildings then reviewed broad nDSM height clusters against
+the current footprint overlaps and OSM parts. Six missing, stable massing cases are now explicit base and
+upper parts in `assets/supplements/richmond-massing.geojson`: Delta Hotels, the Greater Richmond Convention
+Center Annex, The Virginia Home, the Trani Center for Life Sciences, BioTech 6 and the Pocahontas Building.
+The Marriott and RMA garage/tower blocks already contain separate overlapping tower footprints; CoStar's
+second band is rooftop equipment, and the Coliseum's band is a curved roof rather than a setback.
+
 There is also a public 2020
 [`Building_multipatch.lpkx`](https://www.arcgis.com/home/item.html?id=ca6b4ff707fc47a3b3715d3cc9e673c3)
 (140 MB). It contains 162,691 GDAL-readable 3D TIN features in a FileGDB, but inspection showed an

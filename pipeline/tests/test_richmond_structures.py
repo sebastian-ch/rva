@@ -6,7 +6,7 @@ import pandas as pd
 from shapely.geometry import box
 
 from config import CRS_PROJ
-from process import _add_gap_footprints, apply_footprint_replacements, process_richmond_decks
+from process import _add_gap_footprints, apply_footprint_replacements, apply_massing_parts, process_richmond_decks
 
 
 def _write_structures(path):
@@ -63,3 +63,32 @@ def test_verified_footprint_replacement_keeps_source_row_metadata(tmp_path):
     assert result.loc[0, "geometry"].equals(box(-1, -1, 11, 11))
     assert result.loc[0, "footprint_source"] == "richmond_multipatch"
     assert result.loc[1, "geometry"].equals(raw.loc[1, "geometry"])
+
+
+def test_verified_massing_hides_outline_and_adds_tiers(tmp_path):
+    buildings = gpd.GeoDataFrame({
+        "id": ["osm:way/10"], "name": ["Test tower"], "height": [30.0], "min_height": [0.0],
+        "levels": [None], "height_source": ["osm_height"], "roof_shape": ["flat"],
+        "roof_height": [0.0], "roof_azimuth": [None], "roof_source": ["osm"],
+        "roof_color": ["roof_flat"], "roof_color_source": ["heuristic"], "lod2_roof": [None],
+        "wall_color": ["brick"], "type": ["office"], "landmark": [None],
+        "footprint_source": ["osm"], "source_updated": [None], "is_part": [False],
+        "parent": [None], "hidden": [False], "addr": [None], "wikidata": [None],
+        "website": [None], "zoning": [None], "lidar_p90": [30.0], "ground_z": [0.0],
+    }, geometry=[box(0, 0, 20, 20)], crs=CRS_PROJ)
+    path = tmp_path / "massing.geojson"
+    gpd.GeoDataFrame({
+        "target_id": ["osm:way/10", "osm:way/10"], "part_id": ["base", "tier-1"],
+        "height": [8.0, 30.0], "min_height": [0.0, 8.0], "source_date": ["2025-03-01"] * 2,
+    }, geometry=[box(0, 0, 20, 20), box(5, 5, 15, 15)], crs=CRS_PROJ).to_file(path, driver="GeoJSON")
+
+    result = apply_massing_parts(buildings, path)
+
+    assert len(result) == 3
+    assert bool(result.loc[result["id"] == "osm:way/10", "hidden"].iloc[0])
+    parts = result[result["is_part"]].sort_values("height")
+    assert parts["height"].tolist() == [8.0, 30.0]
+    assert parts["min_height"].tolist() == [0.0, 8.0]
+    assert set(parts["parent"]) == {"osm:way/10"}
+    assert set(parts["height_source"]) == {"lidar_massing"}
+    assert set(parts["source_updated"]) == {"2025-03-01T00:00:00Z"}

@@ -17,10 +17,10 @@ from heights import ROOF_SHAPES  # single definition of the roof-shape enum live
 HEIGHT_SOURCES: set[str] = {
     "override", "cch_height",
     "osm_height", "osm_levels", "overture_height", "overture_levels",
-    "lidar", "zoning", "default", "landmark_hint",
+    "lidar", "lidar_massing", "zoning", "default", "landmark_hint",
 }
 
-ROOF_SOURCES: set[str] = {"osm", "overture", "lidar", "lod2", "heuristic", "override"}
+ROOF_SOURCES: set[str] = {"osm", "overture", "lidar", "lidar_massing", "lod2", "heuristic", "override"}
 
 # Where roof_color came from. "ortho" is the NAIP classification in ortho.py; "heuristic" is the
 # seeded guess in heights.resolve_colors that it replaces when the imagery is readable.
