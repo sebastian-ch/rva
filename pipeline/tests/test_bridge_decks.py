@@ -3,10 +3,11 @@ from __future__ import annotations
 
 import geopandas as gpd
 import numpy as np
+import pandas as pd
 from shapely.geometry import LineString
 
 from config import CRS_PROJ
-from process import _deck_endpoints
+from process import _deck_endpoints, _ramp_decks
 
 
 class FlatWithTrench:
@@ -69,6 +70,32 @@ def test_connector_requires_same_highway_class():
     ]
     _deck, connectors = _deck_endpoints(_gdf(rows), FlatWithTrench())
     assert connectors == []
+
+
+def test_ground_trail_between_short_footbridges_is_not_a_connector():
+    rows = [
+        {"highway": "path", "bridge": "yes", "geometry": LineString([(0, 0), (0, 5)])},
+        {"highway": "path", "bridge": None, "geometry": LineString([(0, 5), (0, 95)])},
+        {"highway": "path", "bridge": "yes", "geometry": LineString([(0, 95), (0, 100)])},
+    ]
+    deck, connectors = _deck_endpoints(_gdf(rows), FlatWithTrench())
+    assert connectors == []
+    assert deck.iloc[1] is None
+
+
+def test_ground_trail_touching_footbridge_is_not_a_ramp():
+    rows = [
+        {"highway": "path", "bridge": "yes", "geometry": LineString([(0, 0), (0, 5)])},
+        {"highway": "path", "bridge": None, "geometry": LineString([(0, 5), (0, 95)])},
+    ]
+    lines = _gdf(rows)
+    deck = pd.Series([[0, 0, 40, 0, 5, 40], None], index=lines.index, dtype=object)
+    bridge_flag = pd.Series([True, False], index=lines.index)
+
+    deck, ramp = _ramp_decks(lines, deck, bridge_flag, FlatWithTrench())
+
+    assert deck.iloc[1] is None
+    assert not ramp.iloc[1]
 
 
 def test_bridge_end_over_underpass_uses_connected_approach_grade():

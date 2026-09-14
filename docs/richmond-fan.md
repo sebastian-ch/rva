@@ -92,10 +92,13 @@ Chamberlayne Avenue assigned the stadium slug to Richmond Police Department's 4t
 [Wikidata Q7730070](https://www.wikidata.org/wiki/Q7730070), 37.571806, −77.463733, north of this map.
 
 Richmond City Hall uses the only BIM-flagged feature in the city's public 2022 building SceneServer:
-`OBJECTID 68275`, `Building_71606`. `pipeline/import_richmond_city_hall.py` converts its exact I3S mesh to a
-152-triangle landmark GLB, normalized to the mapped City Hall ground and centered on the OSM parent outline.
-Both the base outline and inherited tower part receive the landmark slug, so the asynchronous model swap
-removes both procedural masses rather than leaving an overlapping tower.
+`OBJECTID 68275`, `Building_71606`. Its leaf mesh has only 152 triangles and the downloadable source multipatch
+has 24, so the direct conversion looked like the old extrusion even with its texture. The visible landmark is
+now authored in `blender/build_landmark.py`: a 71 x 58 m city-source base and 53 x 33 m OSM tower part with a
+four-story plinth, nineteen floor bands, detached perimeter columns, roof overhang, service box and antenna.
+Both the base outline and inherited tower part receive the landmark slug, so the asynchronous model swap removes
+both procedural masses rather than leaving an overlapping tower. The original shared view placed another large
+building between the camera and City Hall; use a City Hall-centered or opposite-azimuth view when reviewing it.
 Its absence from the built extent is intentional; nearby buildings must not stand in for it.
 
 ```sh

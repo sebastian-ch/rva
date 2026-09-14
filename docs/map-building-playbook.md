@@ -48,6 +48,16 @@ This is the reusable record of fixes learned while building Richmond and extendi
 viewer. Read it before adding a region, replacing elevation sources, or changing geometry/rendering.
 Keep the general rules; recheck source-specific thresholds and assumptions for each place.
 
+Planning controls and observed buildings need separate contracts. Height limits, floor caps, coverage, FAR,
+setback tiers and skyplanes describe what a plan permits or proposes; they do not measure the structure currently
+on the parcel. Normalize source-specific fields into a parcel constraints companion, retain the scenario/branch,
+planning horizon and proposal status, and record provenance per populated field. When a system such as ArcGIS
+Urban stores parcel overrides separately from zone-type defaults, resolve each field independently with the parcel
+value first. Select one scenario branch before spatial joins: overlapping copies from multiple branches otherwise
+look like conflicting rules. Missing FAR or skyplane values stay missing. Implementation and regressions:
+`pipeline/planning.py` and `pipeline/tests/test_planning.py`. These constraints can drive QA or an explicit
+buildout view, but must never silently replace observed footprint, LiDAR height or roof attributes.
+
 For Richmond's source URLs and rebuild commands, see [the Richmond implementation notes](richmond-trees-riverfront.md).
 For rendering variants, see [the style template](map-styles.md). This document records **why** the fixes
 exist and how to recognize the same failure elsewhere. It does not claim that every bridge, roof, or
@@ -126,6 +136,13 @@ profiles are added later.
 Do not merge bridge chains through a perpendicular cross street just because it joins their ends.
 Connectors must continue the same road class and direction. Keep deck thickness separate from deck
 height; the existing 0.6 m lift is a rendering thickness, not a generic clearance above terrain.
+
+Do not apply island-connector or approach-ramp inference to pedestrian classes. A running trail can contain
+several short, explicitly tagged wooden footbridges with ordinary ground path between them. Treating the full same-class path
+as a connector lifts hundreds of metres of trail onto one artificial deck. Keep `path`, `footway`, `steps`,
+`cycleway`, `pedestrian`, `track` and `bridleway` segments grounded unless the segment itself is tagged as a
+bridge or boardwalk. Richmond's North Bank Trail exposed this; `test_bridge_decks.py` covers both the sequence
+bridge → ground path → bridge and a ground trail touching a footbridge.
 
 **Implementation:** [process.py](../pipeline/process.py), `_deck_endpoints` / `_ramp_decks`;
 [roads.ts](../web/src/roads.ts), `toPath` / `bridgeLift`.
@@ -622,9 +639,16 @@ Count and locate `BIM` and `CustomMultipatch` values before crawling meshes. Tre
 candidate; group custom records by their source building because one site may be split into several masses.
 When the current map has an outline plus inherited building parts, assign the landmark identity to the parent
 before processing so the model swap removes every overlapping procedural mass. Normalize the imported mesh
-to the current ground datum and center it on the matched parent footprint. Richmond City Hall is the reference
-case in `pipeline/import_richmond_city_hall.py`; a source flag alone is not proof that other custom objects are
-newer or more accurate than current LiDAR.
+to the current ground datum and center it on the matched parent footprint. Richmond City Hall also shows why a
+source flag is insufficient: its BIM-flagged leaf is only 152 triangles and needed authored architectural detail
+to read correctly. Other custom objects are not automatically newer or more accurate than current LiDAR.
+
+Use the selective I3S importer for exact public SceneServer nodes. It delegates schema, vertex-layout and geometry
+decoding to loaders.gl for directly addressable resources, then applies the layer's declared source CRS explicitly before anchoring the GLB to the
+current footprint. Do not use loaders.gl's default lon/lat transform blindly: Richmond's building service stores
+node centers in EPSG:3857, which makes that default transform invalid. Preserve an imported material only when
+the texture contains useful architectural information and has been reviewed in the app; the normal landmark
+path deliberately replaces materials so models participate in the shared map styles.
 
 Treat publisher-labeled rendering examples as demonstrations until their component layers are measured.
 Inspect scene visibility, source-layer extents, feature counts, vertex counts, textures and any accuracy note

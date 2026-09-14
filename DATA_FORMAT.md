@@ -99,6 +99,20 @@ objects. Existing mapped landuse, buildings, roads and water take priority over 
 
 Elevations in every layer are real metres above `base_elevation`; the viewer multiplies them by `Z_SCALE` (1.6, `web/src/elevation.ts`) when a tile is loaded and divides back for anything shown to the user.
 
+## Canonical planning companion
+
+`pipeline/build_planning.py` writes `data/raw/canonical_planning_constraints.parquet`. This is deliberately
+separate from rendered buildings: its values are planning limits or scenario inputs, not observations of what
+exists. Each row is a parcel polygon with the common fields `max_height_m`, `max_floors`,
+`max_coverage_ratio`, `max_far`, `tiers_json`, and `skyplanes_json`, plus `zone_code`, `zone_name`,
+`scenario`, `planning_method`, `planning_horizon`, and `is_proposal`. `provenance` is compact JSON recording
+whether each populated rule came directly from the parcel or was inherited from its zone type. Direct parcel
+rules win. Source IDs and URLs remain on every row.
+
+The current Manchester adapter selects one named ArcGIS Urban branch before joining zones to parcels. Its
+default `Scenario 1` is future proposal data. The output is suitable for QA and a future buildout/setback mode;
+it must not overwrite the observed `buildings.height`, footprint, or roof fields.
+
 ### water (Polygon)
 `id`, `name`, `kind`: `"river"|"canal"|"pond"|"ocean"`, `water_z` (m above `base_elevation`; flat surface for canals and ponds,
 40th percentile of the DEM inside the polygon + 0.3 m; `null` for rivers, which follow the terrain). The terrain grid is

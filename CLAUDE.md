@@ -48,6 +48,7 @@ python3 -m venv .venv && .venv/bin/pip install -r pipeline/requirements.txt
 .venv/bin/python pipeline/fetch.py [--bbox W S E N] [--force] [--skip-dem]   # OSM via Overpass + USGS 3DEP DEM -> data/raw/
 .venv/bin/python pipeline/fetch_overture.py                                 # Overture buildings (2nd height source) -> data/raw/
 .venv/bin/python pipeline/fetch_richmond.py                                 # City of Richmond addresses + zoning -> data/raw/
+.venv/bin/python pipeline/build_planning.py                                 # ArcGIS Urban -> canonical parcel constraints companion
 .venv/bin/python pipeline/fetch_vgin_footprints.py --shp <path.shp>         # VGIN building footprints (gap-fill) -> data/raw/
 .venv/bin/python pipeline/fetch_naip.py [--resolution 0.6] [--dry-run]      # NAIP orthoimagery (roof colour) -> ortho_<slug>.tif
 .venv/bin/python pipeline/dem_noaa.py [--zip data/raw/J1448888.zip]              # NOAA 2025 1 ft DEM tiles -> dem_<slug>.tif (1 m); run before fetch_lidar/build_tiles

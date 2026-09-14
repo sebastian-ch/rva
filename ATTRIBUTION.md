@@ -84,10 +84,17 @@ the current OSM building parts and the 2025 survey.
 
 Richmond City Hall uses the city's sole BIM-flagged object (`OBJECTID 68275`, `Building_71606`) from the
 public [`urban_BuildingMultipatch` SceneServer](https://www.arcgis.com/home/item.html?id=ad66d2b8f88f46e4a0803205dc37e5f1),
-accessed 2026-09-14. `pipeline/import_richmond_city_hall.py` converts that exact I3S leaf mesh to the local
-stylized landmark GLB; the renderer does not use the service's texture resources. Preserve City of Richmond
-credit. The same service's general LiDAR-derived building mesh remains a comparison source rather than a
-citywide production input.
+accessed 2026-09-14. Its 152-triangle I3S leaf and the original 24-triangle multipatch were too coarse to use
+as the visible landmark, but establish the reviewed 71 x 58 m base dimensions. The Blender-authored landmark
+combines that base with the separately mapped OSM tower part and documented architectural features. The raw
+I3S conversion is retained locally as source evidence. Preserve City of Richmond credit. The same service's
+general LiDAR-derived building mesh remains a comparison source rather than a citywide production input.
+
+The public [Manchester Urban Design Database](https://www.arcgis.com/home/item.html?id=494a43abc50d4e30a8426dbfb4fcfd2d),
+accessed 2026-09-14, supplies parcel, scenario-zone and zone-type inputs for the canonical planning-constraints
+companion. The current normalized output selects its explicitly named `Scenario 1` future proposal and retains
+that status on every row. It is used for buildout/setback analysis, not as authoritative current zoning or as an
+observed building source. Preserve City of Richmond credit.
 
 **Road geometry evaluated 2026-09-10:** `Roads/FeatureServer/0` supplies paved-surface polygons maintained
 by the city from orthophotography, site plans and development review sources; its reported data edit is

@@ -82,7 +82,7 @@
     "kind": "building",
     "wikidata": "Q137260560",
     "website": "https://www.rva.gov/",
-    "description": "Richmond's modern City Hall tower on East Broad Street, represented by the city's public BIM scene object.",
+    "description": "Richmond's modern City Hall tower on East Broad Street, modeled from the city's public scene dimensions and its mapped tower footprint.",
     "district": "Capitol Square",
     "in_first_slice": true,
     "model": "landmarks/richmond-city-hall.glb",

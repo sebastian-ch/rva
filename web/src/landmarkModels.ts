@@ -10,6 +10,14 @@ import { centroid, cleanRing, polygons } from './geomutil';
 import type { LoadedTile } from './tiles';
 import type { Landmark } from './types';
 
+export function prepareLandmarkObject(obj: THREE.Object3D, material: THREE.Material, preserveMaterial: boolean) {
+  obj.traverse((o) => {
+    if (!(o as THREE.Mesh).isMesh) return;
+    if (!preserveMaterial) (o as THREE.Mesh).material = material;
+    o.castShadow = true; o.receiveShadow = true;
+  });
+}
+
 /**
  * Hand-modeled landmarks: when landmarks.json has a `model`, load the glTF, drop it at the matched footprint's
  * centroid/ground elevation and rebuild that tile's procedural mesh without the placeholder extrusion.
@@ -64,7 +72,7 @@ export class LandmarkModels {
         if (this.detached.has(tile)) continue;
         const obj = gltf.scene;
         obj.position.set(lx, feat.properties.ground_z, lz);
-        obj.traverse((o) => { if ((o as THREE.Mesh).isMesh) { (o as THREE.Mesh).material = this.material; o.castShadow = true; o.receiveShadow = true; } });
+        prepareLandmarkObject(obj, this.material, Boolean(lm.preserve_material));
         obj.name = `landmark:${lm.slug}`;
         this.group.add(obj);
         const list = this.byTile.get(tile.meta.id) ?? [];

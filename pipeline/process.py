@@ -703,6 +703,7 @@ WATER_REL_Z = 2.0        # endpoints lower than this (m above base) are over the
 LIDAR_TRUST_SAMPLES = 10  # nDSM cells inside the footprint before LiDAR outranks Overture
 CONNECTOR_MAX_M = 450.0  # non-bridge stretch between two bridge chains (an island, a pier) treated as deck
 CONNECTOR_MAX_TURN_DEG = 35.0  # connector ways must continue the bridge's line (not a cross street between two overpasses)
+PEDESTRIAN_CONNECTOR_CLASSES = {"footway", "path", "steps", "cycleway", "pedestrian", "track", "bridleway"}
 ABUTMENT_REACH_M = (2.0, 4.0, 6.0, 8.0)  # look this far back up the approach for the abutment top
 ABUTMENT_MAX_RAISE_M = 3.0
 
@@ -763,6 +764,11 @@ def _deck_endpoints(lines: gpd.GeoDataFrame, terrain) -> tuple[pd.Series, list]:
     adj = {}
     for idx, (a, b) in ends.items():
         if is_bridge[idx]:
+            continue
+        # Several short footbridges along one trail do not turn the ground path
+        # between them into an island connector. Rail inputs have no highway
+        # column and retain connector inference for split viaducts.
+        if "highway" in lines and hw.get(idx) in PEDESTRIAN_CONNECTOR_CLASSES:
             continue
         adj.setdefault(a, []).append((b, idx)); adj.setdefault(b, []).append((a, idx))
     # A connector must continue the bridge's line with the same highway class at every joint, so a cross
@@ -909,6 +915,11 @@ def _ramp_decks(lines: gpd.GeoDataFrame, deck: pd.Series, bridge_flag: pd.Series
 
     deck = deck.copy()
     for idx in lines.index[~bridge_flag]:
+        # Footpaths normally meet their short bridge/boardwalk spans at grade.
+        # Promoting the adjacent path to an approach ramp can lift hundreds of
+        # metres of trail when a bridge endpoint samples above the DEM.
+        if "highway" in lines and str(lines.at[idx, "highway"]) in PEDESTRIAN_CONNECTOR_CLASSES:
+            continue
         g = lines.at[idx, "geometry"]
         ends = [g.coords[0], g.coords[-1]]
         zs = []

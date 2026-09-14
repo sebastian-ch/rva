@@ -92,4 +92,5 @@ export interface CrossingProps {
 export interface Landmark {
   slug: string; name: string; lat: number; lon: number; kind: string; wikidata: string | null;
   website: string | null; description: string; district: string; in_first_slice: boolean; model: string | null;
+  preserve_material?: boolean;
 }

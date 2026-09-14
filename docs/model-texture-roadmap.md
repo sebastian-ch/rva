@@ -131,8 +131,9 @@ geometry path.
 
 **Detailed-object follow-up, 2026-09-14:** the citywide SceneServer contains one `BIM=Yes` object and 20
 `CustomMultipatch=Yes` records. The BIM object is Richmond City Hall (`OBJECTID 68275`, `Building_71606`);
-its exact 152-triangle architectural mesh is now the `richmond-city-hall` landmark, replacing the overlapping
-OSM base and tower extrusions together. The 20 custom records form five sites rather than 20 independent
+its 152-triangle scene leaf and 24-triangle source multipatch proved too coarse for the visible landmark. The
+authored `richmond-city-hall` model instead uses the city object's reviewed base dimensions, the OSM tower part,
+and recognizable architectural framing, replacing the overlapping OSM masses together. The 20 custom records form five sites rather than 20 independent
 buildings: Children’s Hospital of Richmond at VCU, the VCU Health Outpatient Facility, the VCU College of
 Health Professions area, Gateway Plaza, and Dominion Energy HQ. Review those groups individually before
 import because several records are separate massing pieces and their `CustomMultipatch` flag does not by
@@ -154,6 +155,18 @@ Web Scene also contains a hidden group named
 `Random` is a material demonstration and `Spaces` is scenario massing; neither improves the current building
 geometry. Keep `Objects Paste` as a reference for selective streetscape assets, and do not substitute the
 three-layer rendering example for surveyed footprints or LiDAR roofs.
+
+The related [Manchester Urban Design Database](https://www.arcgis.com/home/item.html?id=494a43abc50d4e30a8426dbfb4fcfd2d)
+is planning data rather than another detailed building source. Its `Models` table (layer 19) contains only three
+nonspatial analysis configurations: shadow cast, elevation profile and viewshed. The useful geometry is 928
+parcels, 22 scenario zone polygons and 1,646 proposed floor/use `Spaces`; `LOD1Buildings` is empty. The parcel
+rule columns are mostly blank because ArcGIS Urban stores defaults on the related zone type. The canonical
+adapter in `pipeline/planning.py` selects one branch, inherits those zone-type rules, preserves parcel overrides,
+and records field-level provenance. For `Scenario 1` this produces 845 parcel height/floor caps and 922 coverage
+and tiered-setback definitions; this scenario supplies no FAR or skyplane values. Use these layers for a future
+proposed-buildout or setback mode, not to replace present-day footprints or LiDAR roofs. Cached source files live
+under `data/raw/manchester_test_2/urban_design_database/`; the normalized output is
+`data/raw/canonical_planning_constraints.parquet`.
 
 ## 2. LoD2 roofs from the 2025 LiDAR
 

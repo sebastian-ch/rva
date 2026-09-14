@@ -29,7 +29,27 @@ checking that the footprint centroid falls near `lat`/`lon`. A match sets
 `slug`, which the web app uses to swap in the hand-modeled glTF from `model`
 in place of the procedural extrusion.
 
-Richmond City Hall is the exception to the Blender-authored workflow. Its GLB is converted from the city's
-public BIM-flagged I3S object by `pipeline/import_richmond_city_hall.py`. The converter fixes the exact source
-node and centers the output on the matched OSM parent footprint; update both together if the source object or
-footprint changes.
+Richmond City Hall is Blender-authored because the city's BIM-flagged I3S leaf is only 152 triangles and reads
+as a plain block at map scale. Its reviewed 71 x 58 m base comes from that city object; the 53 x 33 m tower
+comes from the separately mapped OSM building part. `blender/build_landmark.py` adds the documented four-story
+plinth, expressed frame, roof overhang, service box and antenna. Rebuild the visible model with:
+
+```sh
+/Applications/Blender.app/Contents/MacOS/Blender --background \
+  --python blender/build_landmark.py -- --slug richmond-city-hall
+```
+
+`web/tools/import-i3s-object.mjs` remains the generic selective I3S converter. The reviewed raw City Hall
+conversion is retained under `data/raw/`; do not overwrite the authored landmark with that coarse leaf.
+Run the converter from `web/` with the exact SceneServer layer, leaf node, map CRS and target-footprint anchor:
+
+```sh
+node tools/import-i3s-object.mjs \
+  --layer https://example.test/SceneServer/layers/0 \
+  --node 123 --target-crs EPSG:32618 --anchor 285000,4157000 \
+  --output ../data/raw/reviewed-source.glb --name "Reviewed source"
+```
+
+The output is a review artifact until its alignment, geometry and texture have been checked in the app. Copy a
+validated model into this directory and add it to `landmarks.json`; set `preserve_material` only when the source
+texture is useful and should remain visible across map styles.

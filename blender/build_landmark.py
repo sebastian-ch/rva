@@ -153,6 +153,55 @@ def old_city_hall(b, fp):
     b.pyramid(*f.P(tu, tv), 44, 13.2, 13.2, 16, "roof_dark", rot=f.rot_u)
 
 
+def richmond_city_hall(b, fp):
+    """1971 tower: dark four-storey plinth, expressed frame and overhanging roof."""
+    f = Frame(fp)
+    # The broad street-level base is visually distinct from the narrower office tower.
+    # The matched OSM parent is the full raised site (roughly 97 x 99 m), not
+    # the building envelope. The source multipatch resolves a 71 x 58 m base,
+    # while its separately mapped tower part is about 53 x 33 m.
+    base_su, base_sv = min(71.0, 2 * f.hl), min(58.0, 2 * f.hs)
+    base = f.rect(0, 0, base_su, base_sv)
+    b.extrude(base, -0.5, 14.5, "slate", 0.88, name="four-storey-plinth")
+    for z in (2.2, 5.7, 9.2, 12.7):
+        b.band(base, z, 0.16, 1.7, "glass", 0.55)
+    su, sv = min(53.0, base_su - 8.0), min(33.0, base_sv - 8.0)
+    tower = f.rect(0, 0, su, sv)
+    b.extrude(tower, 14.5, 94.5, "concrete", 0.82, name="office-tower")
+
+    # Deep window ribbons and the projecting horizontal spandrels make the real
+    # tower read as nineteen storeys instead of one monolithic slab.
+    floor = (94.5 - 14.5) / 19
+    for i in range(19):
+        z = 14.5 + i * floor + 0.65
+        b.band(tower, z, 0.22, floor * 0.58, "glass", 0.62)
+
+    # Detached perimeter columns survive at map scale as a shallow frame in
+    # front of the curtain wall. Avoid corners duplicated by the two loops.
+    for i in range(7):
+        u = -su / 2 + (i + 0.5) * su / 7
+        for side in (-1, 1):
+            b.box(*f.P(u, side * (sv / 2 + 0.48)), 14.5, 0.65, 0.95, 80,
+                  "concrete", rot=f.rot_u, shade=0.96, name="perimeter-column")
+    for i in range(5):
+        v = -sv / 2 + (i + 0.5) * sv / 5
+        for end in (-1, 1):
+            b.box(*f.P(end * (su / 2 + 0.48), v), 14.5, 0.95, 0.65, 80,
+                  "concrete", rot=f.rot_u, shade=0.96, name="perimeter-column")
+
+    # The roof canopy, service box and antenna form the recognizable top profile.
+    b.box(*f.P(0, 0), 94.5, su + 3.2, sv + 3.2, 1.5, "concrete", rot=f.rot_u,
+          shade=0.92, name="overhanging-roof")
+    b.box(*f.P(0, 0), 96.0, 15, 10, 5.2, "steel", rot=f.rot_u,
+          shade=0.78, name="service-box")
+    b.cylinder(*f.P(0, 0), 101.2, 0.42, 8.0, "steel", n=10, shade=0.8, name="antenna")
+
+    # Raised entrance canopy on the east side. It remains intentionally chunky
+    # at this scale rather than pretending to be a survey of the lobby glazing.
+    b.box(*f.P(su / 2 + 3.4, 0), 3.8, 7.0, 18.0, 0.7, "glass", rot=f.rot_u,
+          shade=0.8, name="entrance-canopy")
+
+
 def jefferson_hotel(b, fp):
     f = Frame(fp)
     _body(b, fp, 21, "brick")
@@ -318,6 +367,7 @@ BUILDERS = {
     "virginia-state-capitol": capitol,
     "main-street-station": main_street_station,
     "old-city-hall": old_city_hall,
+    "richmond-city-hall": richmond_city_hall,
     "the-jefferson-hotel": jefferson_hotel,
     "federal-reserve-bank-of-richmond": federal_reserve,
     "james-monroe-building": james_monroe,
