@@ -10,6 +10,7 @@ import type { TileManager } from './tileManager';
  *   __iso.goto(x, z, zoom?)  -> move the camera (also accepts a building id or landmark slug)
  *   __iso.building(id)       -> properties of a loaded building
  *   __iso.counts()           -> resident tiles, triangles, props
+ *   __iso.refresh(id?)       -> re-fetch one tile (or every resident tile) after build_tiles.py rewrote it
  */
 export interface DebugDeps {
   iso: IsoCamera;
@@ -72,7 +73,15 @@ export function createDebug(d: DebugDeps) {
 
   const counts = () => ({ ...(d.manager()?.summary() ?? {}), props: d.propCounts(), traffic: d.traffic?.() ?? null });
 
-  return { where, find, goto, building, counts };
+  const refresh = async (id?: string) => {
+    const m = d.manager();
+    if (!m) { console.warn('tiles not loaded yet'); return []; }
+    const ids = await m.refresh(id);
+    console.log(`refreshing ${ids.length} tile(s)`, ids.join(' '));
+    return ids;
+  };
+
+  return { where, find, goto, building, counts, refresh };
 }
 
 function centerOf(t: LoadedTile, start: number, count: number): THREE.Vector3 {

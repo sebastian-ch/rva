@@ -25,6 +25,26 @@ export function decodeView(hash: string, region: string): ViewState | null {
     style: parseStyle(p.get('style')), building: p.get('building') || undefined };
 }
 
+/**
+ * Keep the URL hash equal to the current view so a reload (Vite has no HMR for the tile workers, so every
+ * source edit is one) lands where you were looking. `replaceState` adds no history entries and does not fire
+ * `hashchange`, so the restore path stays untouched. Returns a stop function.
+ */
+export function persistView(getView: () => ViewState | null, intervalMs = 500,
+  write: (hash: string) => void = (hash) => history.replaceState(null, '', `${location.pathname}${location.search}${hash}`)): () => void {
+  let last = '';
+  const tick = () => {
+    const view = getView();
+    if (!view) return;
+    const hash = encodeView(view);
+    if (hash === last) return;
+    last = hash;
+    write(hash);
+  };
+  const timer = setInterval(tick, intervalMs);
+  return () => clearInterval(timer);
+}
+
 export function searchPlaces(places: SearchPlace[], query: string): SearchPlace[] {
   const q = query.trim().toLocaleLowerCase();
   if (!q) return [];
