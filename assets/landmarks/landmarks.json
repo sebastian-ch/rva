@@ -322,7 +322,7 @@
     "description": "State art museum campus on Arthur Ashe Boulevard, represented with measured multi-height wings and roof setbacks from the 2025 Richmond LiDAR.",
     "district": "Museum District",
     "in_first_slice": false,
-    "model": "landmarks/virginia-museum-of-fine-arts.glb",
+    "model": null,
     "height_hint_m": 21.5
   },
   {

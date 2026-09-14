@@ -34,7 +34,7 @@ See [the expansion notes](docs/richmond-fan.md) for extent, acquisition counts a
 - **What we use it for:** terrain (the 1 ft bare-earth DEM tiles, resampled to 1 m by `pipeline/dem_noaa.py`), building heights (normalized DSM), roof-shape classification, and Roofer LoD2 roof reconstruction; flown 2025-02-14..03-01 by Sanborn for the City of Richmond, 0.35 m pulse spacing, classified LAS 1.4. Accessed as Entwine Point Tiles (`noaa-nos-coastal-lidar-pds`, dataset 14835, EPSG:3748 + NAVD88). The 1 ft DEM and 0.3 m DSM tiles ordered from the Data Access Viewer are kept in `data/raw/` for reference.
 - **License:** CC0 1.0 Public Domain Dedication (U.S. Government work)
 - **Required attribution:** none required; cite as "Office for Coastal Management, [date of access]: 2025 City of Richmond Lidar: Richmond, VA, https://www.fisheries.noaa.gov/inport/item/80312". Credit: City of Richmond, VA; Sanborn Map Company, Inc.
-- **Derived massing:** reviewed broad height tiers for six large buildings are stored in
+- **Derived massing:** reviewed broad height tiers for seven large buildings are stored in
   `assets/supplements/richmond-massing.geojson`; tier polygons and heights come from the 1 m normalized
   surface built from this survey.
 - **URL:** https://www.fisheries.noaa.gov/inport/item/80312

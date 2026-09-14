@@ -90,9 +90,11 @@ place. VMFA's city and OSM outlines were effectively tied (0.972 versus 0.971), 
 was height massing rather than its perimeter.
 
 A citywide audit of 1,175 large, tall or named buildings then reviewed broad nDSM height clusters against
-the current footprint overlaps and OSM parts. Six missing, stable massing cases are now explicit base and
-upper parts in `assets/supplements/richmond-massing.geojson`: Delta Hotels, the Greater Richmond Convention
+the current footprint overlaps and OSM parts. Seven stable massing cases are now explicit base and upper
+parts in `assets/supplements/richmond-massing.geojson`: VMFA, Delta Hotels, the Greater Richmond Convention
 Center Annex, The Virginia Home, the Trani Center for Life Sciences, BioTech 6 and the Pocahontas Building.
+VMFA uses ordinary procedural parts rather than a landmark glTF so its façade treatment stays consistent
+and its silhouette does not change after an asynchronous model load.
 The Marriott and RMA garage/tower blocks already contain separate overlapping tower footprints; CoStar's
 second band is rooftop equipment, and the Coliseum's band is a curved roof rather than a setback.
 

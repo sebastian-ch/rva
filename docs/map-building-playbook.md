@@ -417,16 +417,18 @@ preserves current metadata and heights. Regression: `test_verified_footprint_rep
 
 Model setbacks only when the height evidence contains broad, stable tiers. VMFA's perimeter was already
 as accurate as the city outline, while its single 9.6 m extrusion hid measured 6, 15.8, 19.5 and 21.5 m masses.
-Nested polygons derived from classified 2025 LiDAR now drive its landmark model. Keep this treatment to
+Nested polygons derived from classified 2025 LiDAR now drive normal building parts. Keep this treatment to
 large campuses, podium towers and recognizable civic buildings; a citywide threshold pass would turn
 roof equipment, trees and reconstruction noise into invented architecture. Implementation:
-`assets/landmarks/virginia-museum-of-fine-arts-massing.json` and `blender/build_landmark.py`.
+`assets/supplements/richmond-massing.geojson` and `apply_massing_parts` in `pipeline/process.py`. Prefer
+these procedural parts when the correction is massing alone: an asynchronous landmark glTF swap made the
+highly concave VMFA outline look like a dark blank slab and temporarily displayed the wrong silhouette.
 
 A Richmond-wide follow-up demonstrates the required review step. A two-band scan flagged 158 of 1,175
 large, tall or named footprints, but many signals were courtyards, a separate overlapping tower, sloped
 roofs, garage ramps or mechanical penthouses. Add general-purpose parts only after checking the spatial
-height mask, current overlaps and existing OSM parts. Six verified cases now use exact-ID base and upper
-parts in `assets/supplements/richmond-massing.geojson`: Delta Hotels, the Greater Richmond Convention
+height mask, current overlaps and existing OSM parts. Seven verified cases now use exact-ID base and upper
+parts in `assets/supplements/richmond-massing.geojson`: VMFA, Delta Hotels, the Greater Richmond Convention
 Center Annex, The Virginia Home, the Trani Center for Life Sciences, BioTech 6 and the Pocahontas Building.
 `apply_massing_parts` keeps the parent as a selectable plinth and renders each tier over its recorded
 height interval. Regression: `test_verified_massing_hides_outline_and_adds_tiers`.
