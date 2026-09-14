@@ -1,11 +1,17 @@
 """Process raw data into per-tile GeoJSON + terrain grids (see DATA_FORMAT.md).
 
 Usage:
-    python pipeline/build_tiles.py [--bbox W S E N] [--no-merge] [--clean]
+    python pipeline/build_tiles.py [--bbox W S E N] [--no-merge] [--clean] [--no-cache] [--clear-cache]
+
+Every build is incremental. The layer stage runs as cached steps (`layer_steps.py`): only the steps whose
+code, sources or upstream layers changed are recomputed. The tiling loop then rewrites only the tile files
+whose features changed since the last build (`layer_cache.row_digests`), so fixing one building rewrites
+one tile. `--clean` forgets both and writes everything; `--no-cache` recomputes every step.
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shutil
 import sys
@@ -14,16 +20,14 @@ from pathlib import Path
 
 import geopandas as gpd
 import numpy as np
-import pandas as pd
 from pyproj import Transformer
 from shapely.geometry import box
 
 from config import CRS_PROJ, DATA_RAW, DATA_TILES, DEFAULT_BBOX, TILE_SIZE, REGION, PROFILE, bbox_slug, snap_down
-from process import (process_buildings, process_landuse, process_pois, process_rail, process_richmond_decks,
-                     process_roads, process_water)
 from terrain import Terrain
 from landmarks import resolve_landmarks
 import layer_cache
+from layer_steps import StepContext, run_steps
 
 POINT_LAYERS = {"pois", "crossings"}
 
@@ -31,6 +35,10 @@ POINT_LAYERS = {"pois", "crossings"}
 def _tile_layer(gdf: gpd.GeoDataFrame, spatial_index, name: str, tile_box):
     """Apply the standard per-layer ownership and clipping rules for one tile."""
     cand = gdf.iloc[list(spatial_index.query(tile_box, predicate="intersects"))]
+    return _clip_candidates(cand, name, tile_box)
+
+
+def _clip_candidates(cand: gpd.GeoDataFrame, name: str, tile_box):
     if len(cand) == 0:
         return cand
     if name in POINT_LAYERS:
@@ -86,85 +94,126 @@ def _search_index(buildings, lms) -> list[dict]:
     return search
 
 
-def _process_layers(bbox, raw_dir, slug, dem_path, terrain, merge_rowhouses, hydro):
-    """Run every layer processor for the region. Returns (layers, extras, beach_profile)."""
-    buildings_path = raw_dir / "buildings.parquet"
-    if REGION == "honolulu":
-        from honolulu import enrich_buildings
-        city_path = DATA_RAW / f"cch_{slug}.parquet"
-        if not city_path.exists():
-            sys.exit("CCH data missing: run pipeline/fetch_honolulu.py with ISO_REGION=honolulu first")
-        enriched = enrich_buildings(gpd.read_parquet(city_path), gpd.read_parquet(buildings_path))
-        buildings_path = DATA_RAW / f"enriched_buildings_{slug}.parquet"
-        enriched.to_parquet(buildings_path)
-    roads, crossings = process_roads(raw_dir / "roads.parquet", terrain)
-    beach_profile = None
-    layers = {
-        "buildings": process_buildings(buildings_path, terrain, merge_rowhouses,
-                                       overture_path=DATA_RAW / f"overture_{slug}.parquet",
-                                       lidar_npz=DATA_RAW / f"lidar_{slug}.npz",
-                                       richmond_dir=DATA_RAW / f"richmond_{slug}",
-                                       richmond_structures_path=DATA_RAW / f"richmond_{slug}" / "structures.parquet",
-                                       vgin_path=DATA_RAW / f"vgin_{slug}.parquet"),
-        "roads": roads,
-        "crossings": crossings,
-        "rail": process_rail(raw_dir / "rail.parquet", terrain),
-        "landuse": process_landuse(raw_dir / "landuse.parquet"),
-        "water": process_water(raw_dir / "water.parquet", terrain),
-        "pois": process_pois(raw_dir / "pois.parquet"),
+def _terrain_fingerprint(dem_path: Path, hydro_path: Path | None, beach_profile) -> str:
+    """Everything a tile's terrain grid depends on besides the still water and hydro mask inside the tile."""
+    parts = {
+        "dem": layer_cache.stat_entry(dem_path) if dem_path.exists() else None,
+        "hydro": layer_cache.stat_entry(hydro_path) if hydro_path and hydro_path.exists() else None,
+        "code": [hashlib.sha1((Path(__file__).with_name(m)).read_bytes()).hexdigest()[:16]
+                 for m in ("terrain.py", "hydro.py")],
+        "beach": [g.wkb_hex for g in beach_profile[:2]] + [beach_profile[2]] if beach_profile else None,
     }
-    surveyed_trees = False
-    beach_profile = None
-    if REGION == "richmond":
-        city_decks = process_richmond_decks(DATA_RAW / f"richmond_{slug}" / "structures.parquet")
-        if len(city_decks):
-            layers["landuse"] = gpd.GeoDataFrame(pd.concat([layers["landuse"], city_decks], ignore_index=True), crs=CRS_PROJ)
-        if hydro is not None:
-            from hydro import merge_water
-            layers["water"] = merge_water(layers["water"], hydro)
-            # Land polygons must stop at the surveyed shoreline, including island holes.
-            layers["landuse"].geometry = layers["landuse"].geometry.difference(hydro.mask)
-        from riverfront import canal_banks
-        banks = canal_banks(layers["water"])
-        if len(banks):
-            layers["landuse"] = gpd.GeoDataFrame(pd.concat([layers["landuse"], banks], ignore_index=True), crs=CRS_PROJ)
-        inventory_path = DATA_RAW / f"richmond_{slug}" / "trees.parquet"
-        lidar_path = DATA_RAW / f"lidar_{slug}.npz"
-        if inventory_path.exists():
-            from vegetation import inventory_trees, lidar_canopies, merge_trees
-            inventory = inventory_trees(gpd.read_parquet(inventory_path))
-            crowns = gpd.GeoDataFrame(geometry=[], crs=CRS_PROJ)
-            if lidar_path.exists() and terrain:
-                crown_path = DATA_RAW / f"canopies_{slug}.parquet"
-                inputs = [lidar_path, dem_path, Path(__file__).with_name("vegetation.py")]
-                if crown_path.exists() and crown_path.stat().st_mtime > max(p.stat().st_mtime for p in inputs):
-                    crowns = gpd.read_parquet(crown_path)
+    return layer_cache.make_key(parts)
+
+
+def write_tiles(layers, terrain, hydro, beach_profile, bbox, surveyed_trees, prev_state: dict,
+                terrain_fp: str, tiles_dir: Path = DATA_TILES) -> tuple[list[dict], dict, dict, dict]:
+    """Tile every layer into `tiles_dir`, rewriting only what changed since `prev_state`.
+
+    Returns (tiles_meta, new_state, grid, counters). A tile's layer file is left alone when the same set of
+    features (by content digest) fed the previous write and the file still exists; its terrain grid is left
+    alone when the DEM, hydro, still-water and code inputs are unchanged.
+    """
+    tr = Transformer.from_crs("EPSG:4326", CRS_PROJ, always_xy=True)
+    west, south, east, north = bbox
+    xs, ys = zip(*[tr.transform(x, y) for x, y in ((west, south), (east, south), (east, north), (west, north))])
+    minx, miny, maxx, maxy = min(xs), min(ys), max(xs), max(ys)
+    ox, oy = snap_down(minx, TILE_SIZE), snap_down(miny, TILE_SIZE)
+    nx = int(np.ceil((maxx - ox) / TILE_SIZE))
+    ny = int(np.ceil((maxy - oy) / TILE_SIZE))
+    grid = {"origin": [ox, oy], "grid": [nx, ny], "bbox_proj": [minx, miny, maxx, maxy]}
+    print(f"grid origin ({ox:.0f}, {oy:.0f}) tiles {nx} x {ny}")
+
+    t0 = time.time()
+    sidx = {k: v.sindex for k, v in layers.items() if len(v)}
+    digests = {k: layer_cache.row_digests(v) for k, v in layers.items() if len(v)}
+    # buildings are owned by centroid, so a footprint straddling a tile edge must only dirty its owner tile
+    bc = layers["buildings"].geometry.centroid if len(layers.get("buildings", [])) else None
+    bcx, bcy = (bc.x.to_numpy(), bc.y.to_numpy()) if bc is not None else (None, None)
+    water = layers.get("water")
+    still = water[water["water_z"].notna()] if water is not None and "water_z" in water else None
+    if still is not None and len(still) == 0:
+        still = None
+    still_sidx = still.sindex if still is not None else None
+    still_digests = layer_cache.row_digests(still) if still is not None else None
+    print(f"  digests {time.time() - t0:.1f}s")
+
+    n = {"written": 0, "unchanged": 0, "removed": 0, "terrain_written": 0, "terrain_unchanged": 0}
+    tiles_meta = []
+    new_state = {}
+    for tx in range(nx):
+        for ty in range(ny):
+            tminx, tminy = ox + tx * TILE_SIZE, oy + ty * TILE_SIZE
+            tile_box = box(tminx, tminy, tminx + TILE_SIZE, tminy + TILE_SIZE)
+            tid = f"{tx}_{ty}"
+            tdir = tiles_dir / tid
+            prev = prev_state.get(tid, {})
+            prev_layers = prev.get("layers", {})
+            tstate = {"layers": {}, "terrain": None}
+            written = []
+            counts = {}
+            for name, gdf in layers.items():
+                dst = tdir / f"{name}.geojson"
+                idx = sidx[name].query(tile_box, predicate="intersects") if name in sidx else []
+                if name == "buildings" and len(idx):
+                    idx = idx[(bcx[idx] >= tminx) & (bcx[idx] < tminx + TILE_SIZE) & (bcy[idx] >= tminy) & (bcy[idx] < tminy + TILE_SIZE)]
+                if len(idx) == 0:
+                    if dst.exists():
+                        dst.unlink()
+                        n["removed"] += 1
+                    continue
+                digest = layer_cache.digest_rows(digests[name], idx)
+                old = prev_layers.get(name)
+                if old and old["digest"] == digest and (dst.exists() == (old["count"] > 0)):
+                    count = old["count"]
+                    n["unchanged"] += 1
                 else:
-                    crowns = lidar_canopies(lidar_path, terrain)
-                    crowns.to_parquet(crown_path)
-                surveyed_trees = len(crowns) > 0
-            layers["pois"] = merge_trees(layers["pois"], inventory, crowns, layers["buildings"], layers["water"])
-            print(f"  vegetation: {len(inventory)} active inventory trees, {len(crowns)} LiDAR crowns")
-    if REGION == "honolulu":
-        from honolulu import ocean_layer, coastal_green_spaces, coastal_structures
-        coast = gpd.read_parquet(DATA_RAW / f"coast_{slug}.parquet")
-        ocean = ocean_layer(coast, bbox, terrain.base if terrain else 0.0, coast_is_water=True)
-        beaches = layers["landuse"][layers["landuse"].kind == "beach"]
-        if len(beaches) and len(ocean):
-            beach_profile = (beaches.geometry.union_all(), ocean.geometry.union_all(), float(ocean.iloc[0].water_z))
-        layers["landuse"] = coastal_green_spaces(layers["landuse"], ocean)
-        structures_path = raw_dir / "coastal_structures.parquet"
-        structure_sources = []
-        if structures_path.exists():
-            structure_sources.append(gpd.read_parquet(structures_path).to_crs(CRS_PROJ))
-        supplement = Path(__file__).resolve().parents[1] / "assets/supplements/honolulu-coastal.geojson"
-        if supplement.exists():
-            structure_sources.append(gpd.read_file(supplement).to_crs(CRS_PROJ))
-        if structure_sources:
-            structures = coastal_structures(gpd.GeoDataFrame(pd.concat(structure_sources, ignore_index=True), crs=CRS_PROJ), terrain.base if terrain else 0.0)
-            layers["landuse"] = gpd.GeoDataFrame(pd.concat([layers["landuse"], structures], ignore_index=True), crs=CRS_PROJ)
-        layers["water"] = gpd.GeoDataFrame(pd.concat([layers["water"], ocean], ignore_index=True), crs=CRS_PROJ)
-    return layers, {"surveyed_trees": surveyed_trees}, beach_profile
+                    part = _clip_candidates(gdf.iloc[idx], name, tile_box)
+                    tdir.mkdir(exist_ok=True)
+                    count = _write_layer(part, dst) if len(part) else 0
+                    if not count and dst.exists():
+                        dst.unlink()
+                    n["written"] += 1
+                tstate["layers"][name] = {"digest": digest, "count": count}
+                if count:
+                    written.append(name)
+                    counts[name] = count
+            if terrain is not None:
+                tdir.mkdir(exist_ok=True)
+                flat_idx = still_sidx.query(tile_box, predicate="intersects") if still_sidx is not None else []
+                flats = [(g, float(z)) for g, z in zip(still.geometry.iloc[flat_idx], still["water_z"].iloc[flat_idx])] if len(flat_idx) else None
+                # Resolve land/water edges at 2.5 m instead of the normal 10 m grid.
+                # Entirely underwater tiles keep the inexpensive normal grid.
+                shore = REGION == "honolulu" and flats and any(not g.covers(tile_box) for g, _ in flats)
+                hydro_here = hydro is not None and hydro.mask.intersects(tile_box)
+                beach_here = bool(beach_profile) and beach_profile[0].buffer(8).intersects(tile_box)
+                tdigest = layer_cache.make_key({
+                    "fp": terrain_fp, "shore": bool(shore), "hydro": bool(hydro_here), "beach": beach_here,
+                    "flats": layer_cache.digest_rows(still_digests, flat_idx) if len(flat_idx) else None})
+                tpath = tdir / "terrain.json"
+                if prev.get("terrain") == tdigest and tpath.exists():
+                    n["terrain_unchanged"] += 1
+                else:
+                    grid_json = terrain.tile_grid(tminx, tminy, TILE_SIZE, n=101 if shore else 26, flatten=flats,
+                                                  beach_profile=beach_profile if beach_here else None)
+                    if hydro_here:
+                        grid_json = hydro.apply_grid(grid_json)
+                    tpath.write_text(json.dumps(grid_json))
+                    n["terrain_written"] += 1
+                tstate["terrain"] = tdigest
+                written.append("terrain")
+            new_state[tid] = tstate
+            if written:
+                tiles_meta.append({"id": tid, "x": tx, "y": ty,
+                                   "bbox": [tminx, tminy, tminx + TILE_SIZE, tminy + TILE_SIZE],
+                                   "layers": written, "counts": counts, "surveyed_trees": surveyed_trees})
+    # tile dirs outside the grid or without any content are stale: drop them so index.json stays the only manifest
+    live = {m["id"] for m in tiles_meta}
+    for p in tiles_dir.iterdir() if tiles_dir.exists() else []:
+        if p.is_dir() and p.name not in live and "_" in p.name:
+            shutil.rmtree(p, ignore_errors=True)
+    n["seconds"] = round(time.time() - t0, 1)
+    return tiles_meta, new_state, grid, n
 
 
 def build(bbox, merge_rowhouses=True, clean=False, no_cache=False) -> Path:
@@ -185,6 +234,7 @@ def build(bbox, merge_rowhouses=True, clean=False, no_cache=False) -> Path:
 
     # The tiling loop needs the hydro grid whether or not the layers themselves were recomputed.
     hydro = None
+    hydro_path = None
     if REGION == "richmond" and terrain is not None:
         hydro_path = DATA_RAW / "richmond_hydro_2025.gpkg"
         if hydro_path.exists():
@@ -192,21 +242,12 @@ def build(bbox, merge_rowhouses=True, clean=False, no_cache=False) -> Path:
             hydro = load_hydro(hydro_path, bbox, terrain.base)
 
     t0 = time.time()
-    options = {"merge_rowhouses": merge_rowhouses, "bbox": [round(v, 6) for v in bbox]}
-    key = layer_cache.fingerprint(slug, raw_dir, options)
-    # Honolulu's beach profile is live geometry that the cache does not carry, so it always reprocesses.
-    cached = None if (no_cache or REGION == "honolulu") else layer_cache.load(slug, key)
-    beach_profile = None
-    if cached is not None:
-        layers, extras = cached
-        print(f"layers from cache {key} ({time.time() - t0:.1f}s; --no-cache to reprocess)")
-    else:
-        print("processing layers...")
-        layers, extras, beach_profile = _process_layers(bbox, raw_dir, slug, dem_path, terrain,
-                                                        merge_rowhouses, hydro)
-        if not no_cache and REGION != "honolulu":
-            layer_cache.store(slug, key, layers, extras)
+    ctx = StepContext(REGION, tuple(bbox), slug, raw_dir, dem_path, terrain, hydro,
+                      merge_rowhouses=merge_rowhouses, no_cache=no_cache)
+    print("layer steps..." + (" (--no-cache: every step recomputed)" if no_cache else ""))
+    layers, extras, report = run_steps(ctx)
     surveyed_trees = extras.get("surveyed_trees", False)
+    beach_profile = ctx.beach_profile
 
     for k, v in layers.items():
         print(f"  {k:10s} {len(v):6d}")
@@ -215,69 +256,26 @@ def build(bbox, merge_rowhouses=True, clean=False, no_cache=False) -> Path:
         print("  height sources:", b["height_source"].value_counts().to_dict())
         print("  roof sources:", b["roof_source"].value_counts().to_dict())
         print("  landmarks matched:", sorted(b["landmark"].dropna().tolist()))
-    print(f"  {time.time() - t0:.1f}s")
+    print(f"  layers {time.time() - t0:.1f}s")
 
-    # grid
-    tr = Transformer.from_crs("EPSG:4326", CRS_PROJ, always_xy=True)
-    west, south, east, north = bbox
-    xs, ys = zip(*[tr.transform(x, y) for x, y in ((west, south), (east, south), (east, north), (west, north))])
-    minx, miny, maxx, maxy = min(xs), min(ys), max(xs), max(ys)
-    ox, oy = snap_down(minx, TILE_SIZE), snap_down(miny, TILE_SIZE)
-    nx = int(np.ceil((maxx - ox) / TILE_SIZE))
-    ny = int(np.ceil((maxy - oy) / TILE_SIZE))
-    print(f"grid origin ({ox:.0f}, {oy:.0f}) tiles {nx} x {ny}")
+    prev_state = {} if clean else layer_cache.load_tile_state(slug)
+    terrain_fp = _terrain_fingerprint(dem_path, hydro_path, beach_profile)
+    tiles_meta, new_state, grid, n = write_tiles(layers, terrain, hydro, beach_profile, bbox, surveyed_trees,
+                                                 prev_state, terrain_fp)
+    layer_cache.save_tile_state(slug, new_state)
+    print(f"  tiles: {n['written']} layer files written, {n['unchanged']} unchanged, {n['removed']} removed; "
+          f"terrain {n['terrain_written']} written, {n['terrain_unchanged']} unchanged; {n['seconds']}s")
 
-    # spatial indexes once
-    sidx = {k: v.sindex for k, v in layers.items() if len(v)}
-    still = layers["water"][layers["water"]["water_z"].notna()] if "water_z" in layers["water"] else layers["water"].iloc[0:0]
-    tiles_meta = []
-    t0 = time.time()
-    for tx in range(nx):
-        for ty in range(ny):
-            tminx, tminy = ox + tx * TILE_SIZE, oy + ty * TILE_SIZE
-            tile_box = box(tminx, tminy, tminx + TILE_SIZE, tminy + TILE_SIZE)
-            tid = f"{tx}_{ty}"
-            tdir = DATA_TILES / tid
-            written = []
-            counts = {}
-            for name, gdf in layers.items():
-                if name not in sidx:
-                    continue
-                part = _tile_layer(gdf, sidx[name], name, tile_box)
-                if len(part) == 0:
-                    continue
-                tdir.mkdir(exist_ok=True)
-                n = _write_layer(part, tdir / f"{name}.geojson")
-                if n:
-                    written.append(name)
-                    counts[name] = n
-            if terrain is not None and (written or True):
-                tdir.mkdir(exist_ok=True)
-                flats = [(g, float(z)) for g, z in zip(still.geometry, still["water_z"]) if g.intersects(tile_box)] if len(still) else None
-                # Resolve land/water edges at 2.5 m instead of the normal 10 m grid.
-                # Entirely underwater tiles keep the inexpensive normal grid.
-                shore = REGION == "honolulu" and flats and any(not g.covers(tile_box) for g, _ in flats)
-                hydro_here = hydro is not None and hydro.mask.intersects(tile_box)
-                grid = terrain.tile_grid(tminx, tminy, TILE_SIZE,
-                                                                               n=101 if shore else 26, flatten=flats,
-                                                                               beach_profile=beach_profile if beach_profile and beach_profile[0].buffer(8).intersects(tile_box) else None)
-                if hydro_here:
-                    grid = hydro.apply_grid(grid)
-                (tdir / "terrain.json").write_text(json.dumps(grid))
-                written.append("terrain")
-            if written:
-                tiles_meta.append({"id": tid, "x": tx, "y": ty,
-                                   "bbox": [tminx, tminy, tminx + TILE_SIZE, tminy + TILE_SIZE],
-                                   "layers": written, "counts": counts, "surveyed_trees": surveyed_trees})
+    t1 = time.time()
     index = {
         "region": REGION,
         "title": PROFILE["title"],
         "crs": CRS_PROJ,
         "tile_size": TILE_SIZE,
-        "origin": [ox, oy],
-        "grid": [nx, ny],
+        "origin": grid["origin"],
+        "grid": grid["grid"],
         "bbox_wgs84": list(bbox),
-        "bbox_proj": [minx, miny, maxx, maxy],
+        "bbox_proj": grid["bbox_proj"],
         "base_elevation": terrain.base if terrain else 0.0,
         "tiles": tiles_meta,
     }
@@ -287,123 +285,37 @@ def build(bbox, merge_rowhouses=True, clean=False, no_cache=False) -> Path:
     (DATA_TILES / "search.json").write_text(json.dumps(_search_index(layers["buildings"], lms),
                                                        separators=(",", ":"), allow_nan=False))
     unmatched = [k for k, v in lms.items() if v["in_first_slice"] and v["how"] is None]
-    print(f"  landmarks resolved: {sum(v['how'] is not None for v in lms.values())}/{len(lms)}; unmatched in slice: {unmatched}")
+    print(f"  landmarks resolved: {sum(v['how'] is not None for v in lms.values())}/{len(lms)}; unmatched in slice: {unmatched}"
+          f" ({time.time() - t1:.1f}s)")
     if terrain:
         terrain.close()
     total = sum(p.stat().st_size for p in DATA_TILES.rglob("*") if p.is_file())
-    print(f"wrote {len(tiles_meta)} tiles, {total / 1e6:.1f} MB, {time.time() - t0:.1f}s -> {DATA_TILES}")
+    print(f"wrote index for {len(tiles_meta)} tiles, {total / 1e6:.1f} MB -> {DATA_TILES}")
+    t2 = time.time()
     try:
         from qa_report import write_report
         write_report(DATA_TILES)
     except Exception as exc:  # QA must never break a build
         print(f"  [warn] QA report failed: {exc}")
+    print(f"  qa {time.time() - t2:.1f}s; total {time.time() - t0:.1f}s")
     return DATA_TILES / "index.json"
-
-
-# Layers a partial rebuild may rewrite: their tile output comes from one processor and nothing later in
-# the layer stage augments them. Everything else is rejected rather than written half-finished --
-# `pois` gains the Richmond tree merge, `landuse` gains city decks and canal banks, `buildings` drives
-# search.json and the tree exclusions, and `landuse`/`water` feed the per-tile terrain grid. Those all
-# need the full build, which the layer cache already keeps cheap.
-PARTIAL_LAYERS = {"roads", "crossings", "rail"}
-AUGMENTED_LAYERS = {"pois": "the tree merge", "landuse": "city decks and canal banks",
-                    "buildings": "search.json and tree exclusions", "water": "the surveyed hydro shoreline"}
-
-
-def _partial_layers(names, raw_dir, slug, terrain):
-    """Reprocess just the requested layers. `roads` and `crossings` come from one call."""
-    layers = {}
-    if "roads" in names or "crossings" in names:
-        roads, crossings = process_roads(raw_dir / "roads.parquet", terrain)
-        if "roads" in names:
-            layers["roads"] = roads
-        if "crossings" in names:
-            layers["crossings"] = crossings
-    if "rail" in names:
-        layers["rail"] = process_rail(raw_dir / "rail.parquet", terrain)
-    return layers
-
-
-def rebuild_layer_tiles(bbox, names) -> Path:
-    """Reprocess and rewrite only the named layers, preserving every other tile layer.
-
-    Tile files for layers that are not listed are left exactly as they are, so list every layer a change
-    affects. Layers coupled to the terrain grid are rejected rather than silently left inconsistent.
-    """
-    bad = sorted(n for n in names if n not in PARTIAL_LAYERS)
-    if bad:
-        why = "; ".join(f"{n} also needs {AUGMENTED_LAYERS[n]}" for n in bad if n in AUGMENTED_LAYERS)
-        sys.exit(f"--layers cannot rewrite {', '.join(bad)}" + (f" ({why})" if why else "")
-                 + f"; run a full build instead. Supported: {', '.join(sorted(PARTIAL_LAYERS))}")
-
-    index_path = DATA_TILES / "index.json"
-    if not index_path.exists():
-        sys.exit("tile index missing: run a full pipeline/build_tiles.py build first")
-    index = json.loads(index_path.read_text())
-    if list(bbox) != index.get("bbox_wgs84"):
-        sys.exit("--layers requires the existing tile index to use the requested bounding box")
-
-    slug = bbox_slug(bbox)
-    raw_dir = DATA_RAW / f"osm_{slug}"
-    if not raw_dir.exists():
-        sys.exit(f"raw OSM dir missing: {raw_dir}. Run pipeline/fetch.py first.")
-    dem_path = DATA_RAW / f"dem_{slug}.tif"
-    terrain = Terrain(dem_path) if dem_path.exists() else None
-    t0 = time.time()
-    layers = _partial_layers(names, raw_dir, slug, terrain)
-    indexes = {name: layer.sindex for name, layer in layers.items() if len(layer)}
-
-    for meta in index["tiles"]:
-        tile_box = box(*meta["bbox"])
-        tdir = DATA_TILES / meta["id"]
-        for name, layer in layers.items():
-            dst = tdir / f"{name}.geojson"
-            part = _tile_layer(layer, indexes[name], name, tile_box) if name in indexes else layer
-            count = _write_layer(part, dst) if len(part) else 0
-            if not count and dst.exists():
-                dst.unlink()
-            if count:
-                if name not in meta["layers"]:
-                    meta["layers"].append(name)
-                meta["counts"][name] = count
-            else:
-                if name in meta["layers"]:
-                    meta["layers"].remove(name)
-                meta["counts"].pop(name, None)
-
-    index_path.write_text(json.dumps(index, indent=1))
-    if terrain:
-        terrain.close()
-    print(f"rewrote {', '.join(sorted(layers))} in {len(index['tiles'])} tiles "
-          f"in {time.time() - t0:.1f}s -> {DATA_TILES}")
-    try:
-        from qa_report import write_report
-        write_report(DATA_TILES)
-    except Exception as exc:
-        print(f"  [warn] QA report failed: {exc}")
-    return index_path
 
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--bbox", nargs=4, type=float, metavar=("W", "S", "E", "N"), default=DEFAULT_BBOX)
     ap.add_argument("--no-merge", action="store_true", help="do not merge touching rowhouse footprints")
-    ap.add_argument("--clean", action="store_true", help="delete existing tile dirs first")
-    ap.add_argument("--layers", help="comma-separated layers to reprocess and rewrite in existing tiles, "
-                                     f"leaving every other layer untouched ({', '.join(sorted(PARTIAL_LAYERS))})")
-    ap.add_argument("--roads-only", action="store_true", help="alias for --layers roads,crossings")
-    ap.add_argument("--no-cache", action="store_true", help="reprocess layers even if the layer cache is current")
-    ap.add_argument("--clear-cache", action="store_true", help="delete the layer cache before building")
+    ap.add_argument("--clean", action="store_true", help="delete existing tile dirs first and rewrite every tile")
+    ap.add_argument("--no-cache", action="store_true", help="recompute every layer step even if its cache is current")
+    ap.add_argument("--clear-cache", action="store_true", help="delete the layer cache and tile state before building")
+    ap.add_argument("--layers", "--roads-only", dest="layers", nargs="?", const="", help=argparse.SUPPRESS)
     a = ap.parse_args(argv)
+    if a.layers is not None:
+        sys.exit("--layers/--roads-only are gone: every build is incremental now. Run build_tiles.py with no "
+                 "flags; only the steps that changed are recomputed and only the tiles that changed are rewritten.")
     if a.clear_cache:
         layer_cache.clear()
-    names = {n.strip() for n in a.layers.split(",") if n.strip()} if a.layers else set()
-    if a.roads_only:
-        names |= {"roads", "crossings"}
-    if names:
-        rebuild_layer_tiles(tuple(a.bbox), names)
-    else:
-        build(tuple(a.bbox), merge_rowhouses=not a.no_merge, clean=a.clean, no_cache=a.no_cache)
+    build(tuple(a.bbox), merge_rowhouses=not a.no_merge, clean=a.clean, no_cache=a.no_cache)
     return 0
 
 

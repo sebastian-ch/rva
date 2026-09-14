@@ -363,19 +363,34 @@ point of a kept cell, so the per-cell winner is the same one a whole-cloud pass 
 in that reduction deterministically (x, then y) or the cached answer depends on input order and roof
 classifications wobble between runs. Regression: `pipeline/tests/test_lidar_index.py`.
 
-`layer_cache.py` applies the same rule to the processed layers: the key covers every raw source, every
-`pipeline/*.py` that implements a layer, and the build options. Drivers that only consume finished layers
-(`build_tiles.py`, `qa_report.py`, `tiles_inspect.py`, the fetchers) are excluded on purpose — iterating on
-those is exactly what the cache is for. Verify a new cache by building twice, once with `--no-cache`, and
-diffing every tile file; the first version of this one silently dropped bridge `deck` lists, because
-parquet returns a list column as an ndarray and `_write_layer` only serialized `list`.
+`layer_cache.py` and `layer_steps.py` apply the same rule to the processed layers, one step at a time. Each
+processor and each augmentation (city decks, the surveyed shoreline, canal banks, the tree merge, the Honolulu
+coast) is a `Step` cached on its own key: the raw sources it declares, the code it runs, its options, and the keys
+of the steps that produced the layers it reads. `deps.py` resolves the code part statically: for the functions a
+step names it hashes the top-level definitions they reach in their own module (so `process_roads` and
+`process_buildings` do not share a key even though both live in `process.py`) and whole files for every other
+local module they import. Content hashes, not mtimes, so a checkout that restores identical text keeps the cache
+warm. Two things keep the analysis honest: `test_deps.py` rejects `import *`, `globals()`, `eval` and `importlib`
+in layer modules, and a step's own glue function is hashed too. When a step starts reading a new raw file, add it
+to that step's `sources`; when it reads another layer, add it to `reads`, or its key will not move when the
+upstream changes. Verify a new step by building twice, once with `--no-cache`, and diffing every tile file; the
+first version of the old single-key cache silently dropped bridge `deck` lists, because parquet returns a list
+column as an ndarray and `_write_layer` only serialized `list`.
 
-A partial rebuild is only safe for a layer that nothing touches after its processor returns. In Richmond
-`pois` gains the tree merge, `landuse` gains city decks and canal banks, `water` gains the surveyed
-shoreline, and `buildings` drives `search.json` and the tree exclusions. Rewriting `pois` alone cut its
-tile features from 81,854 to 9,682 — every tree gone, with no error. Enumerate the layers that qualify
-and reject the rest by name instead of writing them half-finished. Regression:
-`pipeline/tests/test_layer_cache.py`.
+Partial rebuilds are no longer a special case. Because the augmentations are steps, every layer that reaches the
+tiling loop is complete, and the loop itself is incremental: each tile's layer file is keyed by an
+order-independent digest of the features that intersect it (`layer_cache.row_digests`, normalised so a parquet
+round-trip hashes the same as a fresh processor result), and only tiles whose digest moved are rewritten,
+files whose layer left the tile are removed, and `index.json` counts are carried over for the rest. The old
+`--layers` flag, which rewrote one layer's files everywhere and had to reject `pois`/`landuse`/`water`/`buildings`
+by name (rewriting `pois` alone once cut its features from 81,854 to 9,682, every tree gone, with no error), is
+gone. Regressions: `pipeline/tests/test_layer_cache.py`, `test_layer_steps.py`, `test_deps.py`, and the
+incremental cases in `test_build_tiles.py`.
+
+In the viewer, `__iso.refresh()` re-reads `index.json` and rebuilds the resident tiles (or one id) after a
+pipeline run, keeping the old mesh until the new one lands; the URL hash tracks the camera every half second, so
+the full page reload that every source edit costs (the tile workers are outside Vite's HMR graph) lands where you
+were looking.
 
 ## 8. Landmarks: correctness and draw calls both matter
 

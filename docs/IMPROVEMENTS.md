@@ -148,7 +148,9 @@ from the interactive GPU-backed viewer; improvements to one may not improve the 
 Completed:
 - `build_tiles.py --layers roads,crossings,rail` (with `--roads-only` kept as an alias) rewrites only those tile
   files while preserving all other tile layers: about 12 seconds. Every other layer is augmented after its
-  processor runs and is rejected by name rather than written half-finished.
+  processor runs and is rejected by name rather than written half-finished. *Superseded 2026-09-13:* the layer
+  stage is now a step list cached per step (`layer_steps.py`), augmentations included, and the tiling loop only
+  rewrites tiles whose features changed, so `--layers` is gone.
 - The LiDAR roof surface is reduced once and cached (`lidar.py`): 310 M raw points become ~8 M top-of-cell points
   inside the padded footprints, queried through a sorted cell-key index instead of a KD-tree over the whole cloud.
   `process_buildings` fell from 90 s to 16 s; the cKDTree build alone had been 51 s of every run.

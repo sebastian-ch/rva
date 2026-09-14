@@ -175,9 +175,11 @@ Today the client parses GeoJSON and builds ~1.2 M triangles on the main thread. 
   bboxes in `config.py`, writing into the same grid so tiles line up. (S)
 - Incremental builds: **done 2026-09-11.** A fingerprinted processed-layer cache (`layer_cache.py`) plus the cached
   LiDAR roof surface cut a full rebuild from about 130 seconds to 20 seconds when only the tiling side changed;
-  `--layers` generalizes `--roads-only` to the layers that can be rewritten safely (12 seconds). (S)
+  `--layers` generalized `--roads-only` to the layers that could be rewritten safely (12 seconds). **2026-09-13:**
+  replaced by per-step caching (`layer_steps.py` + `deps.py`) and dirty-tile writes: every layer, augmentations
+  included, is cached on its own key and only tiles whose features changed are rewritten. (S)
 - **Fan / VCU coverage done 2026-09-10** through the expanded Richmond build extent. Next: Carytown, Church Hill,
-  Scott's Addition, and Manchester. Per-slice builds and input-hash incremental rebuilds remain open.
+  Scott's Addition, and Manchester. Per-slice builds remain open; input-hash incremental rebuilds are done.
 
 ---
 

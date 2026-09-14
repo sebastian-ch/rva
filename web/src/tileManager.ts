@@ -98,6 +98,42 @@ export class TileManager {
     }
   }
 
+  /**
+   * Re-fetch and rebuild resident tiles after the pipeline rewrote them: one tile id, or every resident tile.
+   * index.json is re-read first so a layer that appeared in (or left) a tile is picked up. The old mesh stays
+   * on screen until the new one lands, so there is no flicker. Returns the ids that were requested.
+   */
+  async refresh(id?: string): Promise<string[]> {
+    await this.reloadIndex();
+    const ids = id ? [id] : [...new Set([...this.tiles.keys(), ...this.pending.keys()])];
+    const requested: string[] = [];
+    for (const tid of ids) {
+      const meta = this.metaById.get(tid);
+      const lod = this.tiles.get(tid)?.lod ?? this.pending.get(tid)?.lod ?? 0;
+      const pend = this.pending.get(tid);
+      if (pend) { pend.cancel(); this.pending.delete(tid); }
+      if (!meta) { if (this.tiles.has(tid)) this.unload(tid); else console.warn('refresh: unknown tile', tid); continue; }
+      this.request(meta, lod, 0);
+      requested.push(tid);
+    }
+    this.progress();
+    return requested;
+  }
+
+  private async reloadIndex() {
+    try {
+      const r = await fetch(`${this.baseUrl}/index.json`, { cache: 'no-store' });
+      if (!r.ok) return;
+      const fresh = (await r.json()) as TileIndex;
+      if (fresh.origin[0] !== this.index.origin[0] || fresh.origin[1] !== this.index.origin[1]) {
+        console.warn('refresh: the tile grid origin changed; reload the page'); return;
+      }
+      this.index.tiles.splice(0, this.index.tiles.length, ...fresh.tiles);
+      this.metaById.clear();
+      for (const m of fresh.tiles) this.metaById.set(m.id, m);
+    } catch (e) { console.warn('refresh: could not re-read index.json', e); }
+  }
+
   private unload(id: string) {
     const t = this.tiles.get(id);
     if (!t) return;

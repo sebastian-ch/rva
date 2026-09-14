@@ -26,7 +26,7 @@ import { fetchWikiSummary } from './wiki';
 import { BuildingEffects } from './buildingEffects';
 import { MAP_STYLES } from './styles';
 import { TrafficTrails } from './trafficTrails';
-import { createNavigation, decodeView, type MapStyle, type SearchPlace, type ViewState } from './navigation';
+import { createNavigation, decodeView, persistView, type MapStyle, type SearchPlace, type ViewState } from './navigation';
 import type { Landmark, TileIndex } from './types';
 
 const landmarks = (regionId === 'richmond' ? landmarksJson : []) as Landmark[];
@@ -205,6 +205,7 @@ const navigation = createNavigation(document.getElementById('ui')!, (place: Sear
 window.addEventListener('hashchange', () => {
   const state = decodeView(location.hash, regionId); if (state) restoreView(state);
 });
+persistView(() => (world && tileIndex ? currentView() : null));
 
 function setNight(on: boolean) {
   night = on;
