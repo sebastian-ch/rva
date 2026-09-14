@@ -42,7 +42,7 @@ def plan_tiles(width: int, height: int, tile_px: int = MAX_TILE_PX) -> list[tupl
 
 
 def _export(service: str, bounds: tuple[float, float, float, float], size: tuple[int, int]) -> bytes:
-    """One exportImage call, retried: the image servers answer large exports with JSON errors now and then."""
+    """Generate one export and download its TIFF, retrying transient ArcGIS failures."""
     minx, miny, maxx, maxy = bounds
     epsg = CRS_PROJ.split(":")[-1]
     params = {
@@ -55,18 +55,30 @@ def _export(service: str, bounds: tuple[float, float, float, float], size: tuple
         "bandIds": "0,1,2,3",
         "interpolation": "RSP_NearestNeighbor",
         "noDataInterpretation": "esriNoDataMatchAny",
-        "f": "image",
+        # Large direct f=image responses intermittently fail with HTTP 500 even when ArcGIS successfully
+        # generates the export. Ask for its URL first, then download the finished file.
+        "f": "json",
     }
-    last = b""
+    last = ""
     for attempt in range(RETRIES):
-        r = requests.get(service, params=params, timeout=300)
-        r.raise_for_status()
-        if r.content[:2] in (b"II", b"MM"):
-            return r.content
-        last = r.content[:200]
-        print(f"  [retry {attempt + 1}] imagery server returned non-TIFF: {last!r}")
-        time.sleep(3 * (attempt + 1))
-    raise RuntimeError(f"imagery server did not return a TIFF after {RETRIES} attempts: {last!r}")
+        try:
+            generated = requests.get(service, params=params, timeout=300)
+            generated.raise_for_status()
+            meta = generated.json()
+            href = meta.get("href")
+            if not href:
+                raise RuntimeError(f"export response has no href: {meta!r}")
+            image = requests.get(href, timeout=300)
+            image.raise_for_status()
+            if image.content[:2] not in (b"II", b"MM"):
+                raise RuntimeError(f"downloaded export is not a TIFF: {image.content[:200]!r}")
+            return image.content
+        except (requests.RequestException, ValueError, RuntimeError) as exc:
+            last = str(exc)
+            print(f"  [retry {attempt + 1}] imagery export failed: {last}")
+            if attempt + 1 < RETRIES:
+                time.sleep(3 * (attempt + 1))
+    raise RuntimeError(f"imagery server did not return a TIFF after {RETRIES} attempts: {last}")
 
 
 def fetch_ortho(bbox: tuple[float, float, float, float], dst: Path, resolution_m: float = DEFAULT_RES_M,

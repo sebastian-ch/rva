@@ -90,6 +90,13 @@ def test_a_missing_file_is_rewritten_even_when_its_digest_matches(tmp_path):
     assert n["written"] == 1 and (tmp_path / "0_0" / "buildings.geojson").exists()
 
 
+def test_tile_code_change_rewrites_files_with_unchanged_rows(tmp_path, monkeypatch):
+    _, state, _, _ = _run(tmp_path, _layers(), {})
+    monkeypatch.setattr("build_tiles.deps.code_fingerprint", lambda entries: {"changed": True})
+    _, _, _, n = _run(tmp_path, _layers(), state)
+    assert n["written"] == 4 and n["unchanged"] == 0
+
+
 def test_stale_tile_dirs_outside_the_grid_are_dropped(tmp_path):
     (tmp_path / "9_9").mkdir()
     (tmp_path / "9_9" / "roads.geojson").write_text("{}")

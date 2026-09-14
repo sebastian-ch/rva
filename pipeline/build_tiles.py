@@ -6,7 +6,8 @@ Usage:
 Every build is incremental. The layer stage runs as cached steps (`layer_steps.py`): only the steps whose
 code, sources or upstream layers changed are recomputed. The tiling loop then rewrites only the tile files
 whose features changed since the last build (`layer_cache.row_digests`), so fixing one building rewrites
-one tile. `--clean` forgets both and writes everything; `--no-cache` recomputes every step.
+one tile. `--clean` rewrites every tile while retaining the step cache; `--clear-cache` forgets both.
+`--no-cache` recomputes every step but still skips tile files whose resulting content is unchanged.
 """
 from __future__ import annotations
 
@@ -26,6 +27,7 @@ from shapely.geometry import box
 from config import CRS_PROJ, DATA_RAW, DATA_TILES, DEFAULT_BBOX, TILE_SIZE, REGION, PROFILE, bbox_slug, snap_down
 from terrain import Terrain
 from landmarks import resolve_landmarks
+import deps
 import layer_cache
 from layer_steps import StepContext, run_steps
 
@@ -114,6 +116,9 @@ def write_tiles(layers, terrain, hydro, beach_profile, bbox, surveyed_trees, pre
     features (by content digest) fed the previous write and the file still exists; its terrain grid is left
     alone when the DEM, hydro, still-water and code inputs are unchanged.
     """
+    # Include the tiling function, the same-module helpers it reaches, and the layer_cache implementation.
+    # A serialization, clipping, ownership or digest-code edit must rewrite output even when source rows match.
+    tile_code_fp = layer_cache.make_key(deps.code_fingerprint((write_tiles,)))
     tr = Transformer.from_crs("EPSG:4326", CRS_PROJ, always_xy=True)
     west, south, east, north = bbox
     xs, ys = zip(*[tr.transform(x, y) for x, y in ((west, south), (east, south), (east, north), (west, north))])
@@ -162,7 +167,10 @@ def write_tiles(layers, terrain, hydro, beach_profile, bbox, surveyed_trees, pre
                         dst.unlink()
                         n["removed"] += 1
                     continue
-                digest = layer_cache.digest_rows(digests[name], idx)
+                digest = layer_cache.make_key({
+                    "rows": layer_cache.digest_rows(digests[name], idx),
+                    "code": tile_code_fp,
+                })
                 old = prev_layers.get(name)
                 if old and old["digest"] == digest and (dst.exists() == (old["count"] > 0)):
                     count = old["count"]
@@ -188,7 +196,8 @@ def write_tiles(layers, terrain, hydro, beach_profile, bbox, surveyed_trees, pre
                 hydro_here = hydro is not None and hydro.mask.intersects(tile_box)
                 beach_here = bool(beach_profile) and beach_profile[0].buffer(8).intersects(tile_box)
                 tdigest = layer_cache.make_key({
-                    "fp": terrain_fp, "shore": bool(shore), "hydro": bool(hydro_here), "beach": beach_here,
+                    "fp": terrain_fp, "tile_code": tile_code_fp,
+                    "shore": bool(shore), "hydro": bool(hydro_here), "beach": beach_here,
                     "flats": layer_cache.digest_rows(still_digests, flat_idx) if len(flat_idx) else None})
                 tpath = tdir / "terrain.json"
                 if prev.get("terrain") == tdigest and tpath.exists():

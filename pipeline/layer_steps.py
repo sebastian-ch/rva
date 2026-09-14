@@ -64,7 +64,7 @@ class Step:
             "options": {o: getattr(ctx, o) for o in self.options},
             "sources": [layer_cache.stat_entry(p) for p in self.sources(ctx) if p.exists()],
             "code": deps.code_fingerprint(self.entries, self.modules),
-            "glue": deps.source_of(self.run),
+            "glue": deps.glue_fingerprint(self.run),
             "reads": {layer: upstream.get(layer) for layer in self.reads},
         }
         return layer_cache.make_key(parts)
@@ -88,8 +88,11 @@ def _buildings(ctx: StepContext, layers: dict):
         enriched = enrich_buildings(gpd.read_parquet(city_path), gpd.read_parquet(buildings_path))
         buildings_path = DATA_RAW / f"enriched_buildings_{ctx.slug}.parquet"
         enriched.to_parquet(buildings_path)
+    # Roofer output is keyed to individual source footprints. Preserve attached
+    # houses when any reconstruction data exists for this build extent.
+    merge_rowhouses = ctx.merge_rowhouses and not bool(_lod2_sources(ctx))
     return {"buildings": process_buildings(
-        buildings_path, ctx.terrain, ctx.merge_rowhouses,
+        buildings_path, ctx.terrain, merge_rowhouses,
         overture_path=DATA_RAW / f"overture_{ctx.slug}.parquet",
         lidar_npz=DATA_RAW / f"lidar_{ctx.slug}.npz",
         richmond_dir=DATA_RAW / f"richmond_{ctx.slug}",
@@ -105,7 +108,19 @@ def _buildings_sources(ctx: StepContext) -> list[Path]:
              DATA_RAW / f"vgin_{ctx.slug}.parquet", DATA_RAW / f"cch_{ctx.slug}.parquet",
              ASSETS / "supplements" / "overrides.json", ASSETS / "landmarks" / "landmarks.json"]
     paths += sorted((DATA_RAW / f"richmond_{ctx.slug}").glob("*.parquet"))
+    paths += _lod2_sources(ctx)
     return paths
+
+
+def _lod2_sources(ctx: StepContext) -> list[Path]:
+    from lod2 import cityjsonseq_files
+    return cityjsonseq_files(DATA_RAW / f"lod2_{ctx.slug}")
+
+
+def _lod2(ctx: StepContext, layers: dict):
+    from lod2 import attach_roofs
+    return {"buildings": attach_roofs(
+        layers["buildings"], DATA_RAW / f"lod2_{ctx.slug}", CRS_PROJ)}
 
 
 def _roads(ctx: StepContext, layers: dict):
@@ -224,6 +239,8 @@ def steps_for(region: str) -> list[Step]:
              sources=lambda c: [c.raw_dir / "water.parquet", c.dem_path]),
         Step("pois", ("pois",), _pois, entries=(process.process_pois,),
              sources=lambda c: [c.raw_dir / "pois.parquet"]),
+        Step("lod2_roofs", ("buildings",), _lod2, modules=("lod2",), reads=("buildings",),
+             sources=_lod2_sources, regions=("richmond",)),
         Step("city_decks", ("landuse",), _city_decks, entries=(process.process_richmond_decks,), reads=("landuse",),
              sources=lambda c: [c.richmond("structures.parquet")], regions=("richmond",)),
         Step("hydro_shoreline", ("water", "landuse"), _hydro_shoreline, entries=(hydro.merge_water, hydro.load_hydro),

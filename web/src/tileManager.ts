@@ -70,8 +70,12 @@ export class TileManager {
 
   private request(meta: TileMeta, lod: Lod, priority: number) {
     let cancelled = false;
+    let pending!: Pending;
+    // A cancelled request may finish after a replacement for the same tile was queued. Only the request
+    // that currently owns the map entry may clear it.
+    const clearPending = () => { if (this.pending.get(meta.id) === pending) this.pending.delete(meta.id); };
     const done = (payload: import('./tileBuild').TilePayload) => {
-      this.pending.delete(meta.id);
+      clearPending();
       if (cancelled) return;
       const t0 = performance.now();
       const tile = wrapTilePayload(payload, this.materials);
@@ -84,16 +88,18 @@ export class TileManager {
       this.progress();
     };
     const fail = (err: Error) => {
-      this.pending.delete(meta.id);
+      clearPending();
       if (err.message !== 'cancelled') console.warn('tile failed', meta.id, err);
       this.progress();
     };
     if (this.pool) {
       const h = this.pool.build(meta, this.baseUrl, this.index.origin, lod, priority);
-      this.pending.set(meta.id, { lod, cancel: () => { cancelled = true; h.cancel(); } });
+      pending = { lod, cancel: () => { cancelled = true; h.cancel(); } };
+      this.pending.set(meta.id, pending);
       h.promise.then(done, fail);
     } else {
-      this.pending.set(meta.id, { lod, cancel: () => { cancelled = true; } });
+      pending = { lod, cancel: () => { cancelled = true; } };
+      this.pending.set(meta.id, pending);
       fetchTileLayers(meta, this.baseUrl, lod).then((layers) => done(buildTilePayload(meta, layers, this.index.origin, lod)), fail);
     }
   }

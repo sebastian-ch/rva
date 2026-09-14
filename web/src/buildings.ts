@@ -22,6 +22,57 @@ const AO_HEIGHT = 6;     // meters over which the gradient fades
  */
 export interface ExtrudeOptions { details?: boolean }
 
+interface Lod2Roof { v: [number, number, number][]; f: number[][][] }
+
+function addLod2Roof(
+  mb: MeshBuilder,
+  encoded: string | null | undefined,
+  toLocal: (x: number, y: number) => V2,
+  top: number,
+  color: THREE.Color,
+): boolean {
+  if (!encoded) return false;
+  let mesh: Lod2Roof;
+  try { mesh = JSON.parse(encoded) as Lod2Roof; } catch { return false; }
+  if (!Array.isArray(mesh.v) || !Array.isArray(mesh.f)) return false;
+  const vertices = mesh.v.map(([x, y, z]) => {
+    const [lx, lz] = toLocal(x, y);
+    return new THREE.Vector3(lx, top + z, lz);
+  });
+  let emitted = 0;
+  for (const face of mesh.f) {
+    const rings3 = face.map((ring) => ring.map((i) => vertices[i]).filter(Boolean)).filter((ring) => ring.length >= 3);
+    if (!rings3.length) continue;
+    // Project each 3D face onto its dominant plane before earcut. Roof closure
+    // faces can be vertical, so a fixed ground-plane projection is insufficient.
+    const normal = new THREE.Vector3();
+    for (let i = 0, ring = rings3[0]; i < ring.length; i++) {
+      const a = ring[i], b = ring[(i + 1) % ring.length];
+      normal.x += (a.y - b.y) * (a.z + b.z);
+      normal.y += (a.z - b.z) * (a.x + b.x);
+      normal.z += (a.x - b.x) * (a.y + b.y);
+    }
+    if (normal.lengthSq() < 1e-12) continue;
+    normal.normalize();
+    const ax = Math.abs(normal.x), ay = Math.abs(normal.y), az = Math.abs(normal.z);
+    const project = (p: THREE.Vector3): V2 => ax >= ay && ax >= az ? [p.z, p.y] : az >= ay ? [p.x, p.y] : [p.x, p.z];
+    const rings2 = rings3.map((ring) => ring.map(project));
+    let indices: number[];
+    try { indices = triangulate(rings2[0], rings2.slice(1)); } catch { continue; }
+    const all = rings3.flat();
+    for (let i = 0; i < indices.length; i += 3) {
+      let p0 = all[indices[i]], p1 = all[indices[i + 1]], p2 = all[indices[i + 2]];
+      if (!p0 || !p1 || !p2) continue;
+      const n = new THREE.Vector3().subVectors(p1, p0).cross(new THREE.Vector3().subVectors(p2, p0)).normalize();
+      if (n.dot(normal) < 0) { [p1, p2] = [p2, p1]; n.negate(); }
+      const shade = 0.86 + 0.14 * Math.max(0, -n.x * 0.5 + n.z * 0.5 + 0.5);
+      mb.tri(p0, p1, p2, color, n, shade);
+      emitted++;
+    }
+  }
+  return emitted > 0;
+}
+
 export function isSevenEleven(p: Pick<BuildingProps, 'id' | 'name' | 'addr' | 'website'>): boolean {
   return p.id === 'osm:way/236014923' || /7[- ]?eleven/i.test(`${p.name ?? ''} ${p.addr ?? ''} ${p.website ?? ''}`);
 }
@@ -232,14 +283,15 @@ export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, Buildin
       mb.tri(a, b, c, capColor, UP, roofH > 0 ? 0.9 : 1);
     }
 
-    if (roofH > 0) {
+    const lod2 = p.roof_source === 'lod2' && addLod2Roof(mb, p.lod2_roof, toLocal, top, roof);
+    if (roofH > 0 && !lod2) {
       const done = (p.roof_shape === 'hip' || p.roof_shape === 'pyramidal') && addInsetRoof(mb, outer, top, roofH, roof, p.roof_shape === 'pyramidal');
       if (!done) addRoof(mb, outer, top, roofH, p.roof_shape, roof, wall, p.roof_azimuth ?? null, holes);
     }
     if (opts.details !== false && !hidden) {
       if (isSevenEleven(p)) addSevenElevenFacade(mb, outer, groundY);
       if (caryMcDonalds) addCaryMcDonaldsFacade(mb, outer, groundY);
-      addRoofDetails(mb, outer, top, p, wall, roof);
+      if (!lod2) addRoofDetails(mb, outer, top, p, wall, roof);
     }
   }
   return mb.triCount - start;

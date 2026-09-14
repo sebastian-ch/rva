@@ -25,6 +25,8 @@ question is settled.
 The USGS image server caps a single export well below the ~10000 × 9500 px the Richmond bbox needs at
 0.6 m, so the export is tiled. Every tile's bounds are derived from the destination transform, so
 tiles land on exact destination pixels and mosaic without a resampling seam.
+For large exports, request `f=json` and download the returned `href`; the live USGS service can return
+HTTP 500 for the equivalent direct `f=image` response even after it successfully generates the TIFF.
 
 The ortho is an optional input, like LiDAR: with no `ortho_<slug>.tif` present every roof keeps the
 seeded colour and nothing else changes.

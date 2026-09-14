@@ -15,8 +15,8 @@ Rank accordingly — do not spend effort re-deriving heights.
 | | item | state |
 |---|---|---|
 | 0 | Roof colour from NAIP orthoimagery | **done** — `pipeline/ortho.py`, [notes](ortho-roof-colour.md) |
-| 1 | Check for a published city LoD2 / multipatch dataset | not started |
-| 2 | LoD2 roofs from the 2025 LiDAR (`roofer`) | not started |
+| 1 | Check for a published city LoD2 / multipatch dataset | **done 2026-09-14** — found and evaluated; insufficient as a city-wide roof replacement |
+| 2 | LoD2 roofs from the 2025 LiDAR (`roofer`) | **Upper Fan import/render passed** — 427/440 individual footprints reconstructed; city-wide batch next |
 | 3 | Roof furniture from the 0.3 m DSM | not started |
 | 4 | Ground cover from NAIP NDVI + nDSM | not started |
 | 5 | Split-grammar facade geometry, lower two floors | not started |
@@ -52,8 +52,41 @@ Where to look: the ArcGIS REST service directory behind
 VGIN's statewide catalogue for the same. `pipeline/fetch_richmond.py` already knows how to talk to
 that portal.
 
-**Done when:** either a fetcher exists for it, or this file records that no such dataset is published
-and the date that was checked.
+**Result, checked 2026-09-14:** Richmond publishes a public
+[`urban_BuildingMultipatch` SceneServer](https://tiles.arcgis.com/tiles/k3vhq11XkBNeeOfM/arcgis/rest/services/urban_BuildingMultipatch_2/SceneServer)
+and includes it in the public
+[`Citywide Scene`](https://www.arcgis.com/home/webscene/viewer.html?webscene=e582ac1e3d8a48e39c87b81e151ab4b6).
+The item covers the city, was created in May 2022, and says its roof polygons were segmented from
+LiDAR. It exposes building/eave/base height, roof form, roof direction and RMSE attributes. It is
+unlisted in the Richmond GeoHub search, which is why the first portal/service-directory searches
+missed it; an ArcGIS Online search scoped to organization `k3vhq11XkBNeeOfM` found it. VGIN's public
+catalogue did not expose another Richmond 3D-building source.
+
+This is not a substitute for item 2. Deduplicating the leaf-node attributes produced 128,454 unique
+objects: 127,246 `Flat`, 817 `Gable`, 390 `Hip`, and one blank. Our much smaller current map slice
+already has 6,626 non-flat roofs, so importing the City layer wholesale would erase useful roof
+shape rather than improve it. Keep the service as a comparison source and consider its 1,207 pitched
+objects as selective candidates after spatial/date validation.
+
+An Upper Fan geometry comparison found a narrower use for the city layer. Its 405 subtype-1 objects
+preserved individual attached buildings that the default pipeline reduced to 323 rows, including 53
+merged rows representing 405 source members. Against classified 2025 LiDAR points, the city footprint
+union had a slightly better proxy F1 (0.824 versus 0.798). That does not make its mostly-flat roof mesh
+better. It does support preserving source-footprint segmentation for Roofer rather than reconstructing
+one roof across a merged rowhouse block.
+
+The city outlines are not generally more complex. Among 126 high-confidence one-to-one Upper Fan
+matches, the city outline retained at least two additional corners after 0.15 m simplification in 16
+cases, our outline did so in 24, and 86 were within one corner. Median simplified complexity was five
+corners for the city versus six for ours. Adopt a city outline only when its added bay, wing or setback
+has independent LiDAR support; the measured general win is segmentation, not vertex count.
+
+There is also a public 2020
+[`Building_multipatch.lpkx`](https://www.arcgis.com/home/item.html?id=ca6b4ff707fc47a3b3715d3cc9e673c3)
+(140 MB). It contains 162,691 GDAL-readable 3D TIN features in a FileGDB, but inspection showed an
+older flat-topped extrusion product with feature edits through July 2020, not the 2022 segmented-roof
+source behind the SceneServer. It is useful for archaeology and coverage checks, not the production
+geometry path.
 
 ## 2. LoD2 roofs from the 2025 LiDAR
 
@@ -64,18 +97,41 @@ gables and real hip geometry.
 **Inputs, all present:** `data/raw/lidar_<slug>.npz` (already reduced to a top-surface cloud by
 `lidar.surface_cache`), plus the footprints.
 
+**Pilot, 2026-09-14:** Roofer 1.0.0 ran against a 56 MB depth-9 subset of the 2025 NOAA LAZ and 355
+actual processed footprints in the Upper Fan (316 OSM, 39 Richmond gap fills). It emitted LoD2.2
+solids for 345 footprints (97.2%); 314 were classified as slanted, with a median of 37 vertices per
+CityJSON feature and a 1.3 MB result. The 10 fallbacks had unusable/insufficient point coverage.
+Reconstruction took about seven seconds, so packaging and conversion are now the work, not model
+fitting. A first attempt also proved that one degenerate ring aborts a whole Roofer tile: validate
+each footprint, remove zero-area fragments and isolate rejected buildings before invoking it.
+
+The corrected unmerged run submitted 440 individual footprints and produced 427 usable roof shells:
+384 slanted, 28 horizontal and 15 multiple-horizontal. Thirteen `unknown` results had no usable roof
+surface and retained the fallback. All 427 matched current source IDs and rendered across eight tiles.
+The Fan browser QA passed without roof/wall seams or console errors; full-tile worker build stayed at
+27 ms p95 in the Upper Fan view.
+
+**Import/render, 2026-09-14:** `pipeline/lod2.py` reads Roofer CityJSONSeq, reprojects its source CRS,
+keeps LoD2.2 roof surfaces and short internal closure faces, and joins each compact indexed mesh by
+source ID. `layer_steps.py` caches that enrichment separately. `buildings.ts` projects and triangulates
+each 3D face on its dominant plane, retaining the existing walls, facade shader, roof colour and picking
+ranges. Buildings without a valid reconstruction retain the procedural roof. The presence of Roofer
+output disables rowhouse merging because those meshes are keyed to individual source footprints.
+
 **Approach:** [`roofer`](https://github.com/3DBAG/roofer) (TU Delft, the engine behind 3D BAG) takes
 exactly a point cloud plus a footprint and emits a watertight LoD1.2/1.3/2.2 model. City3D is the
 alternative with a similar contract.
 
 **Implementation sketch:**
-- New `pipeline/lod2.py` wrapping the roofer CLI or its Python bindings, consuming
-  `lidar.PointCloud.within(geom)` output per footprint so it reuses the existing surface cache.
+- New `pipeline/lod2.py` wrapping the roofer CLI. The CLI requires classified LAS/LAZ, so it cannot
+  consume `lidar.PointCloud.within(geom)` or the reduced NPZ directly. Reuse/download the EPT LAZ
+  nodes that intersect the run extent; the successful pilot confirms class 2/6 data and CRS 3748 are
+  accepted without conversion when the footprints are written in the same CRS.
 - Output is a mesh, not a shape enum — this is the first pipeline layer whose payload is geometry.
-  Decide early: either emit per-building roof polygons + ridge lines that `buildings.ts` can extrude
-  (keeps the low-poly look and the style system), or emit a glTF per tile (breaks both). **Prefer the
-  former.** The project's whole aesthetic is flat-shaded extrusion; dropping photogrammetric roof
-  meshes into it would look like a different map.
+  Roofer's CityJSONSeq gives each source `OBJECTID` back as `source_id` and labels `RoofSurface`,
+  `WallSurface`, and `GroundSurface` boundaries. Convert its LoD2.2 roof surfaces to compact
+  per-building local vertices/faces that `buildings.ts` can render above the existing walls. Do not
+  emit a glTF per tile: that would bypass the style system and complicate streaming.
 - `roof_source` gains `"lod2"`; `DATA_FORMAT.md` and `schema.py` follow.
 - Cache as its own `Step` in `layer_steps.py` reading `buildings`.
 

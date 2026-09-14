@@ -29,6 +29,10 @@ Produced by `pipeline/build_tiles.py`, consumed by `web/src/tiles.ts`.
 GeoJSON FeatureCollections with coordinates in EPSG:32618 meters (not WGS84).
 Geometry is clipped to the tile bbox. All layers optional; missing = empty.
 
+Optional Roofer CityJSONSeq input lives in `data/raw/lod2_<bbox-slug>/*.city.jsonl`. Its source IDs
+must match processed building IDs. When present, the building step preserves individual rowhouse
+footprints and the `lod2_roofs` step attaches each valid reconstruction independently.
+
 ### buildings (Polygon / MultiPolygon)
 | property | type | notes |
 |---|---|---|
@@ -42,11 +46,12 @@ Geometry is clipped to the tile bbox. All layers optional; missing = empty.
 | `roof_shape` | `"flat"\|"gable"\|"hip"\|"pyramidal"\|"skillion"\|"dome"` | |
 | `roof_height` | number | meters of roof above `height`, 0 for flat |
 | `roof_azimuth` | number\|null | ridge direction, degrees clockwise from north (0..180); null unless LiDAR-fitted |
-| `roof_source` | `"osm"\|"overture"\|"lidar"\|"heuristic"` | |
+| `roof_source` | `"osm"\|"overture"\|"lidar"\|"lod2"\|"heuristic"\|"override"` | `lod2` uses a Roofer reconstruction from classified LiDAR |
 | `lidar_p90` | number\|null | 90th percentile nDSM inside the footprint, m |
 | `ground_z` | number | terrain height under the footprint centroid, m above `base_elevation` |
 | `roof_color` | string | palette key |
 | `roof_color_source` | `"osm"\|"ortho"\|"heuristic"\|"override"\|"landmark"` | resolution order: OSM `roof:colour`, NAIP orthoimagery classification (`pipeline/ortho.py`), seeded type/height guess; `landmark` = the stylized flat-roof treatment, `override` = supplements file |
+| `lod2_roof` | string\|null | compact Roofer mesh JSON: `v` holds projected `[x,y,z]` vertices with `z` above the eave; `f` holds indexed surface rings. The viewer keeps the existing footprint walls and palette and uses this measured roof shell when `roof_source=lod2` |
 | `wall_color` | string | palette key |
 | `type` | string | OSM `building=*` value |
 | `landmark` | string\|null | slug from `assets/landmarks/landmarks.json` |

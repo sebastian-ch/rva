@@ -8,7 +8,7 @@ changed. A step's key covers:
   - the raw sources it declares,
   - the pipeline code it runs (see `deps.py`): the functions it calls, every top-level definition
     those functions reference in their own module, and the whole file of every other local module
-    they reach, and the step's own glue function,
+    they reach, plus the step's glue and the same-module helpers that glue reaches,
   - the build options it reads, the region and the bbox,
   - the keys of the steps that produced the layers it reads.
 
@@ -35,7 +35,7 @@ from config import ROOT
 
 CACHE_DIR = ROOT / "data" / "cache"
 PIPELINE_DIR = Path(__file__).resolve().parent
-STATE_VERSION = 2  # bump when the digest or the tile file format changes, to force a rewrite
+STATE_VERSION = 2  # state-schema version; tile output code changes are fingerprinted automatically
 
 
 def stat_entry(p: Path) -> list:

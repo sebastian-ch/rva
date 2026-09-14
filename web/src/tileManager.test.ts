@@ -72,6 +72,29 @@ describe('TileManager.refresh', () => {
     expect(removed).toEqual(['0_0']);
     warn.mockRestore();
   });
+
+  it('does not let a cancelled request clear its replacement from pending', async () => {
+    const meta = index(['roads']);
+    const roadResponses: Array<(value: Response) => void> = [];
+    vi.stubGlobal('fetch', vi.fn((url: string) => {
+      if (url.endsWith('index.json')) return Promise.resolve({ ok: true, json: async () => meta } as Response);
+      return new Promise<Response>((resolve) => roadResponses.push(resolve));
+    }));
+    const m = new TileManager(meta, {} as Materials,
+      { onAdded: () => {}, onRemoved: () => {}, onProgress: () => {} }, 'tiles');
+    (m as unknown as { request(meta: unknown, lod: number, p: number): void }).request(meta.tiles[0], 0, 0);
+    expect(roadResponses).toHaveLength(1);
+
+    await m.refresh('0_0');
+    expect(roadResponses).toHaveLength(2);
+    roadResponses[0]({ ok: true, json: async () => ({ type: 'FeatureCollection', features: [] }) } as Response);
+    await settle(); await settle();
+    expect(m.busy).toBe(true);
+
+    roadResponses[1]({ ok: true, json: async () => ({ type: 'FeatureCollection', features: [] }) } as Response);
+    await settle(); await settle();
+    expect(m.busy).toBe(false);
+  });
 });
 
 describe('persistView', () => {

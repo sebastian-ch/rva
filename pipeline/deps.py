@@ -21,7 +21,6 @@ from __future__ import annotations
 import ast
 import hashlib
 import inspect
-import sys
 from functools import lru_cache
 from pathlib import Path
 
@@ -31,12 +30,12 @@ ALWAYS = ("config",)
 
 @lru_cache(maxsize=None)
 def _module_info(name: str):
-    """Parsed module: source, tree, top-level defs by name, import map (name -> local module)."""
+    """Parsed module: source, tree, top-level defs, import map (binding -> (module, target))."""
     path = PIPELINE_DIR / f"{name}.py"
     src = path.read_text()
     tree = ast.parse(src)
     defs: dict[str, ast.AST] = {}
-    imports: dict[str, str] = {}
+    imports: dict[str, tuple[str, str]] = {}
     for node in tree.body:
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
             defs[node.name] = node
@@ -48,19 +47,32 @@ def _module_info(name: str):
         elif isinstance(node, (ast.AnnAssign, ast.AugAssign)) and isinstance(node.target, ast.Name):
             defs[node.target.id] = node
         elif isinstance(node, ast.ImportFrom) and node.module and node.level == 0:
-            if is_local(node.module.split(".")[0]):
+            root = node.module.split(".")[0]
+            if is_local(root):
                 for a in node.names:
-                    imports[a.asname or a.name] = node.module.split(".")[0]
+                    imports[a.asname or a.name] = (root, f"{node.module}:{a.name}")
         elif isinstance(node, ast.Import):
             for a in node.names:
                 root = a.name.split(".")[0]
                 if is_local(root):
-                    imports[a.asname or root] = root
+                    imports[a.asname or root] = (root, a.name)
     return src, tree, defs, imports
 
 
 def is_local(module: str) -> bool:
     return "." not in module and (PIPELINE_DIR / f"{module}.py").exists()
+
+
+def _local_module_of(fn) -> str | None:
+    """Pipeline module for a callable, including a file executed directly as ``__main__``."""
+    if is_local(fn.__module__):
+        return fn.__module__
+    source = inspect.getsourcefile(fn)
+    if source:
+        path = Path(source).resolve()
+        if path.parent == PIPELINE_DIR.resolve() and is_local(path.stem):
+            return path.stem
+    return None
 
 
 def _nested_imports(node: ast.AST) -> set[str]:
@@ -105,8 +117,9 @@ def _reach(module: str, roots: list[str]) -> tuple[list[str], dict[str, str], se
             if ident is None:
                 continue
             if ident in imports:
-                used_imports[ident] = imports[ident]
-                modules.add(imports[ident])
+                imported_module, target = imports[ident]
+                used_imports[ident] = target
+                modules.add(imported_module)
             elif ident in defs and ident not in seen:
                 stack.append(ident)
     return sorted(seen), used_imports, modules
@@ -123,12 +136,22 @@ def module_closure(module: str) -> frozenset[str]:
             continue
         out.add(m)
         _, tree, _, imports = _module_info(m)
-        stack.extend(set(imports.values()) | _nested_imports(tree))
+        stack.extend({module for module, _ in imports.values()} | _nested_imports(tree))
     return frozenset(out)
 
 
 def _file_digest(module: str) -> str:
     return hashlib.sha1((PIPELINE_DIR / f"{module}.py").read_bytes()).hexdigest()[:16]
+
+
+def _partial_fingerprint(module: str, names: list[str], used_imports: dict[str, str]) -> dict:
+    src, _, defs, _ = _module_info(module)
+    segments = [ast.get_source_segment(src, defs[name]) or "" for name in names]
+    return {
+        "defs": names,
+        "imports": dict(sorted(used_imports.items())),
+        "digest": hashlib.sha1("\n".join(segments).encode()).hexdigest()[:16],
+    }
 
 
 def code_fingerprint(entries: tuple, modules: tuple[str, ...] = ()) -> dict:
@@ -139,18 +162,15 @@ def code_fingerprint(entries: tuple, modules: tuple[str, ...] = ()) -> dict:
     """
     by_module: dict[str, list[str]] = {}
     for fn in entries:
-        mod = fn.__module__
-        if mod not in sys.modules or not is_local(mod):
+        mod = _local_module_of(fn)
+        if mod is None:
             raise ValueError(f"{fn!r} is not a pipeline module function")
         by_module.setdefault(mod, []).append(fn.__name__)
     partial: dict[str, dict] = {}
     whole: set[str] = set(modules) | set(ALWAYS)
     for mod, roots in by_module.items():
         names, used_imports, reached = _reach(mod, roots)
-        src, _, defs, _ = _module_info(mod)
-        segments = [ast.get_source_segment(src, defs[n]) or "" for n in names]
-        partial[mod] = {"defs": names, "imports": dict(sorted(used_imports.items())),
-                        "digest": hashlib.sha1("\n".join(segments).encode()).hexdigest()[:16]}
+        partial[mod] = _partial_fingerprint(mod, names, used_imports)
         for m in reached:
             if m != mod:
                 whole |= module_closure(m)
@@ -170,3 +190,17 @@ def clear_caches() -> None:
 def source_of(fn) -> str:
     """Source text of a function, for hashing a step's own glue code."""
     return inspect.getsource(fn)
+
+
+def glue_fingerprint(fn) -> dict | str:
+    """Fingerprint glue plus same-module helpers, without pulling imported processors in whole.
+
+    Step registry entries fingerprint the imported processor functions precisely. Glue still needs to
+    follow helpers such as ``_concat`` in its own module; hashing only ``inspect.getsource(fn)`` misses
+    those edits. Test-local callables fall back to their direct source because they are outside pipeline/.
+    """
+    module = _local_module_of(fn)
+    if module is None:
+        return source_of(fn)
+    names, used_imports, _ = _reach(module, [fn.__name__])
+    return _partial_fingerprint(module, names, used_imports)

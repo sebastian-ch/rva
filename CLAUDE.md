@@ -34,7 +34,7 @@ web/             three.js app
 - Height resolution order: OSM `height` → `building:levels` × 3.2 m → LiDAR nDSM median (eave for pitched roofs) when ≥ 10 nDSM cells → Overture `height` → Overture `num_floors` × 3.2 m → LiDAR (sparse) → City zoning default → type default. Footprints whose LiDAR surface is at ground (p90 < 1.2 m, ≥ 8 cells) with no OSM height are dropped as stale. LiDAR heights on footprints < 80 m² are capped at 4·√area unless the type is church/tower-like.
 - Hand corrections live in `assets/supplements/overrides.json` (applied last; see its README). Use it for buildings newer than the sources.
 - `building:part` polygons are separate buildings (`is_part`, `parent`, `hidden` on the outline); see DATA_FORMAT.md.
-- Roof resolution order: OSM `roof:shape` → Overture `roof_shape` → LiDAR two-plane fit (`pipeline/roofs.py`) → type heuristic.
+- Roof resolution order: Roofer LoD2 mesh from `data/raw/lod2_<slug>/*.city.jsonl` → OSM `roof:shape` → Overture `roof_shape` → LiDAR two-plane fit (`pipeline/roofs.py`) → type heuristic. Roofer replaces only the roof surface; current footprints, walls, style and metadata remain.
 - Roof colour resolution order: OSM `roof:colour` → NAIP orthoimagery (`pipeline/ortho.py`, recorded as `roof_color_source`) → seeded type/height guess in `heights.resolve_colors`. The ortho classifier answers `None` for tree-covered, shadowed or too-small footprints on purpose — a wrong confident colour looks surveyed. Wall colour is still the seeded guess: nadir imagery cannot see facades.
 - Tiles are ~250 m squares, named by tile index (`x_y`).
 - The base scene palette lives in `assets/palette.json`; artistic style palettes and settings live in `web/src/styles/`. Add styles through its registry.
@@ -74,7 +74,8 @@ Tile schema contract: `DATA_FORMAT.md`. Landmark registry: `assets/landmarks/lan
   hashes only the top-level definitions they reach in their own module, plus whole files of the other modules they
   import), its options, and the keys of the steps whose layers it reads. Editing `overrides.json` recomputes
   `buildings` and the tree merge; editing `process_roads` recomputes `roads` only; editing `heights.py` recomputes
-  the steps that import it. Drivers (`build_tiles.py`, `qa_report.py`, fetchers) never invalidate anything.
+  the steps that import it. Drivers (`qa_report.py`, fetchers) do not invalidate layer steps; changes to
+  `build_tiles.py` invalidate tile files through a separate output-code fingerprint.
 - The tiling loop then rewrites only tile files whose feature set changed (`layer_cache.row_digests`, state in
   `data/cache/tiles_<slug>.json`) and terrain grids whose inputs changed; fixing one building rewrites one tile.
   `--no-cache` recomputes every step, `--clean` rewrites every tile, `--clear-cache` drops both caches. There is

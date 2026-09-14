@@ -20,7 +20,7 @@ HEIGHT_SOURCES: set[str] = {
     "lidar", "zoning", "default", "landmark_hint",
 }
 
-ROOF_SOURCES: set[str] = {"osm", "overture", "lidar", "heuristic", "override"}
+ROOF_SOURCES: set[str] = {"osm", "overture", "lidar", "lod2", "heuristic", "override"}
 
 # Where roof_color came from. "ortho" is the NAIP classification in ortho.py; "heuristic" is the
 # seeded guess in heights.resolve_colors that it replaces when the imagery is readable.

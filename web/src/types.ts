@@ -53,6 +53,8 @@ export interface BuildingProps {
   roof_source?: string;
   roof_color: string;
   roof_color_source?: string;
+  /** Roofer mesh JSON: projected xyz vertices (z above eave) and indexed surface rings. */
+  lod2_roof?: string | null;
   wall_color: string;
   type: string;
   landmark: string | null;

@@ -15,7 +15,8 @@ import deps
 def fake_pipeline(tmp_path, monkeypatch):
     """A throwaway pipeline dir with modules a (entry), b (used by a.f) and c (not used by a.f)."""
     (tmp_path / "config.py").write_text("X = 1\n")
-    (tmp_path / "b.py").write_text("import config\n\ndef helper(v):\n    return v + config.X\n")
+    (tmp_path / "b.py").write_text(
+        "import config\n\ndef helper(v):\n    return v + config.X\n\ndef alternate(v):\n    return v - config.X\n")
     (tmp_path / "c.py").write_text("def unused():\n    return 3\n")
     (tmp_path / "a.py").write_text(textwrap.dedent("""
         from b import helper
@@ -56,7 +57,7 @@ def _edit(path, old, new):
 def test_only_reached_definitions_are_hashed(fake_pipeline):
     fp = _fp()
     assert set(fp["partial"]["a"]["defs"]) == {"f", "_inner", "LIMIT"}
-    assert fp["partial"]["a"]["imports"] == {"helper": "b"}
+    assert fp["partial"]["a"]["imports"] == {"helper": "b:helper"}
     assert set(fp["whole"]) == {"b", "config"}          # c is only used by g
 
 
@@ -67,6 +68,25 @@ def test_editing_the_entry_function_or_its_helpers_changes_the_key(fake_pipeline
     before = _fp()
     _edit(fake_pipeline / "a.py", "LIMIT = 10", "LIMIT = 11")
     assert _fp() != before
+
+
+def test_changing_an_imported_symbol_under_the_same_alias_changes_the_key(fake_pipeline):
+    before = _fp()
+    _edit(fake_pipeline / "a.py", "from b import helper", "from b import alternate as helper")
+    assert _fp() != before
+
+
+def test_glue_fingerprint_follows_same_module_helpers(fake_pipeline):
+    before = deps.glue_fingerprint(importlib.import_module("a").f)
+    _edit(fake_pipeline / "a.py", "return helper(v) if v < LIMIT", "return helper(v) if v <= LIMIT")
+    deps.clear_caches()
+    assert deps.glue_fingerprint(importlib.import_module("a").f) != before
+
+
+def test_directly_executed_pipeline_function_resolves_from_its_source_path(fake_pipeline, monkeypatch):
+    a = importlib.import_module("a")
+    monkeypatch.setattr(a.f, "__module__", "__main__")
+    assert "a" in deps.code_fingerprint((a.f,))["partial"]
 
 
 def test_editing_an_unrelated_function_in_the_same_module_keeps_the_key(fake_pipeline):

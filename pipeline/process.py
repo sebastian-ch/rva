@@ -472,6 +472,7 @@ def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True
             "roof_source": roof_src,
             "roof_color": roof,
             "roof_color_source": "osm" if snap_color(tags.get("roof:colour"), ROOF_KEYS) else "heuristic",
+            "lod2_roof": None,
             "wall_color": wall,
             "type": str(tags.get("building") or tags.get("building:part") or "yes"),
             "landmark": None,

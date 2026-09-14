@@ -84,6 +84,21 @@ function assertNoNaN(arr: ArrayLike<number>) {
 }
 
 describe('buildBuildingsMesh', () => {
+  it('uses an attached Roofer roof mesh above the existing walls', () => {
+    const feat = makeFeature('gable');
+    feat.properties.roof_source = 'lod2';
+    feat.properties.roof_height = 4;
+    feat.properties.lod2_roof = JSON.stringify({
+      v: [[995, 1995, 0], [1005, 1995, 0], [1005, 2005, 4], [995, 2005, 4]],
+      f: [[[0, 1, 2, 3]]],
+    });
+    const { mesh } = buildBuildingsMesh([feat], toLocal, groundAt, material(), { details: false });
+    const pos = mesh.geometry.getAttribute('position') as THREE.BufferAttribute;
+    let maxY = -Infinity;
+    for (let i = 0; i < pos.count; i++) maxY = Math.max(maxY, pos.getY(i));
+    expect(maxY).toBeCloseTo(19, 2);
+  });
+
   it('builds a gable-roofed box within the expected height bounds', () => {
     const feat = makeFeature('gable');
     const { mesh, ranges } = buildBuildingsMesh([feat], toLocal, groundAt, material());

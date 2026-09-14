@@ -341,6 +341,34 @@ Record source URLs, dates, attribution and known limitations. A live service's u
 not mean every observation was surveyed on that date. Check counts and coverage after fetching, then
 rebuild: obtaining raw data alone does not update the viewer.
 
+ArcGIS Hub search and an Enterprise REST directory are not complete inventories of an organization.
+Richmond's public 3D building SceneServer was unlisted in GeoHub and absent from the city Enterprise
+directory, but an ArcGIS Online search scoped to the city's organization id found it. For 3D-source
+intake, search the organization directly by item type (`Scene Service`, `Layer Package`) and inspect
+related items as well as Hub datasets. Then profile the actual attributes before adopting the source:
+Richmond's model covered the city but labelled 127,246 of 128,454 unique objects as flat, so the
+existence of a multipatch layer did not make it a useful city-wide LoD2 replacement. The source's
+viewer appearance and item modification date are not substitutes for a roof-form histogram and data
+vintage check. See [model-texture-roadmap.md](model-texture-roadmap.md) for the Richmond results.
+
+Batch reconstruction tools can fail at tile scope even when one input feature is bad. Roofer rejected
+an entire pilot tile because a valid-looking processed multipolygon contained a three-coordinate,
+zero-area fragment after CRS conversion. Before handing footprints to an external reconstructor,
+make them valid, retain polygonal components above a small area floor, verify each exterior has at
+least three distinct vertices, and keep a source-id map for any split components. Run failures must
+fall back per building rather than erase the whole tile. The cleaned Upper Fan pilot reconstructed
+345 of 355 production footprints; the other ten retained the existing roof path because their point
+coverage was insufficient.
+
+Do not reconstruct one roof over a rowhouse merge made for rendering efficiency. In an Upper Fan
+sample, 53 merged output rows represented 405 individual source footprints; Richmond's city scene
+also retained 405 subtype-1 building objects there. A Roofer mesh belongs to its original source ID,
+so preserve individual footprints whenever reconstruction output is present. Combine evidence by
+surface: retain current footprint walls, styling and metadata; replace only the roof shell; fall back
+per building. The city multipatch is a segmentation/check source here, not the roof source, because
+nearly all of its citywide objects are labelled flat. Implementation: [lod2.py](../pipeline/lod2.py)
+and [buildings.ts](../web/src/buildings.ts). Regression: `test_lod2.py` and `buildings.test.ts`.
+
 When a city footprint layer gap-fills OSM, an `intersects` join alone is too aggressive: attached
 buildings often share a boundary with an OSM footprint and have zero overlap area. Treat a candidate as
 a duplicate only when their intersection covers a meaningful fraction of the smaller polygon. Preserve
@@ -395,9 +423,11 @@ coast) is a `Step` cached on its own key: the raw sources it declares, the code 
 of the steps that produced the layers it reads. `deps.py` resolves the code part statically: for the functions a
 step names it hashes the top-level definitions they reach in their own module (so `process_roads` and
 `process_buildings` do not share a key even though both live in `process.py`) and whole files for every other
-local module they import. Content hashes, not mtimes, so a checkout that restores identical text keeps the cache
-warm. Two things keep the analysis honest: `test_deps.py` rejects `import *`, `globals()`, `eval` and `importlib`
-in layer modules, and a step's own glue function is hashed too. When a step starts reading a new raw file, add it
+local module they import. The import fingerprint includes the imported symbol as well as its module, so changing
+an alias from one helper to another cannot preserve a stale key. Content hashes, not mtimes, mean a checkout that
+restores identical code keeps the cache warm. Two things keep the analysis honest: `test_deps.py` rejects
+`import *`, `globals()`, `eval` and `importlib` in layer modules, and a step's glue fingerprint follows the
+top-level helpers it calls in `layer_steps.py`. When a step starts reading a new raw file, add it
 to that step's `sources`; when it reads another layer, add it to `reads`, or its key will not move when the
 upstream changes. Verify a new step by building twice, once with `--no-cache`, and diffing every tile file; the
 first version of the old single-key cache silently dropped bridge `deck` lists, because parquet returns a list
@@ -412,6 +442,12 @@ files whose layer left the tile are removed, and `index.json` counts are carried
 by name (rewriting `pois` alone once cut its features from 81,854 to 9,682, every tree gone, with no error), is
 gone. Regressions: `pipeline/tests/test_layer_cache.py`, `test_layer_steps.py`, `test_deps.py`, and the
 incremental cases in `test_build_tiles.py`.
+
+The rows are only half of a tile file's contract: clipping, ownership and GeoJSON serialization code determine
+the bytes too. Include the `write_tiles` code fingerprint in every layer and terrain state key. Otherwise a
+precision or clipping fix can report every tile as unchanged and silently leave the old files in place.
+`STATE_VERSION` remains the escape hatch for a state-schema change, not the routine way to invalidate output
+after code edits. Regression: `test_tile_code_change_rewrites_files_with_unchanged_rows`.
 
 In the viewer, `__iso.refresh()` re-reads `index.json` and rebuilds the resident tiles (or one id) after a
 pipeline run, keeping the old mesh until the new one lands; the URL hash tracks the camera every half second, so
