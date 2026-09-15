@@ -1115,6 +1115,10 @@ def process_rail(raw_path: Path, terrain=None) -> gpd.GeoDataFrame:
 
 # ---------------------------------------------------------------- landuse / water / pois
 
+# Reviewed against current Richmond VGIN imagery. This globally unique OSM
+# feature is still a paved slab, but no longer functions as a tennis court.
+RICHMOND_LANDUSE_KIND_OVERRIDES = {("way", 236156641): "groundcover_paved"}
+
 
 def _landuse_kind(row: pd.Series) -> str | None:
     lu, le, am, na, pl = (_nn(row.get(k)) for k in ("landuse", "leisure", "amenity", "natural", "place"))
@@ -1189,8 +1193,23 @@ def process_landuse(raw_path: Path) -> gpd.GeoDataFrame:
     if len(raw) == 0:
         return gpd.GeoDataFrame(geometry=[], crs=CRS_PROJ)
     polys = raw[raw.geometry.geom_type.isin(["Polygon", "MultiPolygon"])].copy()
+    reviewed_kind = pd.Series([
+        RICHMOND_LANDUSE_KIND_OVERRIDES.get((_nn(row.get("element")), row.get("id")))
+        for _, row in polys.iterrows()
+    ], index=polys.index)
     polys["kind"] = polys.apply(_landuse_kind, axis=1)
+    polys.loc[reviewed_kind.notna(), "kind"] = reviewed_kind.dropna()
     polys = polys[polys["kind"].notna()]
+    # OSM sometimes maps a typed court inside a second anonymous pitch outline.
+    # Coplanar overlapping pitch fills z-fight in the renderer. Preserve both
+    # meanings, but cut the more specific surveyed surfaces out of the generic one.
+    pitch_sport = polys["sport"].map(_nn) if "sport" in polys else pd.Series(None, index=polys.index)
+    reviewed = reviewed_kind.reindex(polys.index).notna()
+    specific = polys[((polys["kind"] == "pitch") & pitch_sport.notna()) | reviewed]
+    generic = (polys["kind"] == "pitch") & pitch_sport.isna()
+    if len(specific) and generic.any():
+        polys.loc[generic, "geometry"] = polys.loc[generic].geometry.difference(specific.geometry.union_all())
+        polys = polys[~polys.geometry.is_empty]
     polys["pitch_layout"] = polys.apply(_pitch_layout, axis=1)
     polys["geometry"] = polys.geometry.simplify(1.0, preserve_topology=True).buffer(0)
     return gpd.GeoDataFrame({

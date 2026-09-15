@@ -116,6 +116,10 @@ deck profile instead of being raised by terrain beneath the span. For bridge end
 the pipeline can extrapolate a consistent grade from the connected same-class approach 20–28 m away,
 with slope, residual and height-change guards. This remains an estimated bridge profile.
 
+Current VGIN imagery shows OSM way 236156641 remains a paved slab but no longer functions as a tennis court.
+The Richmond landuse processor reclassifies that reviewed feature as paving and cuts it out of the enclosing
+anonymous grass pitch. This is a dated Richmond correction, not a general rule for suppressing OSM pitches.
+
 
 ## Station shed proportions and road follow-up (2026-09-09)
 

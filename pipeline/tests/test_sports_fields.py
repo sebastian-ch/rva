@@ -32,6 +32,39 @@ def test_pitch_retains_sport_surface_and_stable_layout_for_rendering(tmp_path):
     assert pd.isna(result.loc["osm:way/2", "sport"])
 
 
+def test_specific_court_is_cut_out_of_enclosing_anonymous_pitch(tmp_path):
+    outer = box(280000, 4158000, 280100, 4158100)
+    court = box(280020, 4158020, 280080, 4158080)
+    raw = gpd.GeoDataFrame({
+        "element": ["way", "way"], "id": [10, 11], "name": [None, None],
+        "leisure": ["pitch", "pitch"], "sport": [None, "tennis"],
+        "surface": [None, None], "landuse": [None, None],
+    }, geometry=[outer, court], crs="EPSG:32618")
+    path = tmp_path / "overlapping-pitches.parquet"
+    raw.to_parquet(path)
+
+    result = process_landuse(path).set_index("id")
+
+    assert result.loc["osm:way/10", "geometry"].intersection(court).area == pytest.approx(0)
+    assert result.loc["osm:way/11", "geometry"].area == pytest.approx(court.area)
+
+
+def test_reviewed_removed_richmond_court_becomes_paving(tmp_path):
+    raw = gpd.GeoDataFrame({
+        "element": ["way", "way"], "id": [236156641, 99], "name": [None, None],
+        "leisure": ["pitch", "pitch"], "sport": ["tennis", "tennis"],
+        "surface": [None, None], "landuse": [None, None],
+    }, geometry=[box(280000, 4158000, 280050, 4158050), box(280100, 4158000, 280150, 4158050)],
+       crs="EPSG:32618")
+    path = tmp_path / "removed-richmond-court.parquet"
+    raw.to_parquet(path)
+
+    result = process_landuse(path)
+
+    assert set(result.id) == {"osm:way/236156641", "osm:way/99"}
+    assert result.set_index("id").loc["osm:way/236156641", "kind"] == "groundcover_paved"
+
+
 def test_baseball_layout_uses_corner_with_two_long_boundary_runs(tmp_path):
     # The tiny outfield notch is sharper than home, but its adjacent runs are short.
     diamond = translate(rotate(Polygon([(0, 0), (80, 0), (81, 40), (81, 41), (40, 81), (0, 80)]), 12,

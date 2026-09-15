@@ -45,6 +45,20 @@ def test_current_rgb_bare_soil_overrides_stale_nir_vegetation():
     assert set(np.unique(out[3:-3, 12:15])) == {1}
 
 
+def test_short_ambiguous_gap_inherits_nearest_confident_cover():
+    naip = np.zeros((4, 8, 12), np.uint8)
+    rgb = np.full((3, 8, 12), 110, np.uint8)
+    ndsm = np.zeros((8, 12), np.float32)
+    naip[0] = 80
+    naip[3, :, :4] = 180
+    naip[3, :, 4:7] = 100
+    naip[3, :, 7:] = 70
+
+    out = classify_arrays(naip, rgb, ndsm)
+
+    assert np.all(out[2:-2, 4:7] != 0)
+
+
 def test_polygonize_drops_small_regions_and_honors_exclusion():
     classes = np.zeros((10, 12), np.uint8)
     classes[:, :5] = 1

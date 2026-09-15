@@ -10,7 +10,7 @@ from pathlib import Path
 
 import geopandas as gpd
 import numpy as np
-from scipy.ndimage import binary_closing, binary_opening, label
+from scipy.ndimage import binary_closing, binary_opening, distance_transform_edt, label
 from shapely.geometry import box, shape
 from shapely.ops import unary_union
 from shapely.strtree import STRtree
@@ -20,6 +20,7 @@ from config import CRS_PROJ
 CELL_M = 3.0
 SIMPLIFY_M = 3.0
 SMOOTH_M = 3.0
+MAX_GAP_CELLS = 4
 MIN_AREA_M2 = {"groundcover_lawn": 90.0, "groundcover_paved": 120.0, "groundcover_bare": 120.0}
 PRESERVE_KINDS = {"park", "grass", "pitch", "parking", "cemetery", "plaza", "forest", "beach",
                   "deck", "groyne", "breakwater", "seawall", "pier", "canal_bank"}
@@ -69,6 +70,13 @@ def classify_arrays(naip: np.ndarray, rgb: np.ndarray, ndsm: np.ndarray) -> np.n
         clean = binary_opening(binary_closing(mask, structure=np.ones((3, 3), bool)),
                                structure=np.ones((2, 2), bool))
         out[clean] = value
+    # The NDVI deadband and low-height shadows otherwise punch base-ground
+    # seams between nearby classified cells. Extend only to short gaps; broad
+    # uncertain regions remain unknown, and exact vectors are subtracted later.
+    if np.any(out):
+        distance, nearest = distance_transform_edt(out == 0, return_indices=True)
+        fill = low & (out == 0) & (distance <= MAX_GAP_CELLS)
+        out[fill] = out[tuple(index[fill] for index in nearest)]
     return out
 
 

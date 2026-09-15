@@ -15,6 +15,8 @@ they follow terrain rather than sinking through it. Fall back to an unmarked spo
 sports. Tennis complexes may contain several courts inside one outline. For baseball, find home where the two
 long foul-line boundary runs meet; the sharpest vertex may just be a short chord on the outfield arc. Regressions live in
 `pipeline/tests/test_sports_fields.py` and `web/src/areas.test.ts`.
+An anonymous enclosing pitch may overlap a separately mapped typed court. Cut the specific court geometry out of
+the generic surface; rendering both coplanar fills produces triangular z-fighting shards.
 
 An enclosing park polygon can still show through a correctly preserved pitch when the park's vertical lift is
 higher. Give pitch surfaces explicit priority above parks, then put paint above the pitch. Treat a surface tag as
@@ -38,6 +40,9 @@ the newer RGB boundary rather than repainting the entire stale NIR component wit
 Raster cleanup and simplification alone can still leave conspicuous orthogonal corners at overview zooms. Apply
 bounded vector smoothing before subtracting surveyed exclusions, so inferred outer edges soften while roads,
 buildings, semantic landuse and water keep their exact source boundaries.
+Treat confident imagery classes as a local partition: extend the nearest class across only short, low-height
+NDVI-deadband or shadow gaps. Leaving those cells unknown separates related patches with conspicuous base-ground seams;
+broad uncertain regions must remain unclassified.
 The 3 m classifier is also too coarse for narrow driveways and side yards: exclude inferred paving within 5 m of
 building footprints and keep its palette close to the base ground. Broad unmapped lots still survive that clearance.
 Imagery-derived classes fill gaps and may refine generic industrial land. Run the surveyed shoreline difference
