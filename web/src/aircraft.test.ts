@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { altitudeFeet, predictedCoords, toUtm, type AircraftItem } from './aircraft';
+import { altitudeFeet, displayAltitude, predictedCoords, toUtm, type AircraftItem } from './aircraft';
 
 const NOW = Date.parse('2026-09-14T12:00:00Z');
 const item: AircraftItem = {
@@ -20,6 +20,13 @@ describe('aircraft feed conversion', () => {
     const [x, y] = toUtm(-77.436048, 37.540725, 18);
     expect(x).toBeCloseTo(284777.681, 2);
     expect(y).toBeCloseTo(4157648.304, 2);
+  });
+
+  it('compresses flight levels into the city-scale display band', () => {
+    expect(displayAltitude(0)).toBe(160);
+    expect(displayAltitude(19_000)).toBeGreaterThan(260);
+    expect(displayAltitude(19_000)).toBeLessThan(275);
+    expect(displayAltitude(70_000)).toBeLessThan(290);
   });
 
   it('predicts motion for at most 45 seconds and expires stale records', () => {

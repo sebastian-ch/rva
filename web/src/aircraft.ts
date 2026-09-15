@@ -1,12 +1,11 @@
 import * as THREE from 'three';
 import type { TileIndex } from './types';
-import { Z_SCALE } from './elevation';
 
 const KNOT_MPS = 0.514444;
-const FOOT_M = 0.3048;
 const PREDICT_MS = 45_000;
 const POLL_MS = 30_000;
 const BLEND_MS = 2_000;
+const DISPLAY_FLOOR = 160;
 
 export interface AircraftItem {
   id: string;
@@ -44,6 +43,11 @@ export function altitudeFeet(item: AircraftItem): number | null {
   if (!match) return null;
   const value = Number(match[1].replaceAll(',', ''));
   return Number.isFinite(value) && value >= -1000 && value <= 70_000 ? value : null;
+}
+
+/** Compress real flight levels into a readable city-scale display band. */
+export function displayAltitude(feet: number, floor = DISPLAY_FLOOR): number {
+  return floor + 130 * (1 - Math.exp(-Math.max(0, feet) / 12_000));
 }
 
 /** Short great-circle dead reckoning from the source position. */
@@ -90,6 +94,8 @@ function material(color: string) {
 
 function model(kind: 'airplane' | 'helicopter' | 'unknown'): { group: THREE.Group; rotor?: THREE.Object3D } {
   const group = new THREE.Group();
+  // True-scale aircraft disappear at the default city view. This layer uses map symbols.
+  group.scale.setScalar(2.5);
   const body = material(kind === 'helicopter' ? '#d4533b' : kind === 'unknown' ? '#e4cc8c' : '#e9e4d8');
   const dark = material('#3d4650');
   const add = (geometry: THREE.BufferGeometry, mat: THREE.Material, position: [number, number, number], rotation?: [number, number, number]) => {
@@ -212,7 +218,7 @@ export class AircraftLayer {
       const visible = x >= minx && x <= maxx && y >= miny && y <= maxy;
       track.model.visible = visible;
       if (!visible) continue;
-      track.model.position.set(x - ox, (altitudeFeet(track.item)! * FOOT_M - this.index.base_elevation) * Z_SCALE, -(y - oy));
+      track.model.position.set(x - ox, displayAltitude(altitudeFeet(track.item)!), -(y - oy));
       if (Number.isFinite(track.item.heading)) track.model.rotation.y = Math.PI / 2 - THREE.MathUtils.degToRad(track.item.heading!);
       if (!this.paused && track.rotor) track.rotor.rotation.y += dt * 16;
     }

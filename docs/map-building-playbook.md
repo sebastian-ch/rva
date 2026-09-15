@@ -40,11 +40,15 @@ image tone and LiDAR date; recalibrate them for every region.
 Live moving objects belong in a persistent scene group rather than streamed map tiles. Treat the feed timestamp,
 expiry, coordinates, heading, speed and altitude as one contract; do not invent altitude for incomplete records.
 Predict motion only for a short bounded interval, blend the next received correction, and keep reported positions
-for reduced-motion users. Convert coordinates into the region projection and altitude into the same vertical frame
-as terrain before rendering. Pause must freeze both translation and model animation. The Richmond implementation
+for reduced-motion users. Convert coordinates into the region projection. At city scale, literal cruising altitude
+can put valid aircraft above the camera far plane: preserve the source altitude for information, but map it through
+a documented monotonic display-height compression into the visible air band. Use an intentionally enlarged map symbol
+when a true-scale vehicle would be unreadable. Pause must freeze both translation and model animation. The Richmond implementation
 uses the cached `rva-live` aircraft endpoint in `web/src/aircraft.ts`; its current text-only altitude is handled by
-a strict compatibility parser until the backend publishes numeric altitude and reference fields. Regressions live
-in `web/src/aircraft.test.ts`. Other live feeds may use different time, altitude and coordinate semantics.
+a strict compatibility parser until the backend publishes numeric altitude and reference fields. A September 2026
+regression rendered a valid 19,000-foot report about 9,200 scene units high, beyond the 6,000-unit camera far plane;
+`displayAltitude` restores the 160–290 scene-unit band. Regressions live in `web/src/aircraft.test.ts`. Other live
+feeds may use different time, altitude and coordinate semantics, and their display band must be recalibrated.
 
 This is the reusable record of fixes learned while building Richmond and extending the regional map
 viewer. Read it before adding a region, replacing elevation sources, or changing geometry/rendering.
