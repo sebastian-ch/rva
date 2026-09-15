@@ -136,8 +136,8 @@ Screenshots show stylized rowhouse volumes and measured canopy placement; detail
 facades, species-specific crowns and exact roof ornamentation remain approximations.
 
 Ground cover now combines the leaf-off VGIN VBMP RGB mosaic, NAIP NIR and the 2025 LiDAR nDSM on a 3 m
-classification grid. The build added 7,647 unique simplified polygons: 4,369 lawn, 3,083 paved and 195 bare
-ground, covering 6.42 km². Existing mapped landuse and surveyed hydro retain priority. Checks at VCU, Shockoe,
+classification grid. The cleaned build adds 4,000 unique simplified polygons: 2,837 lawn, 951 paved and 212 bare
+ground, covering about 8.01 km². Existing mapped landuse and surveyed hydro retain priority. Checks at VCU, Shockoe,
 the riverfront and the Fan showed useful yard, campus, lot and industrial-surface separation without photo
 draping; tile-worker p95 remained below 50 ms. The VGIN mosaic is cached locally as
 `data/raw/vbmp_m77p4860_37p5170_m77p4180_37p5680.tif` and can be recreated with `pipeline/fetch_vbmp.py`.

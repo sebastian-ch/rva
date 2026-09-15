@@ -29,9 +29,13 @@ supplies NIR, which separates vegetation more reliably; LiDAR nDSM removes roofs
 a coarse grid, clean it morphologically, simplify at the grid resolution and reject small components before
 polygonizing. Subtract buildings, road widths, water and preserved semantic landuse with their source vector
 geometry afterward. Rasterizing those exclusions first leaves one-cell stair steps around every object.
+Vector subtraction can split one large classified region into many small wedges; reapply the minimum-area
+gate to each resulting polygon, since checking only the combined MultiPolygon lets blocky courtyard remnants survive.
+The 3 m classifier is also too coarse for narrow driveways and side yards: exclude inferred paving within 5 m of
+building footprints and keep its palette close to the base ground. Broad unmapped lots still survive that clearance.
 Imagery-derived classes fill gaps and may refine generic industrial land. Run the surveyed shoreline difference
 after extraction because the base OSM water polygon may not cover the full river. The Richmond settings use a
-3 m grid, 3 m simplification and 90–120 m² minimum areas. They produce 4,746 polygons and keep tile-worker p95
+3 m grid, 3 m simplification and 90–120 m² minimum areas. They produce 4,000 polygons and keep tile-worker p95
 under 50 ms. Implementation:
 `pipeline/groundcover.py`, `pipeline/fetch_vbmp.py` and `web/src/areas.ts`. Regressions:
 `pipeline/tests/test_groundcover.py` and `web/src/areas.test.ts`. Thresholds depend on flight season, band order,
@@ -466,7 +470,10 @@ a porch or rear addition supplies that lowest point. The symptom is a rowhouse r
 triangular wedge even though its RMSE is low. Preserve Roofer's lowest-roof height above its ground datum;
 when that eave is below the procedural wall top, lower the whole shell by the difference and clamp the
 buried portion at the wall top. Never raise a shell above the wall, because that opens a visible gap.
-Regression: `test_low_addition_does_not_lift_the_main_roof` in `pipeline/tests/test_lod2.py`.
+Reject corrections beyond 5 m: they collapse most vertices into triangular fragments and indicate incompatible
+wall and roof datums. The 2218 and 2220 Monument Avenue shells exposed this limit. Regressions:
+`test_low_addition_does_not_lift_the_main_roof` and `test_large_wall_alignment_keeps_procedural_roof` in
+`pipeline/tests/test_lod2.py`.
 
 RMSE also does not prevent over-segmentation. In the Richmond residential output, repeated odd triangles
 came from examples such as `osm:way/369321554`, where Roofer fit 15 planes and 6 ridgelines to a 139 m²

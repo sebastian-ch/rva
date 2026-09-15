@@ -179,6 +179,22 @@ def test_short_wall_does_not_leave_a_gap_below_roof(tmp_path):
     assert max(vertex[2] for vertex in mesh["v"]) == 2.0
 
 
+def test_large_wall_alignment_keeps_procedural_roof(tmp_path):
+    source = tmp_path / "lod2"
+    source.mkdir()
+    _write_cityjsonseq(source / "roof.city.jsonl")
+    buildings = gpd.GeoDataFrame([{
+        "id": "osm:way/1", "hidden": False, "height": 12.0,
+        "roof_source": "lidar", "roof_height": 1.0,
+        "geometry": box(100, 200, 110, 210),
+    }], crs="EPSG:32618")
+
+    out = attach_roofs(buildings, source, "EPSG:32618")
+
+    assert out.iloc[0].roof_source == "lidar"
+    assert out.iloc[0].lod2_roof is None
+
+
 def test_near_vertical_roof_plane_is_ignored(tmp_path):
     path = tmp_path / "spike.city.jsonl"
     _write_cityjsonseq(path)

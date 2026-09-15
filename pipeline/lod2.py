@@ -30,6 +30,7 @@ MEDIUM_BUILDING_AREA_M2 = 600.0
 MAX_MEDIUM_BUILDING_RIDGES = 6
 MAX_MEDIUM_BUILDING_PLANES = 19
 MAX_COMPLEX_SMALL_ROOF_RELIEF_M = 5.0
+MAX_ROOF_LOWERING_M = 5.0
 ROOF_TYPES = {"slanted", "horizontal", "multiple horizontal"}
 
 
@@ -183,10 +184,15 @@ def _merge_meshes(first: dict, second: dict) -> dict:
     }
 
 
-def _align_to_wall(encoded: str, wall_height: float) -> str:
+def _align_to_wall(encoded: str, wall_height: float) -> str | None:
     """Lower a multi-level shell to its measured position without opening a wall gap."""
     mesh = json.loads(encoded)
     shift = min(0.0, float(mesh.pop("e")) - float(wall_height))
+    # A large correction collapses most reconstructed vertices onto the wall top,
+    # leaving a patchwork of triangular remnants. That indicates incompatible
+    # wall/roof datums, so retain the procedural roof instead.
+    if shift < -MAX_ROOF_LOWERING_M:
+        return None
     mesh["v"] = [[x, y, round(max(0.0, z + shift), 2)] for x, y, z in mesh["v"]]
     return json.dumps(mesh, separators=(",", ":"))
 

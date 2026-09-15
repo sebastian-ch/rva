@@ -54,3 +54,24 @@ def test_polygonize_subtracts_source_resolution_vectors_after_raster_classificat
     assert cover.intersection(building).area < 1e-6
     # The cut follows the rotated source footprint, rather than 3 m raster steps.
     assert max(Point(xy).distance(cover.boundary) for xy in building.exterior.coords) < 1e-6
+
+
+def test_polygonize_reapplies_minimum_area_to_fragments_after_vector_subtraction():
+    classes = np.full((20, 20), 2, np.uint8)
+    exclusion = box(55, 0, 59, 60)
+
+    result = polygonize(classes, from_origin(0, 60, 3, 3), vector_exclusion=[exclusion])
+
+    parts = [part for geom in result.geometry for part in getattr(geom, "geoms", [geom])]
+    assert all(part.area >= 120 for part in parts)
+    assert not result.geometry.union_all().covers(Point(59.5, 30))
+
+
+def test_polygonize_supports_class_specific_vector_exclusions():
+    classes = np.full((20, 20), 2, np.uint8)
+    building_apron = box(20, 20, 40, 40)
+
+    result = polygonize(classes, from_origin(0, 60, 3, 3),
+                        kind_vector_exclusion={"groundcover_paved": [building_apron]})
+
+    assert result.geometry.union_all().intersection(building_apron).area == 0

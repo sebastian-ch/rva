@@ -21,7 +21,7 @@ Rank accordingly — do not spend effort re-deriving heights.
 | 2a | Large-building setback / massing audit | **done 2026-09-14** — 1,175 candidates reviewed; seven stable multi-height cases modeled |
 | 2b | Sports-field surface geometry | **done 2026-09-14** — tennis, baseball, football and soccer surfaces and tile-stable markings |
 | 3 | Roof furniture from dense LiDAR | **pilot done 2026-09-14** — 20 measured objects on five of 30 reviewed buildings; citywide expansion next |
-| 4 | Ground cover from VGIN RGB + NAIP NIR + nDSM | **done 2026-09-14** — 7,647 simplified lawn, paving and bare-ground polygons |
+| 4 | Ground cover from VGIN RGB + NAIP NIR + nDSM | **done 2026-09-14; refined 2026-09-15** — 4,000 cleaned lawn, paving and bare-ground polygons |
 | 5 | Split-grammar facade geometry, lower two floors | not started |
 | 6 | Wall colour and surveyed props from Mapillary | not started |
 | 7 | Landmarks from HABS drawings and own photogrammetry | not started |

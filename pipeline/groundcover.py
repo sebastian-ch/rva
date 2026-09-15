@@ -94,7 +94,8 @@ def _exclusion_geometries(buildings: gpd.GeoDataFrame, roads: gpd.GeoDataFrame,
 
 
 def polygonize(classes: np.ndarray, transform, exclusion: np.ndarray | None = None,
-               clip=None, vector_exclusion: list | None = None) -> gpd.GeoDataFrame:
+               clip=None, vector_exclusion: list | None = None,
+               kind_vector_exclusion: dict[str, list] | None = None) -> gpd.GeoDataFrame:
     """Convert a coarse class grid to aggressively simplified map-scale polygons."""
     from rasterio.features import shapes
 
@@ -104,6 +105,11 @@ def polygonize(classes: np.ndarray, transform, exclusion: np.ndarray | None = No
     names = {1: "groundcover_lawn", 2: "groundcover_paved", 3: "groundcover_bare"}
     exclusions = [g for g in (vector_exclusion or []) if g is not None and not g.is_empty]
     exclusion_tree = STRtree(exclusions) if exclusions else None
+    kind_exclusions = {
+        kind: [g for g in geoms if g is not None and not g.is_empty]
+        for kind, geoms in (kind_vector_exclusion or {}).items()
+    }
+    kind_trees = {kind: STRtree(geoms) for kind, geoms in kind_exclusions.items() if geoms}
     rows = []
     for raw, value in shapes(data, mask=data > 0, transform=transform, connectivity=8):
         kind = names.get(int(value))
@@ -123,8 +129,22 @@ def polygonize(classes: np.ndarray, transform, exclusion: np.ndarray | None = No
                 # Subtract the original vectors after polygonization. Rasterizing
                 # these masks first creates 3 m sawteeth around every building and road.
                 geom = geom.difference(unary_union([exclusions[int(i)] for i in hits]))
-        if geom.is_empty or geom.area < MIN_AREA_M2[kind]:
+        extra_tree = kind_trees.get(kind)
+        if extra_tree is not None and not geom.is_empty:
+            hits = extra_tree.query(geom, predicate="intersects")
+            if len(hits):
+                extra = kind_exclusions[kind]
+                geom = geom.difference(unary_union([extra[int(i)] for i in hits]))
+        if geom.is_empty:
             continue
+        # Difference can split one large classified region into dozens of tiny
+        # wedges around buildings. Reapply the area gate per polygon rather than
+        # to the combined MultiPolygon, or those blocky remnants survive.
+        parts = list(geom.geoms) if geom.geom_type in {"MultiPolygon", "GeometryCollection"} else [geom]
+        parts = [part for part in parts if part.geom_type == "Polygon" and part.area >= MIN_AREA_M2[kind]]
+        if not parts:
+            continue
+        geom = unary_union(parts)
         rows.append({"id": f"imagery:{kind}:{len(rows)}", "name": None, "kind": kind,
                      "sport": None, "surface": None, "pitch_layout": None,
                      "source": "vgin_vbmp+naip+lidar2025", "geometry": geom})
@@ -142,10 +162,14 @@ def derive_groundcover(vbmp_path: Path, naip_path: Path, ndsm_path: Path, buildi
     naip, rgb, ndsm, transform = _aligned_inputs(vbmp_path, naip_path, ndsm_path, cell)
     classes = classify_arrays(naip, rgb, ndsm)
     exclusions = _exclusion_geometries(buildings, roads, landuse, water)
+    # The 3 m classifier cannot resolve narrow driveways and side yards cleanly.
+    # Keep inferred paving away from building edges while retaining broad lots.
+    paved_exclusions = [g.buffer(5.0) for g in buildings.geometry if g is not None and not g.is_empty]
     left, top = transform * (0, 0)
     right, bottom = transform * (classes.shape[1], classes.shape[0])
     result = polygonize(classes, transform, clip=box(left, bottom, right, top),
-                        vector_exclusion=exclusions)
+                        vector_exclusion=exclusions,
+                        kind_vector_exclusion={"groundcover_paved": paved_exclusions})
     if len(result):
         counts = result.groupby("kind").size().to_dict()
         area = {k: round(float(v.geometry.area.sum()) / 1e6, 2) for k, v in result.groupby("kind")}
