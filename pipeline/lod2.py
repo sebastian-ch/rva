@@ -26,6 +26,10 @@ MAX_ROOF_SLOPE_DEG = 70.0
 MIN_FOOTPRINT_COVERAGE = 0.5
 MAX_SMALL_BUILDING_RIDGES = 3
 SMALL_BUILDING_AREA_M2 = 300.0
+MEDIUM_BUILDING_AREA_M2 = 600.0
+MAX_MEDIUM_BUILDING_RIDGES = 6
+MAX_MEDIUM_BUILDING_PLANES = 19
+MAX_COMPLEX_SMALL_ROOF_RELIEF_M = 5.0
 ROOF_TYPES = {"slanted", "horizontal", "multiple horizontal"}
 
 
@@ -160,6 +164,7 @@ def _roof_mesh(feature: dict, scale: list[float], translate: list[float], transf
         # rear addition supplies the shell's lowest vertex.
         "e": round(roof_floor - attrs["rf_h_ground"], 2),
         "r": int(attrs.get("rf_ridgelines") or 0),
+        "p": int(attrs.get("rf_roof_planes") or 0),
     }
 
 
@@ -174,6 +179,7 @@ def _merge_meshes(first: dict, second: dict) -> dict:
         "f": first["f"] + [[[i + offset for i in ring] for ring in face] for face in second["f"]],
         "e": eave,
         "r": int(first.get("r", 0)) + int(second.get("r", 0)),
+        "p": int(first.get("p", 0)) + int(second.get("p", 0)),
     }
 
 
@@ -189,15 +195,27 @@ def _finalize_mesh(encoded: str) -> str:
     """Remove importer-only quality metadata before writing tile properties."""
     mesh = json.loads(encoded)
     mesh.pop("r", None)
+    mesh.pop("p", None)
     return json.dumps(mesh, separators=(",", ":"))
 
 
 def _covers_footprint(encoded: str, footprint) -> bool:
     """Reject partial shells that would suppress most of the procedural roof."""
     mesh = json.loads(encoded)
-    if footprint is not None and footprint.area < SMALL_BUILDING_AREA_M2 \
-            and int(mesh.get("r", 0)) > MAX_SMALL_BUILDING_RIDGES:
-        return False
+    if footprint is not None:
+        area = footprint.area
+        ridges, planes = int(mesh.get("r", 0)), int(mesh.get("p", 0))
+        if area < SMALL_BUILDING_AREA_M2 and ridges > MAX_SMALL_BUILDING_RIDGES:
+            return False
+        relief = max((float(v[2]) for v in mesh.get("v", [])), default=0.0)
+        if (area < SMALL_BUILDING_AREA_M2
+                and relief > MAX_COMPLEX_SMALL_ROOF_RELIEF_M
+                and ridges >= 1 and planes >= 9):
+            return False
+        if (area < MEDIUM_BUILDING_AREA_M2
+                and ridges > MAX_MEDIUM_BUILDING_RIDGES
+                and planes > MAX_MEDIUM_BUILDING_PLANES):
+            return False
     surfaces = []
     for face in mesh["f"]:
         try:

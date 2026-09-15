@@ -210,3 +210,51 @@ def test_oversegmented_small_roof_keeps_procedural_fallback(tmp_path):
     out = attach_roofs(buildings, source, "EPSG:32618")
     assert out.iloc[0].roof_source == "lidar"
     assert out.iloc[0].lod2_roof is None
+
+
+def test_oversegmented_medium_roof_keeps_procedural_fallback(tmp_path):
+    source = tmp_path / "lod2"
+    source.mkdir()
+    path = source / "roof.city.jsonl"
+    _write_cityjsonseq(path)
+    lines = path.read_text().splitlines()
+    feature = json.loads(lines[1])
+    building = next(o for o in feature["CityObjects"].values() if o["type"] == "Building")
+    building["attributes"]["rf_ridgelines"] = 7
+    building["attributes"]["rf_roof_planes"] = 28
+    path.write_text(lines[0] + "\n" + json.dumps(feature) + "\n")
+    buildings = gpd.GeoDataFrame([{
+        "id": "osm:way/1", "hidden": False, "height": 10.0,
+        "roof_source": "lidar", "roof_height": 1.0,
+        "geometry": box(100, 200, 120, 220),
+    }], crs="EPSG:32618")
+
+    out = attach_roofs(buildings, source, "EPSG:32618")
+
+    assert out.iloc[0].roof_source == "lidar"
+    assert out.iloc[0].lod2_roof is None
+
+
+def test_tall_complex_small_roof_keeps_procedural_fallback(tmp_path):
+    source = tmp_path / "lod2"
+    source.mkdir()
+    path = source / "roof.city.jsonl"
+    _write_cityjsonseq(path)
+    lines = path.read_text().splitlines()
+    feature = json.loads(lines[1])
+    feature["vertices"][2][2] = 1100
+    feature["vertices"][3][2] = 1100
+    building = next(o for o in feature["CityObjects"].values() if o["type"] == "Building")
+    building["attributes"]["rf_ridgelines"] = 1
+    building["attributes"]["rf_roof_planes"] = 9
+    path.write_text(lines[0] + "\n" + json.dumps(feature) + "\n")
+    buildings = gpd.GeoDataFrame([{
+        "id": "osm:way/1", "hidden": False, "height": 5.0,
+        "roof_source": "lidar", "roof_height": 1.0,
+        "geometry": box(100, 200, 110, 210),
+    }], crs="EPSG:32618")
+
+    out = attach_roofs(buildings, source, "EPSG:32618")
+
+    assert out.iloc[0].roof_source == "lidar"
+    assert out.iloc[0].lod2_roof is None

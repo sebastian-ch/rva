@@ -1,7 +1,7 @@
 import geopandas as gpd
 import numpy as np
 from rasterio.transform import from_origin
-from shapely.geometry import box
+from shapely.geometry import Point, Polygon, box
 
 from groundcover import classify_arrays, polygonize
 
@@ -42,3 +42,15 @@ def test_polygonize_drops_small_regions_and_honors_exclusion():
     assert set(result.kind) == {"groundcover_lawn", "groundcover_paved"}
     lawn = result[result.kind == "groundcover_lawn"].geometry.area.sum()
     assert lawn == 270
+
+
+def test_polygonize_subtracts_source_resolution_vectors_after_raster_classification():
+    classes = np.ones((20, 20), np.uint8)
+    building = Polygon([(12.2, 12.7), (31.4, 16.1), (28.8, 31.6), (9.5, 28.2)])
+
+    result = polygonize(classes, from_origin(0, 60, 3, 3), vector_exclusion=[building])
+
+    cover = result.geometry.union_all()
+    assert cover.intersection(building).area < 1e-6
+    # The cut follows the rotated source footprint, rather than 3 m raster steps.
+    assert max(Point(xy).distance(cover.boundary) for xy in building.exterior.coords) < 1e-6

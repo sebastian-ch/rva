@@ -26,11 +26,13 @@ four-corner home/first/second/third polygon reads as an artificial square and le
 Ground-cover extraction needs complementary imagery rather than the sharpest image alone. VGIN's Richmond
 RGB is sharper and leaf-off, so it supplies clean lot and material boundaries; NAIP's coarser four-band image
 supplies NIR, which separates vegetation more reliably; LiDAR nDSM removes roofs and tree crowns. Classify on
-a coarse grid, clean it morphologically, simplify hard and reject small components before polygonizing. Preserve
-mapped parks, pitches, parking and plazas, and mask buildings, road widths and water; imagery-derived classes
-fill gaps and may refine generic industrial land. Run the surveyed shoreline difference after extraction because
-the base OSM water polygon may not cover the full river. The Richmond settings use a 3 m grid, 1.5 m simplification
-and 90–120 m² minimum areas. They produced 7,647 polygons and kept tile-worker p95 under 50 ms. Implementation:
+a coarse grid, clean it morphologically, simplify at the grid resolution and reject small components before
+polygonizing. Subtract buildings, road widths, water and preserved semantic landuse with their source vector
+geometry afterward. Rasterizing those exclusions first leaves one-cell stair steps around every object.
+Imagery-derived classes fill gaps and may refine generic industrial land. Run the surveyed shoreline difference
+after extraction because the base OSM water polygon may not cover the full river. The Richmond settings use a
+3 m grid, 3 m simplification and 90–120 m² minimum areas. They produce 4,746 polygons and keep tile-worker p95
+under 50 ms. Implementation:
 `pipeline/groundcover.py`, `pipeline/fetch_vbmp.py` and `web/src/areas.ts`. Regressions:
 `pipeline/tests/test_groundcover.py` and `web/src/areas.test.ts`. Thresholds depend on flight season, band order,
 image tone and LiDAR date; recalibrate them for every region.
@@ -464,10 +466,14 @@ Regression: `test_low_addition_does_not_lift_the_main_roof` in `pipeline/tests/t
 
 RMSE also does not prevent over-segmentation. In the Richmond residential output, repeated odd triangles
 came from examples such as `osm:way/369321554`, where Roofer fit 15 planes and 6 ridgelines to a 139 m²
-house. Reject roof-labelled planes over 70°, and let footprints below 300 m² fall back when Roofer reports
-more than three ridgelines. These limits apply to the current stylized hybrid; reassess them for a viewer
-that renders Roofer's full solid. Regressions: `test_near_vertical_roof_plane_is_ignored` and
-`test_oversegmented_small_roof_keeps_procedural_fallback`.
+house. Reject roof-labelled planes over 70° and let footprints below 300 m² fall back when Roofer reports
+more than three ridgelines. Also reject a small shell when more than 5 m of relief is split across at least
+nine planes plus a ridge. Medium footprints below 600 m² fall back when they exceed six ridges and nineteen
+planes; `osm:way/369024988` exposed that second scale of fragmentation. These limits apply to the current
+stylized hybrid; reassess them for a viewer that renders Roofer's full solid. Regressions:
+`test_near_vertical_roof_plane_is_ignored`, `test_oversegmented_small_roof_keeps_procedural_fallback`,
+`test_tall_complex_small_roof_keeps_procedural_fallback`, and
+`test_oversegmented_medium_roof_keeps_procedural_fallback`.
 
 An aggregate footprint comparison can hide the few buildings where an alternate source is materially
 better. Rank large-building exceptions separately, but do not treat extra corners as accuracy: Richmond's

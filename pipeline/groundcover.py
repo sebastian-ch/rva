@@ -12,10 +12,13 @@ import geopandas as gpd
 import numpy as np
 from scipy.ndimage import binary_closing, binary_opening
 from shapely.geometry import box, shape
+from shapely.ops import unary_union
+from shapely.strtree import STRtree
 
 from config import CRS_PROJ
 
 CELL_M = 3.0
+SIMPLIFY_M = 3.0
 MIN_AREA_M2 = {"groundcover_lawn": 90.0, "groundcover_paved": 120.0, "groundcover_bare": 120.0}
 PRESERVE_KINDS = {"park", "grass", "pitch", "parking", "cemetery", "plaza", "forest", "beach",
                   "deck", "groyne", "breakwater", "seawall", "pier", "canal_bank"}
@@ -74,10 +77,9 @@ def _aligned_inputs(vbmp_path: Path, naip_path: Path, ndsm_path: Path, cell: flo
     return naip, rgb, ndsm, transform
 
 
-def _exclusion_mask(shape_: tuple[int, int], transform, buildings: gpd.GeoDataFrame,
-                    roads: gpd.GeoDataFrame, landuse: gpd.GeoDataFrame, water: gpd.GeoDataFrame) -> np.ndarray:
-    from rasterio.features import rasterize
-
+def _exclusion_geometries(buildings: gpd.GeoDataFrame, roads: gpd.GeoDataFrame,
+                          landuse: gpd.GeoDataFrame, water: gpd.GeoDataFrame) -> list:
+    """Return source-resolution geometry that imagery-derived cover must not obscure."""
     geoms = []
     geoms.extend(g.buffer(1.0) for g in buildings.geometry if g is not None and not g.is_empty)
     for _, row in roads.iterrows():
@@ -88,14 +90,11 @@ def _exclusion_mask(shape_: tuple[int, int], transform, buildings: gpd.GeoDataFr
         geoms.extend(g for g in landuse.loc[landuse.kind.isin(PRESERVE_KINDS), "geometry"]
                      if g is not None and not g.is_empty)
     geoms.extend(g.buffer(0.5) for g in water.geometry if g is not None and not g.is_empty)
-    if not geoms:
-        return np.zeros(shape_, bool)
-    return rasterize(((g, 1) for g in geoms), out_shape=shape_, transform=transform,
-                     fill=0, dtype=np.uint8, all_touched=True).astype(bool)
+    return geoms
 
 
 def polygonize(classes: np.ndarray, transform, exclusion: np.ndarray | None = None,
-               clip=None) -> gpd.GeoDataFrame:
+               clip=None, vector_exclusion: list | None = None) -> gpd.GeoDataFrame:
     """Convert a coarse class grid to aggressively simplified map-scale polygons."""
     from rasterio.features import shapes
 
@@ -103,6 +102,8 @@ def polygonize(classes: np.ndarray, transform, exclusion: np.ndarray | None = No
     if exclusion is not None:
         data[exclusion] = 0
     names = {1: "groundcover_lawn", 2: "groundcover_paved", 3: "groundcover_bare"}
+    exclusions = [g for g in (vector_exclusion or []) if g is not None and not g.is_empty]
+    exclusion_tree = STRtree(exclusions) if exclusions else None
     rows = []
     for raw, value in shapes(data, mask=data > 0, transform=transform, connectivity=8):
         kind = names.get(int(value))
@@ -113,7 +114,15 @@ def polygonize(classes: np.ndarray, transform, exclusion: np.ndarray | None = No
             geom = geom.intersection(clip)
         if geom.is_empty or geom.area < MIN_AREA_M2[kind]:
             continue
-        geom = geom.simplify(1.5, preserve_topology=True).buffer(0)
+        # Boundaries cannot justify detail below the source grid. A one-cell
+        # tolerance removes raster stair steps while retaining broad image edges.
+        geom = geom.simplify(SIMPLIFY_M, preserve_topology=True).buffer(0)
+        if exclusion_tree is not None and not geom.is_empty:
+            hits = exclusion_tree.query(geom, predicate="intersects")
+            if len(hits):
+                # Subtract the original vectors after polygonization. Rasterizing
+                # these masks first creates 3 m sawteeth around every building and road.
+                geom = geom.difference(unary_union([exclusions[int(i)] for i in hits]))
         if geom.is_empty or geom.area < MIN_AREA_M2[kind]:
             continue
         rows.append({"id": f"imagery:{kind}:{len(rows)}", "name": None, "kind": kind,
@@ -132,10 +141,11 @@ def derive_groundcover(vbmp_path: Path, naip_path: Path, ndsm_path: Path, buildi
                                                "source", "geometry"], geometry="geometry", crs=CRS_PROJ)
     naip, rgb, ndsm, transform = _aligned_inputs(vbmp_path, naip_path, ndsm_path, cell)
     classes = classify_arrays(naip, rgb, ndsm)
-    exclusion = _exclusion_mask(classes.shape, transform, buildings, roads, landuse, water)
+    exclusions = _exclusion_geometries(buildings, roads, landuse, water)
     left, top = transform * (0, 0)
     right, bottom = transform * (classes.shape[1], classes.shape[0])
-    result = polygonize(classes, transform, exclusion, box(left, bottom, right, top))
+    result = polygonize(classes, transform, clip=box(left, bottom, right, top),
+                        vector_exclusion=exclusions)
     if len(result):
         counts = result.groupby("kind").size().to_dict()
         area = {k: round(float(v.geometry.area.sum()) / 1e6, 2) for k, v in result.groupby("kind")}
