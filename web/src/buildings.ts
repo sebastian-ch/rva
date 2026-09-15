@@ -4,6 +4,7 @@ import { hex } from './props';
 import { MeshBuilder, ccw, centroid, cleanRing, insetRing, minAreaOBB, polygons, signedArea, triangulate, type V2 } from './geomutil';
 import { facadeParams } from './facade';
 import { addBox, addRoofDetails, addSurveyedRoofDetails } from './roofDetails';
+import { addRooftopAssets, rooftopAssetsFor } from './rooftopAssets';
 import { hashStr } from './geomutil';
 import type { BuildingProps, Feature, PolyGeom } from './types';
 
@@ -370,10 +371,12 @@ export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, Buildin
     }
     // This sign is a skyline identifier and remains cheap enough for reduced-detail tiles.
     if (!hidden && isJohnMarshallSign(p)) addJohnMarshallSign(mb, outer, top);
+    const rooftopAssets = hidden || p.roof_shape !== 'flat' ? [] : rooftopAssetsFor(p.id);
+    if (rooftopAssets.length) addRooftopAssets(mb, rooftopAssets, outer, holes, toLocal, top);
     if (opts.details !== false && !hidden) {
       if (isSevenEleven(p)) addSevenElevenFacade(mb, outer, groundY);
       if (caryMcDonalds) addCaryMcDonaldsFacade(mb, outer, groundY);
-      const surveyed = addSurveyedRoofDetails(mb, outer, top, p, toLocal);
+      const surveyed = rooftopAssets.length > 0 || addSurveyedRoofDetails(mb, outer, top, p, toLocal);
       if (!lod2) addRoofDetails(mb, outer, top, p, wall, roof, !surveyed);
     }
   }

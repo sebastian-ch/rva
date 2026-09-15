@@ -1,0 +1,14 @@
+[
+  {
+    "kind": "helipad",
+    "buildingId": "osm:way/224601746",
+    "crs": "EPSG:32618",
+    "name": "VCU Main Hospital rooftop helipad",
+    "code": "8VA0",
+    "outline": [[285357.50, 4157513.42], [285365.36, 4157523.48], [285355.46, 4157531.00], [285347.96, 4157521.29]],
+    "source": "https://www.openstreetmap.org/way/516930724",
+    "license": "ODbL-1.0",
+    "accessed": "2026-09-09",
+    "note": "OSM rooftop=yes, aeroway=helipad; coordinates transformed from WGS84 to UTM18N with pyproj. Thin deck, H marking, perimeter ring and lights are illustrative; deck height follows the modeled roof."
+  }
+]

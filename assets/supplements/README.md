@@ -26,6 +26,11 @@ precision-gated pilot reviewed 30 named flat roofs and accepted 20 objects on fi
 roofs unchanged; cars, trees, parapets, roof edges and broad setback tiers can all resemble equipment in a
 surface residual. A reviewed record replaces procedural HVAC for that building.
 
+`rooftops.json` contains separately mapped rooftop assets whose source geometry identifies both the
+roof and the exact host building. The renderer attaches these data-backed assets at every building-detail
+level, instead of treating them as random roof furniture. Keep the source URL, licence, access date and
+the distinction between sourced footprint and illustrative details on every record.
+
 `overrides.json` is a list of entries:
 
 ```json
