@@ -19,6 +19,7 @@ from config import CRS_PROJ
 
 CELL_M = 3.0
 SIMPLIFY_M = 3.0
+SMOOTH_M = 3.0
 MIN_AREA_M2 = {"groundcover_lawn": 90.0, "groundcover_paved": 120.0, "groundcover_bare": 120.0}
 PRESERVE_KINDS = {"park", "grass", "pitch", "parking", "cemetery", "plaza", "forest", "beach",
                   "deck", "groyne", "breakwater", "seawall", "pier", "canal_bank"}
@@ -52,7 +53,11 @@ def classify_arrays(naip: np.ndarray, rgb: np.ndarray, ndsm: np.ndarray) -> np.n
     strong_counts = np.bincount(components.ravel(), weights=strong_rgb_bare.ravel(), minlength=count + 1)
     stale_components = (sizes >= 4) & (strong_counts > sizes * 0.5)
     stale_components[0] = False
-    stale_bare = stale_components[components]
+    stale_region = stale_components[components]
+    # Follow the current RGB boundary, not the old vegetation component's
+    # blocky outline. A slightly wider close removes machinery/shadow gaps
+    # inside a confirmed cleared site without expanding into adjacent lawn.
+    stale_bare = binary_closing(strong_rgb_bare & stale_region, structure=np.ones((5, 5), bool)) & stale_region
     lawn &= ~stale_bare
     nonveg = low & (ndvi < 0.11)
     paved = nonveg & ~rgb_bare
@@ -139,6 +144,11 @@ def polygonize(classes: np.ndarray, transform, exclusion: np.ndarray | None = No
         # Boundaries cannot justify detail below the source grid. A one-cell
         # tolerance removes raster stair steps while retaining broad image edges.
         geom = geom.simplify(SIMPLIFY_M, preserve_topology=True).buffer(0)
+        # Round both outward and inward raster corners with a bounded map-scale
+        # operation. Keep this before vector subtraction so surveyed buildings,
+        # roads, landuse and water retain their exact source boundaries.
+        geom = geom.buffer(SMOOTH_M, quad_segs=1).buffer(-SMOOTH_M, quad_segs=1)
+        geom = geom.buffer(-SMOOTH_M, quad_segs=1).buffer(SMOOTH_M, quad_segs=1)
         if exclusion_tree is not None and not geom.is_empty:
             hits = exclusion_tree.query(geom, predicate="intersects")
             if len(hits):

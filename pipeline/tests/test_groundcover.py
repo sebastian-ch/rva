@@ -30,15 +30,19 @@ def test_classifies_low_lawn_paving_and_bare_but_not_canopy():
 
 
 def test_current_rgb_bare_soil_overrides_stale_nir_vegetation():
-    naip = np.full((4, 8, 8), 80, np.uint8)
+    naip = np.full((4, 12, 16), 80, np.uint8)
     naip[3] = 180  # Older imagery reports strong vegetation.
-    rgb = np.empty((3, 8, 8), np.uint8)
+    rgb = np.empty((3, 12, 16), np.uint8)
     rgb[:] = np.array([[[195]], [[150]], [[95]]], np.uint8)  # Current imagery is bright bare soil.
-    ndsm = np.zeros((8, 8), np.float32)
+    rgb[:, :, 11:] = np.array([[[115]], [[115]], [[115]]], np.uint8)
+    ndsm = np.zeros((12, 16), np.float32)
 
     out = classify_arrays(naip, rgb, ndsm)
 
-    assert set(np.unique(out[2:-2, 2:-2])) == {3}
+    assert set(np.unique(out[3:-3, 3:9])) == {3}
+    # The override follows current RGB instead of repainting the entire old
+    # NIR vegetation component with its coarse boundary.
+    assert set(np.unique(out[3:-3, 12:15])) == {1}
 
 
 def test_polygonize_drops_small_regions_and_honors_exclusion():
@@ -53,7 +57,17 @@ def test_polygonize_drops_small_regions_and_honors_exclusion():
 
     assert set(result.kind) == {"groundcover_lawn", "groundcover_paved"}
     lawn = result[result.kind == "groundcover_lawn"].geometry.area.sum()
-    assert lawn == 270
+    assert 200 < lawn <= 270
+
+
+def test_polygonize_rounds_raster_corners():
+    classes = np.ones((20, 20), np.uint8)
+
+    result = polygonize(classes, from_origin(0, 60, 3, 3))
+
+    cover = result.geometry.union_all()
+    assert len(cover.exterior.coords) > 5
+    assert not cover.covers(Point(0.1, 0.1))
 
 
 def test_polygonize_subtracts_source_resolution_vectors_after_raster_classification():
