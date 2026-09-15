@@ -29,6 +29,18 @@ def test_classifies_low_lawn_paving_and_bare_but_not_canopy():
     assert set(np.unique(out[2:-2, 10:])) == {0}
 
 
+def test_current_rgb_bare_soil_overrides_stale_nir_vegetation():
+    naip = np.full((4, 8, 8), 80, np.uint8)
+    naip[3] = 180  # Older imagery reports strong vegetation.
+    rgb = np.empty((3, 8, 8), np.uint8)
+    rgb[:] = np.array([[[195]], [[150]], [[95]]], np.uint8)  # Current imagery is bright bare soil.
+    ndsm = np.zeros((8, 8), np.float32)
+
+    out = classify_arrays(naip, rgb, ndsm)
+
+    assert set(np.unique(out[2:-2, 2:-2])) == {3}
+
+
 def test_polygonize_drops_small_regions_and_honors_exclusion():
     classes = np.zeros((10, 12), np.uint8)
     classes[:, :5] = 1

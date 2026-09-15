@@ -10,7 +10,7 @@ from pathlib import Path
 
 import geopandas as gpd
 import numpy as np
-from scipy.ndimage import binary_closing, binary_opening
+from scipy.ndimage import binary_closing, binary_opening, label
 from shapely.geometry import box, shape
 from shapely.ops import unary_union
 from shapely.strtree import STRtree
@@ -35,15 +35,31 @@ def classify_arrays(naip: np.ndarray, rgb: np.ndarray, ndsm: np.ndarray) -> np.n
     valid = (v[:3].max(axis=0) > 0.03) & np.isfinite(ndsm)
     low = valid & (ndsm < 1.25)
 
-    lawn = low & (ndvi > 0.16)
-    nonveg = low & (ndvi < 0.11)
+    # NAIP and VGIN can be flown years apart. Strong bare-soil evidence in the
+    # newer, sharper RGB must veto stale NIR vegetation (for example, a site
+    # cleared after the NAIP flight).
     r, g, b = v[:3]
     brightness = (r + g + b) / 3
-    brown = nonveg & (brightness > 0.16) & (r > g * 1.07) & (g > b * 1.03) & ((r - b) > 0.08)
-    paved = nonveg & ~brown
+    rgb_bare = low & (brightness > 0.16) & (r > g * 1.07) & (g > b * 1.03) & ((r - b) > 0.08)
+
+    lawn = low & (ndvi > 0.16)
+    # Do not apply the temporal veto pixel by pixel: dormant grass is also
+    # brown in leaf-off imagery. Reclassify only coherent vegetation regions
+    # whose current RGB is dominated by unambiguous, bright exposed soil.
+    strong_rgb_bare = rgb_bare & (brightness > 0.55)
+    components, count = label(lawn)
+    sizes = np.bincount(components.ravel(), minlength=count + 1)
+    strong_counts = np.bincount(components.ravel(), weights=strong_rgb_bare.ravel(), minlength=count + 1)
+    stale_components = (sizes >= 4) & (strong_counts > sizes * 0.5)
+    stale_components[0] = False
+    stale_bare = stale_components[components]
+    lawn &= ~stale_bare
+    nonveg = low & (ndvi < 0.11)
+    paved = nonveg & ~rgb_bare
+    bare = rgb_bare & nonveg | stale_bare
 
     out = np.zeros(ndsm.shape, np.uint8)
-    for value, mask in ((1, lawn), (2, paved), (3, brown)):
+    for value, mask in ((1, lawn), (2, paved), (3, bare)):
         # Close one-cell gaps and drop isolated speckle before polygonization.
         clean = binary_opening(binary_closing(mask, structure=np.ones((3, 3), bool)),
                                structure=np.ones((2, 2), bool))

@@ -31,6 +31,9 @@ polygonizing. Subtract buildings, road widths, water and preserved semantic land
 geometry afterward. Rasterizing those exclusions first leaves one-cell stair steps around every object.
 Vector subtraction can split one large classified region into many small wedges; reapply the minimum-area
 gate to each resulting polygon, since checking only the combined MultiPolygon lets blocky courtyard remnants survive.
+Complementary imagery may have different acquisition dates. Strong bare-soil evidence in the newer RGB must
+override vegetation in older NIR imagery, or recently cleared construction sites render as blocky lawns. Keep
+that veto narrow enough that ordinary dormant grass is not relabeled from weak colour evidence alone.
 The 3 m classifier is also too coarse for narrow driveways and side yards: exclude inferred paving within 5 m of
 building footprints and keep its palette close to the base ground. Broad unmapped lots still survive that clearance.
 Imagery-derived classes fill gaps and may refine generic industrial land. Run the surveyed shoreline difference
