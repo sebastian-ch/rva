@@ -55,6 +55,20 @@ function ringArea(outer: V2[]): number {
   return Math.abs(signedArea(outer));
 }
 
+/** A centroid-directed inset is valid only for convex outlines. */
+function isConvex(outer: V2[]): boolean {
+  let turn = 0;
+  for (let i = 0; i < outer.length; i++) {
+    const a = outer[i], b = outer[(i + 1) % outer.length], c = outer[(i + 2) % outer.length];
+    const cross = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]);
+    if (Math.abs(cross) < 1e-8) continue;
+    const sign = Math.sign(cross);
+    if (turn && sign !== turn) return false;
+    turn = sign;
+  }
+  return true;
+}
+
 function distToSeg(p: V2, a: V2, b: V2): number {
   const abx = b[0] - a[0], abz = b[1] - a[1];
   const len2 = abx * abx + abz * abz;
@@ -213,7 +227,7 @@ export function addRoofDetails(
 ): void {
   const rand = rng(hashStr(props.id));
 
-  if (props.roof_shape === 'flat' && props.height > 12) {
+  if (props.roof_shape === 'flat' && props.height > 12 && isConvex(outer)) {
     addParapet(mb, outer, top, wallColor);
   }
   if (proceduralHvac && props.roof_shape === 'flat' && ringArea(outer) > 400) {

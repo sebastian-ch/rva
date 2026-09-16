@@ -328,6 +328,14 @@ it('paints a known right-side bus lane distinctly without moving the roadway',as
  expect(result.paths[0].every(p=>p.z===0)).toBe(true);
 });
 
+it('keeps dedicated busways out of ordinary-road junction and traffic paths',async()=>{
+ const {buildRoads}=await import('./roads');
+ const busway={type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,0],[10,10],[20,10]] as [number,number][]},properties:{id:'dedicated-busway',name:null,highway:'busway',lanes:null,width:6,oneway:true,bus_only:true,surface:'asphalt',sidewalk:false,sidewalk_left:false,sidewalk_right:false,bridge:false,tunnel:false,layer:0}};
+ const result=buildRoads([busway],[],[],(x,y)=>[x,-y],()=>0,{markings:false,bridges:false});
+ expect(result.paths).toEqual([]);
+ expect(result.pathMeta).toEqual([]);
+});
+
 it('opens bridge railings at same-level junctions but keeps them over an underpass',async()=>{
  const {buildRoads}=await import('./roads');
  const countBlockedRails=(crossHeight:number)=>{

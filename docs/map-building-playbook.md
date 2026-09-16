@@ -106,6 +106,20 @@ footprint-safe. Review hip/pyramidal fallbacks and domes when importing unfamili
 Also distinguish a bad roof *mesh* from a bad roof *estimate*: check roof source, eave/ridge heights,
 azimuth, classification quality, and footprint alignment before changing the classifier.
 
+### Procedural parapets require convex outlines
+
+**Symptom:** a flat, concave building part gets an implausible diagonal or folded roof edge.
+**Cause:** the procedural parapet's simple centroid-directed inset crosses a re-entrant corner.
+**Rule:** emit that lightweight parapet only for convex rings. Keep the ordinary flat roof for concave
+footprints until it has a topology-safe polygon offset implementation.
+**Implementation / regression:** `web/src/roofDetails.ts`, `web/src/roofDetails.test.ts`.
+
+Dedicated busways should likewise retain their surveyed centerline: do not expand their endpoints into
+ordinary road junctions or admit them to generic traffic. The generic simulator has no route-aware transit
+contract, so arbitrary cars on a short bus-only connector create visibly wrong turns. This applies to
+`busway` / `bus_only` features, not marked bus lanes within an ordinary roadway. Implementation / regression:
+`web/src/roads.ts`, `web/src/roads.test.ts`.
+
 ## 2. Terrain: all consumers must agree on the surface
 
 **Symptom:** beige triangles poke through grass, road edges disappear into slopes, and surfaces look

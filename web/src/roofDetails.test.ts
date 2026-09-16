@@ -85,6 +85,16 @@ describe('addRoofDetails', () => {
     expect(mb.triCount).toBe(0);
   });
 
+  it('does not add a centroid-inset parapet to a concave flat roof', () => {
+    const mb = new MeshBuilder();
+    const outer: V2[] = [[0, 0], [30, 0], [30, 10], [10, 10], [10, 30], [0, 30]];
+    const props = makeProps({ id: 'concave-flat', height: 20, roof_shape: 'flat' });
+
+    addRoofDetails(mb, outer, 20, props, new THREE.Color('#888888'), new THREE.Color('#333333'), false);
+
+    expect(mb.triCount).toBe(0);
+  });
+
   it('places reviewed projected roof objects once in the owning tile fragment', () => {
     const props = makeProps({ roof_props: JSON.stringify([
       { x: 105, y: 205, w: 4, d: 2, h: 1.5, a: 0, b: 0.8 },

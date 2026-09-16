@@ -266,7 +266,7 @@ export function buildRoads(
     && (p.sidewalk_left !== false || p.sidewalk_right !== false);
   for (const f of feats) {
     const p = f.properties;
-    if (p.tunnel || p.bridge || p.ramp || NO_WALK.has(p.highway) || (MINOR.has(p.highway) && !PAVED_MINOR.has(p.highway))) continue;
+    if (p.tunnel || p.bridge || p.ramp || p.bus_only || NO_WALK.has(p.highway) || (MINOR.has(p.highway) && !PAVED_MINOR.has(p.highway))) continue;
     for (const l of lines(f.geometry)) {
       const c = cleanRing(l);
       if (c.length < 2) continue;
@@ -464,7 +464,7 @@ export function buildRoads(
       let path = toPath(l, toLocal, groundAt, (minor ? ROAD_Y - 0.04 : ROAD_Y) + lift, roadStep(p.highway), deck, !!p.ramp && !p.bridge);
       if (path.length < 2) continue;
       const carPath = path; // un-extended: endpoints sit on the OSM node so the traffic graph can join ways
-      if ((!minor || PAVED_MINOR.has(p.highway)) && !deck) {
+      if (!p.bus_only && (!minor || PAVED_MINOR.has(p.highway)) && !deck) {
         const c = cleanRing(l);
         const [d0, d1] = endDirs(c);
         path = adjustEnds(path, otherClearance(c[0], p.width / 2, d0), otherClearance(c[c.length - 1], p.width / 2, d1));
@@ -496,8 +496,8 @@ export function buildRoads(
           }
         }
       }
-      if (!minor) roadPaths.push({ path, width: p.width });
-      if (!minor && p.highway !== 'service') {
+      if (!minor && !p.bus_only) roadPaths.push({ path, width: p.width });
+      if (!minor && !p.bus_only && p.highway !== 'service') {
         carPaths.push(carPath);
         carMeta.push({ oneway: !!p.oneway, width: p.width, highway: p.highway, lanes: p.lanes ?? (p.oneway ? 1 : 2), bridge: !!p.bridge, ramp: !!p.ramp, wayId: p.id });
       }
