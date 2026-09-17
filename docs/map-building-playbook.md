@@ -590,6 +590,16 @@ when a fresh server download is correct. Compare local/live file hashes before b
 appends the fingerprint to model requests. A changed model therefore also changes the application
 bundle. Existing open sessions still need a refresh. This covers landmark assets, not tile-cache invalidation.
 
+**Symptom:** a newly exported landmark GLB appears to make no visual difference. **Cause:** the
+generated `data/tiles/landmarks.json` still has `model: null`, so the viewer retains the procedural
+building and never requests the GLB. **Rule:** after adding or changing a landmark model entry, run
+the tile build and confirm the resolved manifest contains the expected model path before judging the
+geometry in the browser. Then refresh the viewer; a GLB fingerprint only invalidates the asset URL,
+not a stale resolved-landmark manifest. The six-storey Foundry Park South at CoStar's Richmond campus
+exposed this. At normal oblique distance, judge public high-signal cues such as its stepped planted
+terraces separately from visibility lost behind a taller neighboring tower. This is a landmark-build
+dependency rule, not evidence that an occluded facade is inaccurate.
+
 ## 7b. Build caches and partial rebuilds: a fingerprint is part of the contract
 
 Reducing a large source once and caching the result is usually the cheapest available speed-up, but the
@@ -700,10 +710,36 @@ and low-detail planning masses, and explicitly says its geometry is not fully co
 a style/reference inventory, not a wholesale geometry source. Record the layer-level decision in the region
 notes so a polished screenshot does not later override better surveyed inputs.
 
+New construction can be absent from every routine footprint source even when its height is already
+visible in LiDAR. In that case, retain a hand-reviewed footprint/height override, attach the landmark
+identity directly to that override, and make the landmark registry target its exact generated ID.
+Do not let a nearest-building fallback select an adjacent older structure on a tight campus. Model
+only the confirmed footprint and public high-signal facade/crown cues; a polished rendering does not
+establish every mullion or an adjoining building envelope. Richmond's CoStar Tower uses this pattern
+in `assets/supplements/overrides.json`, `assets/landmarks/landmarks.json`, and
+`blender/build_landmark.py`; `test_match_landmarks_explicit_id_does_not_fall_back_to_nearby_building`
+guards the identity rule. This applies to override-created buildings, not ordinary mapped landmarks
+whose stable source IDs are already available.
+
 When a landmark looks too short, compare eaves, ridge, width and adjacent elevated infrastructure
 separately. A correct peak with low eaves and an undersized footprint can still read too small.
 Compare LiDAR absolute elevations against the model's ground datum before changing height; account
 for terrain exaggeration without stretching architectural dimensions. Main Street Station exposed this.
+
+**Symptom:** a hand-modeled building's stepped terraces face its service side after its footprint is
+replaced. **Cause:** a local OBB axis was treated as a universal river/front direction. **Rule:**
+project the named public street or frontage into the new local frame before placing setbacks, planted
+terraces or a forecourt; verify the result in the map. Foundry Park South's Tredegar Street plaza is
+the Richmond regression. This establishes frontage orientation for the reviewed site only, not a
+survey of paving, planting, or outdoor furniture.
+
+**Symptom:** multistorey garages render as generic offices or industrial blocks even when their source
+names identify them. **Cause:** OSM often records a generic `building=yes` while storing “Parking Deck”
+or “Garage” only in the name. **Rule:** normalize an explicit parking building value and generic named
+parking/deck/garage structures to one semantic `parking` type in the processing pipeline; the renderer
+then owns one open-bay concrete-deck style. Preserve a specific building type such as `apartments` even
+when its name contains “garage.” Richmond implementation: `building_type` in `pipeline/process.py`,
+with regressions in `pipeline/tests/test_process_helpers.py` and `web/src/facade.test.ts`.
 
 Blender's background CLI worked for this project; an MCP connection is not required for scripted
 exports. Test a minimal headless invocation first. A sandbox launch failure is not proof that Blender

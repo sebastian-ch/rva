@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 import zlib
 from pathlib import Path
 from typing import Any
@@ -83,7 +84,17 @@ def match_landmarks(buildings: gpd.GeoDataFrame, landmarks: list[dict], max_dist
         if lm.get("kind") not in ("building", None):
             continue
         hit = None
+        # An explicit target prevents a nearby older building from taking a
+        # landmark identity before a later supplement adds the intended one.
+        if lm.get("match_id"):
+            target = buildings[buildings["id"] == lm["match_id"]]
+            if len(target):
+                hit = target.index[0]
+            else:
+                continue
         for hint in lm.get("osm_name_hints", []) + [lm["name"]]:
+            if hit is not None:
+                break
             m = names[names.str.contains(hint.lower(), regex=False)]
             if len(m):
                 hit = m.index[0]
@@ -277,7 +288,7 @@ def _assign_parts(raw: gpd.GeoDataFrame, is_part: pd.Series) -> tuple[dict, dict
 OVERRIDES_PATH = ASSETS / "supplements" / "overrides.json"
 FOOTPRINT_REPLACEMENTS_PATH = ASSETS / "supplements" / "richmond-esri-outlines.geojson"
 MASSING_PARTS_PATH = ASSETS / "supplements" / "richmond-massing.geojson"
-OVERRIDE_FIELDS = ("name", "height", "levels", "type", "roof_shape", "roof_height", "wall_color", "roof_color", "wikidata", "website")
+OVERRIDE_FIELDS = ("name", "height", "levels", "type", "roof_shape", "roof_height", "wall_color", "roof_color", "wikidata", "website", "landmark")
 
 
 def apply_footprint_replacements(raw: gpd.GeoDataFrame, path: Path = FOOTPRINT_REPLACEMENTS_PATH) -> gpd.GeoDataFrame:
@@ -430,6 +441,21 @@ def apply_overrides(b: gpd.GeoDataFrame, terrain=None, path: Path = OVERRIDES_PA
     return b
 
 
+PARKING_STRUCTURE_RE = re.compile(r"\b(parking|garage|deck)\b", re.IGNORECASE)
+
+
+def building_type(tags: dict) -> str:
+    """Normalize generic named parking structures into the renderer's parking type."""
+    source_type = str(tags.get("building") or tags.get("building:part") or "yes")
+    if source_type in {"parking", "garage", "garages"}:
+        return "parking"
+    if source_type.lower() in {"yes", "true", "building"}:
+        name = " ".join(str(tags.get(k) or "") for k in ("name", "official_name", "alt_name"))
+        if PARKING_STRUCTURE_RE.search(name):
+            return "parking"
+    return source_type
+
+
 def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True,
                       overture_path: Path | None = None, lidar_npz: Path | None = None,
                       richmond_dir: Path | None = None, vgin_path: Path | None = None,
@@ -570,7 +596,7 @@ def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True
             "lod2_roof": None,
             "roof_props": None,
             "wall_color": wall,
-            "type": str(tags.get("building") or tags.get("building:part") or "yes"),
+            "type": building_type(tags),
             "landmark": None,
             "footprint_source": str(row.get("footprint_source") or "osm"),
             "source_updated": _source_date(row.get("source_updated")) or _source_date(row.get("EditDate")),

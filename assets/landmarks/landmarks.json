@@ -253,6 +253,38 @@
     "height_hint_m": null
   },
   {
+    "slug": "foundry-park-south",
+    "name": "Foundry Park South",
+    "osm_name_hints": [],
+    "match_id": "override:Foundry Park South",
+    "lat": 37.53556,
+    "lon": -77.44269,
+    "kind": "building",
+    "wikidata": null,
+    "website": "https://www.costar.com/",
+    "description": "The six-storey mass-timber amenity building at CoStar's Foundry Park campus, with dining, fitness, training and auditorium space plus ground-floor retail facing the riverfront.",
+    "district": "Tredegar",
+    "in_first_slice": true,
+    "model": "landmarks/foundry-park-south.glb",
+    "height_hint_m": null
+  },
+  {
+    "slug": "costar-tower",
+    "name": "CoStar Tower",
+    "osm_name_hints": [],
+    "match_id": "override:CoStar Tower",
+    "lat": 37.53664,
+    "lon": -77.44247,
+    "kind": "building",
+    "wikidata": null,
+    "website": "https://www.costar.com/",
+    "description": "CoStar Group's riverfront office tower at Foundry Park, connected to the firm's existing 501 South Fifth Street campus. Its glass facade, illuminated vertical crown and rooftop drone port reshape Richmond's skyline.",
+    "district": "Tredegar",
+    "in_first_slice": true,
+    "model": "landmarks/costar-tower.glb",
+    "height_hint_m": null
+  },
+  {
     "slug": "mayo-bridge",
     "name": "Mayo Bridge",
     "osm_name_hints": [

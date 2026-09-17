@@ -87,6 +87,27 @@ export function isJohnMarshallSign(p: Pick<BuildingProps, 'id'>): boolean {
   return p.id === 'osm:way/365155760';
 }
 
+export function isVirginiaLotteryBuilding(p: Pick<BuildingProps, 'id'>): boolean {
+  return p.id === 'osm:way/236488158'; // Main Street Centre, 600 E Main St
+}
+
+/** Roofline billboard, deliberately following the readable JMB-sign treatment. */
+function addVirginiaLotterySign(mb: MeshBuilder, outer: V2[], top: number): void {
+  const obb = minAreaOBB(outer);
+  // Match the visible JMB panel direction, rather than Main Street Centre's diagonal footprint.
+  const rot = 0.9049, nx = -Math.sin(rot), nz = Math.cos(rot);
+  const [cx, cz] = obb.center, panel = pal('shadow'), green = pal('roof_green'), white = pal('cream');
+  addBox(mb, cx, top + 0.5, cz, 20, 12, 0.9, rot, panel);
+  addBox(mb, cx + nx * 0.52, top + 1.5, cz + nz * 0.52, 10, 10, 0.24, rot, green);
+  addBox(mb, cx + nx * 0.72, top + 4.0, cz + nz * 0.72, 6.5, 1.1, 0.16, rot, white);
+  addBox(mb, cx - 1.7 + nx * 0.72, top + 2.7, cz + nz * 0.72, 1.1, 3.8, 0.16, rot, white);
+  addBox(mb, cx + 1.7 + nx * 0.72, top + 5.1, cz + nz * 0.72, 1.1, 3.8, 0.16, rot, white);
+}
+
+function isParkingStructure(p: Pick<BuildingProps, 'type' | 'name'>): boolean {
+  return p.type === 'parking' || p.type === 'garage' || p.type === 'garages';
+}
+
 const SIGN_GLYPHS: Record<string, string[]> = {
   A: ['01110', '10001', '10001', '11111', '10001', '10001', '10001'],
   B: ['11110', '10001', '10001', '11110', '10001', '10001', '11110'],
@@ -292,7 +313,8 @@ export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, Buildin
   const p = feat.properties;
   const start = mb.triCount;
   const caryMcDonalds = isCaryMcDonalds(p);
-  const wall = pal(caryMcDonalds ? 'mcd_wall' : p.wall_color), roof = pal(isSevenEleven(p) ? 'concrete' : caryMcDonalds ? 'mcd_tower' : p.roof_color);
+  const parking = isParkingStructure(p);
+  const wall = pal(caryMcDonalds ? 'mcd_wall' : parking ? 'concrete' : p.wall_color), roof = pal(isSevenEleven(p) ? 'concrete' : caryMcDonalds ? 'mcd_tower' : parking ? 'roof_dark' : p.roof_color);
   // outlines covered by their building:parts become a low plinth: still pickable, no facade, no roof
   const hidden = p.hidden === true;
   const base = groundY - 0.3 + p.min_height; // sink slightly so slopes don't show gaps
@@ -371,6 +393,7 @@ export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, Buildin
     }
     // This sign is a skyline identifier and remains cheap enough for reduced-detail tiles.
     if (!hidden && isJohnMarshallSign(p)) addJohnMarshallSign(mb, outer, top);
+    if (!hidden && isVirginiaLotteryBuilding(p)) addVirginiaLotterySign(mb, outer, top);
     const rooftopAssets = hidden || p.roof_shape !== 'flat' ? [] : rooftopAssetsFor(p.id);
     if (rooftopAssets.length) addRooftopAssets(mb, rooftopAssets, outer, holes, toLocal, top);
     if (opts.details !== false && !hidden) {

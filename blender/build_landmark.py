@@ -363,6 +363,76 @@ def cabell_library(b, fp):
     b.box(*f.P(f.hl - 30, -f.hs + 14), 13, 30, 8, 6, "concrete", rot=f.rot_u, shade=0.9)  # cantilevered reading room
 
 
+def costar_tower(b, fp):
+    """Foundry Park's glass office tower; footprint and height are LiDAR-reviewed."""
+    f = Frame(fp)
+    tower_h = float(fp["height"])
+    crown_base = tower_h - 10.0
+    # Preserve the reviewed override outline: this is a tight site beside the
+    # existing CoStar building, so an OBB body would cover its neighbours.
+    b.extrude(fp["ring"], -0.5, crown_base, "glass", 0.82, name="curtain-wall-tower")
+    # Sparse floor ribbons establish scale without posing as a curtain-wall survey.
+    for z in range(6, int(crown_base), 12):
+        b.band(fp["ring"], z, 0.12, 0.34, "steel", 0.82)
+    # The expressed vertical spines and projecting crown are the high-signal skyline cue.
+    # Keep the spines just outside the wall rather than burying them in it: coplanar
+    # surfaces shimmer as the camera zoom changes.
+    spine_u, spine_v = f.hl + 0.35, f.hs + 0.35
+    for u, v in ((spine_u, spine_v), (spine_u, -spine_v), (-spine_u, spine_v), (-spine_u, -spine_v)):
+        b.box(*f.P(u, v), 0, 0.7, 0.7, tower_h, "steel", rot=f.rot_u, shade=0.95, name="vertical-crown-spine")
+    b.box(*f.P(0, 0), crown_base, 2 * f.hl + 1.2, 2 * f.hs + 1.2, 1.25, "steel", rot=f.rot_u,
+          shade=0.9, name="crown-belt")
+    # Leave the top 1.6 m open for the service mass; embedding it in this box
+    # would put its top coplanar with the crown and make the colors flicker.
+    b.box(*f.P(0, 0), crown_base + 1.25, 2 * f.hl - 5.0, 2 * f.hs - 5.0, tower_h - 1.6 - (crown_base + 1.25), "glass", rot=f.rot_u,
+          shade=0.72, name="glazed-crown")
+    # A recessed roof service/drone-port mass adds close-view detail without exceeding the reviewed height.
+    b.box(*f.P(0, 0), tower_h - 1.6, min(18.0, 2 * f.hl - 10), min(14.0, 2 * f.hs - 10), 1.6,
+          "roof_dark", rot=f.rot_u, shade=0.82, name="rooftop-service")
+
+
+def foundry_park_south(b, fp):
+    """Six-storey CoStar amenity building, using its mapped footprint and height."""
+    f = Frame(fp)
+    height = float(fp["height"])
+    # Keep the irregular surveyed outline at street level, but make the upper
+    # storeys visibly step back. Public project imagery consistently shows broad
+    # planted terraces rather than a single six-storey parking-garage-like block.
+    podium_h, middle_h, top_h = 5.8, 11.8, height - 1.0
+    b.extrude(fp["ring"], -0.5, podium_h, "deck", 0.92, name="timber-podium")
+    for z in (0.38, 3.58):
+        b.band(fp["ring"], z, 0.14, 2.25, "glass", 0.70)
+        b.band(fp["ring"], z + 2.55, 0.30, 0.22, "deck", 1.0)
+
+    # Shift each inset volume away from the Tredegar (+v) edge, exposing two
+    # planted terraces toward the riverfront public frontage. The sizes remain
+    # safely inside the documented footprint.
+    middle = f.rect(0, -1.5, 68, 28)
+    b.extrude(middle, podium_h, middle_h, "deck", 0.94, name="middle-terrace-wing")
+    for z in (6.18, 9.38):
+        b.band(middle, z, 0.14, 2.25, "glass", 0.70)
+        b.band(middle, z + 2.55, 0.30, 0.22, "deck", 1.0)
+
+    top = f.rect(3, -6, 52, 18)
+    b.extrude(top, middle_h, top_h, "deck", 0.96, name="upper-terrace-wing")
+    for z in (12.18, 15.38):
+        b.band(top, z, 0.14, 2.25, "glass", 0.72)
+        b.band(top, z + 2.55, 0.30, 0.22, "deck", 1.0)
+
+    # Dense roof planting and the two exposed deck planes are deliberately broad:
+    # they are the cues that survive the map's normal oblique camera distance.
+    b.box(*f.P(0, 7.8), middle_h + 0.02, 60, 7, 0.28, "roof_green", rot=f.rot_u,
+          shade=0.98, name="lower-planted-terrace")
+    b.box(*f.P(3, -6), top_h, 45, 12, 0.8, "roof_green", rot=f.rot_u,
+          shade=0.98, name="planted-roof")
+    # A compact Tredegar forecourt makes the public edge legible at map scale.
+    # It remains a low visual terrace, not a claim about paving joints or furniture.
+    b.box(*f.P(-18, f.hs + 3), -0.5, 58, 7, 0.22, "concrete", rot=f.rot_u,
+          shade=0.98, name="tredegar-forecourt")
+    b.box(*f.P(14, f.hs + 2), -0.27, 18, 4, 0.18, "roof_green", rot=f.rot_u,
+          shade=0.98, name="forecourt-planting")
+
+
 BUILDERS = {
     "virginia-state-capitol": capitol,
     "main-street-station": main_street_station,
@@ -376,6 +446,8 @@ BUILDERS = {
     "carpenter-theatre-dominion-energy-center": carpenter_theatre,
     "byrd-theatre": byrd_theatre,
     "vcu-cabell-library": cabell_library,
+    "costar-tower": costar_tower,
+    "foundry-park-south": foundry_park_south,
 }
 
 

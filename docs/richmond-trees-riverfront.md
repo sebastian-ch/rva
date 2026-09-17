@@ -49,6 +49,30 @@ shed glazing and vertical clock faces with hands; Old City Hall gains arched bay
 The models remain stylized approximations. Tredegar is treated as a riverfront site rather than one
 replacement building model.
 
+### CoStar Tower / Foundry Park
+
+The new CoStar tower at 600 Tredegar Street is an explicit LiDAR-derived footprint override rather
+than an OSM or city-footprint record; those sources did not yet contain the completed tower. Its
+155 m height and four-corner footprint remain the placement contract. The `costar-tower` GLB adds
+only the public, map-scale architectural signals: blue-glass curtain wall, sparse floor bands,
+projecting vertical crown spines, and the recessed rooftop service/drone-port mass. It deliberately
+does not extend into the neighbouring existing 501 South Fifth Street building or invent detailed
+curtain-wall geometry. The landmark registry uses `match_id: override:CoStar Tower`, and the
+override assigns that landmark identity after it creates the building, so proximity matching cannot
+attach the model to the older campus building. Architectural reference: [Pickard Chilton's campus
+project](https://www.pickardchilton.com/work/costar-group-corporate-campus); completion/context:
+[CoStar Group](https://www.costar.com/article/964235169/costar-group-debuts-new-office-campus-in-virginia-to-anchor-next-phase-of-growth).
+
+Foundry Park South at 551 South Fifth Street uses a hand-reviewed `override:Foundry Park South`
+footprint because existing routine sources still describe the former site. It fronts Tredegar Street;
+the outline is traced from current construction imagery against mapped street edges, with its six-storey
+height corroborated by public planning material. Its GLB uses the clipped-corner outline with simplified mass-timber
+floor plates, glass, stepped riverfront terraces, a planted roof, and a compact Tredegar-facing forecourt.
+The public sources establish its mass-timber
+mixed-use programme and its dining/fitness/auditorium role, not a surveyed facade:
+[Kendall/Heaton](https://www.kendall-heaton.com/projects/costar-richmond-office-campus/),
+[Foundry Park listing](https://www.loopnet.com/Listing/600-Tredegar-St-Richmond-VA/34358993/).
+
 All parts of a landmark are combined for export with vertex colors and one material. This keeps added
 architectural detail from multiplying draw calls. Export with the installed Blender executable:
 

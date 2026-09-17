@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
-import { rangeForFace, buildBuildingsMesh, isCaryMcDonalds, isJohnMarshallSign, isSevenEleven, type BuildingRange } from './buildings';
+import { rangeForFace, buildBuildingsMesh, isCaryMcDonalds, isJohnMarshallSign, isSevenEleven, isVirginiaLotteryBuilding, type BuildingRange } from './buildings';
 import type { BuildingProps, Feature, PolyGeom, RoofShape } from './types';
 import type { V2 } from './geomutil';
 
@@ -45,6 +45,13 @@ describe('isJohnMarshallSign', () => {
   it('limits the rooftop sign to the highest John Marshall building part', () => {
     expect(isJohnMarshallSign({ id: 'osm:way/365155760' })).toBe(true);
     expect(isJohnMarshallSign({ id: 'osm:way/236488141' })).toBe(false);
+  });
+});
+
+describe('isVirginiaLotteryBuilding', () => {
+  it('limits the logo to Main Street Centre', () => {
+    expect(isVirginiaLotteryBuilding({ id: 'osm:way/236488158' })).toBe(true);
+    expect(isVirginiaLotteryBuilding({ id: 'osm:way/236488159' })).toBe(false);
   });
 });
 

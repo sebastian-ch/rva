@@ -3,10 +3,12 @@ from __future__ import annotations
 
 import pandas as pd
 import geopandas as gpd
-from shapely.geometry import LineString, Point
+from shapely.geometry import LineString, Point, box
 
 from config import LANE_WIDTH
 from process import (_generated_sidewalk, _landuse_kind, _mapped_sidewalk_sides, _match_crossings_to_roads, _nn, _poi_kind,
+                     building_type,
+                     match_landmarks,
                      _render_sidewalk_side, _road_width)
 
 
@@ -18,6 +20,24 @@ def test_nn():
     assert _nn("hello") == "hello"
     assert _nn(5) == 5
     assert _nn(0) == 0  # falsy but not NaN/None: must be preserved
+
+
+def test_building_type_normalizes_generic_named_parking_structures():
+    assert building_type({"building": "yes", "name": "Federal Reserve Parking Deck"}) == "parking"
+    assert building_type({"building": "parking", "name": "Any structure"}) == "parking"
+    assert building_type({"building": "apartments", "name": "The Lofts at Capital Garage"}) == "apartments"
+
+
+def test_match_landmarks_explicit_id_does_not_fall_back_to_nearby_building():
+    buildings = gpd.GeoDataFrame(
+        {"id": ["old", "override:CoStar Tower"], "name": ["CoStar Group", "CoStar Tower"],
+         "geometry": [box(280000, 4155000, 280040, 4155040), box(280060, 4155000, 280100, 4155040)]},
+        crs="EPSG:32618",
+    )
+    landmarks = [{"slug": "costar-tower", "name": "CoStar Tower", "kind": "building",
+                  "match_id": "override:CoStar Tower", "lon": -77.44, "lat": 37.53}]
+    tagged = match_landmarks(buildings, landmarks)
+    assert tagged.tolist() == [None, "costar-tower"]
 
 
 # --------------------------------------------------------------------- _landuse_kind

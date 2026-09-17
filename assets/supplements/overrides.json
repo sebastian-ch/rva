@@ -9,6 +9,7 @@
     "type": "office",
     "roof_shape": "flat",
     "wall_color": "glass",
+    "landmark": "costar-tower",
     "roof_color": "concrete",
     "website": "https://www.costar.com",
     "note": "26-storey, 510 ft CoStar HQ at 600 Tredegar St; topped out Feb 2025, completion 2026. Sits just NW of the existing CoStar Group building. Footprint is the oriented rectangle of the >60 m region in the VGIN/NOAA 2025 City of Richmond DSM (flown 2025-02-14..03-01, tower at ~147 m then); OSM/Overture/VGIN 2026-02 have no footprint for it. The earlier VGIN OBJECTID 1537705 footprint was the old Tredegar visitor-center block, 300 m west.",
@@ -52,6 +53,29 @@
     "roof_color": "roof_dark",
     "note": "7,500-capacity amphitheater west of the CoStar campus, opened 2025; stage house; height estimated. Applies to the OSM relation 'Allianz Amphitheater at Riverside'.",
     "match_name": "Allianz Amphitheater"
+  },
+  {
+    "name": "Foundry Park South",
+    "lat": 37.53556,
+    "lon": -77.44269,
+    "height": 19.2,
+    "levels": 6,
+    "type": "commercial",
+    "roof_shape": "flat",
+    "landmark": "foundry-park-south",
+    "wall_color": "deck",
+    "note": "Six-storey Foundry Park South at 551 S 5th Street, the CoStar campus mixed-use amenity building. Its south facade and terrace/plaza front Tredegar Street; footprint is traced from a current user-supplied construction image against the mapped street edges, since routine footprint sources still describe the former site. Height/role are corroborated by City planning material, CoStar and leasing sources. The low-poly model represents public mass-timber, glass, retail and terrace cues, not an architectural survey.",
+    "footprint": {
+      "type": "Polygon",
+      "coordinates": [[
+        [-77.443259, 37.535347],
+        [-77.442238, 37.535278],
+        [-77.442101, 37.535587],
+        [-77.442712, 37.535926],
+        [-77.443154, 37.535592],
+        [-77.443259, 37.535347]
+      ]]
+    }
   },
   {
     "name": "Allianz Amphitheater seating bowl",

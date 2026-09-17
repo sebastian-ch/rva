@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { facadeParams } from './facade';
+import { facadeParams, STYLE_PARKING } from './facade';
 import type { BuildingProps } from './types';
 
 function props(overrides: Partial<BuildingProps>): BuildingProps {
@@ -25,6 +25,9 @@ function props(overrides: Partial<BuildingProps>): BuildingProps {
 }
 
 describe('facadeParams', () => {
+  it('uses open-deck bays for parking structures', () => {
+    expect(facadeParams({ type: 'parking', height: 16, levels: 5 } as BuildingProps)).toEqual({ floor: 3.2, style: STYLE_PARKING });
+  });
   it('office, height 40, levels 10 -> style 2, floor 4.0', () => {
     const r = facadeParams(props({ type: 'office', height: 40, levels: 10 }));
     expect(r.style).toBe(2);
