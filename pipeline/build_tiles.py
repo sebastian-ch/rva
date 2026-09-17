@@ -30,6 +30,7 @@ from landmarks import resolve_landmarks
 import deps
 import layer_cache
 from layer_steps import StepContext, run_steps
+from poi_table import write_pois
 
 POINT_LAYERS = {"pois", "crossings"}
 
@@ -66,6 +67,11 @@ def _write_layer(gdf: gpd.GeoDataFrame, dst: Path) -> int:
     gdf = gdf[~gdf.geometry.is_empty]
     gdf.to_file(dst, driver="GeoJSON", COORDINATE_PRECISION=2, RFC7946="NO")
     return len(gdf)
+
+
+def _layer_path(tdir: Path, name: str) -> Path:
+    """POIs are a compact binary point table; every other layer remains GeoJSON."""
+    return tdir / ("pois.bin" if name == "pois" else f"{name}.geojson")
 
 
 def _search_index(buildings, lms) -> list[dict]:
@@ -158,7 +164,7 @@ def write_tiles(layers, terrain, hydro, beach_profile, bbox, surveyed_trees, pre
             written = []
             counts = {}
             for name, gdf in layers.items():
-                dst = tdir / f"{name}.geojson"
+                dst = _layer_path(tdir, name)
                 idx = sidx[name].query(tile_box, predicate="intersects") if name in sidx else []
                 if name == "buildings" and len(idx):
                     idx = idx[(bcx[idx] >= tminx) & (bcx[idx] < tminx + TILE_SIZE) & (bcy[idx] >= tminy) & (bcy[idx] < tminy + TILE_SIZE)]
@@ -178,9 +184,15 @@ def write_tiles(layers, terrain, hydro, beach_profile, bbox, surveyed_trees, pre
                 else:
                     part = _clip_candidates(gdf.iloc[idx], name, tile_box)
                     tdir.mkdir(exist_ok=True)
-                    count = _write_layer(part, dst) if len(part) else 0
+                    count = (write_pois(part, dst, tile_box.bounds) if name == "pois" else _write_layer(part, dst)) if len(part) else 0
                     if not count and dst.exists():
                         dst.unlink()
+                    # Tile state from pre-table builds points at pois.geojson. Remove it once the compact
+                    # table has been successfully written so deployments cannot retain duplicate payloads.
+                    if name == "pois":
+                        old_poi = tdir / "pois.geojson"
+                        if old_poi.exists():
+                            old_poi.unlink()
                     n["written"] += 1
                 tstate["layers"][name] = {"digest": digest, "count": count}
                 if count:

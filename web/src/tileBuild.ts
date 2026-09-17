@@ -12,6 +12,7 @@ import type { CarPathMeta } from './traffic/graph';
 import { exaggerateLayers } from './elevation';
 import { scatterTile, type Placement } from './scatter';
 import type { V2 } from './geomutil';
+import { decodePoiTable } from './poiTable';
 
 export type Lod = 0 | 1; // 0 = full, 1 = reduced (trees only, no roof details/facades, no markings)
 
@@ -51,6 +52,12 @@ async function getJSON<T>(url: string): Promise<T | null> {
   return (await r.json()) as T;
 }
 
+async function getPoiTable(url: string, bbox: TileMeta['bbox']): Promise<FC<PointGeom, PoiProps> | null> {
+  const r = await fetch(url);
+  if (!r.ok) return null;
+  return decodePoiTable(await r.arrayBuffer(), bbox);
+}
+
 export async function fetchTileLayers(meta: TileMeta, baseUrl: string, lod: Lod): Promise<TileLayers> {
   const has = (l: string) => meta.layers.includes(l);
   const u = (l: string) => `${baseUrl}/${meta.id}/${l}`;
@@ -62,7 +69,7 @@ export async function fetchTileLayers(meta: TileMeta, baseUrl: string, lod: Lod)
     has('rail') ? getJSON<FC<LineGeom, RailProps>>(u('rail.geojson')) : null,
     has('landuse') ? getJSON<FC<PolyGeom, AreaProps>>(u('landuse.geojson')) : null,
     has('water') ? getJSON<FC<PolyGeom, AreaProps>>(u('water.geojson')) : null,
-    has('pois') ? getJSON<FC<PointGeom, PoiProps>>(u('pois.geojson')) : null,
+    has('pois') ? getPoiTable(u('pois.bin'), meta.bbox) : null,
   ]);
   return exaggerateLayers({ terrain, buildings, roads, crossings, rail, landuse, water, pois });
 }

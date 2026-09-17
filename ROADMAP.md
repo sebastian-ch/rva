@@ -146,9 +146,10 @@ Today the client parses GeoJSON and builds ~1.2 M triangles on the main thread. 
 ### 4.3 Web worker geometry (M) — done
 - Run the tile builder in a worker, transfer `Float32Array`s. Acceptance: no frame over 50 ms during load.
 
-### 4.4 Compact payloads and measured runtime budgets (M) — next
-- Replace the 24.5 MB POI GeoJSON layer with a quantized binary point table; trees dominate the expanded-region
-  payload and need only a small fixed set of placement fields.
+### 4.4 Compact payloads and measured runtime budgets (M) — in progress
+- **Done 2026-09-17:** replace the POI GeoJSON layer with the versioned `pois.bin` quantized point table. Trees
+  dominate the expanded-region payload; coordinates are centimetres relative to the tile origin and string fields
+  are deduplicated. Rebuild tiles before deploying so no legacy POI GeoJSON files remain.
 - Bake meshopt-compressed LOD1 geometry offline before considering full-detail baked tiles. Preserve the current
   worker builder for development and fallback.
 - Carry indexed terrain through worker transfer instead of expanding the regular grid to triangle soup.

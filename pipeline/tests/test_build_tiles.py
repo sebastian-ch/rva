@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import geopandas as gpd
-from shapely.geometry import LineString, box
+from shapely.geometry import LineString, Point, box
 
 from build_tiles import _tile_layer
 
@@ -102,3 +102,19 @@ def test_stale_tile_dirs_outside_the_grid_are_dropped(tmp_path):
     (tmp_path / "9_9" / "roads.geojson").write_text("{}")
     _run(tmp_path, _layers(), {})
     assert not (tmp_path / "9_9").exists()
+
+
+def test_pois_write_a_compact_binary_table_and_replace_legacy_geojson(tmp_path):
+    ox, oy = _origin()
+    layers = {"pois": gpd.GeoDataFrame([{
+        "id": "tree-1", "name": None, "kind": "tree", "species": "Quercus alba",
+        "geometry": Point(ox + 10.12, oy + 20.34),
+    }], crs=CRS_PROJ)}
+    legacy = tmp_path / "0_0"
+    legacy.mkdir()
+    (legacy / "pois.geojson").write_text("obsolete")
+    meta, _, _, _ = _run(tmp_path, layers, {})
+    tile = next(m for m in meta if "pois" in m["layers"])
+    payload = (tmp_path / tile["id"] / "pois.bin").read_bytes()
+    assert payload[:4] == b"POI1"
+    assert not (tmp_path / tile["id"] / "pois.geojson").exists()

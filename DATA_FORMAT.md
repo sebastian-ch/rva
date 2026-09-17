@@ -124,8 +124,13 @@ pushed down to `water_z - 0.5` under those polygons so the surface is always vis
 `road_id`, `road_width`, `road_dx`, `road_dy`, `road_x`, `road_y` (the matched motor-road id, width, unit direction and projected centreline point; nullable when no safe match exists),
 `crossing_island` (true only for source `crossing:island=yes`)
 
-### pois (Point)
-`id`, `name`, `kind`: `"tree"|"streetlight"|"bench"|"bus_stop"|"traffic_signals"|"fountain"|"monument"|"shop"|"restaurant"|"museum"`
+### pois.bin (quantized Point table)
+POIs use a compact binary table rather than GeoJSON: `POI1` header, fixed 32-byte records, then a
+deduplicated UTF-8 string table. `x`/`y` are unsigned 16-bit centimetres from the tile's southwest
+corner; this is lossless relative to the former 2-decimal GeoJSON output. The records preserve `id`,
+`name`, `kind` (`"tree"|"streetlight"|"bench"|"bus_stop"|"traffic_signals"|"fountain"|"monument"|"shop"|"restaurant"|"museum"`),
+and optional tree `species`, `source`, `tree_height`, and `crown_radius`. See `pipeline/poi_table.py`
+and `web/src/poiTable.ts` for the versioned format.
 
 ### terrain.json
 ```json

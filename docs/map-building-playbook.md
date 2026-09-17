@@ -395,6 +395,15 @@ Reduced-detail tiles formerly omitted all POIs and placements, so their trees va
 POIs and retain tree placements while omitting small props. `treesOnly` filtering preserves the random
 sequence so trees keep the same locations across detail changes. Regression: `scatter.test.ts`.
 
+Large point layers should not pay GeoJSON's repeated geometry and property-key overhead. Store fixed-schema
+points as a versioned binary table with quantized coordinates relative to the tile, a compact type code and a
+deduplicated string table; decode it at the tile-worker boundary into the renderer's ordinary point-feature
+contract. Keep the quantization precision at least as fine as the replaced output, reject points outside the
+declared tile, and test both encoder and decoder. Treat the filename as part of the incremental tile contract:
+the output fingerprint must force a rewrite and the new writer must remove the legacy file, or a deployment can
+silently retain both payloads. Richmond uses `pipeline/poi_table.py` and `web/src/poiTable.ts`, with regressions
+in `pipeline/tests/test_poi_table.py`, `pipeline/tests/test_build_tiles.py`, and `web/src/poiTable.test.ts`.
+
 Fixed tree instance pools silently dropped placements beyond their limit (8,000 round trees). Tree
 buffers now grow geometrically, retaining matrices and tile ownership; removing a tile still compacts
 the grown buffer correctly. Regression: `propPool.test.ts`. Check expected placement counts against
