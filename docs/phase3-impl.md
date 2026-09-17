@@ -63,17 +63,19 @@ info cards enriched from Wikidata → Wikipedia REST summary (extract, thumbnail
 | Labels | visible at zoom ≥ 2, hidden below |
 | Info card | Capitol shows a Wikipedia summary and thumbnail |
 
-## Status (2026-09-09)
+## Status (updated 2026-09-17)
 
-Done. All ten in-slice building landmarks have procedural first-pass models built with `bpy` against their
-matched OSM footprints and exported to Draco-compressed glTF with `COLOR_0` vertex colours
-(`assets/landmarks/*.glb`, 4–42 kB each). `landmarks.json` carries `model` for each. The viewer swaps them in at
+Done. All eleven current in-slice building landmarks have procedural first-pass models built with `bpy` against their
+matched footprints and exported to Draco-compressed glTF with `COLOR_0` vertex colours
+(`assets/landmarks/*.glb`, 4–42 kB each). The CoStar Tower and Foundry Park South use reviewed supplement
+footprints because routine sources have not caught up with construction. `landmarks.json` carries `model` for each.
+The viewer swaps them in at
 the footprint centroid and ground height and rebuilds the tile mesh without the placeholder; models detach when
 their tile unloads or changes LOD. Labels, hover and Wikipedia summaries (3.3) are in.
 
 | Check | Target | Result |
 |---|---|---|
-| `landmarks.json` entries with `model` | 3 | 10 |
+| `landmarks.json` entries with `model` | 3 | 11 |
 | Viewer swap | correct position/ground, placeholder gone | yes (see screenshots in the session log) |
 | Labels | visible at zoom ≥ 2 | yes |
 | Info card | Wikipedia summary + thumbnail | yes, for entries with a verified Wikidata id (9 of 18) |
@@ -84,5 +86,5 @@ Caveats:
   footprint's oriented box and a north-ish heuristic and may be wrong for some. Refine with Google 3D / Street
   View as reference in the desktop app: `build_landmark.py -- --slug <slug> --save blender/<slug>.blend --no-export`,
   edit, then `export_landmark.py`.
-- Bridges, Tredegar / canal walk and the Maggie Walker memorial are not buildings and still need the 1.5
-  matching work before they can carry models.
+- Bridges, Tredegar / canal walk and the Maggie Walker memorial are non-building landmarks. Their matching is
+  complete; a future model would need a site, line, or prop representation rather than the building-GLB path.

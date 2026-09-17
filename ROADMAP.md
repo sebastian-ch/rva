@@ -116,9 +116,10 @@ The plan's key visual step. Recommended approach: a procedural facade shader, no
   never run because Blender is not installed on the dev machine.
 - Acceptance: `landmarks.json` has one `model` set and the viewer hides the placeholder extrusion for it.
 
-### 3.2 Remaining in-slice landmarks (L, art time: 1–3 days each) — procedural first pass done for all 10 buildings; hand refinement open
+### 3.2 Remaining in-slice landmarks (L, art time: 1–3 days each) — procedural first pass done for all 11 current in-slice building landmarks; hand refinement open
 Capitol, Jefferson, Federal Reserve, Monroe Building, Dominion tower, Carpenter Theatre, Main Street Station,
-Old City Hall, Tredegar, Mayo Bridge, Belle Isle footbridge, Maggie Walker memorial.
+Old City Hall, City Hall, CoStar Tower, and Foundry Park South have models. Tredegar, Mayo Bridge, Belle Isle
+footbridge, and the Maggie Walker memorial remain site/non-building work rather than unmodelled building targets.
 
 ### 3.3 Landmark polish in the viewer (S) — done
 - Landmark label sprites at zoom ≥ 2, accent outline on hover, richer info card (Wikipedia summary + thumbnail via

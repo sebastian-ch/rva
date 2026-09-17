@@ -105,5 +105,5 @@ https://sebastian-ch.github.io/rva/.
 
 First slice (Downtown, Shockoe Bottom, Capitol Square, the riverfront and the foot of Church Hill, ~4.7 sq mi)
 is built end to end: procedural buildings with 2025 LiDAR heights and roofs, bridges and ramps, still water, a
-graph-based traffic simulation in a worker, and ten hand-modeled landmarks. `ROADMAP.md` records what each pass
+graph-based traffic simulation in a worker, and eleven hand-modeled building landmarks. `ROADMAP.md` records what each pass
 changed and what is still open; `PLAN.md` is the original plan.
