@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"name": "rail",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/169671749", "name": "Bellwood Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285612.67, 4158500.0 ], [ 285612.42, 4158377.49 ], [ 285613.92, 4158250.0 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/308319097", "name": "Bellwood Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285623.6, 4158500.0 ], [ 285623.95, 4158497.02 ], [ 285646.53, 4158412.38 ], [ 285694.8, 4158250.0 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1221872827", "name": "Piedmont Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285716.39, 4158250.0 ], [ 285739.75, 4158500.0 ] ] } }
+]
+}

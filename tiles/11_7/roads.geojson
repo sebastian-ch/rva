@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "roads",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/76131180", "name": null, "highway": "track", "lanes": null, "width": 2.5, "oneway": false, "surface": "gravel", "footway": null, "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 283164.71, 4156500.0 ], [ 283177.22, 4156506.26 ], [ 283193.6, 4156513.14 ], [ 283229.89, 4156532.73 ], [ 283250.0, 4156539.27 ] ] } }
+]
+}

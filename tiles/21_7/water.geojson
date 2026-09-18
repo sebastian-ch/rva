@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "water",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:relation/13728921", "name": "James River and Kanawha Canal", "kind": "canal", "water_z": 5.25, "source": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285521.03, 4156512.62 ], [ 285518.92, 4156514.19 ], [ 285517.91, 4156515.02 ], [ 285512.2, 4156519.95 ], [ 285506.71, 4156524.6 ], [ 285503.93, 4156526.89 ], [ 285501.03, 4156529.15 ], [ 285505.05, 4156526.4 ], [ 285521.27, 4156512.45 ], [ 285521.03, 4156512.62 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "noaa:Rivers:5", "name": "James River", "kind": "river", "water_z": null, "source": "noaa2025" }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285503.93, 4156526.89 ], [ 285506.71, 4156524.6 ], [ 285512.2, 4156519.95 ], [ 285517.91, 4156515.02 ], [ 285518.92, 4156514.19 ], [ 285521.03, 4156512.62 ], [ 285525.31, 4156509.57 ], [ 285527.34, 4156507.91 ], [ 285536.24, 4156500.0 ], [ 285500.0, 4156500.0 ], [ 285500.0, 4156529.9 ], [ 285501.03, 4156529.15 ], [ 285503.93, 4156526.89 ] ] ] } }
+]
+}

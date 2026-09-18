@@ -1,0 +1,12 @@
+{
+"type": "FeatureCollection",
+"name": "roads",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/6032774", "name": "5th Avenue", "highway": "residential", "lanes": null, "width": 7.0, "oneway": false, "surface": "asphalt", "footway": null, "sidewalk_left": false, "sidewalk_right": null, "generated_sidewalk": true, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 286250.0, 4159957.04 ], [ 286263.32, 4159977.27 ], [ 286278.3, 4160000.0 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1223658644", "name": null, "highway": "service", "lanes": null, "width": 4.5, "oneway": false, "surface": null, "footway": null, "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 286281.09, 4159966.13 ], [ 286270.39, 4159972.84 ], [ 286263.32, 4159977.27 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1223658641", "name": null, "highway": "footway", "lanes": null, "width": 2.0, "oneway": false, "surface": null, "footway": "sidewalk", "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 286265.24, 4159964.98 ], [ 286270.39, 4159972.84 ], [ 286277.95, 4159984.33 ], [ 286287.93, 4160000.0 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1223658647", "name": null, "highway": "footway", "lanes": null, "width": 2.0, "oneway": false, "surface": null, "footway": "sidewalk", "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 286250.0, 4159971.58 ], [ 286268.52, 4160000.0 ] ] } }
+]
+}

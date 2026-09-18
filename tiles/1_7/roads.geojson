@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"name": "roads",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/339997440", "name": "JRPS Maintenance Access Trail", "highway": "service", "lanes": null, "width": 4.5, "oneway": false, "surface": "ground", "footway": null, "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 280559.19, 4156500.0 ], [ 280544.51, 4156522.18 ], [ 280532.07, 4156544.95 ], [ 280511.8, 4156574.22 ], [ 280500.0, 4156584.44 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/38176281", "name": "Boulevard Bridge", "highway": "primary", "lanes": 2.0, "width": 11.0, "oneway": false, "surface": "concrete", "footway": null, "sidewalk_left": false, "sidewalk_right": null, "generated_sidewalk": true, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": true, "ramp": false, "tunnel": false, "layer": 1, "deck": [ 280396.4, 4156528.9, 44.14, 280692.2, 4157074.9, 40.48 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 280500.0, 4156720.13 ], [ 280516.18, 4156750.0 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/302768476", "name": null, "highway": "footway", "lanes": null, "width": 2.0, "oneway": false, "surface": "concrete", "footway": "sidewalk", "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": true, "ramp": false, "tunnel": false, "layer": 1, "deck": [ 280391.0, 4156528.8, 44.8, 280687.9, 4157076.9, 40.51 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 280500.0, 4156729.94 ], [ 280510.86, 4156750.0 ] ] } }
+]
+}

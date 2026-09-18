@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"name": "roads",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/852215893", "name": null, "highway": "service", "lanes": null, "width": 4.5, "oneway": false, "surface": null, "footway": null, "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 284986.83, 4154933.17 ], [ 284999.15, 4154942.12 ], [ 285000.0, 4154942.7 ] ], [ [ 285000.0, 4154990.18 ], [ 284999.79, 4154990.72 ], [ 284990.29, 4155000.0 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/305071751", "name": "East 7th Street", "highway": "residential", "lanes": null, "width": 7.0, "oneway": false, "surface": null, "footway": null, "sidewalk_left": null, "sidewalk_right": null, "generated_sidewalk": true, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 284937.01, 4155000.0 ], [ 284986.83, 4154933.17 ], [ 285000.0, 4154915.5 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/44770975", "name": "Dinwiddie Avenue", "highway": "residential", "lanes": null, "width": 7.0, "oneway": false, "surface": null, "footway": null, "sidewalk_left": null, "sidewalk_right": null, "generated_sidewalk": true, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 284750.0, 4154998.51 ], [ 284751.96, 4155000.0 ] ] } }
+]
+}

@@ -1,0 +1,13 @@
+{
+"type": "FeatureCollection",
+"name": "rail",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/114143932", "name": "Richmond District", "railway": "rail", "bridge": false, "ramp": true, "layer": 0, "deck": [ 284931.8, 4156710.74, 8.03, 285965.79, 4156071.18, 6.25 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 285000.0, 4156735.68 ], [ 285008.49, 4156735.31 ], [ 285016.24, 4156734.43 ], [ 285025.29, 4156732.22 ], [ 285034.37, 4156729.14 ], [ 285043.51, 4156726.04 ], [ 285070.23, 4156715.65 ], [ 285094.51, 4156703.14 ], [ 285122.0, 4156685.69 ], [ 285142.97, 4156672.06 ], [ 285188.96, 4156642.19 ], [ 285250.0, 4156603.51 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/38232584", "name": "Bellwood Subdivision", "railway": "rail", "bridge": true, "ramp": false, "layer": 1, "deck": [ 285137.5, 4155957.4, 9.66, 285670.6, 4157377.4, 14.16 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 285150.09, 4156500.0 ], [ 285151.25, 4156549.6 ], [ 285155.13, 4156611.49 ], [ 285159.45, 4156637.89 ], [ 285165.87, 4156664.45 ], [ 285171.36, 4156680.64 ], [ 285180.54, 4156705.3 ], [ 285191.57, 4156728.32 ], [ 285203.64, 4156750.0 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/463588995", "name": null, "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285122.0, 4156685.69 ], [ 285095.54, 4156705.84 ], [ 285047.76, 4156747.81 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/38180729", "name": "Rivanna Subdivision", "railway": "rail", "bridge": true, "ramp": false, "layer": 2, "deck": [ 284046.9, 4156923.3, 27.51, 285279.0, 4156645.6, 27.86 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 285000.0, 4156708.77 ], [ 285025.2, 4156703.06 ], [ 285250.0, 4156652.17 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/880322646", "name": "Rivanna Subdivision", "railway": "rail", "bridge": true, "ramp": false, "layer": 2, "deck": [ 285278.0, 4156641.8, 27.88, 283660.1, 4156996.8, 27.04 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 285250.0, 4156648.15 ], [ 285023.89, 4156699.49 ], [ 285000.0, 4156704.91 ] ] } }
+]
+}

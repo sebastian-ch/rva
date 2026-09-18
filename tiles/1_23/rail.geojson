@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "rail",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/834034714", "name": "CSX North End Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 280750.0, 4160540.3 ], [ 280727.12, 4160514.97 ], [ 280713.57, 4160500.0 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/834265283", "name": "CSX North End Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 280750.0, 4160533.97 ], [ 280740.02, 4160522.99 ], [ 280719.28, 4160500.0 ] ] } }
+]
+}

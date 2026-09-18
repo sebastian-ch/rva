@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "roads",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/6037263", "name": "Woodcliff Avenue", "highway": "residential", "lanes": null, "width": 7.0, "oneway": true, "surface": null, "footway": null, "sidewalk_left": false, "sidewalk_right": null, "generated_sidewalk": true, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 286243.88, 4160750.0 ], [ 286250.0, 4160773.85 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/6041216", "name": "Groveland Avenue", "highway": "residential", "lanes": null, "width": 7.0, "oneway": true, "surface": null, "footway": null, "sidewalk_left": null, "sidewalk_right": null, "generated_sidewalk": true, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 286176.25, 4160889.33 ], [ 286174.46, 4160881.33 ], [ 286165.34, 4160840.67 ], [ 286148.66, 4160768.21 ], [ 286144.2, 4160750.0 ] ] } }
+]
+}

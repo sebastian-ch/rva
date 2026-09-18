@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "water",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/759611733", "name": "Anne Cobb Gottwald Reflecting Pool", "kind": "pond", "water_z": 67.78, "source": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 281352.91, 4159500.0 ], [ 281369.73, 4159535.75 ], [ 281388.01, 4159527.22 ], [ 281385.06, 4159520.95 ], [ 281373.72, 4159528.29 ], [ 281360.41, 4159500.0 ], [ 281352.91, 4159500.0 ] ] ] } }
+]
+}

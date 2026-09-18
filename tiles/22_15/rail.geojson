@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "rail",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/1221872827", "name": "Piedmont Subdivision", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 285750.0, 4158588.91 ], [ 285756.44, 4158625.79 ], [ 285776.43, 4158692.22 ], [ 285791.22, 4158736.0 ], [ 285793.17, 4158741.78 ], [ 285794.05, 4158744.29 ], [ 285794.99, 4158750.0 ] ] } }
+]
+}

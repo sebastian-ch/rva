@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "roads",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/692891935", "name": "Hermitage Road", "highway": "tertiary", "lanes": null, "width": 8.0, "oneway": true, "surface": null, "footway": null, "sidewalk_left": null, "sidewalk_right": null, "generated_sidewalk": true, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 282688.06, 4160750.0 ], [ 282687.23, 4160832.64 ], [ 282687.01, 4160854.35 ], [ 282687.04, 4160873.38 ], [ 282687.19, 4160962.61 ], [ 282687.21, 4160973.56 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/692891934", "name": "Hermitage Road", "highway": "tertiary", "lanes": null, "width": 8.0, "oneway": true, "surface": null, "footway": null, "sidewalk_left": null, "sidewalk_right": null, "generated_sidewalk": true, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 282675.1, 4160974.66 ], [ 282675.28, 4160854.88 ], [ 282675.74, 4160750.0 ] ] } }
+]
+}

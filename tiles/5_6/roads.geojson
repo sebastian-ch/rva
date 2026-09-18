@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "roads",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/359871989", "name": null, "highway": "footway", "lanes": null, "width": 2.0, "oneway": false, "surface": null, "footway": null, "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 281716.19, 4156443.73 ], [ 281710.95, 4156449.11 ], [ 281702.5, 4156452.64 ], [ 281691.65, 4156455.05 ], [ 281681.95, 4156455.78 ], [ 281670.36, 4156455.8 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/880661956", "name": "Texas Beach Trail", "highway": "footway", "lanes": null, "width": 2.0, "oneway": false, "surface": "dirt", "footway": null, "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 281750.0, 4156437.28 ], [ 281748.44, 4156436.44 ], [ 281732.14, 4156439.26 ], [ 281716.19, 4156443.73 ], [ 281691.79, 4156450.56 ], [ 281675.74, 4156454.48 ], [ 281670.36, 4156455.8 ], [ 281659.36, 4156458.48 ], [ 281639.51, 4156461.94 ], [ 281625.09, 4156460.22 ], [ 281607.33, 4156461.91 ], [ 281578.35, 4156474.5 ], [ 281550.56, 4156485.77 ], [ 281519.67, 4156500.0 ] ] } }
+]
+}

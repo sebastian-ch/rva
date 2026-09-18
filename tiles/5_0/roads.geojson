@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "roads",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/287532402", "name": "Forest Hill", "highway": "path", "lanes": null, "width": 1.5, "oneway": false, "surface": "dirt", "footway": null, "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 281560.26, 4155000.0 ], [ 281557.61, 4154991.84 ], [ 281558.02, 4154987.17 ], [ 281564.49, 4154987.39 ], [ 281572.3, 4154995.71 ], [ 281581.55, 4155000.0 ] ] } }
+]
+}

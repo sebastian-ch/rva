@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"name": "rail",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/38180728", "name": "Rivanna Subdivision", "railway": "rail", "bridge": true, "ramp": false, "layer": 2, "deck": [ 283660.4, 4157000.7, 27.04, 284046.9, 4156923.3, 27.51 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 283660.35, 4157000.71 ], [ 283665.58, 4157000.0 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/971146919", "name": "Rivanna Subdivision", "railway": "rail", "bridge": true, "ramp": false, "layer": 0, "deck": [ 283660.1, 4156996.8, 27.04, 283242.5, 4156995.6, 26.29 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 283631.67, 4157000.0 ], [ 283617.84, 4157001.54 ], [ 283580.98, 4157004.8 ], [ 283543.21, 4157007.14 ], [ 283500.0, 4157008.95 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/965667833", "name": "Rivanna Subdivision", "railway": "rail", "bridge": true, "ramp": false, "layer": 0, "deck": [ 283660.4, 4157000.7, 27.04, 283241.5, 4156999.4, 26.42 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 283660.35, 4157000.71 ], [ 283617.79, 4157005.38 ], [ 283581.77, 4157008.6 ], [ 283543.52, 4157011.05 ], [ 283500.0, 4157013.15 ] ] } }
+]
+}

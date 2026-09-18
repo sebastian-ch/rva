@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"name": "roads",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/323733137", "name": null, "highway": "service", "lanes": null, "width": 4.5, "oneway": false, "surface": "unpaved", "footway": null, "sidewalk_left": false, "sidewalk_right": false, "generated_sidewalk": false, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 280853.04, 4155000.0 ], [ 280773.33, 4154872.26 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/152674334", "name": "Dunston Avenue", "highway": "residential", "lanes": null, "width": 7.0, "oneway": false, "surface": null, "footway": null, "sidewalk_left": null, "sidewalk_right": null, "generated_sidewalk": true, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 281000.0, 4154980.85 ], [ 280970.1, 4155000.0 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/6038696", "name": "West 42nd Street", "highway": "residential", "lanes": null, "width": 7.0, "oneway": false, "surface": null, "footway": null, "sidewalk_left": null, "sidewalk_right": null, "generated_sidewalk": true, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 280750.0, 4154933.34 ], [ 280783.16, 4154987.81 ], [ 280790.93, 4155000.0 ] ] } }
+]
+}

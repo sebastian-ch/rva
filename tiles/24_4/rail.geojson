@@ -1,0 +1,14 @@
+{
+"type": "FeatureCollection",
+"name": "rail",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/114143948", "name": "Peninsula Subdivision", "railway": "rail", "bridge": true, "ramp": false, "layer": 1, "deck": [ 286268.2, 4155868.4, 37.87, 286654.9, 4155338.4, 47.49 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 286268.19, 4155868.42 ], [ 286360.63, 4155770.31 ], [ 286379.58, 4155750.0 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/398442725", "name": "Peninsula Subdivision", "railway": "rail", "bridge": true, "ramp": false, "layer": 1, "deck": [ 286269.9, 4155872.2, 37.84, 286659.6, 4155339.4, 47.49 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 286269.93, 4155872.22 ], [ 286364.13, 4155773.58 ], [ 286386.13, 4155750.0 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/463588989", "name": "Richmond District", "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 286250.0, 4155915.17 ], [ 286301.17, 4155865.75 ], [ 286344.59, 4155834.66 ], [ 286387.11, 4155810.33 ], [ 286415.52, 4155797.9 ], [ 286437.71, 4155790.97 ], [ 286456.01, 4155785.99 ], [ 286500.0, 4155781.39 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/169784636", "name": "Peninsula Subdivision", "railway": "rail", "bridge": true, "ramp": false, "layer": 0, "deck": [ 286221.2, 4155915.2, 37.11, 286268.2, 4155868.4, 37.87 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 286250.0, 4155886.51 ], [ 286268.19, 4155868.42 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/463588983", "name": "Peninsula Subdivision", "railway": "rail", "bridge": true, "ramp": false, "layer": 0, "deck": [ 286269.9, 4155872.2, 37.84, 286224.2, 4155918.2, 37.1 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 286269.93, 4155872.22 ], [ 286260.53, 4155881.61 ], [ 286250.0, 4155892.24 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/398442732", "name": "Peninsula Subdivision", "railway": "rail", "bridge": false, "ramp": true, "layer": 0, "deck": [ 286260.53, 4155881.61, 37.69, 286223.33, 4155913.02, 37.14 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 286260.53, 4155881.61 ], [ 286250.0, 4155890.76 ] ] } }
+]
+}

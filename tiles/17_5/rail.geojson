@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"name": "rail",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/921384166", "name": null, "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 284500.0, 4156087.37 ], [ 284583.61, 4156085.32 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/6032717", "name": null, "railway": "rail", "bridge": false, "ramp": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 284500.0, 4156091.12 ], [ 284539.21, 4156090.24 ], [ 284556.62, 4156089.15 ], [ 284569.77, 4156087.16 ], [ 284583.61, 4156085.32 ], [ 284615.46, 4156081.08 ], [ 284628.17, 4156079.01 ], [ 284641.78, 4156075.84 ], [ 284652.79, 4156071.62 ], [ 284664.25, 4156066.8 ], [ 284673.4, 4156061.71 ], [ 284683.75, 4156055.09 ], [ 284694.92, 4156047.01 ], [ 284707.58, 4156037.58 ], [ 284726.32, 4156024.44 ], [ 284727.79, 4156023.27 ], [ 284733.91, 4156018.38 ], [ 284739.82, 4156012.61 ], [ 284743.96, 4156008.58 ], [ 284750.0, 4156002.41 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/114143919", "name": "Richmond District", "railway": "rail", "bridge": true, "ramp": false, "layer": 1, "deck": [ 284405.6, 4156113.8, 10.41, 284931.8, 4156710.7, 8.97 ] }, "geometry": { "type": "LineString", "coordinates": [ [ 284500.0, 4156192.36 ], [ 284507.18, 4156200.96 ], [ 284547.61, 4156250.0 ] ] } }
+]
+}

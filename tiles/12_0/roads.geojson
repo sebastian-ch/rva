@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"name": "roads",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/6032916", "name": "West 21st Street", "highway": "residential", "lanes": null, "width": 7.0, "oneway": true, "surface": null, "footway": null, "sidewalk_left": null, "sidewalk_right": null, "generated_sidewalk": true, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 283266.25, 4155000.0 ], [ 283287.17, 4154923.69 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/6040820", "name": "Stockton Street", "highway": "residential", "lanes": null, "width": 7.0, "oneway": false, "surface": null, "footway": null, "sidewalk_left": null, "sidewalk_right": null, "generated_sidewalk": true, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 283500.0, 4154781.11 ], [ 283491.23, 4154774.47 ], [ 283458.86, 4154750.0 ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/6038469", "name": "Decatur Street", "highway": "residential", "lanes": null, "width": 7.0, "oneway": false, "surface": null, "footway": null, "sidewalk_left": null, "sidewalk_right": null, "generated_sidewalk": true, "bus_lanes": null, "bus_lane_side": null, "bus_only": false, "sidewalk": false, "bridge": false, "ramp": false, "tunnel": false, "layer": 0, "deck": null }, "geometry": { "type": "LineString", "coordinates": [ [ 283500.0, 4154934.34 ], [ 283444.25, 4154892.26 ], [ 283424.04, 4154877.01 ], [ 283376.58, 4154841.18 ] ] } }
+]
+}
