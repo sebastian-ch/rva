@@ -20,6 +20,7 @@ export interface LoadedTile {
   field: HeightField;
   buildingFeatures: Map<string, Feature<PolyGeom, BuildingProps>>;
   triangles: number;
+  bytes: number;
 }
 
 export interface Materials {
@@ -31,6 +32,7 @@ export function geometryFromArrays(g: GeomArrays): THREE.BufferGeometry {
   geom.setAttribute('position', new THREE.BufferAttribute(g.position, 3));
   geom.setAttribute('normal', new THREE.BufferAttribute(g.normal, 3));
   geom.setAttribute('color', new THREE.BufferAttribute(g.color, 3));
+  if (g.index) geom.setIndex(new THREE.BufferAttribute(g.index, 1));
   if (g.uv) geom.setAttribute('uv', new THREE.BufferAttribute(g.uv, 2));
   if (g.facade) geom.setAttribute('facade', new THREE.BufferAttribute(g.facade, 4));
   return geom;
@@ -40,7 +42,7 @@ export function geometryFromArrays(g: GeomArrays): THREE.BufferGeometry {
 export function wrapTilePayload(p: TilePayload, materials: Materials): LoadedTile {
   const group = new THREE.Group();
   group.name = `tile:${p.meta.id}`;
-  let triangles = 0;
+  let triangles = 0, bytes = 0;
   const add = (name: string, g: GeomArrays | undefined, mat: THREE.Material, shadows: 'cast' | 'receive'): THREE.Mesh | null => {
     if (!g || g.position.length === 0) return null;
     const mesh = new THREE.Mesh(geometryFromArrays(g), mat);
@@ -49,7 +51,8 @@ export function wrapTilePayload(p: TilePayload, materials: Materials): LoadedTil
     mesh.receiveShadow = true;
     if (shadows === 'cast') mesh.castShadow = true;
     group.add(mesh);
-    triangles += g.position.length / 9;
+    triangles += g.index ? g.index.length / 3 : g.position.length / 9;
+    bytes += g.position.byteLength + g.normal.byteLength + g.color.byteLength + (g.index?.byteLength ?? 0) + (g.uv?.byteLength ?? 0) + (g.facade?.byteLength ?? 0);
     return mesh;
   };
   add('terrain', p.geoms.terrain, materials.terrain, 'receive');
@@ -64,7 +67,7 @@ export function wrapTilePayload(p: TilePayload, materials: Materials): LoadedTil
     meta: p.meta, lod: p.lod, group, buildings, ranges: p.ranges, carPaths, carMeta: p.carMeta ?? [], walkPaths, placements: p.placements,
     field: p.terrain ? new HeightField(p.terrain) : FLAT_FIELD(0),
     buildingFeatures: new Map(p.buildingFeatures.map((f) => [f.properties.id, f])),
-    triangles,
+    triangles, bytes,
   };
 }
 

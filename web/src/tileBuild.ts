@@ -16,7 +16,8 @@ import { decodePoiTable } from './poiTable';
 
 export type Lod = 0 | 1; // 0 = full, 1 = reduced (trees only, no roof details/facades, no markings)
 
-export interface GeomArrays { position: Float32Array; normal: Float32Array; color: Float32Array; uv?: Float32Array; facade?: Float32Array }
+/** Transferable geometry streams. Terrain keeps its index instead of expanding into triangle soup. */
+export interface GeomArrays { position: Float32Array; normal: Float32Array; color: Float32Array; index?: Uint16Array | Uint32Array; uv?: Float32Array; facade?: Float32Array }
 
 export interface TilePayload {
   meta: TileMeta;
@@ -33,6 +34,9 @@ export interface TilePayload {
   walkPaths: Float32Array[];
   buildingFeatures: Feature<PolyGeom, BuildingProps>[];
   buildMs: number;
+  /** Worker fetch + decode time and bytes received, for debug performance budgets. */
+  loadMs?: number;
+  sourceBytes?: number;
 }
 
 export interface TileLayers {
@@ -44,34 +48,44 @@ export interface TileLayers {
   landuse: FC<PolyGeom, AreaProps> | null;
   water: FC<PolyGeom, AreaProps> | null;
   pois: FC<PointGeom, PoiProps> | null;
+  metrics?: { loadMs: number; sourceBytes: number };
 }
 
-async function getJSON<T>(url: string): Promise<T | null> {
+async function getJSON<T>(url: string, metrics: { sourceBytes: number }): Promise<T | null> {
   const r = await fetch(url);
   if (!r.ok) return null;
-  return (await r.json()) as T;
+  // Test fetch shims may implement only json(); browsers take the byte-counted path.
+  const response = r as unknown as { arrayBuffer?: () => Promise<ArrayBuffer>; json: () => Promise<unknown> };
+  if (!response.arrayBuffer) return (await response.json()) as T;
+  const bytes = await response.arrayBuffer();
+  metrics.sourceBytes += bytes.byteLength;
+  return JSON.parse(new TextDecoder().decode(bytes)) as T;
 }
 
-async function getPoiTable(url: string, bbox: TileMeta['bbox']): Promise<FC<PointGeom, PoiProps> | null> {
+async function getPoiTable(url: string, bbox: TileMeta['bbox'], metrics: { sourceBytes: number }): Promise<FC<PointGeom, PoiProps> | null> {
   const r = await fetch(url);
   if (!r.ok) return null;
-  return decodePoiTable(await r.arrayBuffer(), bbox);
+  const bytes = await r.arrayBuffer();
+  metrics.sourceBytes += bytes.byteLength;
+  return decodePoiTable(bytes, bbox);
 }
 
 export async function fetchTileLayers(meta: TileMeta, baseUrl: string, lod: Lod): Promise<TileLayers> {
+  const t0 = performance.now(), metrics = { sourceBytes: 0 };
   const has = (l: string) => meta.layers.includes(l);
   const u = (l: string) => `${baseUrl}/${meta.id}/${l}`;
   const [terrain, buildings, roads, crossings, rail, landuse, water, pois] = await Promise.all([
-    has('terrain') ? getJSON<TerrainGrid>(u('terrain.json')) : null,
-    has('buildings') ? getJSON<FC<PolyGeom, BuildingProps>>(u('buildings.geojson')) : null,
-    has('roads') ? getJSON<FC<LineGeom, RoadProps>>(u('roads.geojson')) : null,
-    has('crossings') && lod === 0 ? getJSON<FC<PointGeom, CrossingProps>>(u('crossings.geojson')) : null,
-    has('rail') ? getJSON<FC<LineGeom, RailProps>>(u('rail.geojson')) : null,
-    has('landuse') ? getJSON<FC<PolyGeom, AreaProps>>(u('landuse.geojson')) : null,
-    has('water') ? getJSON<FC<PolyGeom, AreaProps>>(u('water.geojson')) : null,
-    has('pois') ? getPoiTable(u('pois.bin'), meta.bbox) : null,
+    has('terrain') ? getJSON<TerrainGrid>(u('terrain.json'), metrics) : null,
+    has('buildings') ? getJSON<FC<PolyGeom, BuildingProps>>(u('buildings.geojson'), metrics) : null,
+    has('roads') ? getJSON<FC<LineGeom, RoadProps>>(u('roads.geojson'), metrics) : null,
+    has('crossings') && lod === 0 ? getJSON<FC<PointGeom, CrossingProps>>(u('crossings.geojson'), metrics) : null,
+    has('rail') ? getJSON<FC<LineGeom, RailProps>>(u('rail.geojson'), metrics) : null,
+    has('landuse') ? getJSON<FC<PolyGeom, AreaProps>>(u('landuse.geojson'), metrics) : null,
+    has('water') ? getJSON<FC<PolyGeom, AreaProps>>(u('water.geojson'), metrics) : null,
+    has('pois') ? getPoiTable(u('pois.bin'), meta.bbox, metrics) : null,
   ]);
-  return exaggerateLayers({ terrain, buildings, roads, crossings, rail, landuse, water, pois });
+  return exaggerateLayers({ terrain, buildings, roads, crossings, rail, landuse, water, pois,
+    metrics: { loadMs: performance.now() - t0, sourceBytes: metrics.sourceBytes } });
 }
 
 function arrays(g: THREE.BufferGeometry): GeomArrays | undefined {
@@ -84,6 +98,8 @@ function arrays(g: THREE.BufferGeometry): GeomArrays | undefined {
   };
   const uv = g.getAttribute('uv') as THREE.BufferAttribute | undefined;
   const fac = g.getAttribute('facade') as THREE.BufferAttribute | undefined;
+  const index = g.getIndex();
+  if (index) out.index = index.array as Uint16Array | Uint32Array;
   if (uv) out.uv = uv.array as Float32Array;
   if (fac) out.facade = fac.array as Float32Array;
   return out;
@@ -98,11 +114,6 @@ function flattenPaths(paths: THREE.Vector3[][]): Float32Array[] {
   });
 }
 
-/** Terrain grids are indexed; expand to a triangle soup so every layer shares one wrap path. */
-function soup(g: THREE.BufferGeometry): THREE.BufferGeometry {
-  return g.getIndex() ? g.toNonIndexed() : g;
-}
-
 export function buildTilePayload(meta: TileMeta, layers: TileLayers, origin: [number, number], lod: Lod): TilePayload {
   const t0 = performance.now();
   const toLocal = (x: number, y: number): V2 => [x - origin[0], -(y - origin[1])];
@@ -114,7 +125,7 @@ export function buildTilePayload(meta: TileMeta, layers: TileLayers, origin: [nu
   let carPaths: Float32Array[] = [];
   let carMeta: CarPathMeta[] = [];
   let walkPaths: Float32Array[] = [];
-  if (layers.terrain) geoms.terrain = arrays(soup(buildTerrainMesh(layers.terrain, toLocal)));
+  if (layers.terrain) geoms.terrain = arrays(buildTerrainMesh(layers.terrain, toLocal));
   const dummy = new THREE.MeshBasicMaterial();
   if (layers.buildings?.features.length) {
     const r = buildBuildingsMesh(layers.buildings.features, toLocal, groundAt, dummy, {
@@ -140,7 +151,8 @@ export function buildTilePayload(meta: TileMeta, layers: TileLayers, origin: [nu
   }
   const placements = scatterTile(meta.id, layers.pois?.features ?? [], layers.landuse?.features ?? [], layers.roads?.features ?? [], layers.buildings?.features ?? [], meta.bbox, toLocal, groundAt,
       { treesOnly: lod === 1, surveyedTrees: meta.surveyed_trees, water: layers.water?.features ?? [] });
-  return { meta, lod, terrain: layers.terrain, geoms, ranges, placements, carPaths, carMeta, walkPaths, buildingFeatures: layers.buildings?.features ?? [], buildMs: performance.now() - t0 };
+  return { meta, lod, terrain: layers.terrain, geoms, ranges, placements, carPaths, carMeta, walkPaths, buildingFeatures: layers.buildings?.features ?? [], buildMs: performance.now() - t0,
+    loadMs: layers.metrics?.loadMs, sourceBytes: layers.metrics?.sourceBytes };
 }
 
 /** Every ArrayBuffer inside the payload, for postMessage transfer. */
@@ -148,7 +160,7 @@ export function payloadTransferables(p: TilePayload): ArrayBuffer[] {
   const out: ArrayBuffer[] = [];
   for (const g of Object.values(p.geoms)) {
     if (!g) continue;
-    for (const a of [g.position, g.normal, g.color, g.uv, g.facade]) if (a) out.push(a.buffer as ArrayBuffer);
+    for (const a of [g.position, g.normal, g.color, g.index, g.uv, g.facade]) if (a) out.push(a.buffer as ArrayBuffer);
   }
   for (const a of p.carPaths) out.push(a.buffer as ArrayBuffer);
   for (const a of p.walkPaths) out.push(a.buffer as ArrayBuffer);

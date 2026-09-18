@@ -22,7 +22,7 @@ export class TileManager {
   private lastFp: Footprint | null = null;
   private lastZoom = 0;
   private lastCheck = 0;
-  readonly stats = { firstBuildingMs: 0, wrapMs: [] as number[], t0: performance.now() };
+  readonly stats = { firstBuildingMs: 0, wrapMs: [] as number[], loadMs: [] as number[], sourceBytes: 0, payloadBytes: 0, t0: performance.now() };
   private metaById = new Map<string, TileMeta>();
 
   constructor(readonly index: TileIndex, readonly materials: Materials, readonly events: TileManagerEvents,
@@ -80,6 +80,9 @@ export class TileManager {
       const t0 = performance.now();
       const tile = wrapTilePayload(payload, this.materials);
       this.stats.wrapMs.push(performance.now() - t0);
+      if (payload.loadMs !== undefined) this.stats.loadMs.push(payload.loadMs);
+      this.stats.sourceBytes += payload.sourceBytes ?? 0;
+      this.stats.payloadBytes += tile.bytes;
       const old = this.tiles.get(meta.id);
       if (old) this.unload(meta.id);
       this.tiles.set(meta.id, tile);
@@ -155,13 +158,15 @@ export class TileManager {
   get busy(): boolean { return this.pending.size > 0; }
 
   summary() {
-    let full = 0, lod1 = 0, tris = 0;
-    for (const t of this.tiles.values()) { if (t.lod === 0) full++; else lod1++; tris += t.triangles; }
+    let full = 0, lod1 = 0, tris = 0, residentBytes = 0;
+    for (const t of this.tiles.values()) { if (t.lod === 0) full++; else lod1++; tris += t.triangles; residentBytes += t.bytes; }
     const b = this.pool?.stats.buildMs ?? [];
     return {
       tiles: { full, lod1 }, triangles: Math.round(tris), workers: this.pool?.size ?? 0,
       buildMs: { p50: Math.round(percentile(b, 50)), p95: Math.round(percentile(b, 95)), n: b.length },
       wrapMs: { p50: +percentile(this.stats.wrapMs, 50).toFixed(2), p95: +percentile(this.stats.wrapMs, 95).toFixed(2) },
+      loadMs: { p50: +percentile(this.stats.loadMs, 50).toFixed(2), p95: +percentile(this.stats.loadMs, 95).toFixed(2) },
+      bytes: { source: this.stats.sourceBytes, workerPayload: this.stats.payloadBytes, residentGeometry: residentBytes },
       firstBuildingMs: Math.round(this.stats.firstBuildingMs),
     };
   }

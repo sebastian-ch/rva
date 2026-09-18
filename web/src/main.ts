@@ -516,8 +516,15 @@ window.addEventListener('keydown', (e) => {
 });
 const clock = new THREE.Clock();
 let waterTime = 0;
+const frameMs: number[] = [];
+function frameSummary() {
+  const sorted = frameMs.slice().sort((a, b) => a - b);
+  const at = (p: number) => sorted.length ? sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))] : 0;
+  return { p50: +at(0.5).toFixed(2), p95: +at(0.95).toFixed(2), n: frameMs.length };
+}
 function frame() {
   const dt = Math.min(0.1, clock.getDelta());
+  frameMs.push(dt * 1000); if (frameMs.length > 600) frameMs.shift();
   iso.update(dt);
   if (tropicalSky) tropicalSky.position.copy(iso.camera.position);
   if (!paused) { props.update(dt); traffic.apply(props); trails.update(dt); traffic.apply(trails); waterTime += dt; water.update(waterTime); }
@@ -538,4 +545,5 @@ boot().catch((e) => { console.error(e); ui.setLoading(true, 'Failed to load tile
 
 // expose for debugging
 const debug = createDebug({ iso, tiles, manager: () => manager, landmarkTargets, propCounts: () => props.counts_(), traffic: () => ({ ...traffic.stats, drawn: props.trafficCount() }) });
-Object.assign(window, { __iso: { scene, tiles, iso, props, traffic, aircraft: () => aircraft?.stats(), palette, night: () => night, stats: () => manager?.summary(), manager: () => manager, postfx, ...debug } });
+Object.assign(window, { __iso: { scene, tiles, iso, props, traffic, aircraft: () => aircraft?.stats(), palette, night: () => night,
+  stats: () => ({ ...(manager?.summary() ?? {}), frames: frameSummary(), renderer: { memory: { ...renderer.info.memory }, render: { ...renderer.info.render } } }), manager: () => manager, postfx, ...debug } });

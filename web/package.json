@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "snap": "node tools/snap.mjs",
+    "bake:lod1": "node tools/bake-lod1.mjs",
     "smoke": "node tools/smoke.mjs",
     "deploy": "node tools/deploy.mjs"
   },
