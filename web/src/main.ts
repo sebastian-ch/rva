@@ -35,8 +35,9 @@ document.title = region.title;
 const landmarkBySlug = new Map(landmarks.map((l) => [l.slug, l]));
 
 const canvas = document.getElementById('scene') as HTMLCanvasElement;
+const mobileQuality = window.matchMedia('(max-width: 700px) and (pointer: coarse)').matches;
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, mobileQuality ? 1 : 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.NoToneMapping;
 
@@ -58,7 +59,7 @@ const hemi = new THREE.HemisphereLight(DAY.sky, hex('ground'), DAY.hemi);
 const sun = new THREE.DirectionalLight(DAY.sun, DAY.dir);
 const SUN_DIR = new THREE.Vector3(-0.5, 0.75, 0.42).normalize();
 sun.castShadow = true;
-sun.shadow.mapSize.set(4096, 4096);
+sun.shadow.mapSize.set(mobileQuality ? 1024 : 4096, mobileQuality ? 1024 : 4096);
 sun.shadow.bias = -0.0006;
 sun.shadow.normalBias = 0.6;
 sun.shadow.camera.near = 10;
@@ -503,11 +504,17 @@ function featureCenter(t: LoadedTile, r: BuildingRange): THREE.Vector3 | null {
 
 // ---------------------------------------------------------------- loop
 function resize() {
-  renderer.setSize(window.innerWidth, window.innerHeight, false);
-  iso.resize(window.innerWidth, window.innerHeight);
-  postfx.setSize(window.innerWidth, window.innerHeight, renderer.getPixelRatio());
+  const viewport = window.visualViewport;
+  const width = Math.round(viewport?.width ?? window.innerWidth), height = Math.round(viewport?.height ?? window.innerHeight);
+  document.documentElement.style.setProperty('--visual-viewport-width', `${width}px`);
+  document.documentElement.style.setProperty('--visual-viewport-height', `${height}px`);
+  renderer.setSize(width, height, false);
+  iso.resize(width, height);
+  postfx.setSize(width, height, renderer.getPixelRatio());
 }
 window.addEventListener('resize', resize);
+window.visualViewport?.addEventListener('resize', resize);
+window.visualViewport?.addEventListener('scroll', resize);
 resize();
 
 window.addEventListener('keydown', (e) => {
@@ -546,4 +553,4 @@ boot().catch((e) => { console.error(e); ui.setLoading(true, 'Failed to load tile
 // expose for debugging
 const debug = createDebug({ iso, tiles, manager: () => manager, landmarkTargets, propCounts: () => props.counts_(), traffic: () => ({ ...traffic.stats, drawn: props.trafficCount() }) });
 Object.assign(window, { __iso: { scene, tiles, iso, props, traffic, aircraft: () => aircraft?.stats(), palette, night: () => night,
-  stats: () => ({ ...(manager?.summary() ?? {}), frames: frameSummary(), renderer: { memory: { ...renderer.info.memory }, render: { ...renderer.info.render } } }), manager: () => manager, postfx, ...debug } });
+  stats: () => ({ ...(manager?.summary() ?? {}), frames: frameSummary(), quality: { mobile: mobileQuality, pixelRatio: renderer.getPixelRatio(), shadowMap: sun.shadow.mapSize.x }, renderer: { memory: { ...renderer.info.memory }, render: { ...renderer.info.render } } }), manager: () => manager, postfx, ...debug } });

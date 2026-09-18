@@ -71,20 +71,27 @@ body.night {
 
 #app {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: var(--visual-viewport-width, 100vw);
+  height: var(--visual-viewport-height, 100dvh);
 }
 
 #scene {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
   display: block;
   width: 100%;
-  height: 100%;
+  height: var(--visual-viewport-height, 100dvh);
 }
 
 #ui {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: var(--visual-viewport-width, 100vw);
+  height: var(--visual-viewport-height, 100dvh);
   pointer-events: none;
   font-size: 14px;
   color: var(--ui-text);
@@ -114,7 +121,7 @@ body.night {
 .navigation :focus-visible, .toolbar button:focus-visible { outline: 2px solid #3f5bc9; outline-offset: 2px; }
 body.risograph #ui .panel { border-radius: 4px; box-shadow: 2px 2px 0 #3f5bc930; }
 @media (max-width: 1000px) {
-  .toolbar { top: auto !important; bottom: 58px; left: 16px; right: 16px; justify-content: center; flex-wrap: wrap; }
+  .toolbar { top: auto !important; bottom: max(12px, env(safe-area-inset-bottom)); left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); justify-content: center; flex-wrap: wrap; }
   .title-badge { max-width: calc(100vw - 32px) !important; }
 }
 @media (max-width: 600px) {
@@ -481,7 +488,7 @@ body.night .heights-legend-bar-wrap {
 
   .info-card {
     top: auto;
-    bottom: 160px;
+    bottom: calc(148px + env(safe-area-inset-bottom));
     left: 16px;
     right: 16px;
     width: auto;
