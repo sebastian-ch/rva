@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
-import { rangeForFace, buildBuildingsMesh, isCaryMcDonalds, isJohnMarshallSign, isSevenEleven, isVirginiaLotteryBuilding, type BuildingRange } from './buildings';
+import { BILLBOARD_ROTATION, rangeForFace, buildBuildingsMesh, isCaryMcDonalds, isJohnMarshallSign, isSevenEleven, isVirginiaLotteryBuilding, type BuildingRange } from './buildings';
+import { AZIMUTH_DEG } from './camera';
 import type { BuildingProps, Feature, PolyGeom, RoofShape } from './types';
 import type { V2 } from './geomutil';
 
@@ -52,6 +53,25 @@ describe('isVirginiaLotteryBuilding', () => {
   it('limits the logo to Main Street Centre', () => {
     expect(isVirginiaLotteryBuilding({ id: 'osm:way/236488158' })).toBe(true);
     expect(isVirginiaLotteryBuilding({ id: 'osm:way/236488159' })).toBe(false);
+  });
+
+  it('turns the billboard face towards the default camera, not the building axis', () => {
+    // The camera sits at (sin az, cos az) from its target; a box rotated by `rot` faces (-sin rot, cos rot).
+    const az = THREE.MathUtils.degToRad(AZIMUTH_DEG);
+    const face = [-Math.sin(BILLBOARD_ROTATION), Math.cos(BILLBOARD_ROTATION)];
+    expect(face[0] * Math.sin(az) + face[1] * Math.cos(az)).toBeCloseTo(1, 5);
+  });
+
+  it('keeps the sign on the roof of a footprint too narrow for a full-width panel', () => {
+    const feat = makeFeature('flat'); // 10 x 10 m
+    feat.properties.id = 'osm:way/236488158';
+    const { mesh } = buildBuildingsMesh([feat], toLocal, groundAt, material());
+    const pos = mesh.geometry.getAttribute('position') as THREE.BufferAttribute;
+    // Nothing, sign included, may leave the 10 x 10 m footprint.
+    for (let i = 0; i < pos.count; i++) {
+      expect(Math.abs(pos.getX(i))).toBeLessThanOrEqual(5.001);
+      expect(Math.abs(pos.getZ(i))).toBeLessThanOrEqual(5.001);
+    }
   });
 });
 

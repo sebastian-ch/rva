@@ -750,6 +750,16 @@ then owns one open-bay concrete-deck style. Preserve a specific building type su
 when its name contains “garage.” Richmond implementation: `building_type` in `pipeline/process.py`,
 with regressions in `pipeline/tests/test_process_helpers.py` and `web/src/facade.test.ts`.
 
+**Symptom:** a rooftop billboard is a dark blade — the sign is there, but nothing on it can be read.
+**Cause:** the panel was rotated onto the building's own axis, which at the fixed isometric azimuth
+put it nearly edge-on to the camera. **Rule:** a flat, single-faced sign has no reason to follow the
+footprint. Derive its rotation from the camera instead — the camera sits at `(sin az, cos az)` from
+its target and a box rotated by `rot` faces `(-sin rot, cos rot)`, so `rot = -az` is head-on
+(`BILLBOARD_ROTATION` in `buildings.ts`). Turning a panel off the building axis can also hang it over
+the roof edge, so scale it by the footprint's *shortest* width, which is the only width a panel at any
+rotation is guaranteed to fit inside. A double-faced sign like the JMB marquee is the exception: it
+reads from both sides, so it can keep the building's axis. Regressions in `buildings.test.ts`.
+
 Blender's background CLI worked for this project; an MCP connection is not required for scripted
 exports. Test a minimal headless invocation first. A sandbox launch failure is not proof that Blender
 is broken. Follow the environment's permission mechanism rather than bypassing it.

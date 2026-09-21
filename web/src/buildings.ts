@@ -7,6 +7,7 @@ import { FACADE_TRI_BUDGET, addStreetFacade, buildStreetIndex, type StreetIndex 
 import { addBox, addRoofDetails, addSurveyedRoofDetails } from './roofDetails';
 import { addRooftopAssets, rooftopAssetsFor } from './rooftopAssets';
 import { hashStr } from './geomutil';
+import { region } from './region';
 import type { BuildingProps, Feature, LineGeom, PolyGeom, RoadProps } from './types';
 
 type PaletteKey = keyof typeof palette;
@@ -97,17 +98,31 @@ export function isVirginiaLotteryBuilding(p: Pick<BuildingProps, 'id'>): boolean
   return p.id === 'osm:way/236488158'; // Main Street Centre, 600 E Main St
 }
 
+/**
+ * Rotation that turns a flat roofline billboard's face towards the default camera. The camera sits at
+ * (sin az, cos az) from its target, and a box rotated by `rot` faces (-sin rot, cos rot), so rot = -az.
+ * A sign left on the building's own axis is seen edge-on and reads as a blade.
+ */
+export const BILLBOARD_ROTATION = -THREE.MathUtils.degToRad(region.cameraAzimuth);
+
 /** Roofline billboard, deliberately following the readable JMB-sign treatment. */
 function addVirginiaLotterySign(mb: MeshBuilder, outer: V2[], top: number): void {
   const obb = minAreaOBB(outer);
-  // Match the visible JMB panel direction, rather than Main Street Centre's diagonal footprint.
-  const rot = 0.9049, nx = -Math.sin(rot), nz = Math.cos(rot);
+  const rot = BILLBOARD_ROTATION;
+  const ax = Math.cos(rot), az = Math.sin(rot), nx = -Math.sin(rot), nz = Math.cos(rot);
   const [cx, cz] = obb.center, panel = pal('shadow'), green = pal('roof_green'), white = pal('cream');
-  addBox(mb, cx, top + 0.5, cz, 20, 12, 0.9, rot, panel);
-  addBox(mb, cx + nx * 0.52, top + 1.5, cz + nz * 0.52, 10, 10, 0.24, rot, green);
-  addBox(mb, cx + nx * 0.72, top + 4.0, cz + nz * 0.72, 6.5, 1.1, 0.16, rot, white);
-  addBox(mb, cx - 1.7 + nx * 0.72, top + 2.7, cz + nz * 0.72, 1.1, 3.8, 0.16, rot, white);
-  addBox(mb, cx + 1.7 + nx * 0.72, top + 5.1, cz + nz * 0.72, 1.1, 3.8, 0.16, rot, white);
+  // Turned off the building's own axis, a 20 m panel can overhang a narrow roof. The footprint's
+  // shortest width is what a panel at any rotation is guaranteed to fit inside.
+  const fit = Math.min(1, (obb.halfShort * 1.8) / 20);
+  // u runs along the panel and d out from its face, so the lettering turns with the sign. `fit` scales
+  // the sign within its own plane; panel thickness stays put so the plates remain visible.
+  const box = (u: number, d: number, y: number, sx: number, sy: number, sz: number, color: THREE.Color) =>
+    addBox(mb, cx + ax * u * fit + nx * d, top + y * fit, cz + az * u * fit + nz * d, sx * fit, sy * fit, sz, rot, color);
+  box(0, 0, 0.5, 20, 12, 0.9, panel);
+  box(0, 0.52, 1.5, 10, 10, 0.24, green);
+  box(0, 0.72, 4.0, 6.5, 1.1, 0.16, white);
+  box(-1.7, 0.72, 2.7, 1.1, 3.8, 0.16, white);
+  box(1.7, 0.72, 5.1, 1.1, 3.8, 0.16, white);
 }
 
 function isParkingStructure(p: Pick<BuildingProps, 'type' | 'name'>): boolean {
