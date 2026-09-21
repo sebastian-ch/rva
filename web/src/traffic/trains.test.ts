@@ -70,15 +70,15 @@ describe('poseOnEdge', () => {
     expect(out[3]).toBeCloseTo(0); // heading = atan2(-dz, dx) = 0 along +x
   });
 
-  it('extrapolates off both ends so a consist keeps its spacing entering and leaving', () => {
+  it('clamps to the railhead rather than projecting past either end', () => {
     const out = new Float32Array(POSE_STRIDE);
     poseOnEdge(e, -30, out, 0);
-    expect(out[0]).toBeCloseTo(-30);
+    expect(out[0]).toBeCloseTo(0);
     poseOnEdge(e, 160, out, 0);
-    expect(out[0]).toBeCloseTo(160);
+    expect(out[0]).toBeCloseTo(100);
   });
 
-  it('holds the endpoint elevation instead of following the gradient off the end', () => {
+  it('stays on the rail elevation at both ends of a graded line', () => {
     const climb = edgeFrom(new Float32Array([0, 0, 0, 50, 5, 0, 100, 10, 0]));
     const out = new Float32Array(POSE_STRIDE);
     poseOnEdge(climb, 200, out, 0);
@@ -94,11 +94,31 @@ describe('TrainSim', () => {
     sim.addTile('0_0', [straight(2000)], [meta()]);
     run(sim, 400, () => sim.trains.size > 0);
     expect(sim.trains.size).toBe(1);
+    const t = [...sim.trains.values()][0];
+    run(sim, 2000, () => t.s > t.length + 50); // let the whole consist onto the line
     const before = drawnCars(poses(sim));
     expect(before.length).toBeGreaterThan(3);
     run(sim, 200);
     const after = drawnCars(poses(sim));
     expect(after[0].x).toBeGreaterThan(before[0].x);
+  });
+
+  it('draws no car until there is track under it, so none floats off the end of the graph', () => {
+    const sim = new TrainSim(3);
+    sim.addTile('0_0', [straight(2000)], [meta()]);
+    run(sim, 400, () => sim.trains.size > 0);
+    const t = [...sim.trains.values()][0];
+    // freshly spawned: the head is at the start of the entry edge and the consist is still off the graph
+    expect(t.s).toBeLessThan(t.length);
+    const drawn = drawnCars(poses(sim)).length;
+    expect(drawn).toBeLessThan(t.cars.length);
+    for (const c of drawnCars(poses(sim))) {
+      expect(c.x).toBeGreaterThanOrEqual(-0.1);
+      expect(c.x).toBeLessThanOrEqual(2000.1);
+    }
+    // once the whole consist is on the line, every car is drawn
+    run(sim, 2000, () => t.s > t.length + 50);
+    expect(drawnCars(poses(sim))).toHaveLength(t.cars.length);
   });
 
   it('places every car behind the head, spaced by car length, and leads with a locomotive', () => {

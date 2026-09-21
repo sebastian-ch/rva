@@ -208,9 +208,10 @@ buffer, above the road vehicles (`RAIL_SLOT_BASE`). What differs from the road s
   at a node shares a graph node exactly as roads do. `CarPathMeta.offset = 0` and `speed = railSpeed(railway)`
   keep RoadGraph reusable without a rail-specific copy.
 - **One train, many poses.** A consist is a head position plus cars placed by arc length behind it, resolved by
-  walking back through `behind` (the edges the head already traversed). `poseOnEdge` extrapolates along the end
-  tangent past either end of an edge, so a consist keeps its spacing entering and leaving the loaded graph
-  instead of bunching at the last vertex.
+  walking back through `behind` (the edges the head already traversed). A car that lands off the loaded track --
+  behind the oldest edge in history, or past the head's edge while the train is running off the end -- is not
+  drawn at all. Extrapolating it along the end tangent floats it beside the track the LOD-1 tiles are still
+  drawing; the consist grows in from the boundary instead.
 - **Blocks, not car-following.** A train never enters a segment (`Edge.pair`, i.e. undirected track) another
   train occupies; the distance to the first foreign block is the IDM gap. This is what keeps two consists off
   the same single track head-on, which a same-direction leader search cannot do.
