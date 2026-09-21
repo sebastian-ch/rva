@@ -4,6 +4,9 @@ import { hex } from './props';
 import type { BuildingProps } from './types';
 import { regionId } from './region';
 
+/** Wall ambient-occlusion gradient: darkening at ground contact, and the height it fades over. */
+export const AO_BOTTOM = 0.72, AO_HEIGHT = 6;
+
 /** Facade style ids consumed by the shader. */
 export const STYLE_NONE = 0, STYLE_RESIDENTIAL = 1, STYLE_OFFICE = 2, STYLE_RETAIL = 3, STYLE_INDUSTRIAL = 4, STYLE_PARKING = 5;
 

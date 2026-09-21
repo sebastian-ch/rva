@@ -2,11 +2,12 @@ import * as THREE from 'three';
 import palette from '../../assets/palette.json';
 import { hex } from './props';
 import { MeshBuilder, ccw, centroid, cleanRing, insetRing, minAreaOBB, polygons, signedArea, triangulate, type V2 } from './geomutil';
-import { facadeParams } from './facade';
+import { AO_BOTTOM, AO_HEIGHT, facadeParams } from './facade';
+import { FACADE_TRI_BUDGET, addStreetFacade, buildStreetIndex, type StreetIndex } from './facadeGrammar';
 import { addBox, addRoofDetails, addSurveyedRoofDetails } from './roofDetails';
 import { addRooftopAssets, rooftopAssetsFor } from './rooftopAssets';
 import { hashStr } from './geomutil';
-import type { BuildingProps, Feature, PolyGeom } from './types';
+import type { BuildingProps, Feature, LineGeom, PolyGeom, RoadProps } from './types';
 
 type PaletteKey = keyof typeof palette;
 const pal = (k: string): THREE.Color => hex((k in palette ? k : 'cream') as PaletteKey);
@@ -14,14 +15,19 @@ const pal = (k: string): THREE.Color => hex((k in palette ? k : 'cream') as Pale
 export interface BuildingRange { start: number; count: number; props: BuildingProps }
 
 const UP = new THREE.Vector3(0, 1, 0);
-const AO_BOTTOM = 0.72; // darkening at ground contact
-const AO_HEIGHT = 6;     // meters over which the gradient fades
 
 /**
  * Extrude one footprint into `mb`. Coordinates are web-local (x east, z = -north). groundY is the terrain height.
  * Returns the number of triangles appended.
  */
-export interface ExtrudeOptions { details?: boolean; lod2?: boolean }
+export interface ExtrudeOptions {
+  details?: boolean;
+  lod2?: boolean;
+  /** Street centrelines of the tile; without them no wall is known to front a street. */
+  streets?: StreetIndex;
+  /** Remaining tile triangle allowance for the facade grammar. */
+  facadeBudget?: { left: number };
+}
 
 interface Lod2Roof { v: [number, number, number][]; f: number[][][] }
 
@@ -398,7 +404,9 @@ export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, Buildin
     if (rooftopAssets.length) addRooftopAssets(mb, rooftopAssets, outer, holes, toLocal, top);
     if (opts.details !== false && !hidden) {
       if (isSevenEleven(p)) addSevenElevenFacade(mb, outer, groundY);
-      if (caryMcDonalds) addCaryMcDonaldsFacade(mb, outer, groundY);
+      else if (caryMcDonalds) addCaryMcDonaldsFacade(mb, outer, groundY);
+      // The two branded storefronts above are hand-modelled; the grammar would double up on them.
+      else if (opts.streets && opts.facadeBudget) addStreetFacade(mb, outer, groundY, p, opts.streets, opts.facadeBudget);
       const surveyed = rooftopAssets.length > 0 || addSurveyedRoofDetails(mb, outer, top, p, toLocal);
       if (!lod2) addRoofDetails(mb, outer, top, p, wall, roof, !surveyed);
     }
@@ -609,17 +617,19 @@ export function buildBuildingsMesh(
   toLocal: (x: number, y: number) => V2,
   groundAt: (x: number, y: number) => number,
   material: THREE.Material,
-  opts: { details?: boolean; facade?: boolean; lod2?: boolean } = {},
+  opts: { details?: boolean; facade?: boolean; lod2?: boolean; roads?: Feature<LineGeom, RoadProps>[] } = {},
 ): { mesh: THREE.Mesh; ranges: BuildingRange[] } {
   const mb = new MeshBuilder(opts.facade !== false);
   const ranges: BuildingRange[] = [];
+  const streets = opts.details !== false && opts.roads?.length ? buildStreetIndex(opts.roads, toLocal) : undefined;
+  const facadeBudget = { left: FACADE_TRI_BUDGET };
   for (const f of feats) {
     const outer = ccw(cleanRing(polygons(f.geometry)[0][0]));
     if (outer.length < 3) continue;
     const c = centroid(outer);
     const g = Number.isFinite(f.properties.ground_z) ? f.properties.ground_z : groundAt(c[0], c[1]);
     const start = mb.triCount;
-    const count = extrudeBuilding(mb, f, toLocal, g, { details: opts.details, lod2: opts.lod2 });
+    const count = extrudeBuilding(mb, f, toLocal, g, { details: opts.details, lod2: opts.lod2, streets, facadeBudget });
     if (count > 0) ranges.push({ start, count, props: f.properties });
   }
   const mesh = new THREE.Mesh(mb.build(), material);
