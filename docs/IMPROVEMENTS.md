@@ -11,8 +11,9 @@ correct bridge decks, a facade shader that reads as storefronts and offices, str
 ten procedural landmark models, and a measurable pipeline (QA report, schema validation, fixture tests).
 
 Weak spots, roughly in the order a viewer notices them:
-1. Everything is still an extrusion. Landmarks are massing, not models; ordinary buildings have no entrances,
-   bays, balconies or roof furniture beyond HVAC boxes.
+1. Everything is still an extrusion above the second floor. Street-facing ground floors now carry
+   modelled entrances, piers, glazing and cornices (`facadeGrammar.ts`), but landmarks are still
+   massing, not models, and no building has balconies or bay windows.
 2. The ground is one flat colour with contours. No sidewalk texture, no lawns vs beds, no plazas, no parking
    stripes, no rail yards.
 3. Trees are two shapes, props are sparse, there are no people at street level in numbers.
@@ -78,7 +79,7 @@ Weak spots, roughly in the order a viewer notices them:
 | 2 | Screen-space AO + outline + colour grade post pass | M | **Done:** `postfx.ts` — depth-difference contact AO, depth-edge outline, warm/cool grade, vignette; `o` toggles it |
 | 3 | Prebuilt road and junction surface topology with curb radii | M | **In progress:** topology-aware trimming/fills and crossing attachment are live; canonical source-derived curb polygons, medians and turn lanes remain |
 | 4 | roofer-based LoD2 roofs replacing the two-plane fit | L | Real roof forms on every building; inputs already exist |
-| 5 | Facade grammar (geometry) for the ground floor: doors, storefront frames, awnings, steps | M | The plan's kit-of-parts, done where the camera sees it |
+| 5 | Facade grammar (geometry) for the ground floor: doors, storefront frames, awnings, steps | M | **Done 2026-09-21:** `web/src/facadeGrammar.ts` — street frontages read from the tile's road centrelines, five rule sets (plinth, bay piers, lintel, glazing, awnings, entrance, second-floor cornice), LOD 0 only, 20 k triangles per tile. Balconies and bay windows remain |
 | 6 | Ground detail: sidewalk paving tint, lawn vs bed, parking stripes, rail ballast | S | **Partly done:** world-space mottle on land/terrain (`groundDetail.ts`), painted stall lines on surface parking; paving tint and ballast open |
 | 7 | Pedestrians on sidewalk paths, trains on rails | M | **Half done:** walkers ping-pong along sidewalk strips and footpaths (`addWalkers`); trains open |
 | 8 | Search, deep links, minimap, time-of-day (ROADMAP Phase 5) | M | Shareability |

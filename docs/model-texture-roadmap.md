@@ -22,7 +22,7 @@ Rank accordingly — do not spend effort re-deriving heights.
 | 2b | Sports-field surface geometry | **done 2026-09-14** — tennis, baseball, football and soccer surfaces and tile-stable markings |
 | 3 | Roof furniture from dense LiDAR | **pilot done 2026-09-14** — 20 measured objects on five of 30 reviewed buildings; citywide expansion next |
 | 4 | Ground cover from VGIN RGB + NAIP NIR + nDSM | **done 2026-09-14; refined 2026-09-15** — 4,000 cleaned lawn, paving and bare-ground polygons |
-| 5 | Split-grammar facade geometry, lower two floors | not started |
+| 5 | Split-grammar facade geometry, lower two floors | **done 2026-09-21** — `web/src/facadeGrammar.ts`; street frontages from the tile's road centrelines, five rule sets, LOD 0 only, per-tile triangle budget |
 | 6 | Wall colour and surveyed props from Mapillary | not started |
 | 7 | Landmarks from HABS drawings and own photogrammetry | not started |
 | 8 | CC0 prop libraries for vehicles and street furniture | not started |
@@ -320,6 +320,38 @@ collapse into the general rule set once it exists. Reduced-detail tiles skip it,
 gate on tile detail level from the start rather than retrofitting.
 
 **Which wall faces the street?** Use the road ribbon geometry already in the tile, not a guess.
+
+### Built 2026-09-21
+
+`web/src/facadeGrammar.ts` runs inside `extrudeBuilding`, after the walls and before the roof details.
+
+- **Frontage.** `buildStreetIndex` puts the tile's road centrelines (no tunnels, no bridge decks) in a
+  22 m grid in local coordinates. A footprint edge at least 6 m long is a frontage when the nearest
+  street point lies on its outward side (direction cosine ≥ 0.35). The two longest qualify; the
+  entrance and the awnings go on the longer one. Roads are clipped to the tile while buildings are
+  owned by centroid, so a building at a tile edge can lose its street and fall back to shader-only.
+- **Rules**, keyed on the existing `facadeParams` style, with the ground-floor height from OSM levels
+  where they agree with the height: retail (5 m bays, shopfront glazing, seeded awnings, recessed
+  entrance), office (4 m bays, deeper plinth, no awnings), residential (4.4 m bays, punched window
+  sills and heads, stoop and door canopy), industrial (7 m bays, roll-up door), parking (5.5 m open
+  bays between piers, no glazing or entrance). Every frontage gets a plinth, bay piers, a lintel band
+  at the ground-floor line, and a cornice at the second-floor line where a third floor rises above it.
+- **Cost.** Each element is four faces, never a box: an isometric camera sees no underside and no
+  back, and the top is dropped where another band sits on it. A frontage is ~90–130 triangles. On a
+  synthetic 250 m tile of 104 street-fronting buildings the grammar added 9,848 triangles and 12.8 ms
+  of worker build time (node, warm median, against a 3,032-triangle / 5.4 ms baseline). In the viewer
+  on a pathological all-corner grid (64 buildings per tile, two frontages each) resident triangles went
+  from 37.1 k to 70.2 k over four tiles and tile build time from ~107 ms to ~168 ms p50 — but that is
+  headless SwiftShader, where the no-grammar baseline is already ~15× slower than node, so treat it as
+  a ratio, not a budget. `FACADE_TRI_BUDGET` caps the grammar at 20,000 triangles per tile; past the
+  cap the remaining buildings keep the shader-only facade.
+- **Gating.** `tileBuild.ts` passes roads only at LOD 0, so reduced-detail tiles are untouched. Parts
+  whose `min_height` is above the pavement, buildings under ~2.6 m of ground floor and style `NONE`
+  are skipped, as are the two hand-modelled branded storefronts.
+
+Not done: balconies, bay windows, and collapsing `addSevenElevenFacade` / `addCaryMcDonaldsFacade`
+into the rule set. Those two are brand-specific models (stripe bands, arches, pole signs); folding
+them in would lose the branding for no triangle saving.
 
 ## 6. Wall colour and props from Mapillary
 

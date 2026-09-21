@@ -132,6 +132,7 @@ export function buildTilePayload(meta: TileMeta, layers: TileLayers, origin: [nu
       details: lod === 0,
       facade: lod === 0,
       lod2: lod === 0,
+      roads: lod === 0 ? layers.roads?.features : undefined,
     });
     geoms.buildings = arrays(r.mesh.geometry);
     ranges = r.ranges;

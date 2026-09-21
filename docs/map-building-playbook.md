@@ -781,6 +781,45 @@ respawn, and freeze with Pause. They should not smear the whole scene when the c
 **Regression:** [buildingEffects.test.ts](../web/src/buildingEffects.test.ts),
 [trafficTrails.test.ts](../web/src/trafficTrails.test.ts), [navigation.test.ts](../web/src/navigation.test.ts).
 
+## 10. Street-level facade geometry: decide the frontage from data, and pay for it in triangles
+
+**Symptom:** every wall of every building is flat. The shader in `facade.ts` paints windows and a
+cornice, but the AO and outline passes in `postfx.ts` have no depth discontinuity to bite into, so
+the ground floor reads as printed-on rather than built.
+
+**Root cause:** a shader can only tint the wall plane. Entrances, piers, awnings and cornices are
+silhouette, and silhouette is geometry.
+
+**Reusable rules:**
+
+- *Which wall faces the street is a data question.* `facadeGrammar.ts` takes the tile's own road
+  centrelines, indexes them in a 22 m grid, and accepts a footprint edge only when the nearest street
+  point lies on the edge's outward side (`dot(q - mid, normal) / |q - mid| >= 0.35`). Orientation
+  heuristics (longest edge, south-facing, bounding-box axis) put shopfronts on alley walls.
+- *Roads are clipped to the tile, buildings are owned by centroid.* A building whose centroid is just
+  inside a tile edge can have its street clipped away, and then gets no frontage. That is a visible
+  discontinuity at a tile line; widening the tile's road query is the fix if it ever matters.
+- *Gate on detail level from the start.* The grammar runs only when `buildBuildingsMesh` is given
+  roads, and `tileBuild.ts` passes them only at LOD 0. Retrofitting a detail gate after the fact is
+  how the tree regression in section 6 happened.
+- *Attached geometry needs the wall's own shading.* Elements reuse the wall AO gradient
+  (`AO_BOTTOM`/`AO_HEIGHT` in `facade.ts`) and the same fake sun term, otherwise a pier at the dark
+  base of a tall building glows.
+- *An isometric camera never sees undersides or backs.* Each projecting element is four faces (front,
+  top, two returns), and the top is dropped where another band sits on it. Emitting boxes instead
+  costs 12 triangles where 6–8 will do.
+- *Budget the geometry and measure it.* A retail frontage is ~90–130 triangles; on a synthetic
+  250 m tile of 104 street-fronting buildings the grammar added 9,848 triangles and 12.8 ms of worker
+  build time (node, warm median). `FACADE_TRI_BUDGET` (20,000 per tile) bounds the worst case; past
+  it the remaining buildings keep the shader-only facade. Spending is in tile feature order, which is
+  stable, so tiles stay deterministic.
+- *Hand-modelled facades win.* The branded 7-Eleven and McDonald's storefronts keep their bespoke
+  geometry; the general rule set is skipped for them rather than doubling up.
+
+**Implementation:** [facadeGrammar.ts](../web/src/facadeGrammar.ts), wired in
+[buildings.ts](../web/src/buildings.ts) and [tileBuild.ts](../web/src/tileBuild.ts).
+**Regression:** [facadeGrammar.test.ts](../web/src/facadeGrammar.test.ts).
+
 ## New-place intake and acceptance checklist
 
 Copy this section into the next region's notes and fill in actual sources and results.
