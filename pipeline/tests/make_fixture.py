@@ -37,7 +37,7 @@ KEEP_TAGS = {
     "building", "building:levels", "height", "roof:shape", "roof:colour", "building:colour",
     "building:material", "name", "wikidata", "website", "contact:website", "min_height",
     "building:min_level", "highway", "lanes", "oneway", "surface", "sidewalk", "bridge",
-    "tunnel", "layer", "railway", "landuse", "leisure", "amenity", "natural", "place",
+    "tunnel", "layer", "railway", "service", "usage", "landuse", "leisure", "amenity", "natural", "place",
     "water", "waterway", "shop", "tourism", "historic", "crossing", "area",
     "roof:levels", "roof:height",
 }

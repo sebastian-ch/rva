@@ -198,3 +198,29 @@ keeps slots stable (free list) so instance colours do not need re-upload every f
   edge of the loaded area, which is already outside the LOD-0 ring.
 - **Determinism.** Fixed `DT`, seeded RNG, and stable edge ordering by `wayId` keep reloads identical; tile
   arrival order does not affect the graph, only which slot a vehicle gets.
+
+## Trains (implemented)
+
+`traffic/trains.ts` runs consists on the rail graph out of the same worker and writes them into the same pose
+buffer, above the road vehicles (`RAIL_SLOT_BASE`). What differs from the road sim:
+
+- **Track, not lanes.** Rail paths come from `buildRoads` as the drawn centreline, un-extended, so track meeting
+  at a node shares a graph node exactly as roads do. `CarPathMeta.offset = 0` and `speed = railSpeed(railway)`
+  keep RoadGraph reusable without a rail-specific copy.
+- **One train, many poses.** A consist is a head position plus cars placed by arc length behind it, resolved by
+  walking back through `behind` (the edges the head already traversed). `poseOnEdge` extrapolates along the end
+  tangent past either end of an edge, so a consist keeps its spacing entering and leaving the loaded graph
+  instead of bunching at the last vertex.
+- **Blocks, not car-following.** A train never enters a segment (`Edge.pair`, i.e. undirected track) another
+  train occupies; the distance to the first foreign block is the IDM gap. This is what keeps two consists off
+  the same single track head-on, which a same-direction leader search cannot do.
+  Occupancy is marked for every train **before** any train claims the block beyond its junction — a claim that
+  could displace occupancy would hand the approaching train ownership of the block it is meant to stop for, and
+  it would drive straight in (`trains.test.ts` covers it).
+- **Self-healing standoffs.** Two consists can still stop nose to nose in adjacent blocks where a line converges,
+  and a buffer stop holds a train for ever. A consist stopped for `STALL_S` leaves the simulation.
+- **Where trains run.** `railway=rail` with no OSM `service` value: not yard throats, sidings or spurs. The
+  pipeline carries `service`/`usage` through to the tile for this; every class is still drawn.
+
+Open: level crossings do not stop road traffic, and a train running off a mid-scene graph boundary is visible
+as the consist leaving the end of the track.

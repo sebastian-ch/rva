@@ -367,3 +367,18 @@ it('stitches a ramp to its bridge deck at their shared endpoint',async()=>{
  const b=buildRoads(split,[],[],(x,y)=>[x,-y],()=>0,{markings:false}).roads.getAttribute('position').count;
  expect(a).toBeGreaterThan(b);
 });
+
+it('hands the track centreline to the train sim with its OSM class and service tag',async()=>{
+ const {buildRoads}=await import('./roads');
+ const rail={type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,0],[120,0]] as [number,number][]},properties:{id:'r1',name:'A-line',railway:'rail',service:null,usage:'main',bridge:false,layer:0,deck:null}};
+ const yard={type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,20],[80,20]] as [number,number][]},properties:{id:'r2',name:null,railway:'rail',service:'yard',usage:null,bridge:false,layer:0,deck:null}};
+ const result=buildRoads([],[rail,yard],[],(x,y)=>[x,-y],()=>0,{markings:false,bridges:false});
+ expect(result.railPaths.length).toBe(2);
+ expect(result.railMeta.map(m=>m.service)).toEqual([null,'yard']);
+ expect(result.railMeta[0].railway).toBe('rail');
+ // the centreline runs the length of the track and stays on it
+ const path=result.railPaths[0];
+ expect(path[0].x).toBeCloseTo(0);
+ expect(path[path.length-1].x).toBeCloseTo(120);
+ for(const p of path) expect(p.z).toBeCloseTo(0);
+});

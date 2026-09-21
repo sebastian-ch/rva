@@ -9,6 +9,7 @@ import { buildBuildingsMesh, type BuildingRange } from './buildings';
 import { buildRoads } from './roads';
 import { buildAreas } from './areas';
 import type { CarPathMeta } from './traffic/graph';
+import type { RailPathMeta } from './traffic/trains';
 import { exaggerateLayers } from './elevation';
 import { scatterTile, type Placement } from './scatter';
 import type { V2 } from './geomutil';
@@ -32,6 +33,9 @@ export interface TilePayload {
   carMeta: CarPathMeta[];
   /** Pedestrian (sidewalk + footway/pedestrian/path) centrelines, same flattening as carPaths. */
   walkPaths: Float32Array[];
+  /** Track centrelines for the train sim, same flattening as carPaths. */
+  railPaths: Float32Array[];
+  railMeta: RailPathMeta[];
   buildingFeatures: Feature<PolyGeom, BuildingProps>[];
   buildMs: number;
   /** Worker fetch + decode time and bytes received, for debug performance budgets. */
@@ -125,6 +129,8 @@ export function buildTilePayload(meta: TileMeta, layers: TileLayers, origin: [nu
   let carPaths: Float32Array[] = [];
   let carMeta: CarPathMeta[] = [];
   let walkPaths: Float32Array[] = [];
+  let railPaths: Float32Array[] = [];
+  let railMeta: RailPathMeta[] = [];
   if (layers.terrain) geoms.terrain = arrays(buildTerrainMesh(layers.terrain, toLocal));
   const dummy = new THREE.MeshBasicMaterial();
   if (layers.buildings?.features.length) {
@@ -143,6 +149,8 @@ export function buildTilePayload(meta: TileMeta, layers: TileLayers, origin: [nu
     carPaths = flattenPaths(r.paths);
     carMeta = r.pathMeta;
     walkPaths = flattenPaths(r.walkPaths);
+    railPaths = flattenPaths(r.railPaths);
+    railMeta = r.railMeta;
   }
   if (layers.landuse?.features.length || layers.water?.features.length) {
     const a = buildAreas(layers.landuse?.features ?? [], layers.water?.features ?? [], toLocal, groundAt, 0,
@@ -152,7 +160,7 @@ export function buildTilePayload(meta: TileMeta, layers: TileLayers, origin: [nu
   }
   const placements = scatterTile(meta.id, layers.pois?.features ?? [], layers.landuse?.features ?? [], layers.roads?.features ?? [], layers.buildings?.features ?? [], meta.bbox, toLocal, groundAt,
       { treesOnly: lod === 1, surveyedTrees: meta.surveyed_trees, water: layers.water?.features ?? [] });
-  return { meta, lod, terrain: layers.terrain, geoms, ranges, placements, carPaths, carMeta, walkPaths, buildingFeatures: layers.buildings?.features ?? [], buildMs: performance.now() - t0,
+  return { meta, lod, terrain: layers.terrain, geoms, ranges, placements, carPaths, carMeta, walkPaths, railPaths, railMeta, buildingFeatures: layers.buildings?.features ?? [], buildMs: performance.now() - t0,
     loadMs: layers.metrics?.loadMs, sourceBytes: layers.metrics?.sourceBytes };
 }
 
@@ -165,5 +173,6 @@ export function payloadTransferables(p: TilePayload): ArrayBuffer[] {
   }
   for (const a of p.carPaths) out.push(a.buffer as ArrayBuffer);
   for (const a of p.walkPaths) out.push(a.buffer as ArrayBuffer);
+  for (const a of p.railPaths) out.push(a.buffer as ArrayBuffer);
   return [...new Set(out)];
 }

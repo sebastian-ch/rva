@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { PROP_KINDS, VEHICLE_KINDS, buildPropGeometry, buildPalm } from './props';
+import { PROP_KINDS, RAIL_KINDS, RAIL_TINTED_KINDS, VEHICLE_KINDS, buildPropGeometry, buildPalm } from './props';
+import { CAR_LENGTH } from './traffic/trains';
+import type { RailKindName } from './traffic/protocol';
 
 function hasNaN(arr: ArrayLike<number>): boolean {
   for (let i = 0; i < arr.length; i++) if (Number.isNaN(arr[i])) return true;
@@ -123,4 +125,39 @@ describe('buildPropGeometry', () => {
       expect(sawGlass).toBe(true);
     });
   }
+});
+
+describe('rolling stock', () => {
+  it('builds every rail car as a body along +X sitting on the railhead', () => {
+    for (const kind of RAIL_KINDS) {
+      const geom = buildPropGeometry(kind);
+      geom.computeBoundingBox();
+      const box = geom.boundingBox!;
+      expect(box.max.x - box.min.x).toBeGreaterThan(box.max.z - box.min.z); // longer than it is wide
+      expect(box.min.y).toBeGreaterThanOrEqual(-0.01);
+      expect(box.max.y).toBeLessThan(6); // clears bridges and platform canopies
+      expect(box.max.z - box.min.z).toBeLessThan(3.6); // standard loading gauge
+      geom.dispose();
+    }
+  });
+
+  it('matches each car kind to the length the sim spaces it by', () => {
+    for (const kind of RAIL_KINDS) {
+      const geom = buildPropGeometry(kind);
+      geom.computeBoundingBox();
+      const length = geom.boundingBox!.max.x - geom.boundingBox!.min.x;
+      expect(length).toBeLessThanOrEqual(CAR_LENGTH[kind as RailKindName]);
+      expect(length).toBeGreaterThan(CAR_LENGTH[kind as RailKindName] - 4);
+      geom.dispose();
+    }
+  });
+
+  it('builds freight bodies white so the instance livery tints them', () => {
+    for (const kind of RAIL_TINTED_KINDS) {
+      const col = buildPropGeometry(kind, undefined, true).attributes.color;
+      let white = 0;
+      for (let i = 0; i < col.count; i++) if (col.getX(i) === 1 && col.getY(i) === 1 && col.getZ(i) === 1) white++;
+      expect(white).toBeGreaterThan(0);
+    }
+  });
 });

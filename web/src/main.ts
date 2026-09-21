@@ -433,7 +433,7 @@ async function boot() {
       if (t.buildings) { buildingMeshes.push(t.buildings); rangesByMesh.set(t.buildings, t.ranges); }
       props.beginTile(t.meta.id);
       props.add(t.placements);
-      if (t.lod === 0) { traffic.addTile(t.meta.id, t.carPaths, t.carMeta); props.addWalkers(t.walkPaths, rand); }
+      if (t.lod === 0) { traffic.addTile(t.meta.id, t.carPaths, t.carMeta, t.railPaths, t.railMeta); props.addWalkers(t.walkPaths, rand); }
       for (const r of t.ranges) {
         if (r.props.landmark) {
           const c = featureCenter(t, r);

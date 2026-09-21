@@ -1131,6 +1131,10 @@ def process_rail(raw_path: Path, terrain=None) -> gpd.GeoDataFrame:
         "id": lines.apply(_osm_id, axis=1),
         "name": lines["name"].map(_nn) if "name" in lines else None,
         "railway": lines["railway"],
+        # service/usage separate mainline from yard, siding and spur track: the viewer only runs
+        # trains on through track, but every class is still drawn.
+        "service": lines["service"].map(_nn) if "service" in lines else None,
+        "usage": lines["usage"].map(_nn) if "usage" in lines else None,
         "bridge": bridge_flag,
         "ramp": ramp_flag,
         "layer": lines["layer"].map(parse_levels).fillna(0).astype(int) if "layer" in lines else 0,

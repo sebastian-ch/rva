@@ -35,7 +35,7 @@ export async function decodeLod1(data: ArrayBuffer, meta: TileMeta): Promise<Til
     const geom = geoms[layer] ?? (geoms[layer] = {} as GeomArrays);
     (geom as unknown as Record<string, unknown>)[s.attr] = value;
   }
-  return { meta, lod: 1, terrain: header.terrain, geoms, ranges: [], placements: [], carPaths: [], carMeta: [], walkPaths: [], buildingFeatures: [], buildMs: 0, loadMs: header.loadMs, sourceBytes: header.sourceBytes };
+  return { meta, lod: 1, terrain: header.terrain, geoms, ranges: [], placements: [], carPaths: [], carMeta: [], walkPaths: [], railPaths: [], railMeta: [], buildingFeatures: [], buildMs: 0, loadMs: header.loadMs, sourceBytes: header.sourceBytes };
 }
 
 export function isLod1Artifact(data: ArrayBuffer): boolean { return data.byteLength >= 4 && decoder.decode(data.slice(0, 4)) === MAGIC; }

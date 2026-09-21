@@ -1,9 +1,11 @@
 /// <reference lib="webworker" />
-/** Traffic worker: owns the road graph and the IDM simulation, streams pose buffers at a fixed rate. */
+/** Traffic worker: owns the road and rail graphs and their simulations, streams pose buffers at a fixed rate. */
 import { DT, TrafficSim } from './traffic/sim';
-import { MAX_VEHICLES, POSE_STRIDE, type FromWorker, type ToWorker } from './traffic/protocol';
+import { TrainSim } from './traffic/trains';
+import { POSE_STRIDE, TOTAL_POSE_SLOTS, type FromWorker, type ToWorker } from './traffic/protocol';
 
 const sim = new TrafficSim(1);
+const trains = new TrainSim(7);
 const post = (msg: FromWorker, transfer?: Transferable[]) => (self as unknown as Worker).postMessage(msg, transfer ?? []);
 
 let stepMs = 0;
@@ -13,12 +15,15 @@ let running = false;
 function tick() {
   const t0 = performance.now();
   sim.step(DT);
-  const buf = new Float32Array(MAX_VEHICLES * POSE_STRIDE);
+  trains.step(DT);
+  const buf = new Float32Array(TOTAL_POSE_SLOTS * POSE_STRIDE);
   sim.writePoses(buf);
+  trains.writePoses(buf);
   post({ type: 'poses', t: performance.now(), buf }, [buf.buffer]);
   stepMs += performance.now() - t0;
   if (++steps >= 40) {
-    post({ type: 'stats', vehicles: sim.vehicles.size, edges: sim.graph.edges.size, msPerStep: stepMs / steps });
+    post({ type: 'stats', vehicles: sim.vehicles.size, edges: sim.graph.edges.size, msPerStep: stepMs / steps,
+      trains: trains.trains.size, railEdges: trains.graph.edges.size });
     stepMs = 0; steps = 0;
   }
 }
@@ -32,12 +37,16 @@ function ensureRunning() {
 self.onmessage = (ev: MessageEvent<ToWorker>) => {
   const m = ev.data;
   switch (m.type) {
-    case 'addTile': sim.addTile(m.tileId, m.paths, m.meta); ensureRunning(); break;
-    case 'removeTile': sim.removeTile(m.tileId); break;
+    case 'addTile':
+      sim.addTile(m.tileId, m.paths, m.meta);
+      if (m.railPaths?.length) trains.addTile(m.tileId, m.railPaths, m.railMeta ?? []);
+      ensureRunning();
+      break;
+    case 'removeTile': sim.removeTile(m.tileId); trains.removeTile(m.tileId); break;
     case 'setParams':
-      if (m.paused !== undefined) sim.paused = m.paused;
+      if (m.paused !== undefined) { sim.paused = m.paused; trains.paused = m.paused; }
       if (m.density !== undefined) sim.densityScale = m.density;
-      if (m.seed !== undefined) sim.reseed(m.seed);
+      if (m.seed !== undefined) { sim.reseed(m.seed); trains.reseed(m.seed + 6); }
       break;
   }
 };

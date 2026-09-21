@@ -83,7 +83,10 @@ provide both the visible surface and pedestrian navigation),
 Richmond downtown Broad Street's tagged one-way bus lanes use the documented curbside configuration.
 
 ### rail (LineString)
-`id`, `name`, `railway`, `bridge`, `layer`, `deck` (as for roads)
+`id`, `name`, `railway`, `bridge`, `layer`, `deck` (as for roads), plus the OSM `service`
+(`"yard"|"siding"|"spur"|"crossover"`, absent on running track) and `usage`
+(`"main"|"branch"|"industrial"|...`) tags. The viewer draws every class but only runs trains on
+`railway: "rail"` track with no `service` value.
 
 ### landuse (Polygon)
 `id`, `name`, `kind`: `"park"|"grass"|"pitch"|"parking"|"cemetery"|"plaza"|"industrial"|"forest"|"beach"|"deck"|"groundcover_lawn"|"groundcover_paved"|"groundcover_bare"`.

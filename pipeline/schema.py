@@ -58,7 +58,7 @@ LAYER_KEYS: dict[str, set[str]] = {
             "ramp",
     },
     "rail": {
-        "id", "name", "railway", "bridge", "layer", "deck",
+        "id", "name", "railway", "service", "usage", "bridge", "layer", "deck",
             "ramp",
     },
     "landuse": {"id", "name", "kind", "sport", "surface", "pitch_layout"},

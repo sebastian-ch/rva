@@ -18,7 +18,12 @@ export type PropKind =
   | 'person'
   | 'traffic_light'
   | 'bus'
-  | 'fountain';
+  | 'fountain'
+  | 'locomotive'
+  | 'boxcar'
+  | 'hopper'
+  | 'tank_car'
+  | 'coach';
 
 export const PROP_KINDS: PropKind[] = [
   'tree',
@@ -36,7 +41,18 @@ export const PROP_KINDS: PropKind[] = [
   'traffic_light',
   'bus',
   'fountain',
+  'locomotive',
+  'boxcar',
+  'hopper',
+  'tank_car',
+  'coach',
 ];
+
+/** Rail kinds drawn per car of a consist; all are bodies along +X with the wheel tread at y = 0. */
+export const RAIL_KINDS: PropKind[] = ['locomotive', 'boxcar', 'hopper', 'tank_car', 'coach'];
+
+/** Freight bodies are built white so the instance livery colour tints them, as the car kinds are. */
+export const RAIL_TINTED_KINDS: PropKind[] = ['boxcar', 'hopper', 'tank_car'];
 
 /** Low-poly vehicle body kinds built by buildCar/buildSuv/buildPickup/buildVan. */
 export const VEHICLE_KINDS: PropKind[] = ['car', 'suv', 'pickup', 'van'];
@@ -551,6 +567,79 @@ function buildBus(): THREE.BufferGeometry {
   return mergeColored(parts);
 }
 
+// ------------------------------------------------------------------ rolling stock
+// Rail vehicles are 16-26 m long and there can be a couple of hundred of them on screen, so they skip the
+// round wheels the road vehicles use: a bogie reads as a dark box at isometric city scale and costs a
+// twelfth of the vertices. Every body sits on a 1.1 m floor above the railhead (y = 0).
+const RAIL_FLOOR = 1.1;
+
+function railBogies(halfSpacing: number): ColoredPart[] {
+  const frame = new THREE.BoxGeometry(3.8, 0.55, 2.5);
+  const tread = new THREE.BoxGeometry(3.4, 0.5, 2.9);
+  const parts: ColoredPart[] = [];
+  for (const x of [-halfSpacing, halfSpacing]) {
+    parts.push({ geom: tread.clone(), color: hex('roof_dark'), position: [x, 0.25, 0] });
+    parts.push({ geom: frame.clone(), color: hex('slate'), position: [x, 0.78, 0] });
+  }
+  return parts;
+}
+
+function buildLocomotive(): THREE.BufferGeometry {
+  const body = hex('rail_loco');
+  return mergeColored([
+    ...railBogies(6.5),
+    { geom: new THREE.BoxGeometry(21, 0.5, 3.1), color: hex('roof_dark'), position: [0, RAIL_FLOOR + 0.25, 0] },
+    // long hood over the prime mover, then the cab and the short nose at the +X end
+    { geom: new THREE.BoxGeometry(13, 2.6, 2.9), color: body, position: [-3.4, RAIL_FLOOR + 0.5 + 1.3, 0] },
+    { geom: new THREE.BoxGeometry(4, 3.1, 3.05), color: body, position: [5.2, RAIL_FLOOR + 0.5 + 1.55, 0] },
+    { geom: new THREE.BoxGeometry(3.2, 2.1, 2.7), color: body, position: [8.9, RAIL_FLOOR + 0.5 + 1.05, 0] },
+    { geom: new THREE.BoxGeometry(3.6, 0.9, 2.6), color: hex('glass'), position: [5.2, RAIL_FLOOR + 0.5 + 2.3, 0] },
+    { geom: new THREE.BoxGeometry(20.6, 0.18, 3.15), color: hex('rail_loco_trim'), position: [0, RAIL_FLOOR + 0.45, 0] },
+  ]);
+}
+
+function buildBoxcar(white: boolean): THREE.BufferGeometry {
+  const body = white ? WHITE : hex('rail_boxcar');
+  return mergeColored([
+    ...railBogies(5.8),
+    { geom: new THREE.BoxGeometry(18, 0.45, 3.1), color: hex('roof_dark'), position: [0, RAIL_FLOOR + 0.22, 0] },
+    { geom: new THREE.BoxGeometry(17.6, 3.4, 3.05), color: body, position: [0, RAIL_FLOOR + 0.45 + 1.7, 0] },
+    { geom: new THREE.BoxGeometry(17.8, 0.3, 3.15), color: hex('roof_dark'), position: [0, RAIL_FLOOR + 0.45 + 3.5, 0] },
+  ]);
+}
+
+function buildHopper(white: boolean): THREE.BufferGeometry {
+  const body = white ? WHITE : hex('rail_hopper');
+  return mergeColored([
+    ...railBogies(5.2),
+    // the narrow lower box stands in for the discharge slope below the sill
+    { geom: new THREE.BoxGeometry(13.5, 1.2, 1.9), color: hex('roof_dark'), position: [0, RAIL_FLOOR + 0.1, 0] },
+    { geom: new THREE.BoxGeometry(16, 2.4, 3.05), color: body, position: [0, RAIL_FLOOR + 1.3 + 1.2, 0] },
+    { geom: new THREE.BoxGeometry(15, 0.25, 2.5), color: hex('trunk'), position: [0, RAIL_FLOOR + 1.3 + 2.4, 0] },
+  ]);
+}
+
+function buildTankCar(white: boolean): THREE.BufferGeometry {
+  const tank = new THREE.CylinderGeometry(1.5, 1.5, 13.5, 8);
+  tank.rotateZ(Math.PI / 2);
+  return mergeColored([
+    ...railBogies(5.2),
+    { geom: new THREE.BoxGeometry(16, 0.45, 2.6), color: hex('roof_dark'), position: [0, RAIL_FLOOR + 0.22, 0] },
+    { geom: tank, color: white ? WHITE : hex('rail_hopper'), position: [0, RAIL_FLOOR + 0.45 + 1.5, 0] },
+    { geom: new THREE.BoxGeometry(1.4, 0.5, 1.4), color: hex('slate'), position: [0, RAIL_FLOOR + 0.45 + 3.1, 0] },
+  ]);
+}
+
+function buildCoach(): THREE.BufferGeometry {
+  return mergeColored([
+    ...railBogies(8.5),
+    { geom: new THREE.BoxGeometry(26, 0.4, 3.05), color: hex('roof_dark'), position: [0, RAIL_FLOOR + 0.2, 0] },
+    { geom: new THREE.BoxGeometry(25.6, 1.4, 3.0), color: hex('rail_coach'), position: [0, RAIL_FLOOR + 0.4 + 0.7, 0] },
+    { geom: new THREE.BoxGeometry(24.5, 1.0, 3.05), color: hex('glass'), position: [0, RAIL_FLOOR + 0.4 + 1.9, 0] },
+    { geom: new THREE.BoxGeometry(25.6, 1.0, 3.0), color: hex('rail_coach'), position: [0, RAIL_FLOOR + 0.4 + 2.9, 0] },
+  ]);
+}
+
 function buildFountain(): THREE.BufferGeometry {
   const basin = new THREE.CylinderGeometry(3, 3, 0.5, 12);
   const waterDisc = new THREE.CylinderGeometry(2.7, 2.7, 0.05, 12);
@@ -634,6 +723,21 @@ export function buildPropGeometry(
       break;
     case 'fountain':
       geom = buildFountain();
+      break;
+    case 'locomotive':
+      geom = buildLocomotive();
+      break;
+    case 'boxcar':
+      geom = buildBoxcar(bodyWhite ?? true);
+      break;
+    case 'hopper':
+      geom = buildHopper(bodyWhite ?? true);
+      break;
+    case 'tank_car':
+      geom = buildTankCar(bodyWhite ?? true);
+      break;
+    case 'coach':
+      geom = buildCoach();
       break;
   }
   geom.computeVertexNormals();

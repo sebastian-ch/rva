@@ -214,7 +214,16 @@ function toPath(coords: V2[], toLocal: (x: number, y: number) => V2, groundAt: (
 
 export type { CarPathMeta } from './traffic/graph';
 import type { CarPathMeta } from './traffic/graph';
-export interface RoadMeshes { roads: THREE.BufferGeometry; paths: THREE.Vector3[][]; pathMeta: CarPathMeta[]; walkPaths: THREE.Vector3[][]; }
+import type { RailPathMeta } from './traffic/trains';
+export interface RoadMeshes {
+  roads: THREE.BufferGeometry;
+  paths: THREE.Vector3[][];
+  pathMeta: CarPathMeta[];
+  walkPaths: THREE.Vector3[][];
+  /** track centrelines for the train sim, in the same local frame as the car paths */
+  railPaths: THREE.Vector3[][];
+  railMeta: RailPathMeta[];
+}
 
 export function buildRoads(
   feats: Feature<LineGeom, RoadProps>[],
@@ -236,6 +245,8 @@ export function buildRoads(
   const carPaths: THREE.Vector3[][] = [];
   const carMeta: CarPathMeta[] = [];
   const walkPaths: THREE.Vector3[][] = [];
+  const railPaths: THREE.Vector3[][] = [];
+  const railMeta: RailPathMeta[] = [];
   const roadPaths: { path: THREE.Vector3[]; width: number }[] = [];
   const bridgeNeighbors = opts.bridges === false ? [] : feats.filter(f=>!f.properties.tunnel && !MINOR.has(f.properties.highway))
     .flatMap(f=>lines(f.geometry).map(line=>({id:f.properties.id,width:f.properties.width,
@@ -551,6 +562,11 @@ export function buildRoads(
       }
       ribbon(mb, path, 1.6, railC, 0.95);
       ribbon(mb, path.map((v) => new THREE.Vector3(v.x, v.y + 0.02, v.z)), 0.75, hex('roof_dark'));
+      // trains run on the drawn centreline, un-extended, so track meeting at a node shares a graph node
+      if (path.length >= 2) {
+        railPaths.push(path);
+        railMeta.push({ wayId: p.id, railway: p.railway, service: p.service ?? null, usage: p.usage ?? null, bridge: !!p.bridge });
+      }
     }
   }
   // Crosswalks: zebra bars spanning the road at each marked crossing node.
@@ -606,7 +622,7 @@ export function buildRoads(
       ribbon(mb, [a, b], 0.55, sidewalk, 0.97);
     }
   }
-  return { roads: mb.build(), paths: carPaths, pathMeta: carMeta, walkPaths };
+  return { roads: mb.build(), paths: carPaths, pathMeta: carMeta, walkPaths, railPaths, railMeta };
 }
 
 function nearestRoad(paths: { path: THREE.Vector3[]; width: number }[], x: number, z: number): { dir: THREE.Vector3; width: number; point: THREE.Vector3; distance: number } | null {

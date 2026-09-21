@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { PROP_KINDS, VEHICLE_KINDS, buildPropGeometry, hex, type PropKind } from './props';
+import { PROP_KINDS, RAIL_KINDS, RAIL_TINTED_KINDS, VEHICLE_KINDS, buildPropGeometry, hex, type PropKind } from './props';
 import type { Placement } from './scatter';
 import type { PoseSink } from './trafficClient';
-import { MAX_VEHICLES, POSE_STRIDE, VEHICLE_COLORS, VEHICLE_KIND_NAMES } from './traffic/protocol';
+import { POSE_STRIDE, RAIL_COLORS, TOTAL_POSE_SLOTS, VEHICLE_COLORS, VEHICLE_KIND_NAMES } from './traffic/protocol';
 export { laneOffset } from './traffic/graph';
 
 const CAPACITY: Record<PropKind, number> = {
@@ -21,7 +21,15 @@ const CAPACITY: Record<PropKind, number> = {
   traffic_light: 1500,
   bus: 300,
   fountain: 100,
+  locomotive: 16,
+  boxcar: 160,
+  hopper: 120,
+  tank_car: 100,
+  coach: 48,
 };
+/** Kinds whose body is built white and tinted per instance, and the palette each one indexes. */
+const TINTED_KINDS: PropKind[] = [...VEHICLE_KINDS, ...RAIL_TINTED_KINDS];
+const colorTable = (kind: PropKind) => (RAIL_KINDS.includes(kind) ? RAIL_COLORS : VEHICLE_COLORS);
 /** Real-traffic colour mix (white/silver/black/grey dominate), palette keys with weights. */
 const CAR_COLORS: [string, number][] = [
   ['car_white', 24], ['car_silver', 18], ['car_black', 15], ['car_grey', 10], ['car_red', 8], ['car_blue', 8],
@@ -60,8 +68,8 @@ export class PropPool implements PoseSink {
   private counts = new Map<PropKind, number>();
   private walkers: Walker[] = [];
   /** traffic slot -> prop kind index (-1 empty) and instance index */
-  private slotKind = new Int8Array(MAX_VEHICLES).fill(-1);
-  private slotInst = new Int32Array(MAX_VEHICLES).fill(-1);
+  private slotKind = new Int8Array(TOTAL_POSE_SLOTS).fill(-1);
+  private slotInst = new Int32Array(TOTAL_POSE_SLOTS).fill(-1);
   private trafficFree = new Map<PropKind, number[]>();
   private hidden = new THREE.Matrix4().makeScale(0, 0, 0);
   /** tile id per instance, per kind, parallel to the instance index */
@@ -89,7 +97,7 @@ export class PropPool implements PoseSink {
     };
     lampMaterial.customProgramCacheKey = () => 'iso-neon-lamp';
     for (const k of PROP_KINDS) {
-      const geom = VEHICLE_KINDS.includes(k) ? buildPropGeometry(k, undefined, true) : buildPropGeometry(k);
+      const geom = TINTED_KINDS.includes(k) ? buildPropGeometry(k, undefined, true) : buildPropGeometry(k, undefined, false);
       const im = new THREE.InstancedMesh(geom, k === 'streetlight' ? lampMaterial : material, CAPACITY[k]);
       im.count = 0;
       im.frustumCulled = false;
@@ -207,7 +215,7 @@ export class PropPool implements PoseSink {
       // moving vehicles share the instanced buffers with parked ones: follow the compaction
       const ki = VEHICLE_KIND_NAMES.indexOf(k as never);
       if (ki >= 0) {
-        for (let slot = 0; slot < MAX_VEHICLES; slot++) if (this.slotKind[slot] === ki) this.slotInst[slot] = remap.get(this.slotInst[slot]) ?? this.slotInst[slot];
+        for (let slot = 0; slot < TOTAL_POSE_SLOTS; slot++) if (this.slotKind[slot] === ki) this.slotInst[slot] = remap.get(this.slotInst[slot]) ?? this.slotInst[slot];
         const free = this.trafficFree.get(k);
         if (free) this.trafficFree.set(k, free.map((i) => remap.get(i) ?? i).filter((i) => i < w));
       }
@@ -244,7 +252,7 @@ export class PropPool implements PoseSink {
   }
 
   /** Number of moving vehicles currently drawn. */
-  trafficCount(): number { let n = 0; for (let i = 0; i < MAX_VEHICLES; i++) if (this.slotKind[i] >= 0) n++; return n; }
+  trafficCount(): number { let n = 0; for (let i = 0; i < TOTAL_POSE_SLOTS; i++) if (this.slotKind[i] >= 0) n++; return n; }
 
   /**
    * Draw the traffic worker's pose buffers. Slots are stable across frames; a slot that changes kind or empties
@@ -254,7 +262,9 @@ export class PropPool implements PoseSink {
     if (this.paused) return;
     const touched = new Set<THREE.InstancedMesh>();
     const a = Math.min(1.25, Math.max(0, alpha));
-    for (let slot = 0; slot < MAX_VEHICLES; slot++) {
+    // A buffer from an older worker build may be shorter than the current slot count.
+    const slots = Math.min(TOTAL_POSE_SLOTS, Math.floor(cur.length / POSE_STRIDE));
+    for (let slot = 0; slot < slots; slot++) {
       const o = slot * POSE_STRIDE;
       const ki = cur[o + 4];
       const had = this.slotKind[slot];
@@ -278,9 +288,11 @@ export class PropPool implements PoseSink {
         this.owners.get(kind)![idx] = TRAFFIC_OWNER;
         this.slotKind[slot] = ki;
         this.slotInst[slot] = idx;
-        if (VEHICLE_KINDS.includes(kind)) {
-          // white-bodied car kinds take a body colour; buses (and anything pre-coloured) keep their vertex colours
-          im.setColorAt(idx, hex(VEHICLE_COLORS[Math.max(0, Math.min(VEHICLE_COLORS.length - 1, cur[o + 5] | 0))] as never));
+        if (TINTED_KINDS.includes(kind)) {
+          // white-bodied car and freight kinds take a body colour; buses, locomotives and coaches (and anything
+          // else pre-coloured) keep their vertex colours
+          const table = colorTable(kind);
+          im.setColorAt(idx, hex(table[Math.max(0, Math.min(table.length - 1, cur[o + 5] | 0))] as never));
           if (im.instanceColor) im.instanceColor.needsUpdate = true;
         }
       }

@@ -24,7 +24,7 @@ function payloadFor(req: BuildRequest): TilePayload {
     ranges: [],
     placements: [],
     carPaths: [],
-    walkPaths: [], carMeta: [],
+    walkPaths: [], carMeta: [], railPaths: [], railMeta: [],
     buildingFeatures: [],
     buildMs: 5,
   };

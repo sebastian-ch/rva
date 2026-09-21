@@ -64,5 +64,13 @@
   "car_navy": "#2a3d5c",
   "car_green": "#4c7a4f",
   "car_tan": "#c9b58f",
-  "car_orange": "#d9782f"
+  "car_orange": "#d9782f",
+  "rail_loco": "#37475a",
+  "rail_loco_trim": "#e0aa3c",
+  "rail_boxcar": "#8a4436",
+  "rail_brown": "#6d4a37",
+  "rail_hopper": "#8d8f8c",
+  "rail_green": "#3f6b52",
+  "rail_blue": "#35567d",
+  "rail_coach": "#c6ccd2"
 }

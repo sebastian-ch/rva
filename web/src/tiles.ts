@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { CarPathMeta } from './traffic/graph';
+import type { RailPathMeta } from './traffic/trains';
 import type { BuildingProps, Feature, PolyGeom, TileIndex, TileMeta } from './types';
 import { HeightField, FLAT_FIELD } from './terrain';
 import type { BuildingRange } from './buildings';
@@ -16,6 +17,9 @@ export interface LoadedTile {
   carPaths: THREE.Vector3[][];
   carMeta: CarPathMeta[];
   walkPaths: THREE.Vector3[][];
+  /** track centrelines, kept flat: only the train worker reads them */
+  railPaths: Float32Array[];
+  railMeta: RailPathMeta[];
   placements: Placement[];
   field: HeightField;
   buildingFeatures: Map<string, Feature<PolyGeom, BuildingProps>>;
@@ -64,7 +68,7 @@ export function wrapTilePayload(p: TilePayload, materials: Materials): LoadedTil
   const carPaths = toVec3Paths(p.carPaths);
   const walkPaths = toVec3Paths(p.walkPaths);
   return {
-    meta: p.meta, lod: p.lod, group, buildings, ranges: p.ranges, carPaths, carMeta: p.carMeta ?? [], walkPaths, placements: p.placements,
+    meta: p.meta, lod: p.lod, group, buildings, ranges: p.ranges, carPaths, carMeta: p.carMeta ?? [], walkPaths, railPaths: p.railPaths ?? [], railMeta: p.railMeta ?? [], placements: p.placements,
     field: p.terrain ? new HeightField(p.terrain) : FLAT_FIELD(0),
     buildingFeatures: new Map(p.buildingFeatures.map((f) => [f.properties.id, f])),
     triangles, bytes,

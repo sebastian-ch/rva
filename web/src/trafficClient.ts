@@ -4,6 +4,7 @@
  */
 import type * as THREE from 'three';
 import type { CarPathMeta } from './traffic/graph';
+import type { RailPathMeta } from './traffic/trains';
 import { MAX_VEHICLES, POSE_STRIDE, type FromWorker, type StatsMessage, type ToWorker } from './traffic/protocol';
 
 export interface TrafficWorkerLike {
@@ -24,7 +25,7 @@ export class TrafficClient {
   private tPrev = 0;
   private tCur = 0;
   private lastLocal = 0;
-  stats: StatsMessage = { type: 'stats', vehicles: 0, edges: 0, msPerStep: 0 };
+  stats: StatsMessage = { type: 'stats', vehicles: 0, edges: 0, msPerStep: 0, trains: 0, railEdges: 0 };
 
   constructor(factory: () => TrafficWorkerLike = () => new Worker(new URL('./trafficWorker.ts', import.meta.url), { type: 'module' }) as unknown as TrafficWorkerLike) {
     this.worker = factory();
@@ -39,9 +40,11 @@ export class TrafficClient {
     } else if (m.type === 'stats') this.stats = m;
   }
 
-  addTile(tileId: string, paths: THREE.Vector3[][], meta: CarPathMeta[]) {
+  /** Car paths arrive as Vector3 polylines (the tile keeps them in that form); track is already flat. */
+  addTile(tileId: string, paths: THREE.Vector3[][], meta: CarPathMeta[], railPaths: Float32Array[] = [], railMeta: RailPathMeta[] = []) {
     const flat = paths.map((p) => { const a = new Float32Array(p.length * 3); p.forEach((v, i) => { a[i * 3] = v.x; a[i * 3 + 1] = v.y; a[i * 3 + 2] = v.z; }); return a; });
-    this.worker.postMessage({ type: 'addTile', tileId, paths: flat, meta }, flat.map((a) => a.buffer as ArrayBuffer));
+    this.worker.postMessage({ type: 'addTile', tileId, paths: flat, meta, railPaths, railMeta },
+      [...flat, ...railPaths].map((a) => a.buffer as ArrayBuffer));
   }
 
   removeTile(tileId: string) { this.worker.postMessage({ type: 'removeTile', tileId }); }

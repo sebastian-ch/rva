@@ -3,19 +3,22 @@
  * priority yielding, turn slowing and density-driven spawning. Pure TypeScript, fixed time step.
  */
 import { RoadGraph, type Edge } from './graph';
-import { MAX_VEHICLES, POSE_STRIDE, VEHICLE_COLOR_WEIGHTS, VEHICLE_KIND_NAMES, type VehicleKindName } from './protocol';
+import { MAX_VEHICLES, POSE_STRIDE, VEHICLE_COLOR_WEIGHTS, VEHICLE_KIND_NAMES, type RailKindName, type VehicleKindName } from './protocol';
+
+/** Road vehicles only: the rail kinds in the pose buffer belong to the train sim. */
+export type RoadKindName = Exclude<VehicleKindName, RailKindName>;
 
 export const DT = 0.05; // s per step
 
 interface KindSpec { idx: number; length: number; v0: number; a: number; b: number }
-const KINDS: Record<VehicleKindName, KindSpec> = {
+const KINDS: Record<RoadKindName, KindSpec> = {
   car: { idx: 0, length: 4.5, v0: 1.0, a: 1.4, b: 2.2 },
   suv: { idx: 1, length: 5.0, v0: 0.97, a: 1.2, b: 2.0 },
   pickup: { idx: 2, length: 5.5, v0: 0.95, a: 1.1, b: 2.0 },
   van: { idx: 3, length: 5.5, v0: 0.92, a: 1.0, b: 2.0 },
   bus: { idx: 4, length: 12, v0: 0.8, a: 0.8, b: 1.6 },
 };
-const KIND_MIX: [VehicleKindName, number][] = [['car', 60], ['suv', 22], ['pickup', 10], ['van', 8]];
+const KIND_MIX: [RoadKindName, number][] = [['car', 60], ['suv', 22], ['pickup', 10], ['van', 8]];
 const BUS_SHARE = 0.05; // of spawns on roads >= 8 m wide
 
 const S0 = 2.5;            // m, standstill gap
@@ -42,7 +45,7 @@ export function density(highway: string): number {
 
 export interface Vehicle {
   slot: number;
-  kind: VehicleKindName;
+  kind: RoadKindName;
   color: number;
   edge: number;
   s: number;
@@ -156,7 +159,7 @@ export class TrafficSim {
   private spawn(e: Edge, s: number): Vehicle | null {
     if (!this.free.length) return null;
     const slot = this.free.pop()!;
-    const kind: VehicleKindName = e.width >= 8 && this.rand() < BUS_SHARE ? 'bus' : pickWeighted(KIND_MIX, this.rand());
+    const kind: RoadKindName = e.width >= 8 && this.rand() < BUS_SHARE ? 'bus' : pickWeighted(KIND_MIX, this.rand());
     const spec = KINDS[kind];
     const j = () => 0.9 + this.rand() * 0.2;
     const v: Vehicle = {

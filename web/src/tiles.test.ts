@@ -48,6 +48,8 @@ describe('wrapTilePayload', () => {
     carPaths: [new Float32Array([0, 1, 2, 3, 4, 5])],
     carMeta: [{ oneway: false, width: 7, highway: 'residential', lanes: 2, bridge: false, ramp: false, wayId: 'w1' }],
     walkPaths: [new Float32Array([10, 11, 12, 13, 14, 15])],
+    railPaths: [new Float32Array([1, 2, 3, 4, 5, 6])],
+    railMeta: [{ wayId: 'r1', railway: 'rail', service: null, usage: 'main', bridge: false }],
     buildingFeatures: [feature],
     buildMs: 5,
   };

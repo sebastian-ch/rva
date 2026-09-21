@@ -15,6 +15,10 @@ export interface CarPathMeta {
   bridge: boolean;
   ramp: boolean;
   wayId: string;
+  /** free speed in m/s; defaults to the highway class limit (rail sets its own) */
+  speed?: number;
+  /** lateral offset from the centreline in m; defaults to the right-hand lane (rail runs on the centre) */
+  offset?: number;
 }
 
 export interface Edge {
@@ -154,8 +158,8 @@ export class RoadGraph {
     const from = this.node(pts[0], pts[2]), to = this.node(pts[pts.length - 3], pts[pts.length - 1]);
     const e: Edge = {
       id: this.nextId++, pair: pair ?? this.nextPair++, tileId, wayId: m.wayId, highway: m.highway, link: m.highway.endsWith('_link'),
-      from: from.key, to: to.key, pts, cum, length: cum[cum.length - 1], v0: speedLimit(m.highway), priority: priority(m.highway),
-      width: m.width, laneOffset: laneOffset(m.width), vehicles: [],
+      from: from.key, to: to.key, pts, cum, length: cum[cum.length - 1], v0: m.speed ?? speedLimit(m.highway), priority: priority(m.highway),
+      width: m.width, laneOffset: m.offset ?? laneOffset(m.width), vehicles: [],
     };
     this.edges.set(e.id, e);
     from.out.push(e.id);

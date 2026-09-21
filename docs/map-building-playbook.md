@@ -820,6 +820,43 @@ silhouette, and silhouette is geometry.
 [buildings.ts](../web/src/buildings.ts) and [tileBuild.ts](../web/src/tileBuild.ts).
 **Regression:** [facadeGrammar.test.ts](../web/src/facadeGrammar.test.ts).
 
+## 11. Multi-body movers: the reservation must never outrank the occupancy
+
+**Symptom:** two trains run through each other on single track, and one passes straight over a segment
+the other is standing on.
+
+**Root cause:** a consist is not a point, so the road sim's "leader ahead on my edge" rule does not
+apply: the thing to avoid is on the *opposite* directed edge of the same rails. `trains.ts` therefore
+keys occupancy on `Edge.pair` (the undirected segment) and lets a train claim the segment beyond the
+junction it is approaching. The first version wrote occupancy and claims in one pass, so a train
+closing on an occupied block overwrote the standing train's entry with its own id -- and then read the
+block as its own and entered it.
+
+**Reusable rules:**
+
+- *Two passes, not one.* Mark what is physically there for every mover first; only then let anyone
+  reserve, and never over an existing mark. Any single-pass map where writers can displace each other
+  has this bug, whatever the domain.
+- *A body that spans several edges needs its own history.* Cars can be a position on an edge; a 400 m
+  consist cannot. Keep the edges already traversed (`behind`), trimmed to the body length, and resolve
+  each car by walking back through them.
+- *Extrapolate off the end of an edge rather than clamping.* Clamping piles the rear cars onto the
+  first vertex as a train enters or leaves the loaded graph. Extrapolating along the end tangent keeps
+  the spacing; hold the endpoint elevation, or the tail climbs into the air off a graded approach.
+- *Every mutual-exclusion rule needs an escape.* Consists still meet nose to nose in adjacent blocks
+  where a line converges, and a buffer stop holds one for ever. A standstill timer that removes the
+  train is cheaper and steadier than a routing fix, and it is the same lesson as the junction deadlock
+  guard in the road sim.
+- *Decide where movers belong from the data, not from geometry.* Trains run on `railway=rail` with no
+  OSM `service` value; yard throats, sidings and spurs are still drawn but stay empty. That took a
+  pipeline change (`process_rail` now carries `service`/`usage`), and an unset tag has to reach the
+  tile as JSON `null`, not the string `"nan"` -- `test_rail.py` pins that through `_write_layer`.
+
+**Implementation:** [trains.ts](../web/src/traffic/trains.ts), rail centrelines from
+[roads.ts](../web/src/roads.ts), rolling stock in [props.ts](../web/src/props.ts).
+**Regression:** [trains.test.ts](../web/src/traffic/trains.test.ts),
+[test_rail.py](../pipeline/tests/test_rail.py).
+
 ## New-place intake and acceptance checklist
 
 Copy this section into the next region's notes and fill in actual sources and results.
