@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PROP_KINDS, RAIL_KINDS, RAIL_TINTED_KINDS, VEHICLE_KINDS, buildPropGeometry, buildPalm } from './props';
+import { PROP_KINDS, RAIL_KINDS, RAIL_MAX_HEIGHT, RAIL_TINTED_KINDS, VEHICLE_KINDS, buildPropGeometry, buildPalm } from './props';
 import { CAR_LENGTH } from './traffic/trains';
 import type { RailKindName } from './traffic/protocol';
 
@@ -135,7 +135,7 @@ describe('rolling stock', () => {
       const box = geom.boundingBox!;
       expect(box.max.x - box.min.x).toBeGreaterThan(box.max.z - box.min.z); // longer than it is wide
       expect(box.min.y).toBeGreaterThanOrEqual(-0.01);
-      expect(box.max.y).toBeLessThan(6); // clears bridges and platform canopies
+      expect(box.max.y).toBeLessThanOrEqual(RAIL_MAX_HEIGHT); // fits under road decks at underbridges
       expect(box.max.z - box.min.z).toBeLessThan(3.6); // standard loading gauge
       geom.dispose();
     }

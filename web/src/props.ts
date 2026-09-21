@@ -570,8 +570,12 @@ function buildBus(): THREE.BufferGeometry {
 // ------------------------------------------------------------------ rolling stock
 // Rail vehicles are 16-26 m long and there can be a couple of hundred of them on screen, so they skip the
 // round wheels the road vehicles use: a bogie reads as a dark box at isometric city scale and costs a
-// twelfth of the vertices. Every body sits on a 1.1 m floor above the railhead (y = 0).
+// twelfth of the vertices. Every body sits on a 1.1 m floor above the railhead (y = 0), and nothing reaches
+// above RAIL_MAX_HEIGHT: a car taller than the real loading gauge pushes through road decks at underbridges,
+// where the deck profile is an estimate to begin with.
 const RAIL_FLOOR = 1.1;
+/** m above the railhead: US plate-C loading gauge, near enough. */
+export const RAIL_MAX_HEIGHT = 4.75;
 
 function railBogies(halfSpacing: number): ColoredPart[] {
   const frame = new THREE.BoxGeometry(3.8, 0.55, 2.5);
@@ -603,8 +607,8 @@ function buildBoxcar(white: boolean): THREE.BufferGeometry {
   return mergeColored([
     ...railBogies(5.8),
     { geom: new THREE.BoxGeometry(18, 0.45, 3.1), color: hex('roof_dark'), position: [0, RAIL_FLOOR + 0.22, 0] },
-    { geom: new THREE.BoxGeometry(17.6, 3.4, 3.05), color: body, position: [0, RAIL_FLOOR + 0.45 + 1.7, 0] },
-    { geom: new THREE.BoxGeometry(17.8, 0.3, 3.15), color: hex('roof_dark'), position: [0, RAIL_FLOOR + 0.45 + 3.5, 0] },
+    { geom: new THREE.BoxGeometry(17.6, 2.9, 3.05), color: body, position: [0, RAIL_FLOOR + 0.45 + 1.45, 0] },
+    { geom: new THREE.BoxGeometry(17.8, 0.25, 3.15), color: hex('roof_dark'), position: [0, RAIL_FLOOR + 0.45 + 3.025, 0] },
   ]);
 }
 
@@ -614,19 +618,20 @@ function buildHopper(white: boolean): THREE.BufferGeometry {
     ...railBogies(5.2),
     // the narrow lower box stands in for the discharge slope below the sill
     { geom: new THREE.BoxGeometry(13.5, 1.2, 1.9), color: hex('roof_dark'), position: [0, RAIL_FLOOR + 0.1, 0] },
-    { geom: new THREE.BoxGeometry(16, 2.4, 3.05), color: body, position: [0, RAIL_FLOOR + 1.3 + 1.2, 0] },
-    { geom: new THREE.BoxGeometry(15, 0.25, 2.5), color: hex('trunk'), position: [0, RAIL_FLOOR + 1.3 + 2.4, 0] },
+    { geom: new THREE.BoxGeometry(16, 1.9, 3.05), color: body, position: [0, RAIL_FLOOR + 0.7 + 0.95, 0] },
+    // the load sits flush with the rim: an open hopper is the shortest car in the consist
+    { geom: new THREE.BoxGeometry(15, 0.22, 2.5), color: hex('trunk'), position: [0, RAIL_FLOOR + 0.7 + 1.79, 0] },
   ]);
 }
 
 function buildTankCar(white: boolean): THREE.BufferGeometry {
-  const tank = new THREE.CylinderGeometry(1.5, 1.5, 13.5, 8);
+  const tank = new THREE.CylinderGeometry(1.4, 1.4, 13.5, 8);
   tank.rotateZ(Math.PI / 2);
   return mergeColored([
     ...railBogies(5.2),
     { geom: new THREE.BoxGeometry(16, 0.45, 2.6), color: hex('roof_dark'), position: [0, RAIL_FLOOR + 0.22, 0] },
-    { geom: tank, color: white ? WHITE : hex('rail_hopper'), position: [0, RAIL_FLOOR + 0.45 + 1.5, 0] },
-    { geom: new THREE.BoxGeometry(1.4, 0.5, 1.4), color: hex('slate'), position: [0, RAIL_FLOOR + 0.45 + 3.1, 0] },
+    { geom: tank, color: white ? WHITE : hex('rail_hopper'), position: [0, RAIL_FLOOR + 0.45 + 1.4, 0] },
+    { geom: new THREE.BoxGeometry(1.4, 0.3, 1.4), color: hex('slate'), position: [0, RAIL_FLOOR + 0.45 + 2.95, 0] },
   ]);
 }
 
@@ -634,9 +639,9 @@ function buildCoach(): THREE.BufferGeometry {
   return mergeColored([
     ...railBogies(8.5),
     { geom: new THREE.BoxGeometry(26, 0.4, 3.05), color: hex('roof_dark'), position: [0, RAIL_FLOOR + 0.2, 0] },
-    { geom: new THREE.BoxGeometry(25.6, 1.4, 3.0), color: hex('rail_coach'), position: [0, RAIL_FLOOR + 0.4 + 0.7, 0] },
-    { geom: new THREE.BoxGeometry(24.5, 1.0, 3.05), color: hex('glass'), position: [0, RAIL_FLOOR + 0.4 + 1.9, 0] },
-    { geom: new THREE.BoxGeometry(25.6, 1.0, 3.0), color: hex('rail_coach'), position: [0, RAIL_FLOOR + 0.4 + 2.9, 0] },
+    { geom: new THREE.BoxGeometry(25.6, 1.2, 3.0), color: hex('rail_coach'), position: [0, RAIL_FLOOR + 0.4 + 0.6, 0] },
+    { geom: new THREE.BoxGeometry(24.5, 1.0, 3.05), color: hex('glass'), position: [0, RAIL_FLOOR + 0.4 + 1.7, 0] },
+    { geom: new THREE.BoxGeometry(25.6, 0.6, 3.0), color: hex('rail_coach'), position: [0, RAIL_FLOOR + 0.4 + 2.5, 0] },
   ]);
 }
 

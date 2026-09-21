@@ -840,9 +840,13 @@ block as its own and entered it.
 - *A body that spans several edges needs its own history.* Cars can be a position on an edge; a 400 m
   consist cannot. Keep the edges already traversed (`behind`), trimmed to the body length, and resolve
   each car by walking back through them.
-- *Extrapolate off the end of an edge rather than clamping.* Clamping piles the rear cars onto the
-  first vertex as a train enters or leaves the loaded graph. Extrapolating along the end tangent keeps
-  the spacing; hold the endpoint elevation, or the tail climbs into the air off a graded approach.
+- *Off the end of the graph, draw nothing.* The first version extrapolated the rear cars along the end
+  tangent so a consist entering the graph kept its spacing. That floats: the graph ends at the LOD-0
+  ring, the outer tiles keep drawing the track, and a straight constant-elevation guess runs visibly
+  beside real rails for the ~20 s it takes a 400 m consist to pull on. Clamping is no better -- it piles
+  the cars on one vertex. A car with no edge under it is simply not drawn, and the consist grows in from
+  the boundary. The general rule: when a mover extends past the data, shortening what you draw beats
+  inventing where the rest of it goes.
 - *Every mutual-exclusion rule needs an escape.* Consists still meet nose to nose in adjacent blocks
   where a line converges, and a buffer stop holds one for ever. A standstill timer that removes the
   train is cheaper and steadier than a routing fix, and it is the same lesson as the junction deadlock

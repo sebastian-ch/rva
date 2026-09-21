@@ -43,6 +43,7 @@ export const CAR_LENGTH: Record<RailKindName, number> = {
 };
 const COUPLER = 1.2;        // m of slack drawn between car bodies
 const RAIL_LIFT = 0.12;     // m: wheels sit on the railhead, not on the tie ribbon
+const ON_TRACK_EPS = 0.05;  // m of slack before a car counts as off the end of the loaded track
 const FREIGHT_MIX: [RailKindName, number][] = [['boxcar', 45], ['hopper', 30], ['tank_car', 25]];
 const PASSENGER_SHARE = 0.3;
 const MAX_TRAINS = 3;
@@ -97,32 +98,17 @@ function pickWeighted<T>(items: [T, number][], r: number): T {
 }
 
 /**
- * Position and heading at arc length `s` along an edge, extrapolated along the end tangent when `s` falls off
- * either end. A consist entering or leaving the loaded graph keeps its shape that way instead of bunching up;
- * the extrapolated elevation is held at the endpoint rather than following the gradient off into the air.
+ * Position and heading at arc length `s` along an edge, clamped to the edge's ends. Nothing is extrapolated
+ * past a railhead: a car with no track under it is not drawn at all (see poseBehind), because a straight
+ * constant-elevation guess floats over the track the neighbouring tiles are still drawing.
  */
 export function poseOnEdge(e: Edge, s: number, out: Float32Array, o: number): void {
   const p = e.pts, cum = e.cum, n = cum.length;
-  if (s <= 0 || n < 2) {
-    const dx = p[3] - p[0], dz = p[5] - p[2];
-    const l = Math.hypot(dx, dz) || 1;
-    out[o] = p[0] + (dx / l) * s;
-    out[o + 1] = p[1];
-    out[o + 2] = p[2] + (dz / l) * s;
-    out[o + 3] = Math.atan2(-dz, dx);
+  if (n < 2) {
+    out[o] = p[0]; out[o + 1] = p[1]; out[o + 2] = p[2]; out[o + 3] = 0;
     return;
   }
-  const end = cum[n - 1];
-  if (s >= end) {
-    const a = (n - 2) * 3, b = (n - 1) * 3;
-    const dx = p[b] - p[a], dz = p[b + 2] - p[a + 2];
-    const l = Math.hypot(dx, dz) || 1;
-    out[o] = p[b] + (dx / l) * (s - end);
-    out[o + 1] = p[b + 1];
-    out[o + 2] = p[b + 2] + (dz / l) * (s - end);
-    out[o + 3] = Math.atan2(-dz, dx);
-    return;
-  }
+  s = Math.min(Math.max(s, 0), cum[n - 1]);
   let i = 1;
   while (i < n - 1 && cum[i] < s) i++;
   const seg = cum[i] - cum[i - 1];
@@ -350,17 +336,24 @@ export class TrainSim {
     if (entries.length) this.spawn(entries[Math.floor(this.rand() * entries.length)]);
   }
 
-  /** Resolve a car's pose `d` metres behind the head, walking back through the traversed edges. */
+  /**
+   * Resolve a car's pose `d` metres behind the head, walking back through the traversed edges. Returns false
+   * when the car lands off the loaded track -- behind the oldest edge still in history (a consist entering the
+   * graph, or one whose tiles have been unloaded under it) or past the head's edge while the train is running
+   * off the end. That car is then not drawn. It is the honest answer: the alternative, projecting it along the
+   * last tangent, puts cars in the air next to the track the outer tiles are still drawing.
+   */
   private poseBehind(t: Train, d: number, out: Float32Array, o: number): boolean {
     let e = this.graph.edges.get(t.edge);
     if (!e) return false;
     let s = t.s - d;
     for (let i = 0; s < 0 && i < t.behind.length; i++) {
       const prev = this.graph.edges.get(t.behind[i]);
-      if (!prev) break;
+      if (!prev) return false;
       e = prev;
       s += prev.length;
     }
+    if (s < -ON_TRACK_EPS || s > e.length + ON_TRACK_EPS) return false;
     poseOnEdge(e, s, out, o);
     out[o + 1] += RAIL_LIFT;
     return true;
