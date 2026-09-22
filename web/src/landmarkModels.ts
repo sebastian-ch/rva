@@ -19,6 +19,29 @@ export function prepareLandmarkObject(obj: THREE.Object3D, material: THREE.Mater
 }
 
 /**
+ * Per landmark slug in one tile, the range whose centroid places the model. building:parts inherit the slug
+ * and can fall in a neighbouring tile, so only the tile holding the outline places it; a tile holding parts
+ * whose outline lives elsewhere gets `null` (hide them, place nothing), or it would drop a second copy at
+ * the parts' centroid. Parts without a parent fall back to the largest one.
+ */
+export function pickModelAnchors(ranges: BuildingRange[]): Map<string, BuildingRange | null> {
+  const bySlug = new Map<string, BuildingRange[]>();
+  for (const r of ranges) {
+    if (!r.props.landmark) continue;
+    const list = bySlug.get(r.props.landmark) ?? [];
+    list.push(r);
+    bySlug.set(r.props.landmark, list);
+  }
+  const anchors = new Map<string, BuildingRange | null>();
+  for (const [slug, list] of bySlug) {
+    const outlines = list.filter((r) => !r.props.is_part);
+    const pool = outlines.length ? outlines : list.filter((r) => !r.props.parent);
+    anchors.set(slug, pool.length ? pool.reduce((a, b) => (b.count > a.count ? b : a)) : null);
+  }
+  return anchors;
+}
+
+/**
  * Hand-modeled landmarks: when landmarks.json has a `model`, load the glTF, drop it at the matched footprint's
  * centroid/ground elevation and rebuild that tile's procedural mesh without the placeholder extrusion.
  */
@@ -52,15 +75,12 @@ export class LandmarkModels {
     if (!tile.buildings) return 0;
     const withModel = tile.ranges.filter((r) => r.props.landmark && landmarks.get(r.props.landmark)?.model);
     if (!withModel.length) return 0;
-    // one model per landmark: building:parts inherit the slug, so pick the outline (or the largest range) for position
-    const bySlug = new Map<string, BuildingRange>();
-    for (const r of withModel) {
-      const cur = bySlug.get(r.props.landmark!);
-      if (!cur || (cur.props.is_part && !r.props.is_part) || (cur.props.is_part === r.props.is_part && r.count > cur.count)) bySlug.set(r.props.landmark!, r);
-    }
+    const anchors = pickModelAnchors(withModel);
+    const hidden = new Set<string>();
     let placed = 0;
-    for (const r of bySlug.values()) {
-      const lm = landmarks.get(r.props.landmark!)!;
+    for (const [slug, r] of anchors) {
+      if (!r) { hidden.add(slug); continue; }
+      const lm = landmarks.get(slug)!;
       const feat = tile.buildingFeatures.get(r.props.id);
       if (!feat) continue;
       const c = centroid(cleanRing(polygons(feat.geometry)[0][0]));
@@ -78,13 +98,15 @@ export class LandmarkModels {
         const list = this.byTile.get(tile.meta.id) ?? [];
         list.push(obj);
         this.byTile.set(tile.meta.id, list);
+        hidden.add(slug);
         placed++;
       } catch (e) {
         console.warn('landmark model failed', lm.slug, e);
       }
     }
-    if (!placed) return 0;
-    const keep = [...tile.buildingFeatures.values()].filter((f) => !withModel.some((r) => r.props.id === f.properties.id));
+    if (!hidden.size || this.detached.has(tile)) return placed;
+    const drop = new Set(withModel.filter((r) => hidden.has(r.props.landmark!)).map((r) => r.props.id));
+    const keep = [...tile.buildingFeatures.values()].filter((f) => !drop.has(f.properties.id));
     const old = tile.buildings;
     old.parent?.remove(old);
     old.geometry.dispose();
