@@ -433,6 +433,137 @@ def foundry_park_south(b, fp):
           shade=0.98, name="forecourt-planting")
 
 
+def _corner_rect(fp, corners):
+    """(cx, cy, sx, sy, rot) for a quadrilateral given as projected corner points, relative to the footprint
+    centroid. Used where a footprint is not one rectangle and OBB fractions would misplace the roofs."""
+    ox, oy = fp["centroid_proj"]
+    pts = [(x - ox, y - oy) for x, y in corners]
+    (ax, ay), (bx, by), (cx_, cy_), _ = pts
+    cx, cy = sum(x for x, _ in pts) / 4, sum(y for _, y in pts) / 4
+    return cx, cy, math.hypot(bx - ax, by - ay), math.hypot(cx_ - bx, cy_ - by), math.atan2(by - ay, bx - ax)
+
+
+def pump_house(b, fp):
+    """Byrd Park Pump House (1883, Wilfred Cutshaw): rough grey granite Gothic Revival pump station with steep
+    slate gables, pointed-arch windows and the open-air dance hall in the roof storey.
+
+    The OSM way (236152567) is an L: a 39 x 16 m pump-room block along the canal and a lower 23 x 14 m wing
+    at its west end. Walls come from the real ring; roofs sit on the two blocks by their surveyed corners.
+    Massing from the VDHR nomination and public photographs; nothing traced from imagery.
+    """
+    eave, ridge = 8.0, 15.0
+    wing_eave, wing_ridge = 5.6, 10.0
+    granite, roof = "steel", "roof_dark"
+
+    # main block corners (EPSG:32618): SW end at the wing, NE end at the river
+    main = [(280335.1, 4157305.7), (280368.3, 4157285.5), (280376.9, 4157299.5), (280342.8, 4157320.3)]
+    wing = [(280311.2, 4157312.5), (280318.5, 4157324.3), (280338.0, 4157312.5), (280330.7, 4157300.7)]
+    mcx, mcy, msx, msy, mrot = _corner_rect(fp, main)
+    wcx, wcy, wsx, wsy, wrot = _corner_rect(fp, wing)
+
+    # walls: the whole surveyed ring to the wing eave, then only the pump room up to its taller eave
+    b.extrude(fp["ring"], -0.5, wing_eave, granite, 0.92, name="walls")
+    b.band(fp["ring"], 0.3, 0.25, 0.9, granite, 0.8)  # rusticated plinth
+    b.band(fp["ring"], wing_eave - 0.45, 0.35, 0.45, granite, 0.78)  # eave course
+    main_ring = rect_ring(mcx, mcy, msx, msy, mrot)
+    b.extrude(main_ring, wing_eave - 0.2, eave, granite, 0.92, name="pump-room")
+    b.band(main_ring, eave - 0.45, 0.35, 0.45, granite, 0.78)
+
+    # tall two-storey pointed windows on the pump room; small ones on the wing
+    b.window_bays(main_ring, 1.2, height=3.6, width=1.3, pitch=3.9, trim="concrete", arched="pointed")
+    b.window_bays(main_ring, 5.4, height=2.2, width=1.1, pitch=3.9, trim="concrete", arched="pointed")
+    b.window_bays(rect_ring(wcx, wcy, wsx, wsy, wrot), 1.2, height=2.8, width=1.2, pitch=4.2, trim="concrete", arched="pointed")
+
+    # steep slate gables, pump-room ridge along the canal
+    b.gable(mcx, mcy, eave, msx + 0.9, msy + 0.9, ridge - eave, roof, rot=mrot, name="main-roof")
+    b.gable(wcx, wcy, wing_eave, wsx + 0.9, wsy + 0.9, wing_ridge - wing_eave, roof, rot=wrot, name="wing-roof")
+    # gable ends in granite, flush under the roof, so the ends do not read as open sheds
+    ux, uy = math.cos(mrot), math.sin(mrot)
+    for s in (-1, 1):
+        ex, ey = mcx + ux * s * (msx / 2 - 0.05), mcy + uy * s * (msx / 2 - 0.05)
+        b.pediment(ex, ey, eave, msy, 0.1, ridge - eave, granite, rot=mrot + math.pi / 2, shade=0.9)
+    wux, wuy = math.cos(wrot), math.sin(wrot)
+    ex, ey = wcx - wux * (wsx / 2 - 0.05), wcy - wuy * (wsx / 2 - 0.05)
+    b.pediment(ex, ey, wing_eave, wsy, 0.1, wing_ridge - wing_eave, granite, rot=wrot + math.pi / 2, shade=0.9)
+
+    # cross gables over the dance hall: one each side, centred on the long facades
+    nx, ny = -uy, ux
+    for s in (-1, 1):
+        gx, gy = mcx + nx * s * (msy / 2 - 3.0), mcy + ny * s * (msy / 2 - 3.0)
+        b.box(gx, gy, eave - 0.3, 6.0, 6.0, 1.6, granite, rot=mrot, shade=0.9, name="cross-gable-wall")
+        b.gable(gx, gy, eave + 1.3, 6.4, 6.6, 3.4, roof, rot=mrot + math.pi / 2, name="cross-gable")
+        # its pointed window
+        wx, wy = gx + nx * s * 3.31, gy + ny * s * 3.31
+        b.box(wx, wy, eave - 0.1, 1.7, 0.2, 2.4, "concrete", rot=mrot, name="window-surround")
+    # dormers along both eaves, and a ridge ventilator
+    for k in (-1, 1):
+        for s in (-1, 1):
+            dx, dy = mcx + ux * k * msx * 0.32 + nx * s * (msy / 2 - 1.6), mcy + uy * k * msx * 0.32 + ny * s * (msy / 2 - 1.6)
+            b.box(dx, dy, eave + 0.6, 1.8, 1.8, 1.4, granite, rot=mrot, shade=0.9, name="dormer")
+            b.gable(dx, dy, eave + 2.0, 2.2, 2.2, 1.1, roof, rot=mrot + math.pi / 2)
+    b.box(mcx, mcy, ridge - 0.6, 3.2, 1.4, 1.5, roof, rot=mrot, shade=0.85, name="ridge-vent")
+    b.gable(mcx, mcy, ridge + 0.9, 3.6, 1.8, 0.7, roof, rot=mrot, shade=0.85)
+
+
+def carillon(b, fp):
+    """Virginia War Memorial Carillon (1932, Cram & Ferguson): a 73 m brick Georgian Revival bell tower with
+    limestone trim, rising from a low memorial base whose wings carry round-arched loggias.
+
+    Footprint = OSM outline way/527243391; the mapped tower part (way/527243392) is 10 x 10 m, centred on
+    the long axis and set toward the south side. OSM height 73.15 m; proportions from public photographs.
+    """
+    f = Frame(fp)
+    top = max(70.0, float(fp.get("height") or 73.15))
+    base_h = 7.6
+    tower_u, tower_v, ts = 0.3, -2.2, 10.2
+
+    # memorial base: brick with a limestone plinth, cornice and parapet
+    b.extrude(fp["ring"], -0.5, base_h, "brick", 0.96, name="base")
+    b.band(fp["ring"], 0.2, 0.3, 1.0, "cream", 0.95)
+    b.band(fp["ring"], base_h - 0.7, 0.45, 0.7, "cream", 0.97)
+    b.band(fp["ring"], base_h + 0.4, 0.15, 0.6, "cream", 0.92)  # parapet coping
+    b.extrude(fp["ring"], base_h, base_h + 0.25, "roof_flat", 0.85, name="base-roof")
+    # arcaded loggias on the wings, both long faces
+    for su in (-1, 1):
+        wing = f.rect(su * (f.hl - 5.5), -2.2, 10.0, 21.0)
+        b.window_bays(wing, 1.2, height=4.6, width=2.4, pitch=3.5, trim="cream", arched=True, glass="brick_dark")
+    # entrance bay on the front (+v) bump
+    b.window_bays(f.rect(0, 11.0, 12.0, 5.0), 0.6, height=5.2, width=2.8, pitch=4.5, trim="cream", arched=True, glass="brick_dark")
+
+    # shaft
+    shaft = f.rect(tower_u, tower_v, ts, ts)
+    belfry_z = top - 21.0
+    b.extrude(shaft, base_h, belfry_z, "brick", 1.0, name="shaft")
+    b.band(shaft, base_h + 0.8, 0.3, 1.2, "cream", 0.96)  # tower plinth
+    # limestone corner quoins
+    for su in (-1, 1):
+        for sv in (-1, 1):
+            b.box(*f.P(tower_u + su * (ts / 2 - 0.3), tower_v + sv * (ts / 2 - 0.3)), base_h, 0.8, 0.8,
+                  belfry_z - base_h, "cream", rot=f.rot_u, shade=0.94, name="quoin")
+    # tall recessed window slots, three tiers on every face
+    for z, h in ((base_h + 4.0, 7.0), (base_h + 15.0, 9.0), (base_h + 28.0, 9.0)):
+        b.window_bays(shaft, z, height=h, width=1.5, pitch=ts, trim="cream", glass="brick_dark")
+
+    # belfry: limestone stage with tall arched openings on each face, then cornice
+    belfry = f.rect(tower_u, tower_v, ts + 0.4, ts + 0.4)
+    belfry_h = 11.5
+    b.extrude(belfry, belfry_z - 0.2, belfry_z + belfry_h, "cream", 0.98, name="belfry")
+    b.band(belfry, belfry_z - 0.4, 0.5, 0.8, "cream", 0.9)
+    b.window_bays(belfry, belfry_z + 1.2, height=8.2, width=3.0, pitch=ts + 0.4, trim="cream", arched=True, glass="brick_dark")
+    b.band(belfry, belfry_z + belfry_h - 0.2, 0.7, 1.0, "cream", 0.9)
+
+    # stepped crown and pyramidal cap with a small lantern
+    z = belfry_z + belfry_h + 0.8
+    b.box(*f.P(tower_u, tower_v), z, ts - 1.0, ts - 1.0, 1.6, "cream", rot=f.rot_u, shade=0.94, name="crown-step")
+    z += 1.6
+    b.box(*f.P(tower_u, tower_v), z, ts - 3.0, ts - 3.0, 1.2, "cream", rot=f.rot_u, shade=0.92, name="crown-step")
+    z += 1.2
+    cap_h = top - 1.8 - z
+    b.pyramid(*f.P(tower_u, tower_v), z, ts - 3.0, ts - 3.0, cap_h, "slate", rot=f.rot_u, name="cap")
+    b.cylinder(*f.P(tower_u, tower_v), top - 2.4, 0.55, 1.6, "cream", n=8, name="lantern")
+    b.cone(*f.P(tower_u, tower_v), top - 0.8, 0.7, 0.8, "slate", n=8)
+
+
 BUILDERS = {
     "virginia-state-capitol": capitol,
     "main-street-station": main_street_station,
@@ -448,6 +579,8 @@ BUILDERS = {
     "vcu-cabell-library": cabell_library,
     "costar-tower": costar_tower,
     "foundry-park-south": foundry_park_south,
+    "byrd-park-pump-house": pump_house,
+    "virginia-war-memorial-carillon": carillon,
 }
 
 

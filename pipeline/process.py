@@ -623,7 +623,8 @@ def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True
         pid = b.at[i, "parent"]
         if pid in by_id.index:
             for col in ("name", "addr", "landmark", "wikidata", "website"):
-                if b.at[i, col] is None:
+                # missing values arrive as None or NaN depending on the source frame
+                if b.at[i, col] is None or (isinstance(b.at[i, col], float) and pd.isna(b.at[i, col])):
                     b.at[i, col] = by_id.at[pid, col]
             if b.at[i, "type"] in ("yes", "True", "true"):
                 b.at[i, "type"] = by_id.at[pid, "type"]

@@ -393,5 +393,41 @@
     "in_first_slice": true,
     "model": null,
     "height_hint_m": null
+  },
+  {
+    "slug": "byrd-park-pump-house",
+    "name": "Byrd Park Pump House",
+    "osm_name_hints": [
+      "Byrd Park Pump House",
+      "Pump House"
+    ],
+    "lat": 37.5384,
+    "lon": -77.4897,
+    "kind": "building",
+    "wikidata": "Q16895812",
+    "website": "https://www.rva.gov/parks-recreation/byrd-park",
+    "description": "1883 Gothic Revival waterworks in grey granite by city engineer Wilfred Cutshaw, beside the James River and Kanawha Canal; its roof storey held an open-air dance hall. Listed on the National Register.",
+    "district": "Byrd Park",
+    "in_first_slice": false,
+    "model": "landmarks/byrd-park-pump-house.glb",
+    "height_hint_m": 15
+  },
+  {
+    "slug": "virginia-war-memorial-carillon",
+    "name": "Virginia War Memorial Carillon",
+    "osm_name_hints": [
+      "Virginia War Memorial Carillon",
+      "Carillon"
+    ],
+    "lat": 37.5346,
+    "lon": -77.4864,
+    "kind": "building",
+    "wikidata": "Q127740146",
+    "website": "https://www.rva.gov/parks-recreation/carillon",
+    "description": "240-foot brick bell tower with limestone trim by Cram & Ferguson, dedicated in 1932 as Virginia's memorial to the dead of the First World War. Its 53 bells still ring for concerts in Byrd Park.",
+    "district": "Byrd Park",
+    "in_first_slice": false,
+    "model": "landmarks/virginia-war-memorial-carillon.glb",
+    "height_hint_m": null
   }
 ]

@@ -145,8 +145,10 @@ class Builder:
         faces = [(0, 1, 4), (2, 3, 5), (1, 2, 5, 4), (3, 0, 4, 5), (0, 3, 2, 1)]
         return self.add(verts, faces, key, shade)
 
-    def window_bays(self, ring, z, height=3.0, width=1.6, pitch=5.0, trim="cream", arched=False):
-        """Windows and stone surrounds on each real footprint edge, with no floating OBB facades."""
+    def window_bays(self, ring, z, height=3.0, width=1.6, pitch=5.0, trim="cream", arched=False, glass="roof_dark"):
+        """Windows and stone surrounds on each real footprint edge, with no floating OBB facades.
+
+        `arched` may be True (semicircular head) or "pointed" (two-centred Gothic head)."""
         area = sum(ring[i][0] * ring[(i + 1) % len(ring)][1] - ring[(i + 1) % len(ring)][0] * ring[i][1] for i in range(len(ring)))
         for i, (ax, ay) in enumerate(ring):
             bx, by = ring[(i + 1) % len(ring)]
@@ -163,13 +165,21 @@ class Builder:
                 self.box(x, y, z - 0.15, width + 0.4, 0.22, height + 0.3, trim, rot=rot, name="window-surround")
                 x, y = x + nx * 0.13, y + ny * 0.13
                 outline = [(-width / 2, 0), (width / 2, 0)]
-                if arched:
+                if arched == "pointed":
+                    # two arcs of radius `width` centred on the opposite jambs meet in a point
+                    rise = width * math.sqrt(3) / 2
+                    springing = height - rise
+                    right = [(-width / 2 + width * math.cos(a), springing + width * math.sin(a)) for a in [k * math.pi / 15 for k in range(6)]]
+                    left = [(width / 2 - width * math.cos(a), springing + width * math.sin(a)) for a in [k * math.pi / 15 for k in range(5, -1, -1)]]
+                    outline += right + left[1:]
+                elif arched:
                     outline += [(width / 2 * math.cos(a), height - width / 2 + width / 2 * math.sin(a)) for a in [k * math.pi / 8 for k in range(9)]]
                 else:
                     outline += [(width / 2, height), (-width / 2, height)]
                 verts = [(x + ux * u, y + uy * u, z + v) for u, v in outline]
-                self.add(verts, [tuple(range(len(verts)))], "roof_dark", name="window-glass")
-                self.box(x + nx * 0.01, y + ny * 0.01, z, 0.10, 0.06, height - (width / 2 if arched else 0), trim, rot=rot)
+                self.add(verts, [tuple(range(len(verts)))], glass, name="window-glass")
+                head = width * math.sqrt(3) / 2 if arched == "pointed" else (width / 2 if arched else 0)
+                self.box(x + nx * 0.01, y + ny * 0.01, z, 0.10, 0.06, height - head, trim, rot=rot)
                 self.box(x + nx * 0.01, y + ny * 0.01, z + height * 0.48, width, 0.06, 0.10, trim, rot=rot)
 
     def clock_face(self, x, y, z, radius, angle):
