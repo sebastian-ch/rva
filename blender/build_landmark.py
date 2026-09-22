@@ -18,7 +18,7 @@ sys.path.insert(0, str(HERE))
 import bpy  # noqa: E402
 
 from footprint import clean_ring, find_footprint, shoelace, toward  # noqa: E402
-from landmark_lib import Builder, clear_scene, rect_ring  # noqa: E402
+from landmark_lib import Builder, clear_scene, inset_ring, rect_ring  # noqa: E402
 import export_landmark  # noqa: E402
 
 ROOT = HERE.parent
@@ -645,7 +645,8 @@ def cookie_factory_lofts(b, fp):
 
 
 def _massing_parts(fp):
-    """{part_id: [ring, ...]} for the landmark's LiDAR massing parts, centroid-relative and CCW."""
+    """{part_id: [ring, ...]} for the landmark's building parts, centroid-relative and CCW. LiDAR massing parts are
+    keyed by their tier ("base", "mid", ...), OSM parts by "way/<id>"."""
     import json
 
     ox, oy = fp["centroid_proj"]
@@ -830,6 +831,127 @@ def science_museum(b, fp):
     b.dome(tx, ty, wing_h + 1.1, 14.45, 7.1, "seven_white", seg=24, rings=5, name="theatre-dome")
 
 
+def sacred_heart(b, fp):
+    """Cathedral of the Sacred Heart (1906, Joseph H. McGinnis): an Indiana-limestone Latin cross with a
+    gabled nave and transepts, lean-to aisles, a round west apse, an octagonal drum and copper dome over the
+    crossing, and twin domed bell towers flanking the Ionic portico that faces Monroe Park (east).
+
+    Walls follow the OSM parts on way/229623396 (nave+apse 463800180, aisles 463800179, transept 463800178,
+    crossing 463800176, drum 463800190, towers 463800186/188, portico 463800185). OSM part heights are rough,
+    so heights are from the 2025 Richmond LiDAR: aisles 11 m, nave eaves 17.5 / ridge 21.5 m, towers 29 m
+    with caps to 36 m, dome crown ~43 m. The brick west wing uses its own parts (822799759/62/63/64).
+    Column count and trim are generic; nothing traced from imagery.
+    """
+    parts = _massing_parts(fp)
+
+    def part(way):
+        return parts[f"way/{way}"][0]
+
+    def cen(ring):
+        return sum(x for x, _ in ring) / len(ring), sum(y for _, y in ring) / len(ring)
+
+    stone, trim, roof, copper = "cream", "concrete", "slate", "roof_green"
+    aisle_h, eave, ridge = 11.0, 17.5, 21.5
+    # nave axis from the tower faces: u runs west (apse) to east (front)
+    (ax, ay), (bx, by) = part(463800186)[3], part(463800186)[0]
+    rot = math.atan2(by - ay, bx - ax)
+    ux, uy = math.cos(rot), math.sin(rot)
+    vx, vy = -uy, ux
+
+    def span(ring, c):
+        us = [(x - c[0]) * ux + (y - c[1]) * uy for x, y in ring]
+        vs = [(x - c[0]) * vx + (y - c[1]) * vy for x, y in ring]
+        return min(us), max(us), min(vs), max(vs)
+
+    # stone base on the whole outline (porches and links between parts), then the brick west wing on its parts
+    base = inset_ring(fp["ring"], 0.1)  # tucked inside the part walls it shares edges with, so they do not z-fight
+    b.extrude(base, -0.5, 6.0, stone, 0.95, name="base")
+    b.extrude(base, 6.0, 6.15, "roof_flat", 0.85, name="base-roof")
+    for way, h in ((822799759, 7.7), (822799764, 8.8), (822799763, 12.0), (822799762, 12.0)):
+        r = part(way)
+        b.extrude(r, -0.5, h, "brick", 0.95, name="west-wing")
+        b.band(r, h - 0.8, 0.25, 0.5, trim, 0.88)
+        b.extrude(r, h, h + 0.15, "roof_flat", 0.85, name="west-wing-roof")
+        b.window_bays(r, 1.8 if h < 10 else 7.4, height=2.4, width=1.2, pitch=3.8, trim=trim)
+    b.window_bays(part(822799763), 1.8, height=2.4, width=1.2, pitch=3.8, trim=trim)
+    b.window_bays(part(822799762), 1.8, height=2.4, width=1.2, pitch=3.8, trim=trim)
+
+    # aisles: limestone walls with round-headed windows, flat lead roofs
+    aisles = part(463800179)
+    b.extrude(aisles, -0.5, aisle_h, stone, 0.95, name="aisles")
+    b.band(aisles, 0.2, 0.25, 1.0, trim, 0.9)
+    b.band(aisles, aisle_h - 0.7, 0.35, 0.7, trim, 0.9)
+    b.extrude(aisles, aisle_h, aisle_h + 0.15, "roof_flat", 0.85, name="aisle-roof")
+    b.window_bays(aisles, 3.5, height=5.0, width=1.8, pitch=5.5, trim=trim, arched=True, glass="glass")
+
+    # nave and apse: clerestory walls to the eaves, a gable along the axis and a half-cone over the apse
+    nave = part(463800180)
+    c = cen(part(463800190))  # crossing centre
+    u0, u1, v0, v1 = span(nave, c)
+    half = (v1 - v0) / 2
+    vm = (v0 + v1) / 2
+    b.extrude(nave, aisle_h - 0.3, eave, stone, 0.98, name="nave")
+    b.band(nave, eave - 0.6, 0.35, 0.6, trim, 0.92)
+    b.window_bays(nave, aisle_h + 1.3, height=3.6, width=2.0, pitch=4.5, trim=trim, arched=True, glass="glass")
+    apse_u = u0 + half  # apse centre: the round end has the nave's half-width as its radius
+    gu0, gu1 = apse_u, u1
+    gc = (c[0] + ux * (gu0 + gu1) / 2 + vx * vm, c[1] + uy * (gu0 + gu1) / 2 + vy * vm)
+    b.gable(*gc, eave, gu1 - gu0 + 0.4, 2 * half + 0.8, ridge - eave, roof, rot=rot, name="nave-roof")
+    b.cone(c[0] + ux * apse_u + vx * vm, c[1] + uy * apse_u + vy * vm, eave, half + 0.4, ridge - eave, roof, n=20, name="apse-roof")
+
+    # transept: same eaves and ridge, gabled across the nave, with pediments on both ends
+    tr = part(463800178)
+    tc = cen(tr)
+    tu0, tu1, tv0, tv1 = span(tr, tc)
+    b.extrude(tr, -0.5, eave, stone, 0.97, name="transept")
+    b.band(tr, eave - 0.6, 0.35, 0.6, trim, 0.92)
+    b.window_bays(tr, 4.0, height=6.0, width=2.2, pitch=6.0, trim=trim, arched=True, glass="glass")
+    b.gable(*tc, eave, tv1 - tv0 + 0.8, tu1 - tu0 + 0.4, ridge - eave, roof, rot=rot + math.pi / 2, name="transept-roof")
+    for s in (-1, 1):
+        ex, ey = tc[0] + vx * s * ((tv1 - tv0) / 2 + 0.2), tc[1] + vy * s * ((tv1 - tv0) / 2 + 0.2)
+        b.pediment(ex, ey, eave, tu1 - tu0 + 0.6, 0.5, ridge - eave + 0.4, stone, rot=rot, shade=0.95)
+
+    # crossing: square base above the roofs, octagonal drum with arched windows, copper dome and lantern
+    b.extrude(part(463800176), eave, ridge + 2.0, stone, 1.0, name="crossing")
+    b.band(part(463800176), ridge + 1.5, 0.3, 0.5, trim, 0.9)
+    drum = part(463800190)
+    drum_top = 30.5
+    b.extrude(drum, ridge + 1.8, drum_top, stone, 1.0, name="drum")
+    b.band(drum, drum_top - 0.7, 0.35, 0.7, trim, 0.92)
+    b.window_bays(drum, ridge + 3.2, height=3.8, width=1.6, pitch=5.0, trim=trim, arched=True, glass="glass")
+    r = math.sqrt(abs(shoelace(drum)) / math.pi)
+    b.dome(*c, drum_top, r - 0.2, 10.5, copper, seg=24, rings=6, name="dome")
+    b.cylinder(*c, drum_top + 10.2, 1.1, 1.6, stone, n=8, name="lantern")
+    b.cone(*c, drum_top + 11.8, 1.3, 1.2, copper, n=8)
+
+    # twin bell towers: square shafts, open belfry stage, then small copper domes
+    tower_h = 29.0
+    for way in (463800186, 463800188):
+        t = part(way)
+        tx, ty = cen(t)
+        side = math.sqrt(abs(shoelace(t)))
+        b.extrude(t, -0.5, tower_h, stone, 1.0, name="tower")
+        for z in (aisle_h - 0.7, ridge - 0.6):
+            b.band(t, z, 0.3, 0.7, trim, 0.9)
+        b.window_bays(t, ridge + 0.8, height=4.6, width=2.0, pitch=side - 0.5, trim=trim, arched=True, glass="brick_dark")
+        b.band(t, tower_h - 0.8, 0.45, 0.8, trim, 0.9)
+        b.cylinder(tx, ty, tower_h, side / 2 - 0.6, 1.4, stone, n=12, shade=0.95, name="tower-drum")
+        b.dome(tx, ty, tower_h + 1.4, side / 2 - 0.8, 3.8, copper, seg=16, rings=5, name="tower-dome")
+        b.cylinder(tx, ty, tower_h + 5.0, 0.4, 1.6, stone, n=6)
+
+    # portico between the towers: stylobate, six Ionic columns, entablature and pediment
+    po = part(463800185)
+    (p0x, p0y), (p1x, p1y) = po[0], po[1]  # the outer (east) edge
+    pc = cen(po)
+    pw = math.hypot(p1x - p0x, p1y - p0y)
+    col_h = 12.0
+    inset = (-ux * 1.0, -uy * 1.0)  # columns a metre in from the outer edge
+    b.box(*pc, -0.5, 4.8, pw + 1.0, 1.4, trim, rot=rot, shade=0.95, name="stylobate")
+    b.colonnade((p0x + inset[0], p0y + inset[1]), (p1x + inset[0], p1y + inset[1]), 0.9, col_h, 6, 0.55, stone)
+    b.box(*pc, 0.9 + col_h, 4.2, pw, 1.6, stone, rot=rot, shade=0.98, name="entablature")
+    b.pediment(*pc, 2.5 + col_h, pw, 4.2, 3.2, stone, rot=rot + math.pi / 2, shade=0.97)
+
+
 BUILDERS = {
     "virginia-state-capitol": capitol,
     "main-street-station": main_street_station,
@@ -850,6 +972,7 @@ BUILDERS = {
     "cookie-factory-lofts": cookie_factory_lofts,
     "virginia-museum-of-fine-arts": vmfa,
     "science-museum-of-virginia": science_museum,
+    "cathedral-of-the-sacred-heart": sacred_heart,
 }
 
 

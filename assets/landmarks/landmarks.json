@@ -467,5 +467,23 @@
     "in_first_slice": false,
     "model": "landmarks/science-museum-of-virginia.glb",
     "height_hint_m": null
+  },
+  {
+    "slug": "cathedral-of-the-sacred-heart",
+    "name": "Cathedral of the Sacred Heart",
+    "osm_name_hints": [
+      "Cathedral of the Sacred Heart"
+    ],
+    "match_id": "osm:way/229623396",
+    "lat": 37.547485,
+    "lon": -77.452318,
+    "kind": "building",
+    "wikidata": "Q5052468",
+    "website": "https://richmondcathedral.org/",
+    "description": "Italian Renaissance Revival cathedral of the Catholic Diocese of Richmond (1906, Joseph H. McGinnis): a limestone Latin cross with a copper-domed crossing and a twin-towered portico facing Monroe Park.",
+    "district": "Monroe Park",
+    "in_first_slice": false,
+    "model": "landmarks/cathedral-of-the-sacred-heart.glb",
+    "height_hint_m": null
   }
 ]
