@@ -576,5 +576,24 @@
     "in_first_slice": true,
     "model": "landmarks/hippodrome-theater.glb",
     "height_hint_m": null
+  },
+  {
+    "slug": "childrens-hospital-of-richmond-at-vcu",
+    "name": "Children's Hospital of Richmond at VCU",
+    "osm_name_hints": [
+      "Children's Hospital of Richmond at VCU",
+      "Children\u2019s Hospital of Richmond at VCU"
+    ],
+    "match_id": "override:Children's Hospital of Richmond at VCU",
+    "lat": 37.540446,
+    "lon": -77.432116,
+    "kind": "building",
+    "wikidata": null,
+    "website": "https://www.chrichmond.org/",
+    "description": "The Children's Tower (2023) of the Children's Hospital of Richmond at VCU on East Broad Street: a glass inpatient tower rising from a broad podium, Virginia's largest dedicated pediatric hospital building.",
+    "district": "VCU Medical Campus",
+    "in_first_slice": true,
+    "model": "landmarks/childrens-hospital-of-richmond-at-vcu.glb",
+    "height_hint_m": null
   }
 ]

@@ -178,5 +178,30 @@
         ]
       ]
     }
+  },
+  {
+    "name": "Children's Hospital of Richmond at VCU",
+    "lat": 37.540446,
+    "lon": -77.432116,
+    "height": 84.0,
+    "levels": 16,
+    "type": "hospital",
+    "roof_shape": "flat",
+    "wall_color": "glass",
+    "roof_color": "roof_flat",
+    "landmark": "childrens-hospital-of-richmond-at-vcu",
+    "website": "https://www.chrichmond.org/",
+    "note": "Children's Tower at 1000 E Broad St (opened 2023), the Children's Hospital of Richmond at VCU. OSM splits it into osm:way/224510150 (Broad St, 44.8 m) and osm:way/224510149 (Inpatient Pavilion, 65.1 m), both older than the 2025 City of Richmond LiDAR, which shows a ~64 m podium on Broad St and the tower rising to ~84 m with ~95 m plant. Footprint is the exact union of those two OSM outlines (no imagery tracing) so one landmark model can replace both.",
+    "footprint": {
+      "type": "Polygon",
+      "coordinates": [[
+        [-77.4320814, 37.5399491],
+        [-77.4327353, 37.5403378],
+        [-77.4323212, 37.5407596],
+        [-77.4321576, 37.5409397],
+        [-77.4314963, 37.540568],
+        [-77.4320814, 37.5399491]
+      ]]
+    }
   }
 ]

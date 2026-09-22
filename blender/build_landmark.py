@@ -1194,6 +1194,66 @@ def hippodrome(b, fp):
         _sign_pixels(b, "HIPPODROME", (blade[0] + ux * side * 0.3, blade[1] + uy * side * 0.3), rot, 16.4, 0.17, "landmark_accent")
 
 
+def childrens_hospital(b, fp):
+    """Children's Hospital of Richmond at VCU, the Children's Tower (2023) at 1000 East Broad Street: a glass
+    inpatient tower on the Marshall Street side rising from a broad podium, with a lower glazed front and
+    entrance along Broad Street.
+
+    OSM splits the complex into osm:way/224510150 (Broad St) and osm:way/224510149 (Inpatient Pavilion), both
+    shorter than the building now stands; an override (assets/supplements/overrides.json) replaces them with
+    their exact union so this one model covers both. Tier outlines (EPSG:32618) and heights are from the 2025
+    Richmond LiDAR on flat ground: front 20 m, podium 64.5 m, tower 78 m, core 84 m, plant 95 m. Facade
+    banding and colours are generic; nothing traced from imagery.
+    """
+    ox, oy = fp["centroid_proj"]
+
+    def rel(pts):
+        ring = [(x - ox, y - oy) for x, y in pts]
+        return ring if shoelace(ring) > 0 else ring[::-1]
+
+    glass, band, frame = "glass", "cream", "steel"
+    front_h, podium_h, tower_h, core_h, plant_h = 20.0, 64.5, 78.0, 84.0, 95.0
+
+    def storeys(ring, z0, z1, pitch=4.2):
+        """Glass curtain wall with a pale spandrel band at every floor."""
+        z = z0 + pitch
+        while z < z1 - 1.0:
+            b.band(ring, z - 0.5, 0.08, 0.7, band, 0.95)
+            z += pitch
+
+    # low glazed front along Broad Street and the entrance canopy, on the whole footprint
+    ring = fp["ring"]
+    b.extrude(ring, -1.0, front_h, glass, 0.92, name="front")
+    storeys(ring, 0.0, front_h, pitch=5.0)
+    b.band(ring, front_h - 0.9, 0.3, 0.9, band, 0.92)
+    b.extrude(ring, front_h, front_h + 0.2, "roof_flat", 0.9, name="front-roof")
+
+    # podium: every tier outline starts a little below the tier beneath so no roof edge shows a seam
+    podium = rel([(285073.0, 4157600.0), (285122.1, 4157663.2), (285179.4, 4157620.5), (285127.0, 4157556.0),
+                  (285123.0, 4157556.0), (285106.6, 4157573.6)])
+    b.extrude(podium, front_h - 0.3, podium_h, glass, 0.96, name="podium")
+    storeys(podium, front_h, podium_h)
+    b.band(podium, podium_h - 1.2, 0.35, 1.2, band, 0.93)
+    b.extrude(podium, podium_h, podium_h + 0.2, "roof_flat", 0.9, name="podium-roof")
+
+    # tower on the Marshall Street side, its higher core, and the rooftop plant screen
+    tower = rel([(285103.0, 4157638.0), (285122.1, 4157663.2), (285179.4, 4157620.5), (285162.4, 4157599.0),
+                 (285150.0, 4157591.0), (285142.0, 4157598.0), (285133.7, 4157612.6)])
+    b.extrude(tower, podium_h - 0.3, tower_h, glass, 1.0, name="tower")
+    storeys(tower, podium_h, tower_h)
+    b.band(tower, tower_h - 1.0, 0.35, 1.0, band, 0.95)
+    b.extrude(tower, tower_h, tower_h + 0.2, "roof_flat", 0.92, name="tower-roof")
+    core = rel([(285110.0, 4157641.0), (285123.0, 4157661.0), (285176.0, 4157621.0), (285162.4, 4157599.0),
+                (285150.1, 4157602.0), (285139.6, 4157612.6)])
+    b.extrude(core, tower_h - 0.3, core_h, glass, 1.03, name="core")
+    storeys(core, tower_h, core_h)
+    b.band(core, core_h - 0.9, 0.3, 0.9, band, 0.95)
+    b.extrude(core, core_h, core_h + 0.2, "roof_flat", 0.92, name="core-roof")
+    plant = rel([(285135.8, 4157622.5), (285117.2, 4157637.5), (285126.5, 4157649.2), (285145.2, 4157634.2)])
+    b.extrude(plant, core_h - 0.2, plant_h, frame, 0.88, name="plant-screen")
+    b.band(plant, plant_h - 0.6, 0.2, 0.6, frame, 0.8)
+
+
 PIXEL_GLYPHS = {
     "D": ("110", "101", "101", "101", "110"), "E": ("111", "100", "110", "100", "111"),
     "H": ("101", "101", "111", "101", "101"), "I": ("111", "010", "010", "010", "111"),
@@ -1244,6 +1304,7 @@ BUILDERS = {
     "riverfront-plaza-west-tower": riverfront_plaza_tower,
     "riverfront-plaza-east-tower": riverfront_plaza_tower,
     "hippodrome-theater": hippodrome,
+    "childrens-hospital-of-richmond-at-vcu": childrens_hospital,
 }
 
 
