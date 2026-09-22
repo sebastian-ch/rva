@@ -87,6 +87,8 @@ export interface CrossingProps {
   id: string; crossing: string; crossing_markings?: string | null;
   road_id?: string | null; road_width?: number | null; road_dx?: number | null; road_dy?: number | null;
   road_x?: number | null; road_y?: number | null; crossing_island?: boolean;
+  /** walking direction of the mapped crossing footway (projected unit vector), null when none is mapped */
+  foot_dx?: number | null; foot_dy?: number | null;
 }
 
 export interface Landmark {

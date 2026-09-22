@@ -298,6 +298,27 @@ crosswalk or stop-line markings.
 At a four-arm crossing the trimmed road ribbons already cover the center. Adding the same circular cap used to
 close a three-arm T junction makes an ordinary intersection resemble a roundabout. Emit the cap only for the
 topology that needs it; true roundabouts remain mapped ways rather than inferred discs.
+Crosswalk paint must drape over the rendered road top, not sit at one height. The asphalt is conformed to the
+terrain (`draped` in `web/src/roads.ts`) and through streets overlap at a crossing, so a flat bar at the
+crossing's centre height (the old `groundAt + ROAD_Y + 0.02`) sank under the surface on crowned, sloped or
+crossing streets and read as missing or flickering paint across most of the city once `Z_SCALE` steepened every
+grade. Split each bar into ~1 m pieces and lift every edge to 2 cm above the highest covering road centreline or
+terrain + `ROAD_Y` (`pathsTopAt`). Regressions: `keeps crosswalk paint above the draped road surface on sloped
+streets` and `lifts crosswalk paint over a higher through street overlapping the crossing` in `roads.test.ts`.
+Match a crossing to the way that carries its node, not the nearest centreline. OSM crossing nodes are vertices
+of the road they cross, so `_match_crossings_to_roads` (`pipeline/process.py`) prefers a road carrying the node,
+admits bridges only when they carry it (osm:node/3689881244 sits on a primary bridge; excluding bridges snapped
+it to a parallel tertiary 4.8 m away), and never matches a road within 30 degrees of the mapped crossing
+footway: that is a driveway or service-road crossing beside the street, and painting it across the street is
+wrong. The viewer skips crossings whose topology keys are present but null rather than re-snapping them.
+Crossing nodes are usually mapped 4-7 m from the junction, so a paint band centred on the node reaches into the
+cross street's carriageway (264 of 1,374 painted Richmond crossings). Slide the painted point along its road
+until `_crossing_depth` clears every cross street, capped at 4 m; skip same-street continuations past a way
+split, nodes on the junction itself and cross streets on both sides. Export the footway direction
+(`foot_dx/foot_dy`) and paint bars along it, curb to curb, so skewed crossings read as parallelograms instead of
+squares rotated off the walk. Regressions: the `test_crossing_*` cases in `test_process_helpers.py` and
+`paints a skewed crossing along the mapped walk` / `does not paint a crossing the pipeline could not match` in
+`roads.test.ts`.
 Regressions: `pipeline/tests/test_process_helpers.py` covers topology matching;
 `pipeline/tests/test_build_tiles.py` covers reusable tile clipping; `web/src/roads.test.ts` covers topology
 placement, islands, rounded fills, centering, curb-pair deduplication, unmarked crossings, paved service-road T

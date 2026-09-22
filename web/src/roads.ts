@@ -570,6 +570,10 @@ export function buildRoads(
     }
   }
   // Crosswalks: zebra bars spanning the road at each marked crossing node.
+  // Paint follows the rendered road top: the highest covering centreline path (sampled every SEG m, flat across
+  // its carriageway; through streets overlap at a crossing) or the terrain + ROAD_Y where the drape lifts it
+  // higher. A flat bar at the crossing's centre height sank into the asphalt on sloped or crossing streets.
+  const roadTop = (paths: typeof roadPaths, x: number, z: number) => Math.max(pathsTopAt(paths, x, z), groundLocal(x, z) + ROAD_Y);
   const paintedCrossings: { x: number; z: number; dir: THREE.Vector3 }[] = [];
   for (const c of opts.markings === false ? [] : crossings) {
     // OSM uses crossing=unmarked for pedestrian connectivity without painted markings.
@@ -581,6 +585,9 @@ export function buildRoads(
     // Signals/control describe right-of-way, not paint. Without an explicit marking tag (or the older
     // crossing=marked/zebra shorthand), retain pedestrian connectivity but do not invent road markings.
     if (markings == null && p.crossing !== 'marked' && p.crossing !== 'zebra') continue;
+    // Processed tiles carry the topology keys; null there means the pipeline found no safe road to paint on
+    // (only a road parallel to the walk, say). Only tiles without the keys fall back to the nearest road.
+    if ('road_width' in p && p.road_width == null) continue;
     const hasTopology = p.road_x != null && p.road_y != null && p.road_width != null && p.road_dx != null && p.road_dy != null;
     const near = hasTopology
       ? (() => {
@@ -594,10 +601,24 @@ export function buildRoads(
     // centreline. Project paint onto the matched road and collapse the pair.
     if (paintedCrossings.some((p) => Math.hypot(p.x - near.point.x, p.z - near.point.z) < 2.5 && Math.abs(p.dir.dot(near.dir)) > 0.95)) continue;
     paintedCrossings.push({ x: near.point.x, z: near.point.z, dir: near.dir });
-    const cx = near.point.x, cz = near.point.z, gy = near.point.y + 0.02;
+    const cx = near.point.x, cz = near.point.z;
     const dir = near.dir, side = new THREE.Vector3(-dir.z, 0, dir.x);
+    // Bars run along the mapped walk, so a skewed crossing paints as a parallelogram between the curbs; the
+    // pipeline never matches a road within 30 degrees of the walk, so the stretch is at most 2x.
+    const walk = p.foot_dx != null && p.foot_dy != null ? new THREE.Vector3(p.foot_dx, 0, -p.foot_dy).normalize() : null;
+    const skew = walk ? Math.abs(walk.x * dir.z - walk.z * dir.x) : 1;
+    const across = walk && skew >= 0.5 ? walk.clone().multiplyScalar(1 / skew) : side.clone();
+    const nearby = roadPaths.filter(({ path, width }) => path.some((v, i) => i < path.length - 1 &&
+      segmentDistance(cx, cz, v, path[i + 1]) < width / 2 + 12));
+    const onRoad = (lift: number) => (x: number, z: number, y: number) => Math.max(y, roadTop(nearby, x, z) + lift);
+    // split a strip into ~1 m pieces so the drape can follow kinks in the road profile beneath it
+    const strip = (a: THREE.Vector3, b: THREE.Vector3) => {
+      const n = Math.max(1, Math.ceil(a.distanceTo(b)));
+      return Array.from({ length: n + 1 }, (_, i) => a.clone().lerp(b, i / n));
+    };
     // A zebra consists of short, regularly spaced bars along the road direction,
-    // each one spanning the road from curb to curb.
+    // each one spanning the road from curb to curb. Keep in step with `_crossing_depth` in pipeline/process.py,
+    // which slides the painted point until this depth clears any cross street.
     const crossingDepth = Math.min(4.2, Math.max(2.8, near.width * 0.55));
     // Only draw a zebra where OSM identifies one. Unknown/unspecified marked crossings use the neutral US
     // transverse pair instead of inventing dense zebra bars at every signalized intersection.
@@ -609,20 +630,43 @@ export function buildRoads(
         ? [-crossingDepth / 2, -crossingDepth / 2 + 0.35, crossingDepth / 2 - 0.35, crossingDepth / 2]
         : [-crossingDepth / 2, crossingDepth / 2];
     for (const distance of offsets) {
-      const off = dir.clone().multiplyScalar(distance);
-      const centre = new THREE.Vector3(cx, gy, cz).add(off);
-      const a = centre.clone().addScaledVector(side, -(near.width / 2 - 0.2));
-      const b = centre.clone().addScaledVector(side, near.width / 2 - 0.2);
-      ribbon(mb, [a, b], zebra ? 0.28 : 0.12, paint);
+      const centre = new THREE.Vector3(cx, 0, cz).addScaledVector(dir, distance);
+      const a = centre.clone().addScaledVector(across, -(near.width / 2 - 0.2));
+      const b = centre.clone().addScaledVector(across, near.width / 2 - 0.2);
+      ribbon(mb, strip(a, b), zebra ? 0.28 : 0.12, paint, 1, onRoad(0.02));
     }
     if (p.crossing_island && near.width >= 8) {
       const islandHalf = crossingDepth / 2 + 0.65;
-      const a = new THREE.Vector3(cx, gy + 0.055, cz).addScaledVector(dir, -islandHalf);
-      const b = new THREE.Vector3(cx, gy + 0.055, cz).addScaledVector(dir, islandHalf);
-      ribbon(mb, [a, b], 0.55, sidewalk, 0.97);
+      const a = new THREE.Vector3(cx, 0, cz).addScaledVector(dir, -islandHalf);
+      const b = new THREE.Vector3(cx, 0, cz).addScaledVector(dir, islandHalf);
+      ribbon(mb, strip(a, b), 0.55, sidewalk, 0.97, onRoad(0.075));
     }
   }
   return { roads: mb.build(), paths: carPaths, pathMeta: carMeta, walkPaths, railPaths, railMeta };
+}
+
+function segmentDistance(x: number, z: number, a: THREE.Vector3, b: THREE.Vector3): number {
+  const abx = b.x - a.x, abz = b.z - a.z, len2 = abx * abx + abz * abz;
+  const t = len2 < 1e-9 ? 0 : THREE.MathUtils.clamp(((x - a.x) * abx + (z - a.z) * abz) / len2, 0, 1);
+  return Math.hypot(x - (a.x + abx * t), z - (a.z + abz * t));
+}
+
+/** Highest centreline height of every road ribbon covering (x, z): overlapping streets at a junction mouth
+ * each draw their own surface, and paint must clear whichever is on top. -Infinity when none covers it. */
+function pathsTopAt(paths: { path: THREE.Vector3[]; width: number }[], x: number, z: number): number {
+  let top = -Infinity;
+  for (const { path, width } of paths) {
+    const reach = width / 2 + 0.3;
+    for (let i = 0; i < path.length - 1; i++) {
+      const a = path[i], b = path[i + 1];
+      const abx = b.x - a.x, abz = b.z - a.z, len2 = abx * abx + abz * abz;
+      if (len2 < 1e-9) continue;
+      if (segmentDistance(x, z, a, b) > reach) continue;
+      const t = THREE.MathUtils.clamp(((x - a.x) * abx + (z - a.z) * abz) / len2, 0, 1);
+      top = Math.max(top, a.y + (b.y - a.y) * t);
+    }
+  }
+  return top;
 }
 
 function nearestRoad(paths: { path: THREE.Vector3[]; width: number }[], x: number, z: number): { dir: THREE.Vector3; width: number; point: THREE.Vector3; distance: number } | null {

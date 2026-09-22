@@ -1043,22 +1043,42 @@ def process_roads(raw_path: Path, terrain=None) -> tuple[gpd.GeoDataFrame, gpd.G
         "road_dy": topology["road_dy"],
         "road_x": topology["road_x"],
         "road_y": topology["road_y"],
+        "foot_dx": topology["foot_dx"],
+        "foot_dy": topology["foot_dy"],
         "crossing_island": (pts["crossing:island"].fillna("no") == "yes").tolist() if "crossing:island" in pts else [False] * len(pts),
         "geometry": pts.geometry,
     }, crs=CRS_PROJ)
     return roads, crossings
 
 
+CROSSING_PARALLEL_COS = math.cos(math.radians(30))  # a road this close to the walking direction is not crossed
+CROSSING_MAX_SHIFT = 4.0  # m: move paint out of a cross street's carriageway at most this far along its road
+
+
+def _crossing_depth(width: float) -> float:
+    """Painted depth of a crosswalk along its road; mirrors `crossingDepth` in web/src/roads.ts."""
+    return min(4.2, max(2.8, width * 0.55))
+
+
 def _match_crossings_to_roads(points: gpd.GeoDataFrame, roads: gpd.GeoDataFrame) -> dict[str, list]:
-    """Attach each crossing to the road it crosses, using mapped crossing-footway direction when available."""
-    empty = {k: [None] * len(points) for k in ("road_id", "road_width", "road_dx", "road_dy", "road_x", "road_y")}
+    """Attach each crossing to the road it crosses and place its paint.
+
+    An OSM crossing node is a vertex of the way it crosses, so a road carrying the node wins over a nearer
+    parallel one (bridges included: a crossing on a bridge deck belongs to the bridge). The crossing
+    footway's direction breaks ties at junction nodes, is exported as `foot_dx/foot_dy` so skewed crossings
+    paint along the walk, and rejects a road running within 30 degrees of it. The painted point is then
+    slid along its road, up to CROSSING_MAX_SHIFT, until its depth clears any cross street's carriageway:
+    nodes mapped a few metres from a junction otherwise paint into the intersection.
+    """
+    keys = ("road_id", "road_width", "road_dx", "road_dy", "road_x", "road_y", "foot_dx", "foot_dy")
+    empty = {k: [None] * len(points) for k in keys}
     if len(points) == 0 or len(roads) == 0:
         return empty
     from shapely.geometry import LineString
     from shapely.strtree import STRtree
 
     minor = {"footway", "path", "steps", "cycleway", "pedestrian", "service", "living_street", "track"}
-    motor = roads[~roads["highway"].isin(minor) & ~roads["bridge"] & ~roads["tunnel"]].reset_index(drop=True)
+    motor = roads[~roads["highway"].isin(minor) & ~roads["tunnel"]].reset_index(drop=True)
     foot = roads[roads["footway"] == "crossing"].reset_index(drop=True)
     if len(motor) == 0:
         return empty
@@ -1082,6 +1102,37 @@ def _match_crossings_to_roads(points: gpd.GeoDataFrame, roads: gpd.GeoDataFrame)
                 best = (dx / length, dy / length)
         return best
 
+    def carries(geom, point: Point) -> bool:
+        return any(abs(x - point.x) < 0.05 and abs(y - point.y) < 0.05 for x, y in geom.coords)
+
+    def clear_of_cross_streets(i: int, geom, along: float, width: float, road_dir) -> float:
+        """Signed distance along road i that moves the paint's depth clear of every cross street."""
+        here = geom.interpolate(along)
+        reach = _crossing_depth(width) / 2 + 0.3
+        shift = 0.0
+        for j in motor_tree.query(here.buffer(25)):
+            other = motor.iloc[j]
+            if j == i or bool(other["bridge"]) != bool(motor.iloc[i]["bridge"]):
+                continue
+            g = motor_geoms[j]
+            d = g.distance(here)
+            need = float(other["width"]) / 2 + reach - d
+            if need <= 0:
+                continue
+            t = tangent(g, here)
+            if abs(t[0] * road_dir[0] + t[1] * road_dir[1]) > 0.9:
+                continue  # the same street continuing past a way split, not a cross street
+            if d < 0.5:
+                return 0.0  # painted on the junction node itself: no side is "away"
+            # slide the way that increases the distance to the cross street
+            ahead = g.distance(geom.interpolate(min(geom.length, along + 1.0)))
+            behind = g.distance(geom.interpolate(max(0.0, along - 1.0)))
+            step = min(need, CROSSING_MAX_SHIFT) * (1 if ahead >= behind else -1)
+            if shift and (shift > 0) != (step > 0):
+                return 0.0  # cross streets on both sides: leave it where it was mapped
+            shift = step if abs(step) > abs(shift) else shift
+        return shift
+
     out = {k: [] for k in empty}
     for point in points.geometry:
         foot_dir = None
@@ -1096,23 +1147,33 @@ def _match_crossings_to_roads(points: gpd.GeoDataFrame, roads: gpd.GeoDataFrame)
             distance = geom.distance(point)
             if distance > float(row["width"]) / 2 + 2:
                 continue
+            on_way = carries(geom, point)
+            if bool(row["bridge"]) and not on_way:
+                continue  # an overpass above the crossing, not the road it crosses
             road_dir = tangent(geom, point)
-            parallel_penalty = abs(road_dir[0] * foot_dir[0] + road_dir[1] * foot_dir[1]) * 4 if foot_dir else 0
-            score = distance + parallel_penalty
+            parallel = abs(road_dir[0] * foot_dir[0] + road_dir[1] * foot_dir[1]) if foot_dir else 0.0
+            if parallel > CROSSING_PARALLEL_COS:
+                continue
+            score = distance + parallel * 4 + (0 if on_way else 3)
             if best is None or score < best[0]:
-                projected = geom.interpolate(geom.project(point))
-                best = (score, row, road_dir, projected)
+                best = (score, i, row, road_dir)
         if best is None:
             for key in out:
                 out[key].append(None)
             continue
-        _, row, (dx, dy), projected = best
+        _, i, row, (dx, dy) = best
+        geom = motor_geoms[i]
+        along = geom.project(point)
+        along += clear_of_cross_streets(i, geom, along, float(row["width"]), (dx, dy))
+        projected = geom.interpolate(min(max(along, 0.0), geom.length))
         out["road_id"].append(row["id"])
         out["road_width"].append(round(float(row["width"]), 2))
         out["road_dx"].append(round(dx, 6))
         out["road_dy"].append(round(dy, 6))
         out["road_x"].append(round(projected.x, 2))
         out["road_y"].append(round(projected.y, 2))
+        out["foot_dx"].append(round(foot_dir[0], 6) if foot_dir else None)
+        out["foot_dy"].append(round(foot_dir[1], 6) if foot_dir else None)
     return out
 
 

@@ -139,3 +139,54 @@ def test_crossing_topology_prefers_road_perpendicular_to_crossing_footway():
     assert matched["road_id"] == ["east-west"]
     assert matched["road_x"] == [0.5]
     assert matched["road_y"] == [0.0]
+
+
+def _road(id_, highway, width, coords, bridge=False, footway=None):
+    return {"id": id_, "highway": highway, "width": width, "bridge": bridge, "tunnel": False, "footway": footway,
+            "geometry": LineString(coords)}
+
+
+def test_crossing_on_a_bridge_matches_the_bridge_that_carries_the_node():
+    # osm:node/3689881244: the node is a vertex of a primary bridge; a parallel tertiary 4.8 m away used to win
+    roads = gpd.GeoDataFrame([
+        _road("bridge", "primary", 11.0, [(-20, 0), (0, 0), (20, 0)], bridge=True),
+        _road("parallel", "tertiary", 8.0, [(-20, 4.8), (20, 4.8)]),
+        _road("walk", "footway", 2.0, [(0, -6), (0, 6)], footway="crossing"),
+    ], crs="EPSG:32618")
+    matched = _match_crossings_to_roads(gpd.GeoDataFrame([{"geometry": Point(0, 0)}], crs=roads.crs), roads)
+    assert matched["road_id"] == ["bridge"]
+    assert matched["foot_dx"] == [0.0] and matched["foot_dy"] == [1.0]
+
+
+def test_crossing_is_not_painted_on_a_road_parallel_to_the_walk():
+    # the crossed way is unmatched (a service road); the only motor road nearby runs along the footway
+    roads = gpd.GeoDataFrame([
+        _road("along", "residential", 8.0, [(-20, 2), (20, 2)]),
+        _road("walk", "footway", 2.0, [(-6, 0), (6, 0)], footway="crossing"),
+    ], crs="EPSG:32618")
+    matched = _match_crossings_to_roads(gpd.GeoDataFrame([{"geometry": Point(0, 0)}], crs=roads.crs), roads)
+    assert matched["road_id"] == [None]
+
+
+def test_crossing_paint_slides_out_of_the_cross_street():
+    # a side-street crossing mapped 6 m from the main road's centreline: its 4.2 m depth reached into the
+    # main road's 10 m carriageway, so the paint moves 1.4 m further up the side street
+    roads = gpd.GeoDataFrame([
+        _road("main", "primary", 10.0, [(0, 0), (20, 0), (40, 0)]),
+        _road("side", "residential", 8.0, [(20, 0), (20, 6), (20, 40)]),
+        _road("walk", "footway", 2.0, [(15, 6), (25, 6)], footway="crossing"),
+    ], crs="EPSG:32618")
+    matched = _match_crossings_to_roads(gpd.GeoDataFrame([{"geometry": Point(20, 6)}], crs=roads.crs), roads)
+    assert matched["road_id"] == ["side"]
+    assert matched["road_x"] == [20.0]
+    assert matched["road_y"] == [7.4]
+
+
+def test_crossing_paint_ignores_the_same_street_continuing_past_a_split():
+    roads = gpd.GeoDataFrame([
+        _road("a", "primary", 10.0, [(0, 0), (20, 0)]),
+        _road("b", "primary", 10.0, [(20, 0), (40, 0)]),
+        _road("walk", "footway", 2.0, [(21, -6), (21, 6)], footway="crossing"),
+    ], crs="EPSG:32618")
+    matched = _match_crossings_to_roads(gpd.GeoDataFrame([{"geometry": Point(21, 0)}], crs=roads.crs), roads)
+    assert matched["road_x"] == [21.0] and matched["road_y"] == [0.0]

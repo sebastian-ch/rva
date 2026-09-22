@@ -151,6 +151,81 @@ it('centres marked crossings on the road and omits unmarked paint', async () => 
  expect((Math.min(...z)+Math.max(...z))/2).toBeCloseTo(0,1);
 });
 
+it('keeps crosswalk paint above the draped road surface on sloped streets',async()=>{
+ const {buildRoads}=await import('./roads');
+ const {hex}=await import('./props');
+ const road={type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,0],[40,0]] as [number,number][]},properties:{id:'main',name:null,highway:'primary',lanes:1,width:12,oneway:true,surface:'asphalt',sidewalk:false,bridge:false,tunnel:false,layer:0}};
+ // one-way single lane: no centre dashes share the paint colour
+ // cross-slope of 12% plus a 6% grade along the street, rolling between the 8 m centreline samples
+ const ground=(x:number,y:number)=>0.12*y+0.06*x+0.4*Math.sin(x/3);
+ const paint=hex('lane_paint');
+ for(const markings of ['zebra','lines']){
+  const crossing={type:'Feature' as const,geometry:{type:'Point' as const,coordinates:[21,0] as [number,number]},properties:{id:`slope-${markings}`,crossing:'marked',crossing_markings:markings,road_id:'main',road_width:12,road_dx:1,road_dy:0,road_x:21,road_y:0}};
+  const mesh=buildRoads([road],[],[crossing],(x,y)=>[x,-y],ground,{markings:true,bridges:false}).roads;
+  const pos=mesh.getAttribute('position'),color=mesh.getAttribute('color');
+  let checked=0;
+  for(let i=0;i<pos.count;i++){
+   if(Math.abs(color.getX(i)-paint.r)>1e-6||Math.abs(color.getY(i)-paint.g)>1e-6) continue;
+   const x=pos.getX(i),z=pos.getZ(i);
+   expect(pos.getY(i)).toBeGreaterThan(ground(x,-z)+0.28+0.01);
+   checked++;
+  }
+  expect(checked).toBeGreaterThan(8);
+ }
+});
+
+it('lifts crosswalk paint over a higher through street overlapping the crossing',async()=>{
+ const {buildRoads}=await import('./roads');
+ const {hex}=await import('./props');
+ const props={name:null,lanes:1,oneway:true,surface:'asphalt',sidewalk:false,bridge:false,tunnel:false,layer:0};
+ const main={type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,0],[40,0]] as [number,number][]},properties:{...props,id:'main',highway:'primary',width:10}};
+ // a through street crossing the main road (ribbons overlap; T-junction arms are trimmed at the curb instead),
+ // climbing north: its ribbon ramps from 0.28 at y=0 to 1.28 at its 7.5 m sample above flat terrain, so it is
+ // the top surface over the crosswalk's north half even where the main road's centreline is nearer
+ const side={type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[20,30],[20,-30]] as [number,number][]},properties:{...props,id:'side',highway:'residential',width:12}};
+ const ground=(_x:number,y:number)=>y>=7.4?1:0;
+ const crossing={type:'Feature' as const,geometry:{type:'Point' as const,coordinates:[22,0] as [number,number]},properties:{id:'mouth',crossing:'marked',crossing_markings:'lines',road_id:'main',road_width:10,road_dx:1,road_dy:0,road_x:22,road_y:0}};
+ const mesh=buildRoads([main,side],[],[crossing],(x,y)=>[x,-y],ground,{markings:true,bridges:false}).roads;
+ const pos=mesh.getAttribute('position'),color=mesh.getAttribute('color'),paint=hex('lane_paint');
+ let checked=0;
+ for(let i=0;i<pos.count;i++){
+  if(Math.abs(color.getX(i)-paint.r)>1e-6||Math.abs(color.getY(i)-paint.g)>1e-6) continue;
+  const x=pos.getX(i),y=-pos.getZ(i);
+  if(x<23||y<1) continue; // the far bar's north half: inside the side street, nearer the main centreline
+  expect(pos.getY(i)).toBeGreaterThan(0.28+Math.min(1,y/7.5)+0.01);
+  checked++;
+ }
+ expect(checked).toBeGreaterThan(0);
+});
+
+it('paints a skewed crossing along the mapped walk, curb to curb',async()=>{
+ const {buildRoads}=await import('./roads');
+ const {hex}=await import('./props');
+ const road={type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,0],[40,0]] as [number,number][]},properties:{id:'main',name:null,highway:'primary',lanes:1,width:10,oneway:true,surface:'asphalt',sidewalk:false,bridge:false,tunnel:false,layer:0}};
+ const walk=[Math.cos(Math.PI/3),Math.sin(Math.PI/3)]; // 60 degrees to the road, 30 off square
+ const crossing={type:'Feature' as const,geometry:{type:'Point' as const,coordinates:[20,0] as [number,number]},properties:{id:'skew',crossing:'marked',crossing_markings:'lines',road_id:'main',road_width:10,road_dx:1,road_dy:0,road_x:20,road_y:0,foot_dx:walk[0],foot_dy:walk[1]}};
+ const mesh=buildRoads([road],[],[crossing],(x,y)=>[x,-y],()=>0,{markings:true,bridges:false}).roads;
+ const pos=mesh.getAttribute('position'),color=mesh.getAttribute('color'),paint=hex('lane_paint');
+ const pts:[number,number][]=[];
+ for(let i=0;i<pos.count;i++) if(Math.abs(color.getX(i)-paint.r)<1e-6&&Math.abs(color.getY(i)-paint.g)<1e-6) pts.push([pos.getX(i),-pos.getZ(i)]);
+ // the paint reaches both curbs (y = +-4.8) and, at each curb, is displaced along x by y / tan(60)
+ const north=pts.filter(([,y])=>y>4.5), south=pts.filter(([,y])=>y<-4.5);
+ expect(north.length).toBeGreaterThan(0); expect(south.length).toBeGreaterThan(0);
+ const mean=(a:[number,number][])=>a.reduce((t,[x])=>t+x,0)/a.length;
+ expect(mean(north)-mean(south)).toBeCloseTo(9.6/Math.tan(Math.PI/3),0);
+});
+
+it('does not paint a crossing the pipeline could not match to a road',async()=>{
+ const {buildRoads}=await import('./roads');
+ const road={type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,0],[40,0]] as [number,number][]},properties:{id:'main',name:null,highway:'primary',lanes:1,width:10,oneway:true,surface:'asphalt',sidewalk:false,bridge:false,tunnel:false,layer:0}};
+ const crossing=(topology:boolean)=>({type:'Feature' as const,geometry:{type:'Point' as const,coordinates:[20,0] as [number,number]},properties:{id:'rejected',crossing:'marked',...(topology?{road_id:null,road_width:null,road_dx:null,road_dy:null,road_x:null,road_y:null}:{})}});
+ const none=buildRoads([road],[],[],(x,y)=>[x,-y],()=>0,{markings:true,bridges:false}).roads;
+ const rejected=buildRoads([road],[],[crossing(true)],(x,y)=>[x,-y],()=>0,{markings:true,bridges:false}).roads;
+ const legacy=buildRoads([road],[],[crossing(false)],(x,y)=>[x,-y],()=>0,{markings:true,bridges:false}).roads;
+ expect(rejected.getAttribute('position').count).toBe(none.getAttribute('position').count);
+ expect(legacy.getAttribute('position').count).toBeGreaterThan(none.getAttribute('position').count);
+});
+
 it('deduplicates paired curb crossing nodes after projecting them onto the road',async()=>{
  const {buildRoads}=await import('./roads');
  const road={type:'Feature' as const,geometry:{type:'LineString' as const,coordinates:[[0,0],[20,0]] as [number,number][]},properties:{id:'main',name:null,highway:'primary',lanes:1,width:8,oneway:true,surface:'asphalt',sidewalk:false,bridge:false,tunnel:false,layer:0}};
