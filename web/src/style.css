@@ -355,22 +355,6 @@ body.night .info-card .info-links a {
   }
 }
 
-/* ---- Readout pill (bottom-left, next to loading pill) ---- */
-
-.readout-pill {
-  position: absolute;
-  bottom: 16px;
-  left: 148px;
-  padding: 8px 14px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--ui-text-muted);
-}
-
-.readout-pill.hidden {
-  display: none;
-}
-
 /* ---- Heights legend (bottom-left, above loading pill) ---- */
 
 .heights-legend {

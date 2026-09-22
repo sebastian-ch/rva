@@ -198,8 +198,7 @@ Open the printed local URL (Vite default `http://localhost:5173`). Toolbar / key
 - `Escape` — close the info panel
 
 Click a building to open its info card (name, address, height, landmark description with a Wikipedia
-summary/thumbnail where resolved); hover highlights the building under the cursor and shows a ground
-elevation / building height readout.
+summary/thumbnail where resolved); hover highlights the building under the cursor.
 
 For debugging, `window.__iso` is populated in `web/src/main.ts` with `{ scene, tiles, iso, props,
 palette, night(), stats(), manager() }` — `__iso.stats()` reports resident tile/LOD counts, triangle

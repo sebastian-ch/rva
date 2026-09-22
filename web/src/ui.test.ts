@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { legendGradient, readoutText } from "./ui";
+import { legendGradient } from "./ui";
 
 describe("legendGradient", () => {
   it("builds a linear-gradient with stops flipped top-to-bottom", () => {
@@ -26,16 +26,3 @@ describe("legendGradient", () => {
   });
 });
 
-describe("readoutText", () => {
-  it("formats elevation and building height, rounding to whole metres", () => {
-    expect(readoutText(41.6, 17.5)).toBe("Elev 42 m · Bldg 18 m");
-  });
-
-  it("omits the building part when bldg is null", () => {
-    expect(readoutText(41.6, null)).toBe("Elev 42 m");
-  });
-
-  it("rounds negative and zero elevations correctly", () => {
-    expect(readoutText(-2.4, 0)).toBe("Elev -2 m · Bldg 0 m");
-  });
-});

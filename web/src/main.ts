@@ -3,7 +3,7 @@ import palette from '../../assets/palette.json';
 import landmarksJson from '../../assets/landmarks/landmarks.json';
 import { region, regionId } from './region';
 import { createTropicalSky } from './sky';
-import { createUI, readoutText, type BuildingInfo } from './ui';
+import { createUI, type BuildingInfo } from './ui';
 import { IsoCamera } from './camera';
 import { TileWorld, type LoadedTile, type Materials } from './tiles';
 import { TileManager } from './tileManager';
@@ -318,7 +318,6 @@ canvas.addEventListener('pointermove', (e) => {
   ndc.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
   raycaster.setFromCamera(ndc, iso.camera);
   const hit = raycaster.intersectObjects(buildingMeshes, false)[0];
-  updateReadout(hit);
   if (!hit || hit.faceIndex == null) { clearHover(); canvas.style.cursor = ''; return; }
   const mesh = hit.object as THREE.Mesh;
   const range = rangeForFace(rangesByMesh.get(mesh)!, hit.faceIndex);
@@ -328,19 +327,6 @@ canvas.addEventListener('pointermove', (e) => {
   const tile = tiles.find((t) => t.buildings === mesh);
   if (tile) showHover(range, tile);
 });
-
-/** Elevation under the cursor (terrain hit) and, when over a building, its height. */
-function updateReadout(buildingHit: THREE.Intersection | undefined) {
-  if (buildingHit && buildingHit.faceIndex != null) {
-    const mesh = buildingHit.object as THREE.Mesh;
-    const range = rangeForFace(rangesByMesh.get(mesh)!, buildingHit.faceIndex);
-    if (range) { ui.setReadout(readoutText(realElev(range.props.ground_z), range.props.height)); return; }
-  }
-  const terrainMeshes: THREE.Object3D[] = [];
-  for (const t of tiles) { const m = t.group.getObjectByName('terrain'); if (m) terrainMeshes.push(m); }
-  const th = raycaster.intersectObjects(terrainMeshes, false)[0];
-  ui.setReadout(th ? readoutText(realElev(th.point.y), null) : null);
-}
 
 // ---------------------------------------------------------------- tour
 const tourStops = landmarks.filter((l) => l.in_first_slice);

@@ -44,7 +44,6 @@ export interface UI {
   setHeights(on: boolean): void; // sync button state + body.heights
   setAircraft(on: boolean): void;
   setHeightsLegend(spec: HeightsLegendSpec | null): void;
-  setReadout(text: string | null): void;
   setMap(on: boolean): void;
   setStyle(style: MapStyle): void;
 }
@@ -58,19 +57,6 @@ export function legendGradient(stops: Array<{ t: number; color: string }>): stri
   // CSS stop positions must be non-decreasing, so express the ramp bottom-up with t directly.
   const parts = stops.slice().sort((a, b) => a.t - b.t).map(({ t, color }) => `${color} ${Math.round(t * 1000) / 10}%`);
   return `linear-gradient(to top, ${parts.join(", ")})`;
-}
-
-/**
- * Formats the bottom-left readout pill text, e.g. "Elev 42 m · Bldg 18 m".
- * Elevation and building height are rounded to whole metres; when bldg is
- * null, only the elevation part is shown.
- */
-export function readoutText(elev: number, bldg: number | null): string {
-  const parts = [`Elev ${Math.round(elev)} m`];
-  if (bldg !== null && bldg !== undefined) {
-    parts.push(`Bldg ${Math.round(bldg)} m`);
-  }
-  return parts.join(" · ");
 }
 
 function capitalize(s: string): string {
@@ -290,11 +276,6 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
   loadingPill.appendChild(loadingLabel);
 
   root.appendChild(loadingPill);
-
-  // ---- Readout pill (bottom-left, next to loading pill) ----
-  const readoutPill = document.createElement("div");
-  readoutPill.className = "panel readout-pill hidden";
-  root.appendChild(readoutPill);
 
   // ---- Heights legend (bottom-left, above loading pill) ----
   const legendPanel = document.createElement("div");
@@ -523,16 +504,6 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
     legendPanel.classList.toggle("hidden", !heightsOn);
   }
 
-  function setReadout(text: string | null): void {
-    if (text === null) {
-      readoutPill.classList.add("hidden");
-      readoutPill.textContent = "";
-      return;
-    }
-    readoutPill.textContent = text;
-    readoutPill.classList.remove("hidden");
-  }
-
   function isTypingTarget(target: EventTarget | null): boolean {
     if (!(target instanceof HTMLElement)) return false;
     const tag = target.tagName;
@@ -594,7 +565,6 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
     setHeights,
     setAircraft,
     setHeightsLegend,
-    setReadout,
     setStyle,
     setMap(on) { mapOn = on; mapBtn.classList.toggle('active', on); },
   };
