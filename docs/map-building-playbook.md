@@ -185,6 +185,17 @@ bridge → ground path → bridge and a ground trail touching a footbridge.
 **Regression:** [test_bridge_decks.py](../pipeline/tests/test_bridge_decks.py), including underpass and
 branch-junction cases; [roads.test.ts](../web/src/roads.test.ts), supplied deck over noisy terrain.
 
+### Skybridges end in buildings, not on the ground
+
+A pedestrian bridge end that no other way touches and that lies inside a building footprint enters the
+building at an upper floor; the DEM under it is the street below. Anchoring it there tilted the enclosed
+footbridge over North 14th Street (osm:way/113038428) from 34.2 m down to 26.4 m, although the LiDAR shows it
+level at 34.3 m. `_deck_endpoints` now drops such ends as anchors while the chain has another, using the raw
+OSM footprints the `roads` step declares as a source. Do not generalise to every untouched end: the Belle Isle
+footbridge and ground-level boardwalks also end untouched and really do descend, and the rule changed only
+the one skybridge in Richmond. Regressions: `test_skybridge_dead_end_into_a_building_keeps_the_connected_level`
+and `test_footbridge_dead_end_on_open_ground_still_anchors` in `test_bridge_decks.py`.
+
 ### Ground-supported approaches are not spans
 
 **Symptom:** the Downtown Expressway beside the Federal Reserve disappears beneath beige terrain patches.

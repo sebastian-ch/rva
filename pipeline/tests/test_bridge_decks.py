@@ -4,7 +4,7 @@ from __future__ import annotations
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-from shapely.geometry import LineString
+from shapely.geometry import LineString, Polygon
 
 from config import CRS_PROJ
 from process import _deck_endpoints, _ramp_decks
@@ -111,3 +111,46 @@ def test_bridge_end_over_underpass_uses_connected_approach_grade():
     ]
     deck, _ = _deck_endpoints(_gdf(rows), Underpass())
     assert abs(deck.iloc[0][5] - 20.0) < 0.01
+
+
+class Valley:
+    """Street-level ground: 33 m on the north-west bank, falling to 26 m at the far end of the span."""
+
+    def sample(self, xs, ys):
+        xs = np.asarray(xs, float)
+        return np.where(xs < 10, 33.0, 26.0)
+
+
+def test_skybridge_dead_end_into_a_building_keeps_the_connected_level():
+    # osm:way/113038428: a footbridge over North 14th Street ending inside a building. Its far end touches no
+    # other way and lies in the footprint, so the 26 m street under it must not pull the deck down 7 m.
+    rows = [
+        {"highway": "footway", "bridge": "yes", "geometry": LineString([(0, 0), (60, 0)])},
+        {"highway": "footway", "bridge": None, "geometry": LineString([(-10, 0), (0, 0)])},
+    ]
+    hospital = gpd.GeoDataFrame(geometry=[Polygon([(58, -10), (90, -10), (90, 10), (58, 10)])], crs=CRS_PROJ)
+    deck, _ = _deck_endpoints(_gdf(rows), Valley(), hospital)
+    z0, z1 = deck.iloc[0][2], deck.iloc[0][5]
+    assert z0 == 33.0 and z1 == 33.0
+
+
+def test_footbridge_dead_end_on_open_ground_still_anchors():
+    # the Belle Isle footbridge descends to the island: an untouched end outside any building is an abutment
+    rows = [
+        {"highway": "footway", "bridge": "yes", "geometry": LineString([(0, 0), (60, 0)])},
+        {"highway": "footway", "bridge": None, "geometry": LineString([(-10, 0), (0, 0)])},
+    ]
+    elsewhere = gpd.GeoDataFrame(geometry=[Polygon([(70, 20), (90, 20), (90, 40), (70, 40)])], crs=CRS_PROJ)
+    deck, _ = _deck_endpoints(_gdf(rows), Valley(), elsewhere)
+    assert deck.iloc[0][5] == 26.0
+
+
+def test_road_bridge_dead_end_still_anchors_on_its_ground():
+    # a road bridge cut at the bbox edge keeps its own ground anchor: only pedestrian bridges enter buildings
+    rows = [
+        {"highway": "tertiary", "bridge": "yes", "geometry": LineString([(0, 0), (60, 0)])},
+        {"highway": "tertiary", "bridge": None, "geometry": LineString([(-10, 0), (0, 0)])},
+    ]
+    deck, _ = _deck_endpoints(_gdf(rows), Valley())
+    assert deck.iloc[0][5] == 26.0
+

@@ -742,14 +742,16 @@ def _dir_at(coords, at_start: bool) -> tuple[float, float]:
     return (x1 - x0) / d, (y1 - y0) / d
 
 
-def _deck_endpoints(lines: gpd.GeoDataFrame, terrain) -> tuple[pd.Series, list]:
+def _deck_endpoints(lines: gpd.GeoDataFrame, terrain, footprints: gpd.GeoDataFrame | None = None) -> tuple[pd.Series, list]:
     """For bridge ways: [x0, y0, z0, x1, y1, z1] with deck elevations at the way's ends.
 
     Bridges are chains of OSM ways whose joints often sit over water, so per-way bank sampling reads the river.
     Ways sharing endpoints are grouped into chains; short non-bridge stretches that link two chains (the road
     across Mayo's Island) are absorbed as connectors so the deck is continuous bank to bank. Each chain is
     anchored on its land ends (degree-1 nodes above WATER_REL_Z) and every joint gets the inverse-distance
-    weighted mean of the anchors: linear along a simple span, smooth on branching viaducts.
+    weighted mean of the anchors: linear along a simple span, smooth on branching viaducts. A pedestrian end
+    that no other way touches and that lies inside one of `footprints` enters a building (a skybridge) and is
+    not an anchor while the chain has another.
     Returns (deck series, list of connector indices that should be drawn as bridge).
     """
     out = pd.Series([None] * len(lines), index=lines.index, dtype=object)
@@ -877,12 +879,37 @@ def _deck_endpoints(lines: gpd.GeoDataFrame, terrain) -> tuple[pd.Series, list]:
                 residual = np.max(np.abs(elevations-(slope*distances+intercept)))
                 if abs(slope) <= 0.15 and residual <= 0.6 and 1.0 < intercept-zmap[n] <= 12.0:
                     zmap[n] = float(intercept)
+    # A pedestrian bridge end that no other way touches and that lies inside a building enters it at an upper
+    # floor (the skybridge over North 14th Street, osm:way/113038428): the street-level DEM under it is not a
+    # deck height, so it stops being an anchor while the chain has another. An untouched end on open ground is
+    # still an abutment: the Belle Isle footbridge really does descend to the island.
+    indoor = set()
+    if footprints is not None and len(footprints):
+        touched = set()
+        member_set = set(members_idx)
+        for idx, g in zip(lines.index, lines.geometry):
+            if idx not in member_set:
+                touched.update(key(x, y) for x, y in g.coords)
+        candidates = {n for idx in members_idx if hw.get(idx) in PEDESTRIAN_CONNECTOR_CLASSES
+                      for n in ends[idx] if degree[n] == 1 and n not in touched}
+        if candidates:
+            from shapely.strtree import STRtree
+
+            fp_geoms = list(footprints.geometry)
+            fp_tree = STRtree(fp_geoms)
+            for n in candidates:
+                pt = Point(n)
+                if any(fp_geoms[i].distance(pt) <= 0.5 for i in fp_tree.query(pt.buffer(0.5))):
+                    indoor.add(n)
     comps = {}
     for n in nodes:
         comps.setdefault(find(n), []).append(n)
     deck_z = {}
     for members in comps.values():
         anchors = [n for n in members if degree[n] == 1 and zmap[n] > WATER_REL_Z]
+        outdoor = [n for n in anchors if n not in indoor]
+        if outdoor:
+            anchors = outdoor
         if not anchors:
             top = max(zmap[n] for n in members)
             for n in members:
@@ -974,8 +1001,8 @@ def _ramp_decks(lines: gpd.GeoDataFrame, deck: pd.Series, bridge_flag: pd.Series
     return deck, ramp
 
 
-def process_roads(raw_path: Path, terrain=None) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
-    """Return (roads, crossings)."""
+def process_roads(raw_path: Path, terrain=None, buildings_path: Path | None = None) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+    """Return (roads, crossings). `buildings_path` (raw OSM footprints) lets bridge decks recognise skybridges."""
     raw = _read(raw_path)
     empty = gpd.GeoDataFrame(geometry=[], crs=CRS_PROJ)
     if len(raw) == 0:
@@ -985,7 +1012,11 @@ def process_roads(raw_path: Path, terrain=None) -> tuple[gpd.GeoDataFrame, gpd.G
     lines = lines.explode(index_parts=False).reset_index(drop=True)
     if "area" in lines:
         lines = lines[lines["area"].fillna("no") != "yes"]
-    deck, connectors = _deck_endpoints(lines, terrain)
+    footprints = None
+    if buildings_path is not None and Path(buildings_path).exists():
+        footprints = _read(Path(buildings_path))
+        footprints = footprints[footprints.geometry.geom_type.isin(["Polygon", "MultiPolygon"])]
+    deck, connectors = _deck_endpoints(lines, terrain, footprints)
     bridge_flag = (lines["bridge"].fillna("no") != "no") if "bridge" in lines else pd.Series(False, index=lines.index)
     if connectors:
         bridge_flag = bridge_flag.copy()

@@ -141,7 +141,7 @@ def _groundcover(ctx: StepContext, layers: dict):
 
 def _roads(ctx: StepContext, layers: dict):
     from process import process_roads
-    roads, crossings = process_roads(ctx.raw_dir / "roads.parquet", ctx.terrain)
+    roads, crossings = process_roads(ctx.raw_dir / "roads.parquet", ctx.terrain, ctx.raw_dir / "buildings.parquet")
     return {"roads": roads, "crossings": crossings}
 
 
@@ -246,7 +246,7 @@ def steps_for(region: str) -> list[Step]:
         Step("buildings", ("buildings",), _buildings, entries=(process.process_buildings,), modules=("terrain",),
              sources=_buildings_sources, options=("merge_rowhouses",)),
         Step("roads", ("roads", "crossings"), _roads, entries=(process.process_roads,), modules=("terrain",),
-             sources=lambda c: [c.raw_dir / "roads.parquet", c.dem_path]),
+             sources=lambda c: [c.raw_dir / "roads.parquet", c.raw_dir / "buildings.parquet", c.dem_path]),
         Step("rail", ("rail",), _rail, entries=(process.process_rail,), modules=("terrain",),
              sources=lambda c: [c.raw_dir / "rail.parquet", c.dem_path]),
         Step("landuse", ("landuse",), _landuse, entries=(process.process_landuse,),
