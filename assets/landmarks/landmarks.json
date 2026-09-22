@@ -485,5 +485,24 @@
     "in_first_slice": false,
     "model": "landmarks/cathedral-of-the-sacred-heart.glb",
     "height_hint_m": null
+  },
+  {
+    "slug": "st-pauls-episcopal-church",
+    "name": "St. Paul's Episcopal Church",
+    "osm_name_hints": [
+      "Saint Paul's Episcopal Church",
+      "St. Paul's Episcopal Church"
+    ],
+    "match_id": "osm:relation/19918536",
+    "lat": 37.539943,
+    "lon": -77.435291,
+    "kind": "building",
+    "wikidata": "Q7591122",
+    "website": "https://stpaulsrva.org/",
+    "description": "Greek Revival church (1845, Thomas S. Stewart) on East Grace Street facing Capitol Square, with a Corinthian portico and tiered steeple; known as the \"Cathedral of the Confederacy\".",
+    "district": "Capitol Square",
+    "in_first_slice": true,
+    "model": "landmarks/st-pauls-episcopal-church.glb",
+    "height_hint_m": null
   }
 ]

@@ -952,6 +952,94 @@ def sacred_heart(b, fp):
     b.pediment(*pc, 2.5 + col_h, pw, 4.2, 3.2, stone, rot=rot + math.pi / 2, shade=0.97)
 
 
+def st_pauls(b, fp):
+    """St. Paul's Episcopal Church (1845, Thomas S. Stewart): a stuccoed Greek Revival temple facing East Grace
+    Street across from Capitol Square, with a Corinthian portico and a tiered steeple over the vestibule; the
+    parish house and a lower wing wrap a courtyard to the west.
+
+    OSM has one relation (19918536) for the whole group, with the courtyard as a hole that fp["ring"] drops,
+    so the church, parish house and wing rings (EPSG:32618) are split out here. Heights are from the 2025
+    Richmond LiDAR above each piece's own ground: church eaves 11 / ridge 15 m, steeple 38.5 m, parish house
+    12.6 m, wing 8 m. The site falls ~6.5 m from Grace Street to the parish house and the viewer multiplies
+    terrain by Z_SCALE (1.6), so each piece is set on its own display ground. Column count and steeple stages
+    are generic; nothing traced from imagery.
+    """
+    ox, oy = fp["centroid_proj"]
+    g0 = float(fp["ground_z"])
+
+    def rel(pts):
+        ring = [(x - ox, y - oy) for x, y in pts]
+        return ring if shoelace(ring) > 0 else ring[::-1]
+
+    def ground(dem):  # display z of a DEM elevation, relative to the model origin
+        return (dem - g0) * 1.6
+
+    stone, trim, roof = "cream", "concrete", "slate"
+    bottom = ground(43.0) - 0.5  # lowest DEM cell under the group
+
+    # parish house (west) and the low wing on the Grace / 8th Street corner
+    west = rel([(284834.31, 4157551.53), (284843.52, 4157543.93), (284840.47, 4157540.16), (284842.5, 4157538.41),
+                (284838.67, 4157533.64), (284811.84, 4157554.51), (284826.41, 4157573.01), (284841.82, 4157561.03)])
+    wing = rel([(284807.0, 4157588.09), (284818.11, 4157602.23), (284853.73, 4157574.49), (284849.31, 4157568.63),
+                (284857.26, 4157562.36), (284862.67, 4157568.75), (284853.91, 4157557.48), (284844.83, 4157564.55),
+                (284841.82, 4157561.03), (284826.41, 4157573.01), (284817.63, 4157561.88)])
+    for ring, top, name in ((west, ground(46.7) + 12.6, "parish-house"), (wing, ground(49.2) + 8.0, "wing")):
+        b.extrude(ring, bottom, top, stone, 0.9, name=name)
+        b.band(ring, top - 0.8, 0.25, 0.5, trim, 0.86)
+        b.extrude(ring, top, top + 0.15, "roof_flat", 0.85, name=f"{name}-roof")
+        b.window_bays(ring, top - 3.6, height=2.4, width=1.2, pitch=3.8, trim=trim)
+
+    # church body: front (Grace Street) edge fl -> fr, back edge bl -> br
+    fl, fr = (284862.71 - ox, 4157568.71 - oy), (284882.07 - ox, 4157553.63 - oy)
+    bl, br = (284840.41 - ox, 4157540.06 - oy), (284859.83 - ox, 4157525.29 - oy)
+    width = math.hypot(fr[0] - fl[0], fr[1] - fl[1])
+    wx, wy = (fr[0] - fl[0]) / width, (fr[1] - fl[1]) / width  # across the front
+    mx, my = (fl[0] + fr[0]) / 2, (fl[1] + fr[1]) / 2  # front centre
+    bx, by = (bl[0] + br[0]) / 2, (bl[1] + br[1]) / 2
+    length = math.hypot(mx - bx, my - by)
+    dx, dy = (bx - mx) / length, (by - my) / length  # from the front toward the back
+    rot_w = math.atan2(wy, wx)
+
+    def C(across, back):
+        return (mx + wx * across + dx * back, my + wy * across + dy * back)
+
+    base = ground(47.9)  # Grace Street pavement
+    eave, ridge = base + 11.0, base + 15.0
+    portico_d = 5.5
+    body = [C(-width / 2, portico_d), C(width / 2, portico_d), C(width / 2, length), C(-width / 2, length)]
+    if shoelace(body) < 0:
+        body.reverse()
+    b.extrude(body, bottom, eave, stone, 0.97, name="church")
+    b.band(body, eave - 1.0, 0.4, 1.0, trim, 0.92)  # entablature
+    b.window_bays(body, base + 2.5, height=6.5, width=2.0, pitch=5.2, trim=trim, arched=True, glass="glass")
+    b.gable(*C(0, (portico_d + length) / 2), eave, length - portico_d + 0.6, width + 0.8, ridge - eave, roof,
+            rot=math.atan2(dy, dx), name="church-roof")
+    b.pediment(*C(0, length - 0.2), eave, width + 0.4, 0.4, ridge - eave, stone, rot=rot_w, shade=0.95)
+
+    # Corinthian portico on Grace Street: steps, six columns, entablature and pediment
+    b.box(*C(0, portico_d / 2), bottom, width - 1.0, portico_d + 1.5, base - bottom + 1.2, trim, rot=rot_w, shade=0.95, name="steps")
+    b.colonnade(C(-width / 2 + 2.0, 0.8), C(width / 2 - 2.0, 0.8), base + 1.2, eave - base - 2.2, 6, 0.6, stone)
+    b.box(*C(0, portico_d / 2), eave - 1.0, width - 1.0, portico_d + 0.4, 1.0, stone, rot=rot_w, shade=0.98, name="portico-entablature")
+    b.pediment(*C(0, portico_d / 2), eave, width - 1.0, portico_d + 0.4, ridge - eave, stone, rot=rot_w, shade=0.97)
+
+    # steeple over the vestibule: square tower, columned octagonal belfry, smaller lantern, then a cap
+    sx, sy = C(0, portico_d + 3.5)
+    tower = rect_ring(sx, sy, 7.0, 7.0, rot_w)
+    t1, t2, t3, top = ridge + 6.0, base + 29.0, base + 34.5, base + 38.5
+    b.extrude(tower, eave - 0.5, t1, stone, 1.0, name="steeple-base")
+    b.band(tower, t1 - 0.8, 0.35, 0.8, trim, 0.92)
+    b.window_bays(tower, ridge + 1.0, height=3.4, width=1.4, pitch=6.5, trim=trim, arched=True, glass="brick_dark")
+    b.cylinder(sx, sy, t1, 3.1, t2 - t1, stone, n=8, shade=0.98, name="belfry")
+    for k in range(8):
+        a = rot_w + math.pi / 8 + k * math.pi / 4
+        b.cylinder(sx + 3.3 * math.cos(a), sy + 3.3 * math.sin(a), t1, 0.28, t2 - t1 - 0.6, stone, n=6)
+    b.cylinder(sx, sy, t2 - 0.6, 3.7, 0.8, trim, n=8, shade=0.92, name="belfry-cornice")
+    b.cylinder(sx, sy, t2 + 0.2, 2.2, t3 - t2 - 0.2, stone, n=8, shade=0.97, name="lantern")
+    b.cylinder(sx, sy, t3 - 0.5, 2.6, 0.6, trim, n=8, shade=0.92)
+    b.cone(sx, sy, t3 + 0.1, 2.3, top - t3 - 0.9, roof, n=8, name="steeple-cap")
+    b.cylinder(sx, sy, top - 1.0, 0.18, 1.0, "steel", n=6)
+
+
 BUILDERS = {
     "virginia-state-capitol": capitol,
     "main-street-station": main_street_station,
@@ -973,6 +1061,7 @@ BUILDERS = {
     "virginia-museum-of-fine-arts": vmfa,
     "science-museum-of-virginia": science_museum,
     "cathedral-of-the-sacred-heart": sacred_heart,
+    "st-pauls-episcopal-church": st_pauls,
 }
 
 
