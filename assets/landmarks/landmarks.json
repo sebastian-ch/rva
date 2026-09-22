@@ -595,5 +595,25 @@
     "in_first_slice": true,
     "model": "landmarks/childrens-hospital-of-richmond-at-vcu.glb",
     "height_hint_m": null
+  },
+  {
+    "slug": "truist-place",
+    "name": "Truist Place",
+    "osm_name_hints": [
+      "SunTrust Plaza",
+      "SunTrust Center",
+      "Truist Place"
+    ],
+    "match_id": "osm:way/236488177",
+    "lat": 37.537377,
+    "lon": -77.436155,
+    "kind": "building",
+    "wikidata": "Q23074306",
+    "website": null,
+    "description": "400 ft office tower between East Main and East Cary Streets (formerly SunTrust Center), one of the tallest buildings on the downtown skyline, with a lower wing stepping up the slope toward 10th Street.",
+    "district": "Downtown",
+    "in_first_slice": true,
+    "model": "landmarks/truist-place.glb",
+    "height_hint_m": null
   }
 ]

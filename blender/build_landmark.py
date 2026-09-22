@@ -17,7 +17,7 @@ sys.path.insert(0, str(HERE))
 
 import bpy  # noqa: E402
 
-from footprint import clean_ring, find_footprint, shoelace, toward  # noqa: E402
+from footprint import clean_ring, find_footprint, obb, shoelace, toward  # noqa: E402
 from landmark_lib import Builder, clear_scene, inset_ring, offset_ring, rect_ring  # noqa: E402
 import export_landmark  # noqa: E402
 
@@ -1254,6 +1254,60 @@ def childrens_hospital(b, fp):
     b.band(plant, plant_h - 0.6, 0.2, 0.6, frame, 0.8)
 
 
+def truist_place(b, fp):
+    """Truist Place (formerly SunTrust Center), 919 East Main Street: a 400 ft granite-and-glass office tower
+    with notched corners and a raised central cap, and a lower wing stepping up the slope to the north-east.
+
+    OSM has the outline (way/236488177, hidden) and one part, the tower (way/365155755, 121.92 m = 400 ft);
+    the wing had no part, so it rendered as a hole. Heights are from the 2025 Richmond LiDAR above each
+    piece's own ground (tower 24.1 m, wing 29.8 m): tower roof 118 m with the cap to 121.5 m, wing 19.7 m.
+    The viewer multiplies terrain by Z_SCALE (1.6), so each sits on its display ground. Storey banding and
+    colours are generic; nothing traced from imagery.
+    """
+    ox, oy = fp["centroid_proj"]
+    g0 = float(fp["ground_z"])
+
+    def rel(pts):
+        ring = [(x - ox, y - oy) for x, y in pts]
+        return ring if shoelace(ring) > 0 else ring[::-1]
+
+    def ground(dem):
+        return (dem - g0) * 1.6
+
+    stone, glass = "sand", "glass"
+    tower = _massing_parts(fp)["way/365155755"][0]  # the OSM tower part, read from the tile
+    wing = rel([(284756.5, 4157297.5), (284755.8, 4157306.1), (284778.0, 4157334.0), (284784.1, 4157276.0),
+                (284780.1, 4157278.0), (284777.0, 4157276.0), (284774.0, 4157277.0), (284759.0, 4157289.0),
+                (284761.7, 4157293.4)])
+
+    # wing up the slope: granite with storey bands
+    wbase = ground(29.8)
+    wtop = wbase + 19.7
+    b.extrude(wing, -4.0, wtop, stone, 0.92, name="wing")
+    z = wbase + 4.5
+    while z < wtop - 1.5:
+        b.band(wing, z, 0.06, 1.8, glass, 0.95)
+        z += 4.0
+    b.band(wing, wtop - 0.8, 0.3, 0.8, stone, 0.88)
+    b.extrude(wing, wtop, wtop + 0.2, "roof_flat", 0.88, name="wing-roof")
+
+    # tower: granite base storeys, ribbon windows, a pale crown band, then the raised central cap
+    tbase = ground(24.1)
+    ttop, cap = tbase + 118.0, tbase + 121.5
+    b.extrude(tower, -4.0, ttop, stone, 0.96, name="tower")
+    b.band(tower, tbase, 0.4, 8.0, stone, 0.88)
+    z = tbase + 10.0
+    while z < ttop - 6.0:
+        b.band(tower, z, 0.06, 2.3, glass, 0.95)
+        z += 3.9
+    b.band(tower, ttop - 5.0, 0.35, 5.0, "cream", 0.94)  # crown band
+    b.extrude(tower, ttop, ttop + 0.2, "roof_flat", 0.9, name="tower-roof")
+    f = Frame({"obb": obb(tower)})
+    c = f.P(0, 0)
+    b.box(*c, ttop, 2 * f.hl - 22.0, 2 * f.hs - 22.0, cap - ttop, "cream", rot=f.rot_u, shade=0.92, name="cap")
+    b.box(*c, cap, 2 * f.hl - 28.0, 2 * f.hs - 28.0, 1.2, "steel", rot=f.rot_u, shade=0.88, name="cap-plant")
+
+
 PIXEL_GLYPHS = {
     "D": ("110", "101", "101", "101", "110"), "E": ("111", "100", "110", "100", "111"),
     "H": ("101", "101", "111", "101", "101"), "I": ("111", "010", "010", "010", "111"),
@@ -1305,6 +1359,7 @@ BUILDERS = {
     "riverfront-plaza-east-tower": riverfront_plaza_tower,
     "hippodrome-theater": hippodrome,
     "childrens-hospital-of-richmond-at-vcu": childrens_hospital,
+    "truist-place": truist_place,
 }
 
 
