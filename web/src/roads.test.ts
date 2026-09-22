@@ -151,6 +151,21 @@ it('centres marked crossings on the road and omits unmarked paint', async () => 
  expect((Math.min(...z)+Math.max(...z))/2).toBeCloseTo(0,1);
 });
 
+/** Highest asphalt-coloured triangle of a built road mesh above (x, z): the surface paint has to clear. */
+const asphaltTop=(mesh:import('three').BufferGeometry,asphalt:{r:number,g:number},x:number,z:number)=>{
+ const pos=mesh.getAttribute('position'),color=mesh.getAttribute('color');
+ let top=-Infinity;
+ for(let t=0;t<pos.count;t+=3){
+  if(Math.abs(color.getX(t)-asphalt.r)>1e-6||Math.abs(color.getY(t)-asphalt.g)>1e-6) continue;
+  const ax=pos.getX(t),az=pos.getZ(t),bx=pos.getX(t+1),bz=pos.getZ(t+1),cx=pos.getX(t+2),cz=pos.getZ(t+2);
+  const den=(bz-cz)*(ax-cx)+(cx-bx)*(az-cz); if(Math.abs(den)<1e-12) continue;
+  const l0=((bz-cz)*(x-cx)+(cx-bx)*(z-cz))/den, l1=((cz-az)*(x-cx)+(ax-cx)*(z-cz))/den, l2=1-l0-l1;
+  if(l0<-1e-6||l1<-1e-6||l2<-1e-6) continue;
+  top=Math.max(top,l0*pos.getY(t)+l1*pos.getY(t+1)+l2*pos.getY(t+2));
+ }
+ return top;
+};
+
 it('keeps crosswalk paint above the draped road surface on sloped streets',async()=>{
  const {buildRoads}=await import('./roads');
  const {hex}=await import('./props');
@@ -166,8 +181,9 @@ it('keeps crosswalk paint above the draped road surface on sloped streets',async
   let checked=0;
   for(let i=0;i<pos.count;i++){
    if(Math.abs(color.getX(i)-paint.r)>1e-6||Math.abs(color.getY(i)-paint.g)>1e-6) continue;
-   const x=pos.getX(i),z=pos.getZ(i);
-   expect(pos.getY(i)).toBeGreaterThan(ground(x,-z)+0.28+0.01);
+   const x=pos.getX(i),z=pos.getZ(i),top=asphaltTop(mesh,hex('asphalt'),x,z);
+   if(top===-Infinity) continue; // bar ends overhang the ribbon's edge by the curb inset only
+   expect(pos.getY(i)).toBeGreaterThan(top+0.01);
    checked++;
   }
   expect(checked).toBeGreaterThan(8);
@@ -192,7 +208,7 @@ it('lifts crosswalk paint over a higher through street overlapping the crossing'
   if(Math.abs(color.getX(i)-paint.r)>1e-6||Math.abs(color.getY(i)-paint.g)>1e-6) continue;
   const x=pos.getX(i),y=-pos.getZ(i);
   if(x<23||y<1) continue; // the far bar's north half: inside the side street, nearer the main centreline
-  expect(pos.getY(i)).toBeGreaterThan(0.28+Math.min(1,y/7.5)+0.01);
+  expect(pos.getY(i)).toBeGreaterThan(Math.max(0.28+Math.min(1,y/7.5),asphaltTop(mesh,hex('asphalt'),x,pos.getZ(i)))+0.01);
   checked++;
  }
  expect(checked).toBeGreaterThan(0);

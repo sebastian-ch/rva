@@ -242,12 +242,15 @@ export function buildRoads(
   const groundLocal = (lx: number, lz: number) => groundAt(lx + originX, -lz + originY);
   /** edge re-heighting for draped strips: never below the ground under the edge plus the strip's lift */
   const draped = (lift: number) => (x: number, z: number, y: number) => Math.max(y, groundLocal(x, z) + lift);
+  /** triangle ranges of the drivable surface (road ribbons, junction caps): crosswalk paint sits on these */
+  const surfaceRanges: [number, number][] = [];
+  const surface = (emit: () => void) => { const t0 = mb.triCount; emit(); surfaceRanges.push([t0, mb.triCount]); };
   const carPaths: THREE.Vector3[][] = [];
   const carMeta: CarPathMeta[] = [];
   const walkPaths: THREE.Vector3[][] = [];
   const railPaths: THREE.Vector3[][] = [];
   const railMeta: RailPathMeta[] = [];
-  const roadPaths: { path: THREE.Vector3[]; width: number }[] = [];
+  const roadPaths: { path: THREE.Vector3[]; width: number; id: string }[] = [];
   const bridgeNeighbors = opts.bridges === false ? [] : feats.filter(f=>!f.properties.tunnel && !MINOR.has(f.properties.highway))
     .flatMap(f=>lines(f.geometry).map(line=>({id:f.properties.id,width:f.properties.width,
       path:toPath(line,toLocal,groundAt,ROAD_Y+(f.properties.bridge ? bridgeLift(f.properties.layer) : 0),roadStep(f.properties.highway),
@@ -447,7 +450,7 @@ export function buildRoads(
     };
     // Crossing through-roads already overlap at four-way nodes. A redundant circular cap makes an ordinary
     // crossing resemble a roundabout; reserve the stitch for three-arm junctions with an ending approach.
-    if (uniqueRoad.length === 3) fill(halfW + 0.2, ROAD_Y + 0.015, asphalt, 1);
+    if (uniqueRoad.length === 3) surface(() => fill(halfW + 0.2, ROAD_Y + 0.015, asphalt, 1));
   }
   for (const j of bridgeJunctions.values()) {
     if (j.ends.length !== 2) continue;
@@ -462,7 +465,7 @@ export function buildRoads(
       });
       for (let i = 0; i < ring.length; i++) mb.tri(center, ring[(i + 1) % ring.length], ring[i], color, UP, shade);
     };
-    fill(a.halfW + 0.2, j.pt.y + ROAD_Y + 0.015, asphalt, 1);
+    surface(() => fill(a.halfW + 0.2, j.pt.y + ROAD_Y + 0.015, asphalt, 1));
   }
 
   for (const f of feats) {
@@ -484,7 +487,7 @@ export function buildRoads(
         ? {fraction: Math.min(p.bus_lanes/p.lanes,1),side:p.bus_lane_side,color:busColor} : undefined;
       // Roadside sidewalk centerlines remain pedestrian paths, while the road emits the one visible curb strip.
       // Drawing both makes the intervening terrain verge read as a second sidewalk in the compact palette.
-      if (p.footway !== 'crossing') ribbon(mb, path, p.width / 2, p.bus_only || p.highway === 'busway' ? busColor : minor && p.highway !== 'service' && p.highway !== 'living_street' ? (TRAIL.has(p.highway) && !p.bridge ? dirt : sidewalk) : asphalt, minor ? 0.94 : 1, deck && p.bridge ? undefined : draped((minor ? ROAD_Y - 0.04 : ROAD_Y) + lift), busStripe);
+      if (p.footway !== 'crossing') surface(() => ribbon(mb, path, p.width / 2, p.bus_only || p.highway === 'busway' ? busColor : minor && p.highway !== 'service' && p.highway !== 'living_street' ? (TRAIL.has(p.highway) && !p.bridge ? dirt : sidewalk) : asphalt, minor ? 0.94 : 1, deck && p.bridge ? undefined : draped((minor ? ROAD_Y - 0.04 : ROAD_Y) + lift), busStripe));
       // Sunken freeways otherwise expose the DEM's coarse, faceted shoulder. Add a short
       // retaining edge only where the adjacent ground rises materially above the pavement.
       if (!minor && !deck && ['motorway', 'motorway_link', 'trunk', 'trunk_link'].includes(p.highway)) {
@@ -507,7 +510,7 @@ export function buildRoads(
           }
         }
       }
-      if (!minor && !p.bus_only) roadPaths.push({ path, width: p.width });
+      if (!minor && !p.bus_only) roadPaths.push({ path, width: p.width, id: p.id });
       if (!minor && !p.bus_only && p.highway !== 'service') {
         carPaths.push(carPath);
         carMeta.push({ oneway: !!p.oneway, width: p.width, highway: p.highway, lanes: p.lanes ?? (p.oneway ? 1 : 2), bridge: !!p.bridge, ramp: !!p.ramp, wayId: p.id });
@@ -570,10 +573,12 @@ export function buildRoads(
     }
   }
   // Crosswalks: zebra bars spanning the road at each marked crossing node.
-  // Paint follows the rendered road top: the highest covering centreline path (sampled every SEG m, flat across
-  // its carriageway; through streets overlap at a crossing) or the terrain + ROAD_Y where the drape lifts it
-  // higher. A flat bar at the crossing's centre height sank into the asphalt on sloped or crossing streets.
-  const roadTop = (paths: typeof roadPaths, x: number, z: number) => Math.max(pathsTopAt(paths, x, z), groundLocal(x, z) + ROAD_Y);
+  // Paint sits on the asphalt triangles actually emitted above, not on a formula for them. The drape is
+  // max(centreline, terrain + ROAD_Y) at triangle vertices, interpolated between them, so the rendered surface
+  // rides above any analytic road top (and mitred bends shift it further); paint placed from a formula sank
+  // 5-10 cm into crowned, sloped, bending and crossing streets.
+  let sampler: ((x: number, z: number, ceiling: number) => number | null) | null = null;
+  const surfaceTop = (x: number, z: number, ceiling: number) => (sampler ??= surfaceSampler(mb.pos, surfaceRanges))(x, z, ceiling);
   const paintedCrossings: { x: number; z: number; dir: THREE.Vector3 }[] = [];
   for (const c of opts.markings === false ? [] : crossings) {
     // OSM uses crossing=unmarked for pedestrian connectivity without painted markings.
@@ -593,7 +598,10 @@ export function buildRoads(
       ? (() => {
           const [cx, cz] = toLocal(p.road_x!, p.road_y!);
           const dir = new THREE.Vector3(p.road_dx!, 0, -p.road_dy!).normalize();
-          return { dir, width: p.road_width!, point: new THREE.Vector3(cx, groundAt(p.road_x!, p.road_y!) + ROAD_Y, cz), distance: Math.hypot(lx - cx, lz - cz) };
+          // height of the matched road itself (a bridge deck when the crossing is on one), terrain otherwise
+          const own = nearestRoad(roadPaths.filter((r) => r.id === p.road_id), cx, cz);
+          const y = own ? own.point.y : groundAt(p.road_x!, p.road_y!) + ROAD_Y;
+          return { dir, width: p.road_width!, point: new THREE.Vector3(cx, y, cz), distance: Math.hypot(lx - cx, lz - cz) };
         })()
       : nearestRoad(roadPaths, lx, lz);
     if (!near) continue;
@@ -608,13 +616,29 @@ export function buildRoads(
     const walk = p.foot_dx != null && p.foot_dy != null ? new THREE.Vector3(p.foot_dx, 0, -p.foot_dy).normalize() : null;
     const skew = walk ? Math.abs(walk.x * dir.z - walk.z * dir.x) : 1;
     const across = walk && skew >= 0.5 ? walk.clone().multiplyScalar(1 / skew) : side.clone();
-    const nearby = roadPaths.filter(({ path, width }) => path.some((v, i) => i < path.length - 1 &&
-      segmentDistance(cx, cz, v, path[i + 1]) < width / 2 + 12));
-    const onRoad = (lift: number) => (x: number, z: number, y: number) => Math.max(y, roadTop(nearby, x, z) + lift);
-    // split a strip into ~1 m pieces so the drape can follow kinks in the road profile beneath it
-    const strip = (a: THREE.Vector3, b: THREE.Vector3) => {
-      const n = Math.max(1, Math.ceil(a.distanceTo(b)));
-      return Array.from({ length: n + 1 }, (_, i) => a.clone().lerp(b, i / n));
+    // Only surfaces near the crossing's own road count: an overpass deck above it would otherwise win.
+    const ceiling = near.point.y + 1.5;
+    const top = (x: number, z: number) => surfaceTop(x, z, ceiling) ?? groundLocal(x, z) + ROAD_Y;
+    // A straight strip a -> b, halfW wide, in flat 0.5 m pieces whose corners sit `lift` above the asphalt.
+    // Not conformTriangle: its error-driven split never converges across the step where one street's ribbon
+    // ends on another, and one crosswalk grew to 17k triangles. A piece whose centre rides higher than its
+    // corners (a crease or step inside it) is lifted as a whole so no part sinks.
+    const paintStrip = (a: THREE.Vector3, b: THREE.Vector3, halfW: number, color: THREE.Color, lift: number, shade = 1) => {
+      const len = Math.hypot(b.x - a.x, b.z - a.z);
+      if (len < 1e-6) return;
+      const ux = (b.x - a.x) / len, uz = (b.z - a.z) / len, nx = -uz * halfW, nz = ux * halfW;
+      const n = Math.max(1, Math.ceil(len * 2));
+      for (let i = 0; i < n; i++) {
+        const x0 = a.x + (b.x - a.x) * i / n, z0 = a.z + (b.z - a.z) * i / n;
+        const x1 = a.x + (b.x - a.x) * (i + 1) / n, z1 = a.z + (b.z - a.z) * (i + 1) / n;
+        const q = [[x0 + nx, z0 + nz], [x0 - nx, z0 - nz], [x1 - nx, z1 - nz], [x1 + nx, z1 + nz]];
+        const h = q.map(([x, z]) => top(x, z));
+        const rise = Math.max(0, top((x0 + x1) / 2, (z0 + z1) / 2) - (h[0] + h[1] + h[2] + h[3]) / 4);
+        const v = q.map(([x, z], k) => new THREE.Vector3(x, h[k] + rise + lift, z));
+        const cr = new THREE.Vector3().subVectors(v[1], v[0]).cross(new THREE.Vector3().subVectors(v[2], v[0]));
+        if (cr.y >= 0) { mb.tri(v[0], v[1], v[2], color, UP, shade); mb.tri(v[0], v[2], v[3], color, UP, shade); }
+        else { mb.tri(v[0], v[2], v[1], color, UP, shade); mb.tri(v[0], v[3], v[2], color, UP, shade); }
+      }
     };
     // A zebra consists of short, regularly spaced bars along the road direction,
     // each one spanning the road from curb to curb. Keep in step with `_crossing_depth` in pipeline/process.py,
@@ -633,40 +657,55 @@ export function buildRoads(
       const centre = new THREE.Vector3(cx, 0, cz).addScaledVector(dir, distance);
       const a = centre.clone().addScaledVector(across, -(near.width / 2 - 0.2));
       const b = centre.clone().addScaledVector(across, near.width / 2 - 0.2);
-      ribbon(mb, strip(a, b), zebra ? 0.28 : 0.12, paint, 1, onRoad(0.02));
+      paintStrip(a, b, zebra ? 0.28 : 0.12, paint, 0.02);
     }
     if (p.crossing_island && near.width >= 8) {
       const islandHalf = crossingDepth / 2 + 0.65;
       const a = new THREE.Vector3(cx, 0, cz).addScaledVector(dir, -islandHalf);
       const b = new THREE.Vector3(cx, 0, cz).addScaledVector(dir, islandHalf);
-      ribbon(mb, strip(a, b), 0.55, sidewalk, 0.97, onRoad(0.075));
+      paintStrip(a, b, 0.55, sidewalk, 0.075, 0.97);
     }
   }
   return { roads: mb.build(), paths: carPaths, pathMeta: carMeta, walkPaths, railPaths, railMeta };
 }
 
-function segmentDistance(x: number, z: number, a: THREE.Vector3, b: THREE.Vector3): number {
-  const abx = b.x - a.x, abz = b.z - a.z, len2 = abx * abx + abz * abz;
-  const t = len2 < 1e-9 ? 0 : THREE.MathUtils.clamp(((x - a.x) * abx + (z - a.z) * abz) / len2, 0, 1);
-  return Math.hypot(x - (a.x + abx * t), z - (a.z + abz * t));
-}
-
-/** Highest centreline height of every road ribbon covering (x, z): overlapping streets at a junction mouth
- * each draw their own surface, and paint must clear whichever is on top. -Infinity when none covers it. */
-function pathsTopAt(paths: { path: THREE.Vector3[]; width: number }[], x: number, z: number): number {
-  let top = -Infinity;
-  for (const { path, width } of paths) {
-    const reach = width / 2 + 0.3;
-    for (let i = 0; i < path.length - 1; i++) {
-      const a = path[i], b = path[i + 1];
-      const abx = b.x - a.x, abz = b.z - a.z, len2 = abx * abx + abz * abz;
-      if (len2 < 1e-9) continue;
-      if (segmentDistance(x, z, a, b) > reach) continue;
-      const t = THREE.MathUtils.clamp(((x - a.x) * abx + (z - a.z) * abz) / len2, 0, 1);
-      top = Math.max(top, a.y + (b.y - a.y) * t);
+/**
+ * Highest point, no higher than `ceiling`, of the given triangles of `pos` (xyz triples) above (x, z), or null
+ * where none covers it. Triangles are bucketed on a 4 m grid once; crosswalks query a handful of points each.
+ */
+function surfaceSampler(pos: number[], ranges: [number, number][]): (x: number, z: number, ceiling: number) => number | null {
+  const CELL = 4;
+  const grid = new Map<string, number[]>();
+  for (const [t0, t1] of ranges) {
+    for (let t = t0; t < t1; t++) {
+      const o = t * 9;
+      const xs = [pos[o], pos[o + 3], pos[o + 6]], zs = [pos[o + 2], pos[o + 5], pos[o + 8]];
+      for (let gx = Math.floor(Math.min(...xs) / CELL); gx <= Math.floor(Math.max(...xs) / CELL); gx++) {
+        for (let gz = Math.floor(Math.min(...zs) / CELL); gz <= Math.floor(Math.max(...zs) / CELL); gz++) {
+          const k = `${gx},${gz}`;
+          const list = grid.get(k);
+          if (list) list.push(o); else grid.set(k, [o]);
+        }
+      }
     }
   }
-  return top;
+  return (x, z, ceiling) => {
+    let top: number | null = null;
+    for (const o of grid.get(`${Math.floor(x / CELL)},${Math.floor(z / CELL)}`) ?? []) {
+      const ax = pos[o], ay = pos[o + 1], az = pos[o + 2];
+      const bx = pos[o + 3], by = pos[o + 4], bz = pos[o + 5];
+      const cx = pos[o + 6], cy = pos[o + 7], cz = pos[o + 8];
+      const den = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
+      if (Math.abs(den) < 1e-12) continue;
+      const l0 = ((bz - cz) * (x - cx) + (cx - bx) * (z - cz)) / den;
+      const l1 = ((cz - az) * (x - cx) + (ax - cx) * (z - cz)) / den;
+      const l2 = 1 - l0 - l1;
+      if (l0 < -1e-6 || l1 < -1e-6 || l2 < -1e-6) continue;
+      const y = l0 * ay + l1 * by + l2 * cy;
+      if (y <= ceiling && (top === null || y > top)) top = y;
+    }
+    return top;
+  };
 }
 
 function nearestRoad(paths: { path: THREE.Vector3[]; width: number }[], x: number, z: number): { dir: THREE.Vector3; width: number; point: THREE.Vector3; distance: number } | null {

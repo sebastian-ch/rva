@@ -309,13 +309,20 @@ crosswalk or stop-line markings.
 At a four-arm crossing the trimmed road ribbons already cover the center. Adding the same circular cap used to
 close a three-arm T junction makes an ordinary intersection resemble a roundabout. Emit the cap only for the
 topology that needs it; true roundabouts remain mapped ways rather than inferred discs.
-Crosswalk paint must drape over the rendered road top, not sit at one height. The asphalt is conformed to the
-terrain (`draped` in `web/src/roads.ts`) and through streets overlap at a crossing, so a flat bar at the
-crossing's centre height (the old `groundAt + ROAD_Y + 0.02`) sank under the surface on crowned, sloped or
-crossing streets and read as missing or flickering paint across most of the city once `Z_SCALE` steepened every
-grade. Split each bar into ~1 m pieces and lift every edge to 2 cm above the highest covering road centreline or
-terrain + `ROAD_Y` (`pathsTopAt`). Regressions: `keeps crosswalk paint above the draped road surface on sloped
-streets` and `lifts crosswalk paint over a higher through street overlapping the crossing` in `roads.test.ts`.
+Crosswalk paint must sit on the asphalt triangles actually emitted, not on a formula for them. The road drape
+is `max(centreline, terrain + ROAD_Y)` evaluated at triangle vertices and interpolated between them; that
+interpolant rides above the analytic maximum (it is convex), mitred bends shift the ribbon's edges along the
+street, and through streets overlap at a crossing. A flat bar at the crossing's centre height (the original
+`groundAt + ROAD_Y + 0.02`) was 45-66% buried in dense downtown tiles; an analytic road-top drape still left
+6-13% buried (East Franklin at North 15th Street). `buildRoads` now records the drivable-surface triangle ranges
+(`surface(...)`), samples their highest point under each paint vertex (`surfaceSampler`), capped 1.5 m above the
+crossing's own road so an overpass deck never wins, and emits paint as flat 0.5 m quads 2 cm above it, lifting a
+piece whose centre rides higher. Do not route paint through `conformTriangle`: its error-driven split never
+converges across the step where one ribbon ends on another, and single crosswalks grew to 17k triangles.
+Regressions: `keeps crosswalk paint above the draped road surface on sloped streets` and `lifts crosswalk paint
+over a higher through street overlapping the crossing` in `roads.test.ts`, which compare paint with the built
+mesh's own asphalt.
+
 Match a crossing to the way that carries its node, not the nearest centreline. OSM crossing nodes are vertices
 of the road they cross, so `_match_crossings_to_roads` (`pipeline/process.py`) prefers a road carrying the node,
 admits bridges only when they carry it (osm:node/3689881244 sits on a primary bridge; excluding bridges snapped
