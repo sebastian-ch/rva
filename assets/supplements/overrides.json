@@ -203,5 +203,37 @@
         [-77.4320814, 37.5399491]
       ]]
     }
+  },
+  {
+    "name": "Wytestone Plaza",
+    "lat": 37.538359,
+    "lon": -77.437164,
+    "radius_m": 5,
+    "height": 64.4,
+    "note": "OSM height 76.29 m (osm:way/236488160) disagrees with the 2025 City of Richmond LiDAR: nDSM median 64.4 m, p90 68.7 m over the footprint, consistent with its 18 mapped levels. Height only; footprint unchanged."
+  },
+  {
+    "name": "Seventh & Franklin Building",
+    "lat": 37.539793,
+    "lon": -77.437312,
+    "radius_m": 5,
+    "height": 58.5,
+    "note": "OSM height 78.64 m (osm:way/263135040) disagrees with the 2025 City of Richmond LiDAR: nDSM median 58.5 m, p90 60.0 m over the footprint, consistent with its 15 mapped levels. Height only; footprint unchanged."
+  },
+  {
+    "name": "Main Street Centre",
+    "lat": 37.53989,
+    "lon": -77.438501,
+    "radius_m": 5,
+    "height": 81.6,
+    "note": "OSM height 92.96 m (osm:way/236488158) disagrees with the 2025 City of Richmond LiDAR: nDSM median 81.6 m, p90 85.1 m over the footprint, consistent with its 23 mapped levels. Height only; footprint unchanged."
+  },
+  {
+    "name": "The Locks at 321",
+    "lat": 37.534601,
+    "lon": -77.437889,
+    "radius_m": 5,
+    "height": 39.2,
+    "note": "OSM height 96.01 m (osm:way/398440546) disagrees with the 2025 City of Richmond LiDAR: nDSM median 39.2 m, p90 41.4 m over the footprint, consistent with its 13 mapped levels. Height only; footprint unchanged."
   }
 ]
