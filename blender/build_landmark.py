@@ -644,6 +644,119 @@ def cookie_factory_lofts(b, fp):
                       rot=mrot + math.pi / 2, name="sign-letter")
 
 
+def _massing_parts(fp):
+    """{part_id: [ring, ...]} for the landmark's LiDAR massing parts, centroid-relative and CCW."""
+    import json
+    from footprint import clean_ring, shoelace
+
+    ox, oy = fp["centroid_proj"]
+    parts = {}
+    fc = json.loads((ROOT / "data" / "tiles" / fp["tile"] / "buildings.geojson").read_text())
+    for ft in fc["features"]:
+        p = ft["properties"]
+        if p.get("landmark") != fp["props"]["landmark"] or not p.get("is_part"):
+            continue
+        g = ft["geometry"]
+        polys = [g["coordinates"]] if g["type"] == "Polygon" else g["coordinates"]
+        for poly in polys:
+            ring = clean_ring(poly[0])
+            if shoelace(ring) < 0:
+                ring.reverse()
+            parts.setdefault(p["id"].rsplit(":", 1)[-1], []).append([(x - ox, y - oy) for x, y in ring])
+    return parts
+
+
+def _inside(ring, x, y):
+    hit = False
+    for i in range(len(ring)):
+        (x0, y0), (x1, y1) = ring[i - 1], ring[i]
+        if (y0 > y) != (y1 > y) and x < x0 + (y - y0) * (x1 - x0) / (y1 - y0):
+            hit = not hit
+    return hit
+
+
+def vmfa(b, fp):
+    """Virginia Museum of Fine Arts: pale limestone gallery wings in three roof tiers, with skylit gallery
+    roofs and the glazed entrance front on North Arthur Ashe Boulevard.
+
+    Walls follow the 2025 Richmond LiDAR massing parts on way/146689449 (base 6 m, galleries 15.8 m, a
+    north block to 19.5 m with 21.5 m roof structures), not the OBB. The site falls ~3.5 m to the south-west,
+    so walls start well below the centroid grade. Detailing is generic; nothing traced from imagery.
+    """
+    parts = _massing_parts(fp)
+    f = Frame(fp)
+    stone, trim = "cream", "concrete"
+    base_h, mid_h, upper_h = 6.0, 15.8, 19.5
+    boulevard = (281470.0 - fp["centroid_proj"][0], 4159380.0 - fp["centroid_proj"][1])
+
+    # base storey on the full outline, and the entrance glazing on the edges facing the Boulevard
+    ring = fp["ring"]
+    b.extrude(ring, -4.5, base_h, stone, 0.9, name="base")
+    b.band(ring, 0.0, 0.25, 0.8, trim, 0.85)
+    b.band(ring, base_h - 0.5, 0.3, 0.5, trim, 0.9)
+    ex, ey = boulevard
+    el = math.hypot(ex, ey)
+    for i, (ax, ay) in enumerate(ring):
+        bx, by = ring[(i + 1) % len(ring)]
+        length = math.hypot(bx - ax, by - ay)
+        if length < 8.0:
+            continue
+        ux, uy = (bx - ax) / length, (by - ay) / length
+        nx, ny = uy, -ux  # outward for a CCW ring
+        if (nx * ex + ny * ey) / el < 0.6:
+            continue
+        rot = math.atan2(uy, ux)
+        mx, my = (ax + bx) / 2 + nx * 0.12, (ay + by) / 2 + ny * 0.12
+        b.box(mx, my, 0.2, length - 2.0, 0.2, base_h - 1.2, "glass", rot=rot, name="entrance-glass")
+        for k in range(int((length - 2.0) / 2.5) + 1):
+            t = -(length - 2.0) / 2 + k * (length - 2.0) / max(1, int((length - 2.0) / 2.5))
+            b.box(mx + ux * t + nx * 0.12, my + uy * t + ny * 0.12, 0.2, 0.14, 0.14, base_h - 1.2, "steel", rot=rot, name="mullion")
+    b.extrude(ring, base_h, base_h + 0.2, "roof_flat", 0.9, name="base-roof")
+
+    # gallery wings: blank limestone with a tall clerestory band, flat roofs with rows of skylights
+    for mid in parts.get("mid", []):
+        b.extrude(mid, base_h - 0.3, mid_h, stone, 0.96, name="galleries")
+        b.band(mid, mid_h - 0.7, 0.35, 0.7, trim, 0.9)
+        b.band(mid, mid_h, 0.1, 0.5, stone, 0.9)  # parapet
+        b.extrude(mid, mid_h, mid_h + 0.15, "roof_flat", 0.92, name="gallery-roof")
+        b.window_bays(mid, base_h + 1.5, height=2.2, width=4.0, pitch=12.0, trim=trim, glass="glass")
+    # long skylight strips along the wings: step each row in 3 m cells and merge the runs that stay clear
+    higher = parts.get("upper", []) + parts.get("top", [])
+
+    def clear(u, v):
+        corners = [f.P(u + du, v + dv) for du in (-1.5, 1.5) for dv in (-2.5, 2.5)]
+        return all(any(_inside(m, *c) for m in parts.get("mid", [])) for c in corners) and \
+            not any(_inside(h, *c) for h in higher for c in corners)
+
+    for v in range(-42, 43, 14):
+        run = []
+        for u in [k * 3.0 for k in range(-26, 27)] + [None]:
+            if u is not None and clear(u, v):
+                run.append(u)
+                continue
+            if len(run) >= 4:
+                u0, u1 = run[0] - 1.0, run[-1] + 1.0
+                b.box(*f.P((u0 + u1) / 2, v), mid_h + 0.1, u1 - u0, 3.6, 0.4, "steel", rot=f.rot_u, shade=0.9, name="skylight-curb")
+                b.gable(*f.P((u0 + u1) / 2, v), mid_h + 0.5, u1 - u0, 3.6, 1.2, "glass", rot=f.rot_u, name="skylight")
+            run = []
+
+    # taller north block, then its roof structures: the big glazed lantern and a smaller stone plant room
+    for up in parts.get("upper", []):
+        b.extrude(up, mid_h - 0.3, upper_h, stone, 1.0, name="north-block")
+        b.band(up, upper_h - 0.6, 0.35, 0.6, trim, 0.92)
+        b.extrude(up, upper_h, upper_h + 0.15, "roof_flat", 0.95, name="north-roof")
+    for top in parts.get("top", []):
+        z0 = mid_h  # the lantern overhangs the north block's edge, so both start at the gallery roof
+        area = abs(sum(top[i - 1][0] * top[i][1] - top[i][0] * top[i - 1][1] for i in range(len(top)))) / 2
+        if area > 250:
+            b.extrude(top, z0 - 0.2, 21.0, "glass", 0.95, name="lantern")
+            b.band(top, 21.0, 0.2, 0.5, "steel", 0.9)
+            b.extrude(top, 21.5, 21.6, "glass", 1.05, name="lantern-roof")
+        else:
+            b.extrude(top, z0 - 0.2, 21.5, stone, 0.88, name="plant-room")
+            b.band(top, 21.0, 0.2, 0.5, trim, 0.85)
+
+
 BUILDERS = {
     "virginia-state-capitol": capitol,
     "main-street-station": main_street_station,
@@ -662,6 +775,7 @@ BUILDERS = {
     "byrd-park-pump-house": pump_house,
     "virginia-war-memorial-carillon": carillon,
     "cookie-factory-lofts": cookie_factory_lofts,
+    "virginia-museum-of-fine-arts": vmfa,
 }
 
 
