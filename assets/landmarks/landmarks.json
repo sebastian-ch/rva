@@ -504,5 +504,77 @@
     "in_first_slice": true,
     "model": "landmarks/st-pauls-episcopal-church.glb",
     "height_hint_m": null
+  },
+  {
+    "slug": "egyptian-building",
+    "name": "Egyptian Building",
+    "osm_name_hints": [
+      "Egyptian Building"
+    ],
+    "match_id": "osm:way/224530980",
+    "lat": 37.539157,
+    "lon": -77.42942,
+    "kind": "building",
+    "wikidata": "Q5348385",
+    "website": null,
+    "description": "1845 Egyptian Revival home of the Medical College of Virginia (Thomas S. Stewart), now VCU: battered stucco walls, a cavetto cornice and a columned portico on College Street.",
+    "district": "VCU Medical Campus",
+    "in_first_slice": true,
+    "model": "landmarks/egyptian-building.glb",
+    "height_hint_m": null
+  },
+  {
+    "slug": "riverfront-plaza-west-tower",
+    "name": "Riverfront Plaza West Tower",
+    "osm_name_hints": [
+      "Riverfront Plaza West Tower"
+    ],
+    "match_id": "osm:way/225274657",
+    "lat": 37.535106,
+    "lon": -77.438933,
+    "kind": "building",
+    "wikidata": null,
+    "website": null,
+    "description": "The 901 East Byrd Street half of Riverfront Plaza (1990), twin notched-corner office towers on the James River that anchor the downtown skyline.",
+    "district": "Downtown",
+    "in_first_slice": true,
+    "model": "landmarks/riverfront-plaza-west-tower.glb",
+    "height_hint_m": null
+  },
+  {
+    "slug": "riverfront-plaza-east-tower",
+    "name": "Riverfront Plaza East Tower",
+    "osm_name_hints": [
+      "Riverfront Plaza East Tower"
+    ],
+    "match_id": "osm:way/266759715",
+    "lat": 37.534464,
+    "lon": -77.43891,
+    "kind": "building",
+    "wikidata": null,
+    "website": null,
+    "description": "The 951 East Byrd Street half of Riverfront Plaza (1990), twin notched-corner office towers on the James River that anchor the downtown skyline.",
+    "district": "Downtown",
+    "in_first_slice": true,
+    "model": "landmarks/riverfront-plaza-east-tower.glb",
+    "height_hint_m": null
+  },
+  {
+    "slug": "hippodrome-theater",
+    "name": "Hippodrome Theater",
+    "osm_name_hints": [
+      "Hippodrome Theater"
+    ],
+    "match_id": "osm:relation/4043108",
+    "lat": 37.547264,
+    "lon": -77.438044,
+    "kind": "building",
+    "wikidata": "Q16995477",
+    "website": null,
+    "description": "1914 vaudeville and movie house on North 2nd Street, the heart of Jackson Ward's \"Harlem of the South\", restored in 2011 with its marquee and vertical sign.",
+    "district": "Jackson Ward",
+    "in_first_slice": true,
+    "model": "landmarks/hippodrome-theater.glb",
+    "height_hint_m": null
   }
 ]

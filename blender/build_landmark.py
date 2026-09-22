@@ -18,7 +18,7 @@ sys.path.insert(0, str(HERE))
 import bpy  # noqa: E402
 
 from footprint import clean_ring, find_footprint, shoelace, toward  # noqa: E402
-from landmark_lib import Builder, clear_scene, inset_ring, rect_ring  # noqa: E402
+from landmark_lib import Builder, clear_scene, inset_ring, offset_ring, rect_ring  # noqa: E402
 import export_landmark  # noqa: E402
 
 ROOT = HERE.parent
@@ -1040,6 +1040,184 @@ def st_pauls(b, fp):
     b.cylinder(sx, sy, top - 1.0, 0.18, 1.0, "steel", n=6)
 
 
+def _tapered(b, ring, z0, z1, inset, key, shade=1.0, name=None):
+    """Extrusion whose walls lean inward by `inset` over their height (battered walls)."""
+    top = inset_ring(ring, inset)
+    n = len(ring)
+    verts = [(x, y, z0) for x, y in ring] + [(x, y, z1) for x, y in top]
+    faces = [(i, (i + 1) % n, n + (i + 1) % n, n + i) for i in range(n)] + [tuple(range(n, 2 * n))]
+    return b.add(verts, faces, key, shade, name)
+
+
+def _front_edge(ring, target):
+    """(a, b) of the ring edge whose midpoint is nearest `target` (centroid-relative)."""
+    best = None
+    for i in range(len(ring)):
+        a, c = ring[i], ring[(i + 1) % len(ring)]
+        d = math.hypot((a[0] + c[0]) / 2 - target[0], (a[1] + c[1]) / 2 - target[1])
+        if best is None or d < best[0]:
+            best = (d, a, c)
+    return best[1], best[2]
+
+
+def _edge_frame(a, c):
+    """Helpers for building on one footprint edge a -> c of a CCW ring: F(along, out) and the edge's rotation."""
+    length = math.hypot(c[0] - a[0], c[1] - a[1])
+    ux, uy = (c[0] - a[0]) / length, (c[1] - a[1]) / length
+    nx, ny = uy, -ux  # outward for a CCW ring
+    mx, my = (a[0] + c[0]) / 2, (a[1] + c[1]) / 2
+
+    def F(along, out):
+        return (mx + ux * along + nx * out, my + uy * along + ny * out)
+
+    return F, length, math.atan2(uy, ux)
+
+
+def egyptian_building(b, fp):
+    """Egyptian Building (1845, Thomas S. Stewart), the Medical College of Virginia's first home: stuccoed
+    battered walls with corner torus mouldings, a deep cavetto cornice, and on College Street a recessed
+    portico of two papyrus columns between pylon-like antae under a winged-disc lintel.
+
+    Footprint = OSM way/224530980 (31 x 19 m). LiDAR puts the cornice at 15-17 m (OSM says 20 m). The ground
+    falls ~2.3 m across the block, so walls start below grade. Proportions are generic; nothing traced.
+    """
+    ring = fp["ring"]
+    ox, oy = fp["centroid_proj"]
+    stone, trim, dark = "sand", "cream", "roof_dark"
+    wall_h, cornice_h, batter = 13.0, 16.2, 0.7
+
+    _tapered(b, ring, -4.0, wall_h, batter, stone, 0.95, name="walls")
+    top = inset_ring(ring, batter)
+    b.band(top, wall_h - 0.5, 0.3, 0.5, trim, 0.88)  # torus moulding under the cornice
+    # cavetto cornice: a deep concave flare from the wall head, then the fillet and the flat roof
+    n = len(top)
+    prev, prev_z = top, wall_h
+    for k, (out, z) in enumerate(((0.35, wall_h + 1.2), (0.95, wall_h + 2.2), (1.7, cornice_h - 0.5))):
+        ring_k = offset_ring(top, out)
+        verts = [(x, y, prev_z) for x, y in prev] + [(x, y, z) for x, y in ring_k]
+        b.add(verts, [(i, (i + 1) % n, n + (i + 1) % n, n + i) for i in range(n)], trim, 0.9 + 0.03 * k, name="cavetto")
+        prev, prev_z = ring_k, z
+    flare = prev
+    b.extrude(flare, cornice_h - 0.5, cornice_h, trim, 0.97, name="cornice-fillet")
+    b.extrude(top, wall_h, cornice_h - 0.2, "roof_flat", 0.85, name="roof")
+
+    # tall narrow windows on the battered walls, two storeys, each on the wall line at its own height
+    for z, h in ((2.0, 3.2), (7.0, 3.4)):
+        b.window_bays(inset_ring(ring, batter * (z + 4.0) / (wall_h + 4.0)), z, height=h, width=1.3, pitch=5.2, trim=trim, glass=dark)
+
+    # College Street portico: recess between antae, two papyrus columns, winged-disc lintel
+    a, c = _front_edge(ring, (285371.0 - ox, 4157449.5 - oy))
+    F, length, rot = _edge_frame(a, c)
+    b.box(*F(0, 0.15), -1.0, 8.4, 0.5, 11.0, "shadow", rot=rot, shade=1.2, name="portico-recess")
+    for s in (-1, 1):
+        b.box(*F(s * 5.6, 0.7), -1.0, 2.8, 1.6, 12.2, stone, rot=rot, shade=1.0, name="anta")
+        cx, cy = F(s * 2.1, 0.9)
+        b.cylinder(cx, cy, -0.5, 0.75, 9.2, stone, n=10, shade=0.97, name="papyrus-column")
+        b.cone(cx, cy, 8.7, 1.25, -1.4, stone, n=10)  # bell capital
+        b.cylinder(cx, cy, 8.7, 1.25, 0.4, stone, n=10, shade=0.95)
+    b.box(*F(0, 0.9), 9.1, 14.0, 1.8, 2.1, trim, rot=rot, shade=0.97, name="lintel")
+    b.box(*F(0, 1.85), 9.6, 5.0, 0.1, 0.9, "landmark_accent", rot=rot, shade=0.9, name="winged-disc")
+    b.box(*F(0, 0.9), -1.0, 10.0, 3.4, 0.9, trim, rot=rot, shade=0.9, name="steps")
+
+
+def riverfront_plaza_tower(b, fp):
+    """Riverfront Plaza (1990): twin granite-and-glass office towers with notched corners on East Byrd
+    Street. Each tower's shaft rises to ~82 m, then steps back in a two-tier crown to ~92 m with a
+    mechanical penthouse to ~98 m (2025 Richmond LiDAR).
+
+    Footprints are the notched OSM outlines (way/225274657 west, way/266759715 east); heights are set above
+    each tower's own median ground, since the east tower's lot falls ~10 m toward the river and the viewer
+    multiplies terrain by Z_SCALE (1.6). Storey banding and colours are generic; nothing traced.
+    """
+    f = Frame(fp)
+    g = float(fp["ground_z"])
+    local = {"riverfront-plaza-west-tower": 25.5, "riverfront-plaza-east-tower": 25.2}[fp["props"]["landmark"]]
+    base = (local - g) * 1.6
+    shaft, tier1, tier2, pent = base + 82.0, base + 87.5, base + 92.0, base + 98.0
+    ring = fp["ring"]
+    stone, glass = "sand", "glass"
+
+    b.extrude(ring, -14.5, shaft, stone, 0.95, name="shaft")  # east lot bottoms out 13.4 m below the origin
+    b.band(ring, base, 0.4, 7.5, stone, 0.88)  # granite base storeys
+    z = base + 9.0
+    while z < shaft - 3.0:  # ribbon windows, one band per storey
+        b.band(ring, z, 0.06, 2.3, glass, 0.95)
+        z += 3.75
+    b.band(ring, shaft - 1.0, 0.45, 1.0, stone, 0.9)
+
+    # stepped crown on the tower's box, a glazed tier, a stone tier and the penthouse
+    su, sv = 2 * f.hl, 2 * f.hs
+    t1 = f.rect(0, 0, su - 12.0, sv - 12.0)  # clear of the ~4.5 m corner notches
+    b.extrude(t1, shaft, tier1, glass, 0.9, name="crown-1")
+    b.band(t1, tier1 - 0.8, 0.35, 0.8, stone, 0.9)
+    t2 = f.rect(0, 0, su - 24.0, sv - 24.0)
+    b.extrude(t2, tier1, tier2, stone, 0.93, name="crown-2")
+    b.band(t2, tier2 - 0.7, 0.3, 0.7, stone, 0.86)
+    b.box(*f.P(0, 0), tier2, (su - 24.0) * 0.5, (sv - 24.0) * 0.5, pent - tier2, "steel", rot=f.rot_u, shade=0.9, name="penthouse")
+
+
+def hippodrome(b, fp):
+    """Hippodrome Theater (1914), Jackson Ward: a brick auditorium behind a pale three-bay facade on North
+    2nd Street with a projecting marquee and a tall vertical HIPPODROME blade sign, restored in 2011.
+
+    Footprint = OSM relation/4043108 (41 x 15 m); LiDAR roof 10 m with the front parapet to ~12.3 m.
+    Letter shapes and facade proportions are generic; nothing traced from imagery.
+    """
+    ring = fp["ring"]
+    ox, oy = fp["centroid_proj"]
+    body_h, parapet = 10.0, 12.3
+
+    b.extrude(ring, -0.8, body_h, "brick", 0.9, name="auditorium")
+    b.band(ring, body_h - 0.5, 0.25, 0.5, "brick_dark", 0.85)
+    b.extrude(ring, body_h, body_h + 0.2, "roof_dark", 0.9, name="roof")
+
+    a, c = _front_edge(ring, (284636.2 - ox, 4158365.1 - oy))
+    F, width, rot = _edge_frame(a, c)
+    # pale facade slab with a stepped parapet, two upper windows and the entrance under the marquee
+    b.box(*F(0, 0.3), -0.8, width + 0.4, 0.8, parapet + 0.8, "cream", rot=rot, shade=0.97, name="facade")
+    b.box(*F(0, 0.35), parapet, width * 0.5, 0.7, 0.9, "cream", rot=rot, shade=0.95, name="parapet-step")
+    b.box(*F(0, 0.72), parapet - 1.1, width + 0.6, 0.3, 0.5, "terracotta", rot=rot, shade=0.9, name="cornice")
+    for s in (-1, 1):
+        b.box(*F(s * 3.6, 0.75), 6.0, 2.4, 0.1, 3.4, "glass", rot=rot, shade=0.95, name="upper-window")
+    for k in (-1, 0, 1):
+        b.box(*F(k * 2.4, 0.75), 0.0, 1.9, 0.1, 3.0, "roof_dark", rot=rot, shade=0.85, name="entrance")
+    # marquee over the sidewalk: canopy, reader board, and the chasing-light fascia
+    b.box(*F(0, 2.3), 3.6, width - 2.0, 3.6, 0.5, "cream", rot=rot, shade=0.9, name="marquee-canopy")
+    b.box(*F(0, 2.3), 4.1, width - 3.0, 3.2, 1.6, "seven_white", rot=rot, name="reader-board")
+    b.box(*F(0, 2.3), 5.7, width - 3.0, 3.3, 0.25, "landmark_accent", rot=rot, name="marquee-lights")
+    # vertical blade sign near one end of the facade, lettered on both faces
+    blade = F(width / 2 - 1.6, 2.2)
+    b.box(*blade, 6.2, 0.5, 2.6, 10.8, "seven_red", rot=rot, shade=0.95, name="blade")
+    b.box(*blade, 16.9, 0.7, 2.9, 0.4, "landmark_accent", rot=rot, name="blade-cap")
+    ux, uy = math.cos(rot), math.sin(rot)
+    for side in (-1, 1):
+        _sign_pixels(b, "HIPPODROME", (blade[0] + ux * side * 0.3, blade[1] + uy * side * 0.3), rot, 16.4, 0.17, "landmark_accent")
+
+
+PIXEL_GLYPHS = {
+    "D": ("110", "101", "101", "101", "110"), "E": ("111", "100", "110", "100", "111"),
+    "H": ("101", "101", "111", "101", "101"), "I": ("111", "010", "010", "010", "111"),
+    "M": ("101", "111", "111", "101", "101"), "O": ("111", "101", "101", "101", "111"),
+    "P": ("110", "101", "110", "100", "100"), "R": ("110", "101", "110", "101", "101"),
+}
+
+
+def _sign_pixels(b, text, at, rot, top_z, pixel, key):
+    """Vertical stack of chunky 3x5 letters on a blade sign's face, `at` its face centre, `rot` the blade's
+    thin axis. Letters read top to bottom, each 6 pixels tall."""
+    ux, uy = math.cos(rot), math.sin(rot)
+    vx, vy = -uy, ux  # across the blade face
+    for li, letter in enumerate(text):
+        for row, bits in enumerate(PIXEL_GLYPHS[letter]):
+            for col, bit in enumerate(bits):
+                if bit == "0":
+                    continue
+                along = (col - 1) * pixel
+                z = top_z - li * pixel * 6 - row * pixel
+                b.box(at[0] + vx * along, at[1] + vy * along, z - pixel, pixel * 0.1 + 0.12, pixel * 0.85, pixel * 0.85,
+                      key, rot=rot, shade=1.02, name="sign-letter")
+
+
 BUILDERS = {
     "virginia-state-capitol": capitol,
     "main-street-station": main_street_station,
@@ -1062,6 +1240,10 @@ BUILDERS = {
     "science-museum-of-virginia": science_museum,
     "cathedral-of-the-sacred-heart": sacred_heart,
     "st-pauls-episcopal-church": st_pauls,
+    "egyptian-building": egyptian_building,
+    "riverfront-plaza-west-tower": riverfront_plaza_tower,
+    "riverfront-plaza-east-tower": riverfront_plaza_tower,
+    "hippodrome-theater": hippodrome,
 }
 
 
