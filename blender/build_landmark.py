@@ -17,7 +17,7 @@ sys.path.insert(0, str(HERE))
 
 import bpy  # noqa: E402
 
-from footprint import find_footprint, toward  # noqa: E402
+from footprint import clean_ring, find_footprint, shoelace, toward  # noqa: E402
 from landmark_lib import Builder, clear_scene, rect_ring  # noqa: E402
 import export_landmark  # noqa: E402
 
@@ -647,7 +647,6 @@ def cookie_factory_lofts(b, fp):
 def _massing_parts(fp):
     """{part_id: [ring, ...]} for the landmark's LiDAR massing parts, centroid-relative and CCW."""
     import json
-    from footprint import clean_ring, shoelace
 
     ox, oy = fp["centroid_proj"]
     parts = {}
@@ -757,6 +756,80 @@ def vmfa(b, fp):
             b.band(top, 21.0, 0.2, 0.5, trim, 0.85)
 
 
+def science_museum(b, fp):
+    """Science Museum of Virginia in Broad Street Station (1919, John Russell Pope): a limestone Beaux-Arts
+    terminal whose saucer-domed rotunda and Doric portico face West Broad Street, with the old concourse arm
+    running north-east toward the tracks and the museum's Dome theatre in the north-west wing.
+
+    Outline = OSM way/252997396; tier rings (EPSG:32618) are from the 2025 Richmond LiDAR. The station steps
+    down the hill: Broad Street is at 65.9 m, the rear at 60.5 m, and the main block and arm share one
+    ~81 m roof. The viewer multiplies terrain by Z_SCALE (1.6) and not buildings, so heights below are
+    display heights above the outline's ground_z, set so the front reads ~14 m tall from Broad Street.
+    Dome colours (dark rotunda, white theatre) follow public aerial photos; portico column count is generic; nothing traced from imagery.
+    """
+    ox, oy = fp["centroid_proj"]
+
+    def rel(pts):
+        ring = [(x - ox, y - oy) for x, y in pts]
+        return ring if shoelace(ring) > 0 else ring[::-1]  # band/window_bays expect CCW
+
+    front = (65.9 - float(fp["ground_z"])) * 1.6  # Broad Street pavement in display coordinates
+    wing_h, roof, drum_top, crown = 10.5, 22.0, 30.5, 39.1
+    stone, trim, dome_key = "cream", "concrete", "slate"
+
+    # low wings on the whole outline (north-west wing and the north-east block)
+    ring = fp["ring"]
+    b.extrude(ring, -1.0, wing_h, stone, 0.9, name="wings")
+    b.band(ring, wing_h - 0.5, 0.3, 0.5, trim, 0.88)
+    b.extrude(ring, wing_h, wing_h + 0.15, "roof_flat", 0.9, name="wing-roof")
+
+    # main block and concourse arm: one roof level, tall arched windows above the rear ground storey
+    main = rel([(282181.9, 4160014.7), (282187.0, 4160017.0), (282196.0, 4160014.0), (282207.3, 4160005.1),
+                (282217.0, 4160017.0), (282221.5, 4160013.6), (282253.5, 4160054.4), (282266.8, 4160043.0),
+                (282235.1, 4160003.5), (282233.9, 4160000.3), (282240.7, 4159995.0), (282239.0, 4159992.0),
+                (282236.0, 4159989.0), (282229.1, 4159989.4), (282240.0, 4159979.0), (282244.5, 4159966.9),
+                (282225.9, 4159943.0), (282212.8, 4159951.9), (282208.0, 4159947.3), (282173.6, 4159973.8),
+                (282178.2, 4159978.8), (282165.7, 4159989.3), (282184.4, 4160012.7)])
+    b.extrude(main, wing_h - 0.3, roof, stone, 0.97, name="main-block")
+    b.band(main, roof - 1.2, 0.45, 1.2, trim, 0.92)  # entablature
+    b.band(main, roof, 0.1, 0.8, stone, 0.9)  # attic parapet
+    b.extrude(main, roof, roof + 0.2, "roof_flat", 0.92, name="main-roof")
+    b.window_bays(main, front + 2.5, height=6.5, width=2.4, pitch=6.5, trim=trim, arched=True, glass="glass")
+
+    # rotunda: octagonal attic drum with lunettes, then the low saucer dome (LiDAR crown ~98 m)
+    drum = rel([(282189.0, 4159985.0), (282198.0, 4159999.0), (282211.0, 4160000.0), (282223.0, 4159990.0),
+                (282224.0, 4159977.0), (282215.0, 4159966.0), (282201.0, 4159967.0), (282194.0, 4159972.0)])
+    b.extrude(drum, roof - 0.2, drum_top, stone, 1.0, name="drum")
+    b.band(drum, drum_top - 0.8, 0.4, 0.8, trim, 0.92)
+    b.window_bays(drum, roof + 2.2, height=3.6, width=3.4, pitch=7.0, trim=trim, arched=True, glass="glass")
+    dx, dy = 282206.9 - ox, 4159979.8 - oy
+    b.cylinder(dx, dy, drum_top - 0.1, 14.6, 0.6, trim, n=24, shade=0.9, name="dome-ring")
+    b.dome(dx, dy, drum_top + 0.5, 14.0, crown - drum_top - 1.4, dome_key, seg=24, rings=6, name="dome")
+    b.cylinder(dx, dy, crown - 1.0, 2.2, 0.9, trim, n=12, shade=0.95, name="oculus-curb")
+
+    # Doric portico on the Broad Street front: stylobate at pavement level, columns, entablature
+    p0, p1 = (282173.6 - ox, 4159973.8 - oy), (282208.0 - ox, 4159947.3 - oy)
+    length = math.hypot(p1[0] - p0[0], p1[1] - p0[1])
+    ux, uy = (p1[0] - p0[0]) / length, (p1[1] - p0[1]) / length
+    nx, ny = uy, -ux  # outward, away from the rotunda
+    rot = math.atan2(uy, ux)
+    tc, half = 22.7, 14.0  # the rotunda's projection on this edge, and the portico half-width
+
+    def E(t, out):
+        return (p0[0] + ux * t + nx * out, p0[1] + uy * t + ny * out)
+
+    b.box(*E(tc, 1.4), front - 1.0, 2 * half + 3.0, 3.6, 1.2, trim, rot=rot, shade=0.95, name="stylobate")
+    b.box(*E(tc, 0.12), front, 2 * half, 0.25, roof - front - 1.6, stone, rot=rot, shade=0.62, name="portico-recess")
+    b.colonnade(E(tc - half + 1.0, 1.6), E(tc + half - 1.0, 1.6), front + 0.2, roof - front - 2.4, 8, 0.75, stone)
+    b.box(*E(tc, 1.0), roof - 2.2, 2 * half + 1.0, 2.6, 2.2, stone, rot=rot, shade=0.98, name="portico-entablature")
+    b.band(rect_ring(*E(tc, 1.0), 2 * half + 1.0, 2.6, rot), roof - 0.4, 0.2, 0.4, trim, 0.9)
+
+    # Dome theatre in the north-west wing (OSM part way/334113913): drum wall, then its shallow dome
+    tx, ty = 282186.4 - ox, 4160040.3 - oy
+    b.cylinder(tx, ty, wing_h - 0.2, 14.45, 1.3, stone, n=24, shade=0.93, name="theatre-drum")
+    b.dome(tx, ty, wing_h + 1.1, 14.45, 7.1, "seven_white", seg=24, rings=5, name="theatre-dome")
+
+
 BUILDERS = {
     "virginia-state-capitol": capitol,
     "main-street-station": main_street_station,
@@ -776,6 +849,7 @@ BUILDERS = {
     "virginia-war-memorial-carillon": carillon,
     "cookie-factory-lofts": cookie_factory_lofts,
     "virginia-museum-of-fine-arts": vmfa,
+    "science-museum-of-virginia": science_museum,
 }
 
 

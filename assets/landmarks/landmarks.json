@@ -448,5 +448,24 @@
     "in_first_slice": false,
     "model": "landmarks/cookie-factory-lofts.glb",
     "height_hint_m": null
+  },
+  {
+    "slug": "science-museum-of-virginia",
+    "name": "Science Museum of Virginia",
+    "osm_name_hints": [
+      "Broad Street Station",
+      "Science Museum of Virginia"
+    ],
+    "match_id": "osm:way/252997396",
+    "lat": 37.561494,
+    "lon": -77.46562,
+    "kind": "building",
+    "wikidata": null,
+    "website": "https://smv.org/",
+    "description": "John Russell Pope's 1919 Broad Street Station, a limestone Beaux-Arts rail terminal with a domed rotunda and Doric portico on West Broad Street, home of the Science Museum of Virginia and its Dome theatre since 1977.",
+    "district": "Museum District",
+    "in_first_slice": false,
+    "model": "landmarks/science-museum-of-virginia.glb",
+    "height_hint_m": null
   }
 ]
