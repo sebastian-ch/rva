@@ -296,6 +296,8 @@ def _facade_pixels(b, f, text, front_u, center_v, z0, pixel, key, vertical=False
         "Y": ("101", "101", "010", "010", "010"),
         "R": ("110", "101", "110", "101", "101"),
         "D": ("110", "101", "101", "101", "110"),
+        "F": ("111", "100", "110", "100", "100"),
+        "V": ("101", "101", "101", "101", "010"),
     }
     runs = list(text) if vertical else [text]
     for run_index, run in enumerate(runs):
@@ -564,6 +566,84 @@ def carillon(b, fp):
     b.cone(*f.P(tower_u, tower_v), top - 0.8, 0.7, 0.8, "slate", n=8)
 
 
+def cookie_factory_lofts(b, fp):
+    """Cookie Factory Lofts (1927, Southern Biscuit Co. / later Interbake Foods / FFV): a six-storey
+    reinforced-concrete factory in Manchester, wrapped by lower single-storey wings, topped with a riveted
+    steel water tank and the "HOME OF FFV COOKIES AND CRACKERS" rooftop sign on its scaffold tower.
+
+    fp["ring"] is the full OSM outline (way/265138862, the low wings). The tall block is a separate
+    building:part (way/466009777, 40 m / 6 levels); its four surveyed corners (EPSG:32618) place it here
+    since it is not centred on the outline's own OBB. Sign wording, water tower and proportions from the
+    public Google Maps street-level photo; nothing else traced from imagery.
+    """
+    wing_h = 8.0
+    tower_h = 40.0
+    wall, trim, glass = "concrete", "cream", "roof_dark"
+
+    # low wings wrapping the tower, then the tall block on its own surveyed footprint
+    b.extrude(fp["ring"], -0.5, wing_h, wall, 0.92, name="wings")
+    b.band(fp["ring"], wing_h - 0.5, 0.3, 0.5, trim, 0.88)
+
+    main = [(282040.17, 4160186.74), (282009.9, 4160211.83), (282039.04, 4160245.82), (282068.58, 4160221.52)]
+    mcx, mcy, msx, msy, mrot = _corner_rect(fp, main)
+    main_ring = rect_ring(mcx, mcy, msx, msy, mrot)
+    tux, tuy = math.cos(mrot), math.sin(mrot)
+    tvx, tvy = -tuy, tux
+
+    def TP(u, v):
+        return (mcx + tux * u + tvx * v, mcy + tuy * u + tvy * v)
+
+    b.extrude(main_ring, wing_h - 0.3, tower_h, wall, 0.95, name="tower")
+    b.band(main_ring, 0.3, 0.25, 1.0, trim, 0.85)  # plinth
+    # ground-floor arcade, four tiers of factory sash windows, then the frieze under the cornice
+    b.window_bays(main_ring, 1.5, height=4.0, width=2.0, pitch=6.5, trim=trim, arched=True, glass=glass)
+    for z in (7.5, 14.0, 20.5, 27.0):
+        b.window_bays(main_ring, z, height=4.3, width=1.8, pitch=4.6, trim=trim, glass=glass)
+    b.band(main_ring, 33.5, 0.15, 1.0, "roof_dark", 0.8)  # dark frieze (INTERBAKE FOODS lettering band)
+    b.window_bays(main_ring, 35.0, height=3.5, width=1.8, pitch=4.6, trim=trim, glass=glass)
+    b.band(main_ring, tower_h - 1.0, 0.35, 1.0, trim, 0.9)  # cornice
+    b.extrude(main_ring, tower_h, tower_h + 0.3, "roof_flat", 0.85, name="roof")
+
+    # riveted steel water tank on a braced leg tower, set back from the sign
+    wx, wy = TP(11.0, 0.0)
+    tank_base = tower_h + 8.0
+    for su in (-1, 1):
+        for sv in (-1, 1):
+            lx, ly = TP(11.0 + su * 3.2, sv * 3.2)
+            b.box(lx, ly, tower_h + 0.2, 0.35, 0.35, tank_base - tower_h - 0.2, "steel", rot=mrot, shade=0.9, name="tank-leg")
+    b.cylinder(wx, wy, tower_h + 4.0, 3.6, 0.25, "steel", n=8, shade=0.85, name="tank-brace")
+    b.cylinder(wx, wy, tank_base, 4.3, 5.0, "steel", n=14, name="tank")
+    b.band(rect_ring(wx, wy, 8.6, 8.6, mrot), tank_base + 0.3, 0.1, 0.3, "steel", 0.9)
+    b.cone(wx, wy, tank_base + 5.0, 4.3, 2.4, "roof_dark", n=14, name="tank-roof")
+    b.cylinder(wx, wy, tank_base + 7.4, 0.2, 1.0, "steel", n=6)
+
+    # rooftop sign scaffold, set toward the opposite end from the tank: steel lattice legs, ribbon bands
+    # for "HOME OF" and "COOKIES AND CRACKERS", and the bold "FFV" cursive pixel-text between them
+    sign_u, sign_half = -10.0, 13.0
+    scaffold_h = 12.6
+    p0, p1 = TP(sign_u, -sign_half), TP(sign_u, sign_half)
+    b.colonnade(p0, p1, tower_h + 0.2, scaffold_h, 6, 0.14, "steel", cap=False)
+    for v in (-sign_half + 1.5, sign_half - 1.5):
+        lx, ly = TP(sign_u, v)
+        b.box(lx, ly, tower_h + 0.2, 0.3, 0.3, scaffold_h, "steel", rot=mrot, shade=0.85, name="sign-brace")
+    b.box(*TP(sign_u, 0.0), tower_h + 10.9, 0.6, sign_half * 2 - 2.0, 1.5, "seven_red", rot=mrot, name="sign-ribbon-top")
+    b.box(*TP(sign_u, 0.0), tower_h + 1.4, 0.6, sign_half * 2 - 2.0, 1.5, "roof_dark", rot=mrot, shade=0.95, name="sign-ribbon-bottom")
+
+    # bold pixel "FFV" between the two ribbons, the sign's most recognisable element
+    glyphs = {"F": ("111", "100", "110", "100", "100"), "V": ("101", "101", "101", "101", "010")}
+    pixel = 1.8
+    width = (3 * 4 - 1) * pixel
+    for li, letter in enumerate("FFV"):
+        for row, bits in enumerate(glyphs[letter]):
+            for col, bit in enumerate(bits):
+                if bit == "0":
+                    continue
+                v = -width / 2 + (li * 4 + col + 0.5) * pixel
+                z = tower_h + 3.1 + (4 - row) * pixel
+                b.box(*TP(sign_u - 0.3, v), z, pixel * 0.78, 0.16, pixel * 0.78, "seven_white",
+                      rot=mrot + math.pi / 2, name="sign-letter")
+
+
 BUILDERS = {
     "virginia-state-capitol": capitol,
     "main-street-station": main_street_station,
@@ -581,6 +661,7 @@ BUILDERS = {
     "foundry-park-south": foundry_park_south,
     "byrd-park-pump-house": pump_house,
     "virginia-war-memorial-carillon": carillon,
+    "cookie-factory-lofts": cookie_factory_lofts,
 }
 
 

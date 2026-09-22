@@ -429,5 +429,24 @@
     "in_first_slice": false,
     "model": "landmarks/virginia-war-memorial-carillon.glb",
     "height_hint_m": null
+  },
+  {
+    "slug": "cookie-factory-lofts",
+    "name": "Cookie Factory Lofts",
+    "osm_name_hints": [
+      "Cookie Factory Lofts",
+      "Southern Biscuit Company",
+      "Interbake Foods"
+    ],
+    "lat": 37.5631,
+    "lon": -77.4679,
+    "kind": "building",
+    "wikidata": "Q16900367",
+    "website": "https://cookiefactorylofts.com/",
+    "description": "1927 reinforced-concrete factory for the Southern Biscuit Company (later Interbake Foods, maker of FFV cookies and crackers), converted to apartments in 2014. Its rooftop water tower and neon \"Home of FFV Cookies and Crackers\" sign are a Midtown landmark. Listed on the National Register.",
+    "district": "Midtown",
+    "in_first_slice": false,
+    "model": "landmarks/cookie-factory-lofts.glb",
+    "height_hint_m": null
   }
 ]
