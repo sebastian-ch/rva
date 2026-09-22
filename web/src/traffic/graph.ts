@@ -119,16 +119,55 @@ export class RoadGraph {
       for (const k of own) seen.set(k, (seen.get(k) ?? 0) + 1);
     }
     for (const [k, n] of seen) if (n >= 2) splitKeys.add(k);
-    const ids: number[] = [];
+
+    // Flatten every path into pieces, then fold sub-1m stubs (an OSM way split right at a structure boundary
+    // — a bridge abutment or tunnel portal — routinely leaves one) into a neighbour at any pass-through node,
+    // so a stub doesn't leave a false dead end for something routing across it (a train treats the truncated
+    // end as the edge of the graph and despawns there).
+    let nextPieceId = 0;
+    const pieces = new Map<number, { pts: Float32Array; meta: CarPathMeta }>();
     paths.forEach((p, i) => {
       if (p.length < 6) return;
       const m = meta[i] ?? { oneway: false, width: 7, highway: 'residential', lanes: 2, bridge: false, ramp: false, wayId: `${tileId}:${i}` };
-      for (const piece of splitAt(p, splitKeys)) {
-        if (piece.length < 6 || pathLength(piece) < 1) continue;
-        ids.push(this.addEdge(tileId, piece, m).id);
-        if (!m.oneway) ids.push(this.addEdge(tileId, reversed(piece), m, this.nextPair - 1).id);
-      }
+      for (const pts of splitAt(p, splitKeys)) pieces.set(nextPieceId++, { pts, meta: m });
     });
+    const byNode = new Map<string, number[]>();
+    const touch = (k: string, id: number) => { const a = byNode.get(k); if (a) a.push(id); else byNode.set(k, [id]); };
+    for (const [id, pc] of pieces) {
+      touch(nodeKey(pc.pts[0], pc.pts[2]), id);
+      touch(nodeKey(pc.pts[pc.pts.length - 3], pc.pts[pc.pts.length - 1]), id);
+    }
+    let mergedAny = true;
+    while (mergedAny) {
+      mergedAny = false;
+      for (const [key, at] of byNode) {
+        if (at.length !== 2 || at[0] === at[1]) continue;
+        const [a, b] = at;
+        const pa = pieces.get(a), pb = pieces.get(b);
+        if (!pa || !pb || (pathLength(pa.pts) >= 1 && pathLength(pb.pts) >= 1)) continue;
+        const aEndsHere = nodeKey(pa.pts[pa.pts.length - 3], pa.pts[pa.pts.length - 1]) === key;
+        const bStartsHere = nodeKey(pb.pts[0], pb.pts[2]) === key;
+        const merged = concatPaths(aEndsHere ? pa.pts : reversed(pa.pts), bStartsHere ? pb.pts : reversed(pb.pts));
+        const keepMeta = pathLength(pa.pts) >= pathLength(pb.pts) ? pa.meta : pb.meta;
+        pieces.delete(a);
+        pieces.delete(b);
+        byNode.delete(key);
+        const newId = nextPieceId++;
+        pieces.set(newId, { pts: merged, meta: keepMeta });
+        for (const ids2 of byNode.values()) {
+          for (let j = 0; j < ids2.length; j++) if (ids2[j] === a || ids2[j] === b) ids2[j] = newId;
+        }
+        mergedAny = true;
+        break;
+      }
+    }
+
+    const ids: number[] = [];
+    for (const { pts, meta: m } of pieces.values()) {
+      if (pathLength(pts) < 1) continue; // still an isolated short way — genuinely degenerate, not a split stub
+      ids.push(this.addEdge(tileId, pts, m).id);
+      if (!m.oneway) ids.push(this.addEdge(tileId, reversed(pts), m, this.nextPair - 1).id);
+    }
     this.byTile.set(tileId, ids);
     return ids;
   }
@@ -253,6 +292,14 @@ function reversed(p: Float32Array): Float32Array {
   const n = p.length / 3;
   const out = new Float32Array(p.length);
   for (let i = 0; i < n; i++) { const s = (n - 1 - i) * 3, d = i * 3; out[d] = p[s]; out[d + 1] = p[s + 1]; out[d + 2] = p[s + 2]; }
+  return out;
+}
+
+/** Concatenate two pieces that share an endpoint vertex (as produced by `splitAt`), without duplicating it. */
+function concatPaths(a: Float32Array, b: Float32Array): Float32Array {
+  const out = new Float32Array(a.length + b.length - 3);
+  out.set(a);
+  out.set(b.subarray(3), a.length);
   return out;
 }
 

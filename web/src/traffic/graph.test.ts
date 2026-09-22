@@ -34,6 +34,23 @@ describe('RoadGraph', () => {
     expect(g.edges.size).toBe(8);
   });
 
+  it('folds a sub-1m stub at a structure boundary into its neighbour instead of leaving a dead end', () => {
+    const g = new RoadGraph();
+    // OSM splits the way right at a bridge abutment, leaving a 0.4m stub way before the next real way.
+    const approach = line([0, 0], [100, 0]);
+    const stub = line([100, 0], [100.4, 0]);
+    const deck = line([100.4, 0], [200, 0]);
+    g.addTile('a', [approach, stub, deck], [
+      meta({ wayId: 'rail1', highway: 'rail' }),
+      meta({ wayId: 'rail2', highway: 'rail' }),
+      meta({ wayId: 'rail3', highway: 'rail' }),
+    ]);
+    expect(g.arms(nodeKey(100, 0))).toBe(0); // the stub's near node never became a graph node
+    expect(g.arms(nodeKey(100.4, 0))).toBe(2); // through connection, not a dead end
+    expect(g.arms(nodeKey(0, 0))).toBe(1);
+    expect(g.arms(nodeKey(200, 0))).toBe(1);
+  });
+
   it('never offers the reverse edge as a turn unless it is a dead end', () => {
     const g = new RoadGraph();
     g.addTile('a', [line([0, 0], [100, 0]), line([100, 0], [200, 0])], [meta({ wayId: 'a' }), meta({ wayId: 'b' })]);
