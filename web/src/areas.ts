@@ -86,9 +86,9 @@ function subdivideTri(a: V2, b: V2, c: V2, maxEdge: number, emit: (a: V2, b: V2,
   else { const x = mid(c, a); subdivideTri(a, b, x, maxEdge, emit, depth + 1); subdivideTri(x, b, c, maxEdge, emit, depth + 1); }
 }
 
-/** How land drapes meet the terrain. Full-detail tiles refine each triangle until it follows the ground
- * (conformTriangle). `cells` instead cuts triangles along the terrain's own triangles (`HeightField.clipToCells`),
- * which is exact and far cheaper; LOD1 tiles use it, where refinement cost ~45x the terrain's triangle count. */
+/** How land drapes meet the terrain. `cells` cuts triangles along the terrain's own triangles
+ * (`HeightField.clipToCells`), which is exact; tiles use it because refining with conformTriangle cost ~45x the
+ * terrain's triangle count. Without it (no height field) drapes fall back to that refinement. */
 export interface AreaDetail { markings: boolean; cells?: (tri: V2[]) => V2[][] }
 export const AREA_FULL: AreaDetail = { markings: true };
 

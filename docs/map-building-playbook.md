@@ -154,10 +154,10 @@ That refinement is expensive: midpoint splits never line up with the terrain's c
 so a 2.5 cm error bound refines along every crease. LOD1 land cost 36.5 M triangles across 625 tiles
 (~45× the terrain) and 210 MB of the 254 MB baked LOD1. Looser tolerances trade triangles against a
 lift that pushes land over roads. The better tool is exact: `HeightField.clipToCells` cuts each land
-triangle along the rendered terrain triangles, so every piece is planar on the surface. LOD1 now uses it
-(`AreaDetail.cells` in [areas.ts](../web/src/areas.ts)): 7.5 M land triangles, 87.5 MB baked, and no
-terrain poking through by construction. Full-detail tiles still refine; switching them is a candidate
-once checked on screen. **Regression:** `clipToCells` tests in terrain.test.ts, LOD1 drape in areas.test.ts.
+triangle along the rendered terrain triangles, so every piece is planar on the surface. Both LODs now use
+it (`AreaDetail.cells` in [areas.ts](../web/src/areas.ts)): LOD1 fell to 7.5 M land triangles and 87.5 MB
+baked, and no terrain pokes through by construction. Refinement remains only for callers without a height
+field. **Regression:** `clipToCells` tests in terrain.test.ts, LOD1 drape in areas.test.ts.
 
 ## 3. Bridges: bare-earth elevation is not deck elevation
 

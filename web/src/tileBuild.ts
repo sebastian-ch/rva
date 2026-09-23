@@ -7,7 +7,7 @@ import type { AreaProps, BuildingProps, CrossingProps, FC, Feature, LineGeom, Po
 import { HeightField, FLAT_FIELD, buildTerrainMesh } from './terrain';
 import { buildBuildingsMesh, type BuildingRange } from './buildings';
 import { buildRoads } from './roads';
-import { AREA_FULL, buildAreas } from './areas';
+import { buildAreas } from './areas';
 import type { CarPathMeta } from './traffic/graph';
 import type { RailPathMeta } from './traffic/trains';
 import { exaggerateLayers } from './elevation';
@@ -155,7 +155,7 @@ export function buildTilePayload(meta: TileMeta, layers: TileLayers, origin: [nu
   if (layers.landuse?.features.length || layers.water?.features.length) {
     const a = buildAreas(layers.landuse?.features ?? [], layers.water?.features ?? [], toLocal, groundAt, 0,
       hydroField ? (x, y) => hydroField.at(x, y) : undefined,
-      lod === 1 ? { markings: false, cells: (tri) => field.clipToCells(tri) } : AREA_FULL);
+      { markings: lod === 0, cells: (tri) => field.clipToCells(tri) });
     geoms.land = arrays(a.land);
     geoms.water = arrays(a.water);
   }
