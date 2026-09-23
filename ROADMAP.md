@@ -196,7 +196,7 @@ Today the client parses GeoJSON and builds ~1.2 M triangles on the main thread. 
 - Pipeline integration test on a tiny bbox (one block) with raw parquet committed as a fixture; asserts tile
   schema against `DATA_FORMAT.md`. (M)
 - Static deploy (GitHub Pages or Cloudflare Pages) of `web/dist` with tiles, gzip/brotli on. (S)
-- Fix the `THREE.Clock` deprecation (use `THREE.Timer`) and the `toNonIndexed()` warning in `props.ts`. (S, delegable)
+- **Done 2026-09-23:** `THREE.Clock` replaced by `THREE.Timer`; the `toNonIndexed()` call in `props.ts` is already guarded by `getIndex()`.
 
 ---
 

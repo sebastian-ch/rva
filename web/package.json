@@ -15,17 +15,18 @@
     "deploy": "node tools/deploy.mjs"
   },
   "dependencies": {
-    "@types/three": "^0.185.4",
+    "@types/three": "^0.186.0",
+    "meshoptimizer": "^1.2.0",
     "three": "^0.186.0",
     "typescript": "^7.0.2",
-    "vite": "^8.2.2"
+    "vite": "^8.3.0"
   },
   "devDependencies": {
-    "@loaders.gl/core": "^4.4.5",
-    "@loaders.gl/i3s": "^4.4.5",
-    "@types/node": "^26.5.0",
+    "@loaders.gl/core": "^4.5.2",
+    "@loaders.gl/i3s": "^4.5.2",
+    "@types/node": "^26.6.2",
     "playwright-core": "^1.63.0",
-    "proj4": "^2.20.2",
-    "vitest": "^5.0.0"
+    "proj4": "^2.22.0",
+    "vitest": "^5.0.1"
   }
 }

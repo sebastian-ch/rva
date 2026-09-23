@@ -11,9 +11,9 @@ import math
 from dataclasses import dataclass
 
 import numpy as np
+import shapely
 from shapely.geometry import Polygon
 from shapely.prepared import prep
-from shapely import vectorized
 
 MIN_POINTS = 25
 FLAT_RMS = 0.35
@@ -95,7 +95,7 @@ def classify_roof(points: np.ndarray, footprint: Polygon, ground: float) -> Roof
     inner = footprint.buffer(-0.8)
     if inner.is_empty:
         inner = footprint
-    inside = vectorized.contains(inner, points[:, 0], points[:, 1])
+    inside = shapely.contains_xy(inner, points[:, 0], points[:, 1])
     p = points[inside]
     p = p[p[:, 2] > ground + EAVE_CLEARANCE]
     if len(p) < MIN_POINTS:

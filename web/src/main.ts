@@ -507,7 +507,8 @@ window.addEventListener('keydown', (e) => {
   const editing = e.target instanceof HTMLElement && e.target.closest('input, textarea, select, [contenteditable="true"]');
   if (e.key === 'o' && !editing) postfx.enabled = !postfx.enabled;
 });
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
+timer.connect(document); // no catch-up delta after a hidden tab
 let waterTime = 0;
 const frameMs: number[] = [];
 function frameSummary() {
@@ -515,8 +516,9 @@ function frameSummary() {
   const at = (p: number) => sorted.length ? sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))] : 0;
   return { p50: +at(0.5).toFixed(2), p95: +at(0.95).toFixed(2), n: frameMs.length };
 }
-function frame() {
-  const dt = Math.min(0.1, clock.getDelta());
+function frame(now?: number) {
+  timer.update(now);
+  const dt = Math.min(0.1, timer.getDelta());
   frameMs.push(dt * 1000); if (frameMs.length > 600) frameMs.shift();
   iso.update(dt);
   if (tropicalSky) tropicalSky.position.copy(iso.camera.position);
