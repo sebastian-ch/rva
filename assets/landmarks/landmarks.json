@@ -615,5 +615,41 @@
     "in_first_slice": true,
     "model": "landmarks/truist-place.glb",
     "height_hint_m": null
+  },
+  {
+    "slug": "virginia-war-memorial",
+    "name": "Virginia War Memorial",
+    "osm_name_hints": [
+      "Virginia War Memorial"
+    ],
+    "match_id": "osm:way/822396322",
+    "lat": 37.53702,
+    "lon": -77.44835,
+    "kind": "building",
+    "wikidata": "Q7934654",
+    "website": "https://vawarmemorial.org/",
+    "description": "Virginia's memorial to its war dead on the bluff above the James: the 1956 Shrine of Memory, an open marble-and-glass pavilion engraved with nearly 12,000 names around the 23 ft Memory statue, with the Education Center and the Heilman Amphitheatre beside it.",
+    "district": "Oregon Hill",
+    "in_first_slice": true,
+    "model": "landmarks/virginia-war-memorial.glb",
+    "height_hint_m": null
+  },
+  {
+    "slug": "american-civil-war-museum",
+    "name": "American Civil War Museum",
+    "osm_name_hints": [
+      "American Civil War Museum"
+    ],
+    "match_id": "osm:way/822723703",
+    "lat": 37.53562,
+    "lon": -77.44548,
+    "kind": "building",
+    "wikidata": "Q80007684",
+    "website": "https://acwm.org/",
+    "description": "Brick and glass museum (3North, 2019) at Historic Tredegar, set into Gambles Hill between the old gun foundry and the Pattern Building, whose glass lobby encloses a surviving ruin wall of the Tredegar Iron Works.",
+    "district": "Downtown",
+    "in_first_slice": true,
+    "model": "landmarks/american-civil-war-museum.glb",
+    "height_hint_m": null
   }
 ]

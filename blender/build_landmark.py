@@ -1308,6 +1308,226 @@ def truist_place(b, fp):
     b.box(*c, cap, 2 * f.hl - 28.0, 2 * f.hs - 28.0, 1.2, "steel", rot=f.rot_u, shade=0.88, name="cap-plant")
 
 
+def war_memorial(b, fp):
+    """Virginia War Memorial, 621 South Belvidere Street: the 1956 Shrine of Memory (Samuel J. and Richard E.
+    Collins), an open pavilion with a solid white marble west wall and thirteen columns framing engraved glass
+    on the east, open at both ends, a flat roof, the 23 ft marble Memory statue at the south end and a V-shaped
+    reflecting pool running out from under the roof toward the Flag Court. North of it is the Education
+    Center bar with its oval rotunda. The east block (theatre and galleries) steps down the bluff. The Heilman
+    Amphitheatre's five stone seat arcs sit in the slope between the shrine and that block.
+
+    Footprint = OSM way/822396322 (one outline, no parts). Roof heights are from the 2025 Richmond LiDAR,
+    tied to the upper grade (DEM 45.45 m): shrine 8.7 m, Education Center bar 5.5 m, rotunda 7.0 m, theatre
+    8.3 m. The east block's lower storeys go down to its own grade (~37.5 m). Pool, amphitheatre and
+    rotunda positions come from NAIP orthoimagery. Materials follow published descriptions; detailing is generic.
+    """
+    ox, oy = fp["centroid_proj"]
+    g0 = float(fp["ground_z"])
+
+    def P(x, y):  # projected coords, given as offsets from (283000, 4157000)
+        return (283000.0 + x - ox, 4157000.0 + y - oy)
+
+    def rel(pts):
+        ring = [P(x, y) for x, y in pts]
+        return ring if shoelace(ring) > 0 else ring[::-1]
+
+    def ground(dem):
+        return (dem - g0) * 1.6
+
+    def slab(p0, p1, t, z0, z1, key, shade=1.0, name=None):
+        """Wall of thickness t on the left of p0 -> p1."""
+        dx, dy = p1[0] - p0[0], p1[1] - p0[1]
+        L = math.hypot(dx, dy)
+        nx, ny = -dy / L * t, dx / L * t
+        b.extrude(rel([p0, p1, (p1[0] + nx, p1[1] + ny), (p0[0] + nx, p0[1] + ny)]), z0, z1, key, shade, name=name)
+
+    white, stone, glass = "seven_white", "cream", "glass"
+    up = ground(45.45)  # upper grade: shrine, plaza, Education Center entrance
+    low = ground(37.3)  # foot of the bluff under the east block
+
+    # ---- Shrine of Memory
+    shrine = [(646.4, 218.6), (657.8, 218.3), (658.8, 262.0), (647.4, 262.8)]
+    floor, soffit, roof = up + 0.45, up + 8.1, up + 8.7
+    b.extrude(offset_ring(rel(shrine), 0.8), up - 1.2, floor, "concrete", 0.95, name="shrine-plinth")
+    slab((646.4, 218.6), (647.4, 262.8), -0.9, floor, soffit, white, 1.0, name="marble-wall")
+    b.colonnade(P(657.2, 219.4), P(658.2, 261.4), floor, soffit - floor, 13, 0.42, white, cap=False)
+    slab((657.1, 219.4), (658.1, 261.4), 0.16, floor + 0.4, soffit - 0.5, glass, 0.92, name="name-glass")
+    b.extrude(offset_ring(rel(shrine), 0.9), soffit, roof, white, 0.93, name="shrine-roof")
+    b.extrude(rel(shrine), roof, roof + 0.12, "roof_flat", 0.9, name="shrine-roof-top")
+    # covered link north to the Education Center
+    link = rel([(651.3, 262.7), (656.4, 262.3), (656.5, 267.6), (651.4, 268.0)])
+    b.extrude(link, up - 0.5, up + 0.45, "concrete", 0.95)
+    b.extrude(link, up + 3.8, up + 4.2, white, 0.93, name="link-roof")
+    for x, y in ((651.7, 263.1), (656.1, 262.8)):
+        b.box(*P(x, y), up + 0.45, 0.35, 0.35, 3.4, white, name="link-post")
+
+    # Memory statue on its pedestal at the south end, facing north into the shrine, torch bowl in front of the pool
+    sx, sy = 652.3, 221.2
+    b.box(*P(sx, sy), floor, 2.4, 2.4, 1.3, white, shade=0.92, name="pedestal")
+    z = floor + 1.3
+    for w, d, h in ((1.7, 1.3, 2.6), (1.4, 1.05, 1.7), (1.1, 0.85, 1.2), (0.5, 0.5, 0.6)):  # robe, torso, shoulders, head
+        b.box(*P(sx, sy), z, w, d, h, white, shade=1.02, name="memory")
+        z += h
+    b.cylinder(*P(sx, sy - 1.9), floor, 0.55, 0.9, "steel", n=10, shade=0.9, name="torch")
+    b.cone(*P(sx, sy - 1.9), floor + 0.9, 0.3, 0.7, "landmark_accent", n=8, name="flame")
+
+    # V-shaped reflecting pool, wide under the roof and narrowing south toward the Flag Court
+    pool = rel([(647.0, 218.4), (660.4, 218.2), (648.6, 207.3)])
+    b.extrude(offset_ring(pool, 0.6), up - 0.8, up + 0.3, stone, 0.94, name="pool-rim")
+    b.extrude(pool, up + 0.3, up + 0.36, "water", 1.0, name="pool")
+
+    # Flag Court flagpoles
+    for x, y, h in ((636.5, 211.0, 16.0), (632.5, 214.5, 12.0), (640.0, 207.5, 12.0)):
+        b.cylinder(*P(x, y), ground(45.4), 0.14, h, "steel", n=6, name="flagpole")
+    b.box(*P(637.6, 211.0), ground(45.4) + 13.6, 2.2, 0.08, 1.3, "brick", name="flag")
+
+    # ---- Education Center bar and oval rotunda
+    bar = rel([(635.9, 268.9), (676.5, 267.8), (676.5, 282.1), (636.2, 283.0)])
+    bar_top = up + 5.5
+    b.extrude(bar, up - 1.0, bar_top, stone, 0.97, name="edu-bar")
+    b.band(bar, up, 0.2, 0.7, "concrete", 0.9)
+    b.window_bays(bar, up + 1.1, height=2.8, width=2.2, pitch=3.4, trim=stone, glass=glass)
+    b.band(bar, bar_top - 0.5, 0.25, 0.8, stone, 0.9)
+    b.extrude(inset_ring(bar, 0.3), bar_top, bar_top + 0.1, "roof_flat", 0.9, name="edu-roof")
+    for x0, x1 in ((638.0, 651.5), (653.0, 673.0)):  # the two raised roof panels
+        b.extrude(rel([(x0, 271.0), (x1, 270.6), (x1, 280.4), (x0, 280.8)]), bar_top, bar_top + 0.6, "concrete", 0.92)
+
+    cx, cy, rx, ry = 679.0, 275.1, 4.9, 11.1
+    oval = rel([(cx + rx * math.cos(2 * math.pi * i / 28), cy + ry * math.sin(2 * math.pi * i / 28)) for i in range(28)])
+    rot_top = up + 7.0
+    b.extrude(oval, up - 1.0, rot_top - 1.0, glass, 0.95, name="rotunda-glass")
+    for i in range(0, 28, 2):  # stone fins
+        a = 2 * math.pi * i / 28
+        b.box(*P(cx + (rx + 0.1) * math.cos(a), cy + (ry + 0.1) * math.sin(a)), up - 0.5, 0.45, 0.45,
+              rot_top - 1.0 - up + 0.5, stone, rot=a, name="rotunda-fin")
+    b.extrude(offset_ring(oval, 0.4), rot_top - 1.0, rot_top, stone, 0.95, name="rotunda-crown")
+    b.extrude(oval, rot_top, rot_top + 0.1, "roof_flat", 0.88, name="rotunda-roof")
+
+    court = rel([(683.5, 265.9), (708.8, 264.9), (708.9, 281.4), (683.5, 282.1)])
+    b.extrude(court, up - 1.0, up + 5.2, stone, 0.95, name="edu-court")
+    b.window_bays(court, up + 1.1, height=2.8, width=2.2, pitch=3.4, trim=stone, glass=glass)
+    b.band(court, up + 4.7, 0.25, 0.8, stone, 0.9)
+    b.extrude(rel([(688.8, 269.6), (702.6, 269.4), (702.7, 280.5), (688.9, 280.7)]), up + 5.2, up + 6.2, glass, 0.9,
+              name="skylight")
+
+    # ---- east block down the bluff: glazed lower storeys, galleries at the bar's roof line, theatre box
+    east = rel([(708.6, 254.3), (739.6, 253.9), (739.8, 265.1), (748.2, 264.9), (748.4, 279.7), (721.6, 280.6),
+                (708.8, 281.0)])
+    b.extrude(east, low - 1.0, bar_top, stone, 0.95, name="east-block")
+    for z in (up - 8.6, up - 4.3, up + 1.1):  # rows below the upper grade are hidden where the ground is high
+        b.window_bays(east, z, height=2.9, width=2.6, pitch=3.3, trim=stone, glass=glass)
+    for z in (up - 5.0, up - 0.7):
+        b.band(east, z, 0.2, 0.5, "concrete", 0.9)
+    b.band(east, bar_top - 0.5, 0.25, 0.8, stone, 0.9)
+    b.extrude(inset_ring(east, 0.3), bar_top, bar_top + 0.1, "roof_flat", 0.9, name="east-roof")
+    theatre = rel([(710.2, 255.2), (738.4, 254.8), (738.5, 264.4), (710.3, 264.8)])
+    b.extrude(theatre, bar_top, up + 8.3, stone, 0.9, name="theatre")
+    b.band(theatre, up + 7.8, 0.2, 0.6, stone, 0.86)
+    b.extrude(inset_ring(theatre, 0.3), up + 8.3, up + 8.4, "roof_flat", 0.88)
+    # north entrance: canopy on posts and a glass vestibule
+    canopy = rel([(702.6, 281.6), (721.6, 280.6), (721.6, 290.4), (702.7, 290.5)])
+    b.extrude(canopy, up + 3.6, up + 4.0, white, 0.93, name="canopy")
+    for x, y in ((703.2, 289.9), (712.0, 289.8), (703.2, 282.2)):
+        b.box(*P(x, y), up, 0.35, 0.35, 3.6, white, name="canopy-post")
+    vest = rel([(713.6, 290.4), (721.6, 290.2), (721.6, 294.3), (713.7, 294.6)])
+    b.extrude(vest, ground(44.6), up + 3.4, glass, 0.95, name="vestibule")
+    b.extrude(offset_ring(vest, 0.2), up + 3.4, up + 3.8, white, 0.93)
+
+    # ---- Heilman Amphitheatre: stage and five nested stone seat arcs following the slope
+    acx, acy = 707.2, 230.5
+    b.extrude(rel([(acx + 6.0 * math.cos(math.radians(a)), acy + 6.0 * math.sin(math.radians(a)))
+                   for a in range(0, 360, 20)]), ground(37.4), ground(37.7) + 1.1, "paving", 0.95, name="stage")
+    for r, dem in ((12.5, 38.3), (14.5, 38.7), (16.5, 39.1), (18.5, 39.7), (20.5, 40.2)):
+        for a0 in range(55, 205, 10):
+            m = math.radians(a0 + 5)
+            # deep blocks: the viewer's terrain triangles ride up to ~1 m above the DEM in this bowl
+            b.box(*P(acx + r * math.cos(m), acy + r * math.sin(m)), ground(dem) - 2.0, 0.9,
+                  2 * r * math.sin(math.radians(5)) + 0.05, 3.1, stone, rot=m, shade=0.93, name="seat")
+
+
+def civil_war_museum(b, fp):
+    """American Civil War Museum at Historic Tredegar (3North, 2019): a two-storey brick and glass block cut
+    into the foot of Gambles Hill between the Tredegar gun foundry and the Pattern Building. The glass lobby on
+    the Tredegar Street plaza encloses a surviving brick ruin wall of the iron works (the architects call it a
+    vitrine).
+
+    Footprint = OSM way/822723703. The ground falls ~6 m from the hillside (DEM 20.3 m) to the plaza (14.6 m).
+    Roofs follow the 2025 Richmond LiDAR relative to the north grade: west galleries 27.0 m, a raised strip
+    along their east edge to ~28.3 m, the lower east wing 24.8 m. Walls drop to the plaza, so the south front
+    reads taller by the terrain exaggeration. The lobby's place, the ruin wall and the glazing pattern come
+    from the published description, not from survey; the lobby roof is drawn as open steelwork so the ruin
+    shows from above.
+    """
+    ox, oy = fp["centroid_proj"]
+    g0 = float(fp["ground_z"])
+    sw, se, ne, nw = [(x - ox, y - oy) for x, y in ((283910.7, 4157081.7), (283950.7, 4157084.6),
+                                                    (283947.7, 4157125.9), (283907.7, 4157123.0))]
+
+    def Q(s, t):  # s west -> east, t south -> north, bilinear over the OSM quad
+        return (sw[0] * (1 - s) * (1 - t) + se[0] * s * (1 - t) + ne[0] * s * t + nw[0] * (1 - s) * t,
+                sw[1] * (1 - s) * (1 - t) + se[1] * s * (1 - t) + ne[1] * s * t + nw[1] * (1 - s) * t)
+
+    def quad(s0, t0, s1, t1):
+        return [Q(s0, t0), Q(s1, t0), Q(s1, t1), Q(s0, t1)]
+
+    def ground(dem):
+        return (dem - g0) * 1.6
+
+    brick, glass, trim, frame = "brick", "glass", "concrete", "steel"
+    rot = math.atan2(se[1] - sw[1], se[0] - sw[0])
+    north, plaza = ground(20.3), ground(14.6)
+    foot = ground(13.8) - 1.0
+    west_top, strip_top, east_top = north + 6.7, north + 8.0, north + 4.5
+    split = 0.4  # west galleries / east wing, at the LiDAR roof step (x ~ 283925)
+    lobby_t = 0.33
+
+    # east wing: brick, a band of glass at plaza level and a clerestory ribbon above
+    east = quad(split, 0.0, 1.0, 1.0)
+    b.extrude(east, foot, east_top, brick, 0.95, name="east-wing")
+    b.band(quad(split, 0.0, 1.0, 0.02), plaza + 0.2, 0.15, 3.4, glass, 0.95)  # storefront on the plaza
+    b.band(quad(split + 0.02, 0.0, 0.98, 0.02), plaza + 6.2, 0.12, 1.4, glass, 0.92)
+    b.window_bays(quad(split, 0.05, 1.0, 1.0), plaza + 4.6, height=3.4, width=1.2, pitch=3.2, trim=trim,
+                  glass=glass)  # upper-floor slots; on the north and west faces they fall below grade or inside
+    b.band(east, east_top - 0.6, 0.2, 0.7, trim, 0.9)
+    b.extrude(quad(split + 0.01, 0.01, 0.99, 0.99), east_top, east_top + 0.1, trim, 0.95, name="east-roof")
+
+    # west galleries north of the lobby, with the raised strip along their east edge
+    west = quad(0.0, lobby_t, split, 1.0)
+    b.extrude(west, foot, west_top, brick, 0.97, name="galleries")
+    b.band(west, west_top - 0.6, 0.2, 0.7, trim, 0.9)
+    b.extrude(quad(0.01, lobby_t + 0.01, split - 0.01, 0.99), west_top, west_top + 0.1, trim, 0.95)
+    strip = quad(split - 0.1, lobby_t + 0.1, split - 0.005, 0.9)
+    b.extrude(strip, west_top, strip_top - 0.4, glass, 0.9, name="clerestory")
+    b.extrude(offset_ring(strip, 0.15), strip_top - 0.4, strip_top, trim, 0.92)
+    for i in range(6):  # rooftop units
+        c = Q(0.12 + (i % 2) * 0.12, 0.45 + (i // 2) * 0.16)
+        b.box(*c, west_top + 0.1, 2.2, 1.6, 1.3, frame, rot=rot, shade=0.9, name="rtu")
+
+    # glass lobby: curtain wall on the plaza front and to the east, open steel roof over the ruin wall
+    lobby = quad(0.0, 0.0, split, lobby_t)
+    b.extrude(lobby, foot, plaza + 0.2, trim, 0.92, name="lobby-plinth")
+    b.extrude(quad(0.0, 0.0, split, 0.012), plaza + 0.2, west_top, glass, 0.95, name="lobby-front")
+    b.extrude(quad(0.0, lobby_t - 0.012, split, lobby_t), plaza + 0.2, west_top, glass, 0.9)
+    b.extrude(quad(0.0, 0.0, 0.012, lobby_t), plaza + 0.2, west_top, brick, 0.9)  # party wall to the foundry
+    for k in range(9):  # mullions on the front, beams across the roof
+        s = 0.01 + k * (split - 0.02) / 8
+        b.extrude(quad(s - 0.004, -0.004, s + 0.004, 0.01), plaza + 0.2, west_top, frame, 0.85, name="mullion")
+        b.extrude(quad(s - 0.003, 0.0, s + 0.003, lobby_t), west_top - 0.5, west_top, frame, 0.85, name="beam")
+    for edge in (quad(0.0, 0.0, split, 0.012), quad(0.0, lobby_t - 0.012, split, lobby_t),
+                 quad(split - 0.008, 0.0, split, lobby_t)):  # edge beams (the party wall closes the west side)
+        b.extrude(edge, west_top - 0.6, west_top, frame, 0.85, name="edge-beam")
+    b.extrude(quad(0.012, 0.012, split, lobby_t - 0.012), plaza + 0.2, plaza + 0.3, "paving", 0.95, name="lobby-floor")
+    # the ruin wall: ragged brick, window gaps, stepped broken top
+    tops = (7.0, 9.4, 10.6, 10.1, 8.3, 9.8, 6.2)
+    for k, h in enumerate(tops):
+        s0, s1 = 0.05 + k * 0.042, 0.05 + (k + 1) * 0.042
+        if k in (1, 4):  # tall arched window openings: only the wall above them survives
+            b.extrude(quad(s0, 0.16, s1, 0.185), plaza + 6.0, plaza + h, "brick_dark", 0.95, name="ruin")
+            b.extrude(quad(s0, 0.16, s1, 0.185), plaza + 0.3, plaza + 1.0, "brick_dark", 0.95, name="ruin")
+        else:
+            b.extrude(quad(s0, 0.16, s1, 0.185), plaza + 0.3, plaza + h, "brick_dark", 0.95, name="ruin")
+
+
 PIXEL_GLYPHS = {
     "D": ("110", "101", "101", "101", "110"), "E": ("111", "100", "110", "100", "111"),
     "H": ("101", "101", "111", "101", "101"), "I": ("111", "010", "010", "010", "111"),
@@ -1360,6 +1580,8 @@ BUILDERS = {
     "hippodrome-theater": hippodrome,
     "childrens-hospital-of-richmond-at-vcu": childrens_hospital,
     "truist-place": truist_place,
+    "virginia-war-memorial": war_memorial,
+    "american-civil-war-museum": civil_war_museum,
 }
 
 
