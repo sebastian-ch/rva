@@ -67,7 +67,7 @@ export function createNavigation(root: HTMLElement, onSelect: (place: SearchPlac
   const share = document.createElement('button'); share.type = 'button'; share.textContent = 'Share view';
   const results = document.createElement('div'); results.id = 'place-results'; results.setAttribute('role', 'listbox'); results.hidden = true;
   const status = document.createElement('div'); status.className = 'navigation-status'; status.setAttribute('role', 'status');
-  panel.append(input, share, results, status); root.append(panel);
+  panel.append(input, share, results, status); (root.querySelector('.top-left') ?? root).append(panel);
   let places: SearchPlace[] = [], matches: SearchPlace[] = [], active = -1;
   const close = () => { results.hidden = true; input.setAttribute('aria-expanded', 'false'); input.removeAttribute('aria-activedescendant'); active = -1; };
   const choose = (p: SearchPlace) => { input.value = p.name ?? p.addr ?? ''; close(); input.blur(); onSelect(p); };

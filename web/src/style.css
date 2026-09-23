@@ -101,8 +101,14 @@ body.night {
   color: inherit;
 }
 
+.top-left {
+  position: absolute; left: 16px; top: 16px; max-width: calc(100vw - 32px);
+  display: flex; align-items: flex-start; gap: 8px;
+}
+/* stack below the title when the row would run into the top-right toolbar */
+@media (max-width: 1240px) { .top-left { flex-direction: column; } }
 .navigation {
-  position: absolute; left: 16px; top: 88px; width: 330px; max-width: calc(100vw - 32px);
+  width: 330px; max-width: 100%;
   display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; padding: 8px;
 }
 .navigation input, .navigation button {
@@ -125,7 +131,7 @@ body.risograph #ui .panel { border-radius: 4px; box-shadow: 2px 2px 0 #3f5bc930;
   .title-badge { max-width: calc(100vw - 32px) !important; }
 }
 @media (max-width: 600px) {
-  .navigation { top: 82px; width: calc(100vw - 32px); }
+  .navigation { width: calc(100vw - 32px); }
   .toolbar button { padding: 7px !important; }
   .toolbar .icon { display: none; }
 }
@@ -141,9 +147,6 @@ body.risograph #ui .panel { border-radius: 4px; box-shadow: 2px 2px 0 #3f5bc930;
 /* ---- Title badge (top-left) ---- */
 
 .title-badge {
-  position: absolute;
-  top: 16px;
-  left: 16px;
   padding: 10px 16px;
   max-width: 60vw;
 }

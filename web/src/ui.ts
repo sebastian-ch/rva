@@ -103,7 +103,11 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
   subtitle.textContent = region.subtitle;
   titleBadge.appendChild(subtitle);
 
-  root.appendChild(titleBadge);
+  // title and search share this row; createNavigation appends its panel here
+  const topLeft = document.createElement("div");
+  topLeft.className = "top-left";
+  topLeft.appendChild(titleBadge);
+  root.appendChild(topLeft);
 
   // ---- Toolbar ----
   const toolbar = document.createElement("div");
