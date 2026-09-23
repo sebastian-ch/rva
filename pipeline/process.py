@@ -1001,6 +1001,48 @@ def _ramp_decks(lines: gpd.GeoDataFrame, deck: pd.Series, bridge_flag: pd.Series
     return deck, ramp
 
 
+def _deck_lift_ends(lines: gpd.GeoDataFrame, deck: pd.Series, bridge_flag: pd.Series, ramp_flag: pd.Series) -> pd.Series:
+    """Per deck end ([start, end] of the unclipped way), whether the renderer's deck thickness continues past it.
+
+    The viewer lifts deck surfaces 0.6 m above the anchor profile. A constant lift steps 0.6 m wherever a deck
+    lands at grade, and ramps carried none, so every bridge/ramp join stepped too. 1 = the end continues onto
+    another elevated way (any bridge; a ramp, for a bridge), 0 = it lands at grade and the lift tapers to zero.
+    Tiles clip ways, so the renderer cannot see the neighbour itself: the flag travels with the way.
+    """
+    out = pd.Series([None] * len(lines), index=lines.index, dtype=object)
+    has_deck = deck.notna()
+    if not has_deck.any():
+        return out
+    from shapely.strtree import STRtree
+    from shapely.geometry import Point
+
+    bridges = lines[bridge_flag & has_deck]
+    ramps = lines[ramp_flag & has_deck]
+    btree = STRtree(list(bridges.geometry)) if len(bridges) else None
+    rtree = STRtree(list(ramps.geometry)) if len(ramps) else None
+    bidx, ridx = list(bridges.index), list(ramps.index)
+
+    def touches(tree, idxs, geoms, pt, self_idx):
+        if tree is None:
+            return False
+        for k in tree.query(pt.buffer(RAMP_TOUCH_M)):
+            if idxs[k] != self_idx and geoms[k].distance(pt) <= RAMP_TOUCH_M:
+                return True
+        return False
+
+    bgeoms, rgeoms = list(bridges.geometry), list(ramps.geometry)
+    for idx in lines.index[has_deck & (bridge_flag | ramp_flag)]:
+        g = lines.at[idx, "geometry"]
+        is_bridge = bool(bridge_flag.at[idx])
+        ends = []
+        for x, y in (g.coords[0], g.coords[-1]):
+            pt = Point(x, y)
+            up = touches(btree, bidx, bgeoms, pt, idx) or (is_bridge and touches(rtree, ridx, rgeoms, pt, idx))
+            ends.append(1 if up else 0)
+        out.at[idx] = ends
+    return out
+
+
 def process_roads(raw_path: Path, terrain=None, buildings_path: Path | None = None) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
     """Return (roads, crossings). `buildings_path` (raw OSM footprints) lets bridge decks recognise skybridges."""
     raw = _read(raw_path)
@@ -1022,6 +1064,7 @@ def process_roads(raw_path: Path, terrain=None, buildings_path: Path | None = No
         bridge_flag = bridge_flag.copy()
         bridge_flag.loc[connectors] = True
     deck, ramp_flag = _ramp_decks(lines, deck, bridge_flag, terrain)
+    deck_lift = _deck_lift_ends(lines, deck, bridge_flag, ramp_flag)
     mapped_sides = _mapped_sidewalk_sides(lines)
     sidewalk_left = lines.apply(lambda row: _render_sidewalk_side(row, "left"), axis=1)
     sidewalk_right = lines.apply(lambda row: _render_sidewalk_side(row, "right"), axis=1)
@@ -1056,6 +1099,7 @@ def process_roads(raw_path: Path, terrain=None, buildings_path: Path | None = No
         "tunnel": (lines["tunnel"].fillna("no") != "no") if "tunnel" in lines else False,
         "layer": lines["layer"].map(parse_levels).fillna(0).astype(int) if "layer" in lines else 0,
         "deck": deck,
+        "deck_lift": deck_lift,
         "geometry": lines.geometry,
     }, crs=CRS_PROJ)
     pts = raw[(raw.geometry.geom_type == "Point")]

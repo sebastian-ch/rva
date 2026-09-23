@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bridgeLift, deckHeight, parseDeck, retainingProfile } from './roads';
+import { bridgeLift, deckHeight, deckLift, parseDeck, retainingProfile } from './roads';
 
 describe('bridge decks', () => {
   it('parses the pipeline deck string and rejects bad input', () => {
@@ -472,4 +472,41 @@ it('hands the track centreline to the train sim with its OSM class and service t
  expect(path[0].x).toBeCloseTo(0);
  expect(path[path.length-1].x).toBeCloseTo(120);
  for(const p of path) expect(p.z).toBeCloseTo(0);
+});
+
+describe('deck lift', () => {
+  const deck = parseDeck([0, 0, 10, 100, 0, 10])!;
+  it('tapers a bridge to zero at an end that lands at grade', () => {
+    const lift = deckLift({ bridge: true, ramp: false, layer: 1, deck_lift: [0, 1] }, deck);
+    expect(lift(0, 0)).toBeCloseTo(0);
+    expect(lift(6, 0)).toBeCloseTo(0.3);
+    expect(lift(50, 0)).toBeCloseTo(0.6);
+    expect(lift(100, 0)).toBeCloseTo(0.6);
+  });
+  it('carries a ramp from its bridge end down to its ground end', () => {
+    const lift = deckLift({ bridge: false, ramp: true, layer: 0, deck_lift: [1, 0] }, deck);
+    expect(lift(0, 0)).toBeCloseTo(0.6);
+    expect(lift(50, 0)).toBeCloseTo(0.3);
+    expect(lift(100, 0)).toBeCloseTo(0);
+  });
+  it('keeps the old constant lift for tiles without the flags', () => {
+    expect(deckLift({ bridge: true, ramp: false, layer: 1, deck_lift: null }, deck)(0, 0)).toBeCloseTo(0.6);
+    expect(deckLift({ bridge: false, ramp: true, layer: 0, deck_lift: null }, deck)(0, 0)).toBeCloseTo(0);
+  });
+});
+
+it('attaches a mapped sidewalk bridge flush to the road deck at its height', async () => {
+  const { buildRoads } = await import('./roads');
+  const base = { name: null, lanes: 2, oneway: false, surface: 'asphalt', sidewalk: false, sidewalk_left: false, sidewalk_right: false, ramp: false, tunnel: false, layer: 1 };
+  const road = { type: 'Feature' as const, geometry: { type: 'LineString' as const, coordinates: [[0, 0], [60, 0]] as [number, number][] },
+    properties: { ...base, id: 'road', highway: 'tertiary', width: 10, bridge: true, deck: [0, 0, 10, 60, 0, 10], deck_lift: [1, 1] } };
+  // mapped 1.4 m off the carriageway edge, on its own deck anchors a metre lower
+  const walk = { type: 'Feature' as const, geometry: { type: 'LineString' as const, coordinates: [[0, -7.4], [60, -7.4]] as [number, number][] },
+    properties: { ...base, id: 'walk', highway: 'footway', footway: 'sidewalk', width: 2, bridge: true, deck: [0, -7.4, 9, 60, -7.4, 9], deck_lift: [1, 1] } };
+  const { walkPaths } = buildRoads([road, walk], [], [], (x, y) => [x, -y], () => 0, { markings: false });
+  const path = walkPaths.find((p) => p.length && Math.abs(p[0].z) > 3)!;
+  for (const v of path) {
+    expect(v.z).toBeCloseTo(6, 3); // road half-width 5 + sidewalk half-width 1, south of the road (local z = -north)
+    expect(v.y).toBeCloseTo(10 + 0.28 + 0.6 + 0.12, 3);
+  }
 });

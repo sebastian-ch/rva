@@ -117,9 +117,10 @@ function offsetPath(pts: THREE.Vector3[], off: number): THREE.Vector3[] {
 }
 
 /** Bridge furniture: railings on both edges and box piers to the ground every ~25 m. */
-function bridgeFurniture(mb: MeshBuilder, path: THREE.Vector3[], halfW: number, groundY: (v: THREE.Vector3) => number, color: THREE.Color, occupied?: (v: THREE.Vector3) => boolean) {
+function bridgeFurniture(mb: MeshBuilder, path: THREE.Vector3[], halfW: number | ((side: number) => number), groundY: (v: THREE.Vector3) => number, color: THREE.Color, occupied?: (v: THREE.Vector3) => boolean) {
+  const edge = typeof halfW === 'number' ? () => halfW : halfW;
   for (const side of [1, -1]) {
-    const rail = offsetPath(path, side * (halfW - 0.3));
+    const rail = offsetPath(path, side * (edge(side) - 0.3));
     for (let i = 0; i < rail.length - 1; i++) {
       const a = rail[i], b = rail[i + 1];
       if (a.y - groundY(a) < 1.5 && b.y - groundY(b) < 1.5) continue; // at grade: no railing
@@ -144,7 +145,7 @@ function bridgeFurniture(mb: MeshBuilder, path: THREE.Vector3[], halfW: number, 
         const g = groundY(c);
         if (c.y - g < 1.5) continue;
         const d = new THREE.Vector3(b.x - a.x, 0, b.z - a.z).normalize();
-        pierBox(mb, c, g, d, Math.max(1.2, halfW * 0.5), 1.4, color);
+        pierBox(mb, c, g, d, Math.max(1.2, Math.min(edge(1), edge(-1)) * 0.5), 1.4, color);
       }
     }
   }
@@ -187,8 +188,36 @@ export function deckHeight(d: Deck, x: number, y: number): number {
  */
 export function bridgeLift(_layer: number): number { return 0.6; }
 
+/** Length over which a deck's thickness tapers to zero where it lands at grade. */
+const LIFT_TAPER = 12;
+/**
+ * Deck thickness at a point of a bridge or ramp. A constant lift stepped 0.6 m wherever a deck met a road at
+ * grade, and ramps carried none, so bridge/ramp joins stepped too (South 2nd Street over the Downtown
+ * Expressway). With the pipeline's `deck_lift` ends, a bridge tapers to zero over its last LIFT_TAPER metres at
+ * a grade end, and a ramp carries the lift from its bridge end down to zero at its ground end. Without the
+ * flags (older tiles) bridges keep the constant lift and ramps none.
+ */
+export function deckLift(p: Pick<RoadProps, 'bridge' | 'ramp' | 'layer' | 'deck_lift'>, deck: Deck | null): (x: number, y: number) => number {
+  const full = bridgeLift(p.layer);
+  if (!deck || (!p.bridge && !p.ramp)) return () => 0;
+  let ends: number[] | null = null;
+  try { ends = p.deck_lift == null ? null : (Array.isArray(p.deck_lift) ? p.deck_lift : JSON.parse(p.deck_lift)) as number[]; } catch { ends = null; }
+  if (!Array.isArray(ends) || ends.length !== 2) return () => (p.bridge ? full : 0);
+  const [e0, e1] = ends;
+  const dx = deck.x1 - deck.x0, dy = deck.y1 - deck.y0;
+  const len = Math.hypot(dx, dy);
+  const along = (x: number, y: number) => len > 1e-6 ? THREE.MathUtils.clamp(((x - deck.x0) * dx + (y - deck.y0) * dy) / (len * len), 0, 1) : 0;
+  if (!p.bridge) return (x, y) => { const t = along(x, y); return full * (e0 * (1 - t) + e1 * t); };
+  const taper = Math.min(LIFT_TAPER, len / 2);
+  return (x, y) => {
+    const t = along(x, y);
+    const drop = (1 - e0) * Math.max(0, 1 - (t * len) / taper) + (1 - e1) * Math.max(0, 1 - ((1 - t) * len) / taper);
+    return full * Math.max(0, 1 - drop);
+  };
+}
+
 /** Resample a polyline so long segments follow terrain (or a bridge deck); returns local 3D points. */
-function toPath(coords: V2[], toLocal: (x: number, y: number) => V2, groundAt: (x: number, y: number) => number, lift: number, maxSeg = 12, deck: Deck | null = null, groundedApproach = false): THREE.Vector3[] {
+function toPath(coords: V2[], toLocal: (x: number, y: number) => V2, groundAt: (x: number, y: number) => number, lift: number | ((x: number, y: number) => number), maxSeg = 12, deck: Deck | null = null, groundedApproach = false): THREE.Vector3[] {
   const c = cleanRing(coords);
   if (c.length < 2) return [];
   const out: THREE.Vector3[] = [];
@@ -196,7 +225,8 @@ function toPath(coords: V2[], toLocal: (x: number, y: number) => V2, groundAt: (
   // pulled spans up into false humps at embankments and beneath crossing roads.
   const heightAt = deck ? (x: number, y: number) => groundedApproach
     ? Math.max(deckHeight(deck, x, y), groundAt(x, y)) : deckHeight(deck, x, y) : groundAt;
-  const push = (x: number, y: number) => { const [lx, lz] = toLocal(x, y); out.push(new THREE.Vector3(lx, heightAt(x, y) + lift, lz)); };
+  const liftAt = typeof lift === 'number' ? () => lift : lift;
+  const push = (x: number, y: number) => { const [lx, lz] = toLocal(x, y); out.push(new THREE.Vector3(lx, heightAt(x, y) + liftAt(x, y), lz)); };
   for (let i = 0; i < c.length - 1; i++) {
     const [x0, y0] = c[i], [x1, y1] = c[i + 1];
     const len = Math.hypot(x1 - x0, y1 - y0);
@@ -251,9 +281,12 @@ export function buildRoads(
   const railPaths: THREE.Vector3[][] = [];
   const railMeta: RailPathMeta[] = [];
   const roadPaths: { path: THREE.Vector3[]; width: number; id: string }[] = [];
+  /** deck thickness along a bridge or ramp, and a toPath lift of `base` plus it */
+  const liftOf = (p: RoadProps) => deckLift(p, parseDeck(p.deck));
+  const raise = (base: number, lift: (x: number, y: number) => number) => (x: number, y: number) => base + lift(x, y);
   const bridgeNeighbors = opts.bridges === false ? [] : feats.filter(f=>!f.properties.tunnel && !MINOR.has(f.properties.highway))
     .flatMap(f=>lines(f.geometry).map(line=>({id:f.properties.id,width:f.properties.width,
-      path:toPath(line,toLocal,groundAt,ROAD_Y+(f.properties.bridge ? bridgeLift(f.properties.layer) : 0),roadStep(f.properties.highway),
+      path:toPath(line,toLocal,groundAt,raise(ROAD_Y,liftOf(f.properties)),roadStep(f.properties.highway),
         parseDeck(f.properties.deck),!!f.properties.ramp && !f.properties.bridge)})));
   const occupiedRoad = (id: string) => (v: THREE.Vector3) => bridgeNeighbors.some(other=>{
     if(other.id===id) return false;
@@ -264,6 +297,78 @@ export function buildRoads(
       if(Math.hypot(v.x-a.x-t*dx,v.z-a.z-t*dz)<other.width/2+0.2 && Math.abs(v.y-a.y-t*(b.y-a.y))<1.5) return true;
     }
     return false;
+  });
+
+  // Separately mapped sidewalk bridges beside a road bridge are one structure with it. OSM draws them a little
+  // off the carriageway edge and their own deck anchors can sit ~1 m below the road's, so drawn as-is they
+  // floated beside the deck behind a second pair of railings (South 2nd Street over the Downtown Expressway).
+  // Snap them flush to the road edge at the road's deck height; the road leaves that side's edge strip and
+  // railing to the sidewalk, and the sidewalk drops its inner railing.
+  const roadDecks = opts.bridges === false ? [] : feats
+    .filter((f) => f.properties.bridge && !f.properties.tunnel && !MINOR.has(f.properties.highway) && parseDeck(f.properties.deck))
+    .flatMap((f) => lines(f.geometry).map((line) => ({
+      halfW: f.properties.width / 2,
+      path: toPath(line, toLocal, groundAt, raise(ROAD_Y, liftOf(f.properties)), roadStep(f.properties.highway), parseDeck(f.properties.deck)),
+    })));
+  /** Closest point on a local path, extrapolating past its ends; `lateral` is signed like offsetPath's side. */
+  const nearestOn = (path: THREE.Vector3[], x: number, z: number) => {
+    let best: { point: THREE.Vector3; dir: THREE.Vector3; lateral: number; beyond: number; d2: number } | null = null;
+    for (let i = 1; i < path.length; i++) {
+      const a = path[i - 1], b = path[i];
+      const dx = b.x - a.x, dz = b.z - a.z, len2 = dx * dx + dz * dz;
+      if (len2 < 1e-6) continue;
+      const len = Math.sqrt(len2);
+      const raw = ((x - a.x) * dx + (z - a.z) * dz) / len2;
+      const lo = i === 1 ? -Infinity : 0, hi = i === path.length - 1 ? Infinity : 1;
+      const t = Math.min(hi, Math.max(lo, raw));
+      const beyond = t < 0 ? -t * len : t > 1 ? (t - 1) * len : 0;
+      const point = new THREE.Vector3(a.x + dx * t, t < 0 ? a.y : t > 1 ? b.y : a.y + (b.y - a.y) * t, a.z + dz * t);
+      const d2 = (x - point.x) ** 2 + (z - point.z) ** 2;
+      if (best && d2 >= best.d2) continue;
+      const dir = new THREE.Vector3(dx / len, 0, dz / len);
+      best = { point, dir, lateral: (x - point.x) * -dir.z + (z - point.z) * dir.x, beyond, d2 };
+    }
+    return best;
+  };
+  const SIDEWALK_ON_DECK = 0.12; // a raised walk beside the carriageway
+  const attachToDeck = (path: THREE.Vector3[], halfW: number): THREE.Vector3[] | null => {
+    let hits = 0;
+    const out = path.map((v, i) => {
+      const prev = path[Math.max(0, i - 1)], next = path[Math.min(path.length - 1, i + 1)];
+      const fd = new THREE.Vector2(next.x - prev.x, next.z - prev.z).normalize();
+      for (const r of roadDecks) {
+        const h = nearestOn(r.path, v.x, v.z);
+        if (!h || h.beyond > 3) continue;
+        const off = Math.abs(h.lateral);
+        if (off < r.halfW - 1.5 || off > r.halfW + 2 * halfW + 2 || Math.abs(v.y - h.point.y) > 2.5) continue;
+        if (Math.abs(fd.x * h.dir.x + fd.y * h.dir.z) < 0.9) continue;
+        hits++;
+        const side = Math.sign(h.lateral) * (r.halfW + halfW);
+        return new THREE.Vector3(h.point.x - h.dir.z * side, h.point.y + SIDEWALK_ON_DECK, h.point.z + h.dir.x * side);
+      }
+      return v;
+    });
+    return hits >= Math.max(2, Math.ceil(path.length * 0.6)) ? out : null;
+  };
+  const deckSidewalks = new Map<string, THREE.Vector3[]>();
+  for (const f of roadDecks.length ? feats : []) {
+    const p = f.properties;
+    if (!p.bridge || p.tunnel || !FOOT_MINOR.has(p.highway)) continue;
+    const deck = parseDeck(p.deck);
+    lines(f.geometry).forEach((l, li) => {
+      const path = attachToDeck(toPath(l, toLocal, groundAt, raise(ROAD_Y - 0.04, liftOf(p)), roadStep(p.highway), deck), p.width / 2);
+      if (path) deckSidewalks.set(`${p.id}#${li}`, path);
+    });
+  }
+  /** a mapped sidewalk bridge has been attached along this deck edge */
+  const sidewalkBeside = (v: THREE.Vector3) => [...deckSidewalks.values()].some((path) => {
+    const h = nearestOn(path, v.x, v.z);
+    return !!h && h.beyond < 0.5 && Math.abs(h.lateral) < 1.4 && Math.abs(v.y - h.point.y) < 1.5;
+  });
+  /** inside a road deck's carriageway (plus a curb): the attached sidewalk's inner railing */
+  const overRoadDeck = (v: THREE.Vector3) => roadDecks.some((r) => {
+    const h = nearestOn(r.path, v.x, v.z);
+    return !!h && h.beyond < 0.5 && Math.abs(h.lateral) < r.halfW + 0.6 && Math.abs(v.y - h.point.y) < 1.5;
   });
 
   // Junctions: every paved polyline endpoint shared by two or more ways. Asphalt ends are extended into the
@@ -312,7 +417,7 @@ export function buildRoads(
       for (const [end, next] of ends) {
         const k = key(end[0], end[1]);
         const [lx, lz] = toLocal(end[0], end[1]);
-        const pt = new THREE.Vector3(lx, deckHeight(deck, end[0], end[1]) + bridgeLift(p.layer), lz);
+        const pt = new THREE.Vector3(lx, deckHeight(deck, end[0], end[1]) + liftOf(p)(end[0], end[1]), lz);
         const j = bridgeJunctions.get(k) ?? { pt, ends: [] };
         j.ends.push({
           dir: new THREE.Vector2(next[0] - end[0], next[1] - end[1]).normalize(), halfW: p.width / 2,
@@ -374,6 +479,8 @@ export function buildRoads(
     return chunks.filter((chunk) => chunk.length >= 2);
   };
   const CURB = 0.15, WALK_W = 2.2, WALK_Y = ROAD_Y + CURB, DECK_EDGE = 0.5;
+  /** concrete beyond the carriageway on one side of a deck: a generated walk, or a narrow edge */
+  const deckEdge = (p: RoadProps, side: number) => carriesGeneratedSidewalk(p) && sidewalkSides(p).includes(side) ? WALK_W : DECK_EDGE;
   // sidewalks: raised strips either side with a curb face; bridges keep a wide concrete deck instead
   for (const f of feats) {
     const p = f.properties;
@@ -386,15 +493,16 @@ export function buildRoads(
       const walk = carriesGeneratedSidewalk(p);
       if (p.bridge || p.ramp) {
         const rdeck = p.bridge ? deck : parseDeck(p.deck);
-        const base = toPath(l, toLocal, groundAt, ROAD_Y - 0.06 + lift, roadStep(p.highway), rdeck, !!p.ramp && !p.bridge);
-        const edge = walk && sidewalkSides(p).length ? WALK_W : DECK_EDGE;
+        const base = toPath(l, toLocal, groundAt, raise(ROAD_Y - 0.06, liftOf(p)), roadStep(p.highway), rdeck, !!p.ramp && !p.bridge);
         for (const side of [-1, 1]) {
+          const edge = deckEdge(p, side);
           // Pavement supplies the deck surface. A wider concrete underlay can
           // cover it at slopes and branching spans; emit only exposed edges.
           const strip = offsetPath(base, side * (p.width / 2 + edge / 2));
           const occupied = occupiedRoad(p.id);
           for (let i=1;i<strip.length;i++) {
-            if (occupied(strip[i-1].clone().lerp(strip[i],0.5))) continue;
+            const mid = strip[i-1].clone().lerp(strip[i],0.5);
+            if (occupied(mid) || (p.bridge && sidewalkBeside(mid))) continue;
             ribbon(mb, [strip[i-1],strip[i]], edge / 2, concrete, 0.98,
               p.bridge ? undefined : draped(ROAD_Y - 0.06 + lift));
           }
@@ -474,8 +582,9 @@ export function buildRoads(
     const minor = MINOR.has(p.highway) && !p.bus_only;
     const lift = p.bridge ? bridgeLift(p.layer) : 0;
     const deck = p.bridge || p.ramp ? parseDeck(p.deck) : null;
-    for (const l of lines(f.geometry)) {
-      let path = toPath(l, toLocal, groundAt, (minor ? ROAD_Y - 0.04 : ROAD_Y) + lift, roadStep(p.highway), deck, !!p.ramp && !p.bridge);
+    for (const [li, l] of lines(f.geometry).entries()) {
+      const attached = deckSidewalks.get(`${p.id}#${li}`);
+      let path = attached ?? toPath(l, toLocal, groundAt, raise(minor ? ROAD_Y - 0.04 : ROAD_Y, liftOf(p)), roadStep(p.highway), deck, !!p.ramp && !p.bridge);
       if (path.length < 2) continue;
       const carPath = path; // un-extended: endpoints sit on the OSM node so the traffic graph can join ways
       if (!p.bus_only && (!minor || PAVED_MINOR.has(p.highway)) && !deck) {
@@ -517,8 +626,10 @@ export function buildRoads(
       }
       if (minor && FOOT_MINOR.has(p.highway)) walkPaths.push(path);
       if ((p.bridge || p.ramp) && (!minor || FOOT_MINOR.has(p.highway)) && opts.bridges !== false) {
-        const furnitureHalfWidth = p.width / 2 + (minor ? 0.15 : 2.2);
-        bridgeFurniture(mb, path, furnitureHalfWidth, (v) => groundAt(v.x + originX, -v.z + originY), concrete, minor ? undefined : occupiedRoad(p.id));
+        const occupied = occupiedRoad(p.id);
+        bridgeFurniture(mb, path, minor ? p.width / 2 + 0.15 : (side) => p.width / 2 + deckEdge(p, side),
+          (v) => groundAt(v.x + originX, -v.z + originY), concrete,
+          minor ? (attached ? overRoadDeck : undefined) : (v) => occupied(v) || (!!p.bridge && sidewalkBeside(v)));
       }
     }
   }
@@ -527,12 +638,11 @@ export function buildRoads(
   for (const f of opts.markings === false ? [] : feats) {
     const p = f.properties;
     if (p.tunnel || MINOR.has(p.highway) || p.highway === 'service') continue;
-    const lift = p.bridge ? bridgeLift(p.layer) : 0;
     const deck = p.bridge || p.ramp ? parseDeck(p.deck) : null;
     for (const l of lines(f.geometry)) {
       const source = cleanRing(l);
       for (const chunk of deck ? [source] : splitAtJunctions(source)) {
-        let path = toPath(chunk, toLocal, groundAt, ROAD_Y + 0.02 + lift, roadStep(p.highway), deck, !!p.ramp && !p.bridge);
+        let path = toPath(chunk, toLocal, groundAt, raise(ROAD_Y + 0.02, liftOf(p)), roadStep(p.highway), deck, !!p.ramp && !p.bridge);
         if (path.length < 2) continue;
         if (!deck) {
           const [d0, d1] = endDirs(chunk);

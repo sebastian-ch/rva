@@ -205,6 +205,26 @@ footbridge and ground-level boardwalks also end untouched and really do descend,
 the one skybridge in Richmond. Regressions: `test_skybridge_dead_end_into_a_building_keeps_the_connected_level`
 and `test_footbridge_dead_end_on_open_ground_still_anchors` in `test_bridge_decks.py`.
 
+### Deck thickness tapers at grade; mapped sidewalk bridges join the road deck
+
+**Symptom:** at South 2nd Street over the Downtown Expressway each deck end stood 0.6 m proud of its approach,
+and the bridge/ramp stitch cap showed as a 12-sided plate. The separately mapped sidewalk bridges floated beside
+the carriageway, one overlapping it and one leaving a gap, behind two pairs of railings per side.
+**Cause:** `bridgeLift` (0.6 m deck thickness) was constant along bridges and zero on ramps, so every deck that
+met a road at grade, and every bridge/ramp join, stepped by 0.6 m. The road's railings were always placed for a
+2.2 m generated sidewalk, even when `sidewalk_left/right = false` because mapped sidewalks covered those sides. The
+mapped sidewalk bridges kept their OSM offset and their own deck anchors, about 1 m below the road's.
+**Rule:** the pipeline writes `deck_lift` ([start, end]: 1 where the end continues onto another elevated way,
+0 where it lands at grade; `_deck_lift_ends`). The tiles clip ways, so the renderer cannot see the neighbour
+itself. `deckLift` tapers a bridge's thickness to zero over its last 12 m at a grade end and carries a ramp
+linearly from its bridge end down to its ground end. Tiles without the flag keep the old constant lift. The
+railings and edge strip of a road deck are chosen per side. A `footway`/`path` bridge that runs parallel within a
+road deck's edge corridor is snapped flush to the carriageway edge, 0.12 m above the road deck. Where it attaches,
+the road omits its edge strip and railing, and the sidewalk omits its inner railing. This fixes the join geometry
+only. It does not infer a missing mapped sidewalk, and it leaves ground sidewalks that approach at an angle as
+mapped. **Regressions:** `test_deck_lift_ends_mark_where_a_deck_continues` in `test_bridge_decks.py`;
+`deck lift` and `attaches a mapped sidewalk bridge flush to the road deck at its height` in `roads.test.ts`.
+
 ### Ground-supported approaches are not spans
 
 **Symptom:** the Downtown Expressway beside the Federal Reserve disappears beneath beige terrain patches.

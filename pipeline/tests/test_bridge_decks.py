@@ -154,3 +154,24 @@ def test_road_bridge_dead_end_still_anchors_on_its_ground():
     deck, _ = _deck_endpoints(_gdf(rows), Valley())
     assert deck.iloc[0][5] == 26.0
 
+
+
+def test_deck_lift_ends_mark_where_a_deck_continues():
+    from process import _deck_lift_ends
+
+    rows = [
+        {"highway": "tertiary", "geometry": LineString([(0, 0), (0, 20)])},    # ramp up to the bridge
+        {"highway": "tertiary", "geometry": LineString([(0, 20), (0, 80)])},   # bridge
+        {"highway": "tertiary", "geometry": LineString([(0, 80), (0, 100)])},  # bridge continues (split way)
+        {"highway": "footway", "geometry": LineString([(8, 20), (8, 80)])},    # footbridge landing at grade
+    ]
+    lines = _gdf(rows)
+    deck = pd.Series([[0, 0, 40, 0, 20, 41], [0, 20, 41, 0, 80, 42], [0, 80, 42, 0, 100, 41],
+                      [8, 20, 40, 8, 80, 41]], index=lines.index, dtype=object)
+    bridge = pd.Series([False, True, True, True], index=lines.index)
+    ramp = pd.Series([True, False, False, False], index=lines.index)
+    ends = _deck_lift_ends(lines, deck, bridge, ramp)
+    assert ends[0] == [0, 1]  # ground end, then the bridge
+    assert ends[1] == [1, 1]  # a ramp at one end, the next bridge span at the other
+    assert ends[2] == [1, 0]  # lands at grade
+    assert ends[3] == [0, 0]

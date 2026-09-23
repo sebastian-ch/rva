@@ -59,10 +59,11 @@ def _write_layer(gdf: gpd.GeoDataFrame, dst: Path) -> int:
         return 0
     # compact: 2 decimals (cm) is plenty at this scale
     gdf = gdf.copy()
-    if "deck" in gdf:
-        # a deck may arrive as a list or, via the layer cache's parquet round-trip, as an ndarray
-        gdf["deck"] = gdf["deck"].map(
-            lambda v: json.dumps([float(x) for x in v]) if isinstance(v, (list, tuple, np.ndarray)) else None)
+    for col in ("deck", "deck_lift"):
+        if col in gdf:
+            # list-valued: may arrive as a list or, via the layer cache's parquet round-trip, as an ndarray
+            gdf[col] = gdf[col].map(
+                lambda v: json.dumps([float(x) for x in v]) if isinstance(v, (list, tuple, np.ndarray)) else None)
     gdf["geometry"] = gdf.geometry.set_precision(0.01)
     gdf = gdf[~gdf.geometry.is_empty]
     gdf.to_file(dst, driver="GeoJSON", COORDINATE_PRECISION=2, RFC7946="NO")

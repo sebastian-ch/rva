@@ -72,7 +72,7 @@ procedural roof.
 | `website` | string\|null | |
 
 ### roads (LineString)
-`id`, `name`, `highway`, `lanes` (int), `width` (m), `oneway` (bool), `surface`, `sidewalk` (bool), `bridge` (bool), `ramp` (bool: a non-bridge way whose end meets an elevated deck; carries a `deck` so it climbs to it), `tunnel` (bool), `layer` (int), `deck` (bridges and ramps: `[x0,y0,z0,x1,y1,z1]`, the unclipped way's ends with deck elevations relative to `base_elevation`, computed per connected bridge chain from its land ends (chain nodes whose ground is at or above the interpolated deck become anchors too); the GeoJSON driver stores it as a real array)
+`id`, `name`, `highway`, `lanes` (int), `width` (m), `oneway` (bool), `surface`, `sidewalk` (bool), `bridge` (bool), `ramp` (bool: a non-bridge way whose end meets an elevated deck; carries a `deck` so it climbs to it), `tunnel` (bool), `layer` (int), `deck` (bridges and ramps: `[x0,y0,z0,x1,y1,z1]`, the unclipped way's ends with deck elevations relative to `base_elevation`, computed per connected bridge chain from its land ends (chain nodes whose ground is at or above the interpolated deck become anchors too); the GeoJSON driver stores it as a real array), `deck_lift` (with `deck`: `[start, end]`, 1 where that end continues onto another elevated way — any bridge, or a ramp for a bridge — and 0 where it lands at grade; the viewer tapers its 0.6 m deck thickness to zero at grade ends and carries it through bridge/ramp joins)
 
 Optional road attributes: `generated_sidewalk` (the pipeline's normalized curb-strip eligibility),
 `sidewalk_left` / `sidewalk_right` (boolean or null; false also covers
