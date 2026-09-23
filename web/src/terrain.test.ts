@@ -60,3 +60,28 @@ it('matches the rendered diagonal on a non-planar embankment cell',()=>{
  expect(field.at(5,5)).toBe(0); // bilinear gave 2.5 m, intersecting the actual mesh
  expect(field.at(7.5,7.5)).toBeCloseTo(5);
 });
+
+describe('HeightField.clipToCells', () => {
+  // Uneven heights so every cell half is its own plane.
+  const field = new HeightField({ size: 20, n: 3, origin: [100, 200], elev: [0, 4, 1, 7, 2, 9, 3, 0, 5] });
+  const area = (r: [number, number][]) => Math.abs(r.reduce((s, u, i) => { const v = r[(i + 1) % r.length]; return s + u[0] * v[1] - v[0] * u[1]; }, 0)) / 2;
+  const tri: [number, number][] = [[101, 201], [119, 203], [104, 219]];
+  const pieces = field.clipToCells(tri);
+
+  it('partitions the triangle without losing area', () => {
+    expect(pieces.length).toBeGreaterThan(4);
+    expect(pieces.reduce((s, p) => s + area(p), 0)).toBeCloseTo(area(tri), 6);
+  });
+
+  it('keeps each piece on one rendered terrain triangle', () => {
+    // Planar over the piece: every chord midpoint sits at the mean of its ends.
+    for (const p of pieces) for (const u of p) for (const v of p) {
+      expect(field.at((u[0] + v[0]) / 2, (u[1] + v[1]) / 2)).toBeCloseTo((field.at(...u) + field.at(...v)) / 2, 6);
+    }
+  });
+
+  it('keeps pieces that overhang the grid edge', () => {
+    const edge: [number, number][] = [[95, 205], [105, 205], [100, 215]];
+    expect(field.clipToCells(edge).reduce((s, p) => s + area(p), 0)).toBeCloseTo(area(edge), 6);
+  });
+});

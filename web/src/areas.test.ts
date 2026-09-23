@@ -1,6 +1,7 @@
 import { expect, it } from 'vitest';
 import * as THREE from 'three';
 import { buildAreas, pitchSurfaceColor } from './areas';
+import { HeightField } from './terrain';
 import type { PolyGeom } from './types';
 
 it('keeps coastal decks above water with outward-facing solid sides', () => {
@@ -108,4 +109,21 @@ it('decorates a small youth baseball diamond', () => {
   const unique = new Set(Array.from({ length: colors.count }, (_, i) =>
     `${colors.getX(i).toFixed(3)},${colors.getY(i).toFixed(3)},${colors.getZ(i).toFixed(3)}`));
   expect(unique.size).toBeGreaterThanOrEqual(3); // turf, dirt, and paint
+});
+
+it('drapes LOD1 land exactly on the terrain triangles without markings', () => {
+  const field = new HeightField({ size: 40, n: 5, origin: [0, 0], elev: Array.from({ length: 25 }, (_, i) => (i * 7) % 5) });
+  const lot = { type: 'Feature' as const, properties: { id: 'lot', name: null, kind: 'parking' },
+    geometry: { type: 'Polygon', coordinates: [[[2, 3], [37, 5], [33, 38], [4, 30], [2, 3]]] } as PolyGeom };
+  const toLocal = (x: number, y: number): [number, number] => [x, -y], groundAt = (x: number, y: number) => field.at(x, y);
+  const full = buildAreas([lot], [], toLocal, groundAt, 0).land;
+  const lod1 = buildAreas([lot], [], toLocal, groundAt, 0, undefined, { markings: false, cells: (tri) => field.clipToCells(tri) }).land;
+  const pos = lod1.getAttribute('position');
+  for (let i = 0; i < pos.count; i += 3) {
+    // Triangle centroid as well as corners: a triangle spanning a crease would leave the surface in between.
+    const cx = (pos.getX(i) + pos.getX(i + 1) + pos.getX(i + 2)) / 3, cz = (pos.getZ(i) + pos.getZ(i + 1) + pos.getZ(i + 2)) / 3;
+    const cy = (pos.getY(i) + pos.getY(i + 1) + pos.getY(i + 2)) / 3;
+    expect(cy).toBeCloseTo(field.at(cx, -cz) + 0.06, 6);
+  }
+  expect(pos.count).toBeLessThan(full.getAttribute('position').count / 4);
 });

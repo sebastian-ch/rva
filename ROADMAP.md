@@ -150,6 +150,8 @@ Today the client parses GeoJSON and builds ~1.2 M triangles on the main thread. 
 - **Done 2026-09-17:** replace the POI GeoJSON layer with the versioned `pois.bin` quantized point table. Trees
   dominate the expanded-region payload; coordinates are centimetres relative to the tile origin and string fields
   are deduplicated. Rebuild tiles before deploying so no legacy POI GeoJSON files remain.
+- **Done 2026-09-22:** LOD1 land drapes are clipped to the terrain triangles instead of refined by error, cutting
+  the baked LOD1 from 254 MB to 87.5 MB (gzip 169 → 54 MB) and land triangles from 36.5 M to 7.5 M.
 - Bake meshopt-compressed LOD1 geometry offline before considering full-detail baked tiles. Preserve the current
   worker builder for development and fallback.
 - Carry indexed terrain through worker transfer instead of expanding the regular grid to triangle soup.

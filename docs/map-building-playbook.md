@@ -150,6 +150,15 @@ triangle edges ≤ 8 m before accepting the error estimate (current terrain cell
 is capped at depth 9. [drape.test.ts](../web/src/drape.test.ts) reproduces the missed-cut case.
 Adjust the spacing to the terrain resolution when reusing the renderer.
 
+That refinement is expensive: midpoint splits never line up with the terrain's cell edges and diagonals,
+so a 2.5 cm error bound refines along every crease. LOD1 land cost 36.5 M triangles across 625 tiles
+(~45× the terrain) and 210 MB of the 254 MB baked LOD1. Looser tolerances trade triangles against a
+lift that pushes land over roads. The better tool is exact: `HeightField.clipToCells` cuts each land
+triangle along the rendered terrain triangles, so every piece is planar on the surface. LOD1 now uses it
+(`AreaDetail.cells` in [areas.ts](../web/src/areas.ts)): 7.5 M land triangles, 87.5 MB baked, and no
+terrain poking through by construction. Full-detail tiles still refine; switching them is a candidate
+once checked on screen. **Regression:** `clipToCells` tests in terrain.test.ts, LOD1 drape in areas.test.ts.
+
 ## 3. Bridges: bare-earth elevation is not deck elevation
 
 **Symptom:** a bridge dives into an underpass, develops a hump, or meets its approach with a sudden step.

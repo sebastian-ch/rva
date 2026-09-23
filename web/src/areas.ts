@@ -38,7 +38,8 @@ export function pitchSurfaceColor(p: Pick<AreaProps, 'id' | 'kind' | 'sport' | '
 
 /** Drape polygons onto terrain; interior is subdivided on a grid so big parks follow relief. */
 function drape(mb: MeshBuilder, feat: Feature<PolyGeom, AreaProps>, color: THREE.Color, lift: number,
-  toLocal: (x: number, y: number) => V2, groundAt: (x: number, y: number) => number, flatY: number | null, shade = 1) {
+  toLocal: (x: number, y: number) => V2, groundAt: (x: number, y: number) => number, flatY: number | null, shade = 1,
+  detail: AreaDetail = AREA_FULL) {
   for (const poly of polygons(feat.geometry)) {
     const rings = poly.map((r) => cleanRing(r)).filter((r) => r.length >= 3);
     if (!rings.length) continue;
@@ -52,6 +53,14 @@ function drape(mb: MeshBuilder, feat: Feature<PolyGeom, AreaProps>, color: THREE
     };
     for (let i = 0; i < idx.length; i += 3) {
       const A = all[idx[i]], B = all[idx[i + 1]], C = all[idx[i + 2]];
+      if (flatY === null && detail.cells) {
+        for (const piece of detail.cells([A, B, C])) for (let k = 1; k < piece.length - 1; k++) {
+          let va = V(piece[0]), vb = V(piece[k]), vc = V(piece[k + 1]);
+          if (new THREE.Vector3().subVectors(vb, va).cross(new THREE.Vector3().subVectors(vc, va)).y < 0) [vb, vc] = [vc, vb];
+          mb.tri(va, vb, vc, color, UP, shade);
+        }
+        continue;
+      }
       subdivideTri(A, B, C, flatY === null ? (feat.properties.kind === 'beach' ? 2.5 : 8) : 60, (a, b, c) => {
         let va = V(a), vb = V(b), vc = V(c);
         const cr = new THREE.Vector3().subVectors(vb, va).cross(new THREE.Vector3().subVectors(vc, va));
@@ -77,6 +86,12 @@ function subdivideTri(a: V2, b: V2, c: V2, maxEdge: number, emit: (a: V2, b: V2,
   else { const x = mid(c, a); subdivideTri(a, b, x, maxEdge, emit, depth + 1); subdivideTri(x, b, c, maxEdge, emit, depth + 1); }
 }
 
+/** How land drapes meet the terrain. Full-detail tiles refine each triangle until it follows the ground
+ * (conformTriangle). `cells` instead cuts triangles along the terrain's own triangles (`HeightField.clipToCells`),
+ * which is exact and far cheaper; LOD1 tiles use it, where refinement cost ~45x the terrain's triangle count. */
+export interface AreaDetail { markings: boolean; cells?: (tri: V2[]) => V2[][] }
+export const AREA_FULL: AreaDetail = { markings: true };
+
 export function buildAreas(
   landuse: Feature<PolyGeom, AreaProps>[],
   water: Feature<PolyGeom, AreaProps>[],
@@ -84,6 +99,7 @@ export function buildAreas(
   groundAt: (x: number, y: number) => number,
   baseWaterY: number,
   waterAt?: (x: number, y: number) => number,
+  detail: AreaDetail = AREA_FULL,
 ): { land: THREE.BufferGeometry; water: THREE.BufferGeometry } {
   const land = new MeshBuilder(), wat = new MeshBuilder();
   for (const f of landuse) {
@@ -94,7 +110,8 @@ export function buildAreas(
     const spec = LANDUSE_COLOR[f.properties.kind];
     if (!spec) continue;
     const pitchColor = pitchSurfaceColor(f.properties);
-    drape(land, f, hex(pitchColor as never), spec[1], toLocal, groundAt, null);
+    drape(land, f, hex(pitchColor as never), spec[1], toLocal, groundAt, null, 1, detail);
+    if (!detail.markings) continue;
     if (f.properties.kind === 'parking') parkingStripes(land, f, toLocal, groundAt, spec[1] + 0.02);
     if (f.properties.kind === 'pitch') sportsMarkings(land, f, toLocal, groundAt, spec[1] + 0.025);
   }

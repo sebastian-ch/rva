@@ -23,6 +23,49 @@ export class HeightField {
     // described a different surface and exposed terrain through parks and roads.
     return tx + ty <= 1 ? a + (b-a)*tx + (c-a)*ty : d + (c-d)*(1-tx) + (b-d)*(1-ty);
   }
+  /** Cut triangle abc (projected metres) along the rendered terrain triangles. Each convex piece lies on one of
+   * them, so its corners' `at` heights describe the surface exactly. Pieces past the grid edge stay attached to the
+   * outermost cells rather than being dropped. */
+  clipToCells(tri: [number, number][]): [number, number][][] {
+    const g = this.grid, s = this.step, m = this.n - 1;
+    const p = tri.map(([x, y]): [number, number] => [(x - g.origin[0]) / s, (y - g.origin[1]) / s]);
+    const xs = p.map((q) => q[0]), ys = p.map((q) => q[1]);
+    const cx0 = Math.max(0, Math.floor(Math.min(...xs))), cx1 = Math.min(m - 1, Math.ceil(Math.max(...xs)) - 1);
+    const cy0 = Math.max(0, Math.floor(Math.min(...ys))), cy1 = Math.min(m - 1, Math.ceil(Math.max(...ys)) - 1);
+    const out: [number, number][][] = [];
+    for (let iy = cy0; iy <= cy1; iy++) for (let ix = cx0; ix <= cx1; ix++) {
+      let cell = p;
+      if (ix > 0) cell = clipHalf(cell, 1, 0, -ix);
+      if (ix < m - 1) cell = clipHalf(cell, -1, 0, ix + 1);
+      if (iy > 0) cell = clipHalf(cell, 0, 1, -iy);
+      if (iy < m - 1) cell = clipHalf(cell, 0, -1, iy + 1);
+      if (cell.length < 3) continue;
+      // buildTerrainMesh splits each cell along its b-c diagonal, x + y = ix + iy + 1 in grid units.
+      for (const side of [1, -1]) {
+        const piece = clipHalf(cell, -side, -side, side * (ix + iy + 1));
+        if (piece.length >= 3 && Math.abs(ringArea(piece)) > 1e-9) out.push(piece.map(([x, y]) => [g.origin[0] + x * s, g.origin[1] + y * s]));
+      }
+    }
+    return out;
+  }
+}
+
+/** Sutherland-Hodgman: keep the part of a convex polygon where a·x + b·y + c >= 0. */
+function clipHalf(poly: [number, number][], a: number, b: number, c: number): [number, number][] {
+  const out: [number, number][] = [];
+  for (let i = 0; i < poly.length; i++) {
+    const u = poly[i], v = poly[(i + 1) % poly.length];
+    const fu = a * u[0] + b * u[1] + c, fv = a * v[0] + b * v[1] + c;
+    if (fu >= 0) out.push(u);
+    if ((fu >= 0) !== (fv >= 0)) { const t = fu / (fu - fv); out.push([u[0] + (v[0] - u[0]) * t, u[1] + (v[1] - u[1]) * t]); }
+  }
+  return out;
+}
+
+function ringArea(r: [number, number][]): number {
+  let a = 0;
+  for (let i = 0; i < r.length; i++) { const u = r[i], v = r[(i + 1) % r.length]; a += u[0] * v[1] - v[0] * u[1]; }
+  return a / 2;
 }
 
 export const FLAT_FIELD = (z = 0): HeightField =>
