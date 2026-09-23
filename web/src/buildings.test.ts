@@ -145,6 +145,24 @@ describe('buildBuildingsMesh', () => {
     expect(maxY).toBeCloseTo(19, 2);
   });
 
+  it('draws building=roof as a canopy on posts, with no walls down to the ground', () => {
+    const feat = makeFeature('flat');
+    feat.properties.type = 'roof';
+    feat.properties.height = 4.6;
+    const { mesh } = buildBuildingsMesh([feat], toLocal, groundAt, material(), { details: false });
+    const pos = mesh.geometry.getAttribute('position') as THREE.BufferAttribute;
+    const fasciaBottom = 5 + 4.6 - 0.92;
+    let edgeBelow = 0, below = 0;
+    for (let i = 0; i < pos.count; i++) {
+      if (pos.getY(i) >= fasciaBottom - 1e-3) continue;
+      below++; // posts
+      const x = pos.getX(i), z = pos.getZ(i);
+      if (Math.abs(Math.abs(x) - 5) < 1e-3 || Math.abs(Math.abs(z) - 5) < 1e-3) edgeBelow++;
+    }
+    expect(below).toBeGreaterThan(0);
+    expect(edgeBelow).toBe(0);
+  });
+
   it('emits one attached roof mesh for a multipart footprint', () => {
     const feat = makeFeature('flat');
     feat.geometry = { type: 'MultiPolygon', coordinates: [

@@ -315,6 +315,73 @@ function addCaryMcDonaldsFacade(mb: MeshBuilder, outer: V2[], ground: number): v
   box(sideStoreU, eastV + eastSide * 0.18, 2.9, sideStoreWidth, 0.22, 0.28, trim);
 }
 
+/** OSM building=roof: a roof on posts with no walls (fuel canopies, shelters, carports). */
+function isCanopy(p: Pick<BuildingProps, 'type' | 'hidden'>): boolean {
+  return p.type === 'roof' && p.hidden !== true;
+}
+
+/** Fascia depth for a canopy, so the walls loop only draws the roof edge band. */
+function canopyFascia(height: number): number {
+  return Math.min(1.0, Math.max(0.35, height * 0.2));
+}
+
+/**
+ * Posts along the canopy's long axis (fuel canopies stand on the pump-island line), the soffit under the roof
+ * slab, and for 7-Eleven the striped fascia and pump islands.
+ */
+function addCanopy(mb: MeshBuilder, outer: V2[], holes: V2[][], base: number, top: number, p: BuildingProps, wall: THREE.Color): void {
+  const fascia = canopyFascia(p.height);
+  const under = top - fascia;
+  const all = [...outer, ...holes.flat()];
+  const idx = triangulate(outer, holes);
+  const DOWN = new THREE.Vector3(0, -1, 0);
+  for (let i = 0; i < idx.length; i += 3) {
+    const A = all[idx[i]], B = all[idx[i + 1]], C = all[idx[i + 2]];
+    let a = new THREE.Vector3(A[0], under, A[1]), b = new THREE.Vector3(B[0], under, B[1]), c = new THREE.Vector3(C[0], under, C[1]);
+    const cr = new THREE.Vector3().subVectors(b, a).cross(new THREE.Vector3().subVectors(c, a));
+    if (cr.y > 0) [b, c] = [c, b];
+    mb.tri(a, b, c, wall, DOWN, 0.7);
+  }
+  const obb = minAreaOBB(outer);
+  const [ax, az] = obb.axis;
+  const rot = Math.atan2(az, ax);
+  const at = (u: number): V2 => [obb.center[0] + ax * u, obb.center[1] + az * u];
+  const span = Math.max(0, obb.halfLong * 2 - 3.0);
+  const posts = span < 1 ? 1 : Math.max(2, Math.ceil(span / 9) + 1);
+  const postU = (k: number) => (posts === 1 ? 0 : -span / 2 + (span * k) / (posts - 1));
+  const post = Math.min(0.5, Math.max(0.3, obb.halfShort * 0.1));
+  const seven = isSevenEleven(p);
+  for (let k = 0; k < posts; k++) {
+    const [x, z] = at(postU(k));
+    addBox(mb, x, base, z, post, under - base, post, rot, seven ? pal('seven_white') : wall);
+  }
+  if (!seven) return;
+  // Brand fascia: orange, red and green bands wrapped round the white edge.
+  const bands: [number, number, THREE.Color][] = [[0.18, 0.12, pal('seven_orange')], [0.4, 0.1, pal('seven_red')], [0.6, 0.1, pal('seven_green')]];
+  for (const [y, h, color] of bands) {
+    const ring = outer; // 6 cm boxes centred on the fascia face stand 3 cm proud of it
+    for (let i = 0; i < ring.length; i++) {
+      const [x0, z0] = ring[i], [x1, z1] = ring[(i + 1) % ring.length];
+      const len = Math.hypot(x1 - x0, z1 - z0);
+      if (len < 0.3) continue;
+      addBox(mb, (x0 + x1) / 2, under + fascia * y, (z0 + z1) / 2, len, fascia * h, 0.06, Math.atan2(z1 - z0, x1 - x0), color);
+    }
+  }
+  // One pump island per gap between posts (or under a single post), with a pump at each end.
+  const islands = Math.max(1, posts - 1);
+  for (let k = 0; k < islands; k++) {
+    const u0 = posts === 1 ? -obb.halfLong * 0.5 : postU(k), u1 = posts === 1 ? obb.halfLong * 0.5 : postU(k + 1);
+    const len = Math.max(1.6, u1 - u0 - post);
+    const [x, z] = at((u0 + u1) / 2);
+    addBox(mb, x, base, z, len, 0.45, 1.1, rot, pal('concrete'));
+    for (const s of [-0.28, 0.28]) {
+      const [px, pz] = at((u0 + u1) / 2 + s * len);
+      addBox(mb, px, base + 0.45, pz, 0.7, 1.6, 0.5, rot, pal('seven_white'));
+      addBox(mb, px, base + 1.55, pz, 0.72, 0.3, 0.52, rot, pal('seven_red'));
+    }
+  }
+}
+
 export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, BuildingProps>, toLocal: (x: number, y: number) => V2, groundY: number, opts: ExtrudeOptions = {}): number {
   const p = feat.properties;
   const start = mb.triCount;
@@ -325,7 +392,9 @@ export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, Buildin
   const hidden = p.hidden === true;
   const base = groundY - 0.3 + p.min_height; // sink slightly so slopes don't show gaps
   const top = groundY + (hidden ? 0.6 : p.height);
-  const roofH = hidden || p.roof_shape === 'flat' ? 0 : p.roof_height;
+  const canopy = isCanopy(p);
+  const roofH = hidden || canopy || p.roof_shape === 'flat' ? 0 : p.roof_height;
+  const wallBase = canopy ? top - canopyFascia(p.height) : base;
   let lod2 = false;
   let lod2Attempted = false;
 
@@ -338,7 +407,7 @@ export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, Buildin
     const holes = rings.slice(1).map((r) => (signedArea(r) > 0 ? r.slice().reverse() : r));
 
     // walls
-    const fp = hidden || isSevenEleven(p) || caryMcDonalds ? { floor: 0, style: 0 } : facadeParams(p);
+    const fp = hidden || canopy || isSevenEleven(p) || caryMcDonalds ? { floor: 0, style: 0 } : facadeParams(p);
     const seed = (hashStr(p.id) % 1000) / 1000;
     for (const ring of [outer, ...holes]) {
       const n = ring.length;
@@ -353,7 +422,7 @@ export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, Buildin
         // (A centroid-based test breaks on concave U/L footprints and culled courtyard walls.)
         const nx = dz / len, nz = -dx / len;
         const nrm = new THREE.Vector3(nx, 0, nz);
-        const a = new THREE.Vector3(x0, base, z0), b = new THREE.Vector3(x1, base, z1);
+        const a = new THREE.Vector3(x0, wallBase, z0), b = new THREE.Vector3(x1, wallBase, z1);
         const c2 = new THREE.Vector3(x1, top, z1), d = new THREE.Vector3(x0, top, z0);
         const sTop = 1, sBot = p.height > AO_HEIGHT ? AO_BOTTOM : THREE.MathUtils.lerp(1, AO_BOTTOM, p.height / AO_HEIGHT);
         // sun-facing walls a touch lighter: fake directional shading baked in
@@ -391,7 +460,7 @@ export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, Buildin
     // components together; emitting it once per polygon duplicates the roof.
     if (!lod2Attempted) {
       lod2Attempted = true;
-      lod2 = opts.lod2 !== false && p.roof_source === 'lod2' && addLod2Roof(mb, p.lod2_roof, toLocal, top, roof);
+      lod2 = opts.lod2 !== false && !canopy && p.roof_source === 'lod2' && addLod2Roof(mb, p.lod2_roof, toLocal, top, roof);
     }
     if (roofH > 0 && !lod2) {
       const done = (p.roof_shape === 'hip' || p.roof_shape === 'pyramidal') && addInsetRoof(mb, outer, top, roofH, roof, p.roof_shape === 'pyramidal');
@@ -402,6 +471,10 @@ export function extrudeBuilding(mb: MeshBuilder, feat: Feature<PolyGeom, Buildin
     if (!hidden && isVirginiaLotteryBuilding(p)) addVirginiaLotterySign(mb, outer, top);
     const rooftopAssets = hidden || p.roof_shape !== 'flat' ? [] : rooftopAssetsFor(p.id);
     if (rooftopAssets.length) addRooftopAssets(mb, rooftopAssets, outer, holes, toLocal, top);
+    if (canopy) {
+      addCanopy(mb, outer, holes, base, top, p, wall);
+      continue;
+    }
     if (opts.details !== false && !hidden) {
       if (isSevenEleven(p)) addSevenElevenFacade(mb, outer, groundY);
       else if (caryMcDonalds) addCaryMcDonaldsFacade(mb, outer, groundY);
