@@ -6,14 +6,16 @@ import type { V2 } from './geomutil';
 /**
  * A fluffy ginger Aussie that runs laps of the lawns in the Robins Sculpture Garden behind the Virginia Museum of
  * Fine Arts, stopping now and then to sniff. The loop (EPSG:32618) stays inside the garden (osm:way/236129239),
- * is ~80% on its lawns, crossing the garden paths between them, and keeps 7 m clear of every building. Height is
- * the top of the tile's ground meshes (terrain, land drapes, paths) under the dog, raycast a few times a second,
- * so it stands on the surface rather than inside it; it hides while its tile is not resident.
+ * is ~80% on its lawns, crossing the garden paths between them, and keeps 7 m clear of every building. The return
+ * leg stays well north-west of the museum's gallery wing so the default camera (south-east, 35°) sees over it
+ * everywhere: the worst point needs ~17°. Height is the top of the tile's ground meshes (terrain, land drapes,
+ * paths) under the dog, raycast a few times a second, so it stands on the surface rather than inside it; it hides
+ * while its tile is not resident.
  */
 const LAWN_LOOP: V2[] = [
-  [281279, 4159440], [281294, 4159460], [281309, 4159480], [281319, 4159495], [281311, 4159510], [281324, 4159535],
-  [281334, 4159560], [281344, 4159585], [281369, 4159565], [281384, 4159550], [281359, 4159540], [281339, 4159520],
-  [281324, 4159490], [281311, 4159455], [281299, 4159425],
+  [281279, 4159440], [281294, 4159460], [281307, 4159480], [281315, 4159495], [281311, 4159510], [281324, 4159535],
+  [281334, 4159560], [281344, 4159585], [281369, 4159570], [281384, 4159555], [281364, 4159556], [281344, 4159546],
+  [281330, 4159522], [281320, 4159492], [281306, 4159458], [281295, 4159428],
 ];
 
 const SCALE = 2.4;        // well over life size: a real-sized dog is a few pixels at the viewer's closest zoom
