@@ -35,17 +35,18 @@ function packedUnit(value, encoding) {
 }
 function indexedGeometry(geom) {
   if (!geom?.position || !geom.normal || !geom.color) return geom;
-  const count = geom.position.length / 3, byVertex = new Map(), keep = [], indices = [];
+  const count = geom.position.length / 3, byVertex = new Map(), keep = [], remap = [];
   for (let i = 0; i < count; i++) {
     const p = i * 3;
     // Rounding matches the later 16-bit/8-bit streams, so vertices that decode identically share one index.
     const key = [0, 1, 2].flatMap((k) => [Math.round(geom.position[p + k] * 100), Math.round((geom.normal[p + k] * .5 + .5) * 255), Math.round(geom.color[p + k] * 255)]).join(',');
     let next = byVertex.get(key);
     if (next === undefined) { next = keep.length; byVertex.set(key, next); keep.push(i); }
-    indices.push(next);
+    remap.push(next);
   }
   const copy = (src) => Float32Array.from(keep.flatMap((i) => Array.from(src.slice(i * 3, i * 3 + 3))));
-  const index = new Uint32Array(indices);
+  // An already-indexed source (the terrain grid) keeps its triangles; only a triangle soup reads vertices in order.
+  const index = geom.index ? Uint32Array.from(geom.index, (i) => remap[i]) : new Uint32Array(remap);
   return { position: copy(geom.position), normal: copy(geom.normal), color: copy(geom.color), index };
 }
 for (const [tileIndex, meta] of index.tiles.entries()) {

@@ -159,6 +159,14 @@ it (`AreaDetail.cells` in [areas.ts](../web/src/areas.ts)): LOD1 fell to 7.5 M l
 baked, and no terrain pokes through by construction. Refinement remains only for callers without a height
 field. **Regression:** `clipToCells` tests in terrain.test.ts, LOD1 drape in areas.test.ts.
 
+The LOD1 baker ([bake-lod1.mjs](../web/tools/bake-lod1.mjs)) dedupes vertices before meshopt encoding.
+It used to treat every mesh as a triangle soup, so an already-indexed source (the 26×26 terrain grid,
+land, roads) lost its index: terrain became 676 sequential indices instead of 3750, scrambled triangles
+whose last one read past the vertex list. Hidden under the land drape it looked fine, but raycasts
+against LOD1 terrain returned NaN hits (the Carytown dog vanished and dragged the camera to NaN).
+`indexedGeometry` now maps an existing index through the vertex remap. Rebake after changing it: the
+script skips tiles that already have `lod1.meshopt`.
+
 ## 3. Bridges: bare-earth elevation is not deck elevation
 
 **Symptom:** a bridge dives into an underpass, develops a hump, or meets its approach with a sudden step.
