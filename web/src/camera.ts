@@ -10,6 +10,7 @@ export class IsoCamera {
   readonly camera: THREE.OrthographicCamera | THREE.PerspectiveCamera;
   readonly controls: MapControls;
   private anim: { from: THREE.Vector3; to: THREE.Vector3; fromZoom: number; toZoom: number; t: number; dur: number } | null = null;
+  private follow: (() => THREE.Vector3 | null) | null = null;
   private mapMode = false;
   private savedPolar = 0;
 
@@ -36,7 +37,7 @@ export class IsoCamera {
     c.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE };
     c.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_ROTATE };
     this.savedPolar = polar;
-    c.addEventListener('start', () => { this.anim = null; });
+    c.addEventListener('start', () => { this.anim = null; this.follow = null; });
   }
 
   lookAt(target: THREE.Vector3, distance = 1500) {
@@ -66,6 +67,13 @@ export class IsoCamera {
   flyTo(target: THREE.Vector3, zoom: number, dur = 1.6) {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) dur = 0.001;
     this.anim = { from: this.controls.target.clone(), to: target.clone(), fromZoom: this.camera.zoom, toZoom: zoom, t: 0, dur };
+    this.follow = null;
+  }
+
+  /** Fly to a moving target and keep it centred until the user pans, zooms or rotates, or another flight starts. */
+  followTarget(get: () => THREE.Vector3 | null, zoom: number) {
+    this.flyTo(get() ?? this.controls.target, zoom);
+    this.follow = get;
   }
 
   setMapMode(on: boolean) {
@@ -80,6 +88,7 @@ export class IsoCamera {
 
   restore(target: THREE.Vector3, zoom: number, azimuth: number, distance: number, map: boolean) {
     this.anim = null;
+    this.follow = null;
     this.controls.enableDamping = false;
     this.controls.update();
     this.controls.target.copy(target);
@@ -93,6 +102,14 @@ export class IsoCamera {
   }
 
   update(dt: number) {
+    let followed = this.follow?.();
+    if (followed && !Number.isFinite(followed.x + followed.y + followed.z)) followed = null;
+    if (followed && this.anim) this.anim.to.copy(followed);
+    else if (followed) {
+      const delta = followed.sub(this.controls.target).multiplyScalar(Math.min(1, dt * 8));
+      this.controls.target.add(delta);
+      this.camera.position.add(delta);
+    }
     if (this.anim) {
       const a = this.anim;
       a.t = Math.min(a.dur, a.t + dt);

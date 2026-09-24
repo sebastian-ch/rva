@@ -76,7 +76,7 @@ Weak spots, roughly in the order a viewer notices them:
 | # | Item | Effort | Why now |
 |---|---|---|---|
 | 1 | Render OSM `building:part` and `min_height` as separate extrusions | S | **Done 2026-09-09:** 126 parts, 42 covered outlines drawn as plinths; James Center's three towers now rise from their shared podium |
-| 2 | Screen-space AO + outline + colour grade post pass | M | **Done:** `postfx.ts` — depth-difference contact AO, depth-edge outline, warm/cool grade, vignette; `o` toggles it |
+| 2 | Screen-space AO + outline + colour grade post pass | M | **Done:** `postfx.ts` — depth-difference contact AO, depth-edge outline, warm/cool grade, vignette; `p` toggles it |
 | 3 | Prebuilt road and junction surface topology with curb radii | M | **In progress:** topology-aware trimming/fills and crossing attachment are live; canonical source-derived curb polygons, medians and turn lanes remain |
 | 4 | roofer-based LoD2 roofs replacing the two-plane fit | L | Real roof forms on every building; inputs already exist |
 | 5 | Facade grammar (geometry) for the ground floor: doors, storefront frames, awnings, steps | M | **Done 2026-09-21:** `web/src/facadeGrammar.ts` — street frontages read from the tile's road centrelines, five rule sets (plinth, bay piers, lintel, glazing, awnings, entrance, second-floor cornice), LOD 0 only, 20 k triangles per tile. Balconies and bay windows remain |

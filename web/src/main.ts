@@ -8,7 +8,7 @@ import { IsoCamera } from './camera';
 import { TileWorld, type LoadedTile, type Materials } from './tiles';
 import { TileManager } from './tileManager';
 import { PropPool } from './propPool';
-import { Dog } from './dog';
+import { Dog, AUSSIE, BASSET } from './dog';
 import { TrafficClient } from './trafficClient';
 import { rangeForFace, type BuildingRange } from './buildings';
 import { extrudeBuilding } from './buildings';
@@ -116,7 +116,7 @@ scene.add(props.group);
 let landmarkModels: LandmarkModels | null = null;
 let buildingEffects: BuildingEffects | null = null;
 let aircraft: AircraftLayer | null = null;
-let dog: Dog | null = null;
+const dogs: Dog[] = [];
 
 const iso = new IsoCamera(canvas, window.innerWidth / window.innerHeight);
 const postfx = createPostFX(renderer, scene, iso.camera);
@@ -370,7 +370,9 @@ async function boot() {
     if (!aircraftEnabled) aircraft.setEnabled(false);
     aircraft.start();
   }
-  if (regionId === 'richmond') { dog = new Dog(propMaterial, world.toLocal); scene.add(dog.group); }
+  if (regionId === 'richmond') {
+    for (const breed of [AUSSIE, BASSET]) { const d = new Dog(breed, propMaterial, world.toLocal); dogs.push(d); scene.add(d.group); }
+  }
   landmarkModels = new LandmarkModels(world.toLocal, materials.buildings);
   scene.add(landmarkModels.group);
   buildingEffects = new BuildingEffects(world.toLocal);
@@ -508,11 +510,9 @@ resize();
 
 window.addEventListener('keydown', (e) => {
   const editing = e.target instanceof HTMLElement && e.target.closest('input, textarea, select, [contenteditable="true"]');
-  if (e.key === 'o' && !editing) postfx.enabled = !postfx.enabled;
-  if (e.key === 'd' && !editing && dog) { // find the VMFA dog; until its tile loads, go to the museum
-    const at = dog.group.visible ? dog.group.position.clone() : landmarkTargets.get('virginia-museum-of-fine-arts');
-    if (at) iso.flyTo(at, dog.group.visible ? 12 : 6);
-  }
+  if (e.key === 'p' && !editing) postfx.enabled = !postfx.enabled;
+  const dog = editing ? undefined : e.key === 'd' ? dogs[0] : e.key === 'o' ? dogs[1] : undefined; // d: VMFA Aussie, o: Carytown basset
+  if (dog) iso.followTarget(() => dog.lookTarget(), 10); // until pan/zoom/rotate
 });
 const timer = new THREE.Timer();
 timer.connect(document); // no catch-up delta after a hidden tab
@@ -529,7 +529,7 @@ function frame(now?: number) {
   frameMs.push(dt * 1000); if (frameMs.length > 600) frameMs.shift();
   iso.update(dt);
   if (tropicalSky) tropicalSky.position.copy(iso.camera.position);
-  if (!paused) { dog?.update(dt, tiles); props.update(dt); traffic.apply(props); trails.update(dt); traffic.apply(trails); waterTime += dt; water.update(waterTime); }
+  if (!paused) { for (const d of dogs) d.update(dt, tiles); props.update(dt); traffic.apply(props); trails.update(dt); traffic.apply(trails); waterTime += dt; water.update(waterTime); }
   aircraft?.update(Date.now(), dt);
   updateSunShadow();
   manager?.update(iso.camera, iso.camera.zoom);
@@ -547,5 +547,5 @@ boot().catch((e) => { console.error(e); ui.setLoading(true, 'Failed to load tile
 
 // expose for debugging
 const debug = createDebug({ iso, tiles, manager: () => manager, landmarkTargets, propCounts: () => props.counts_(), traffic: () => ({ ...traffic.stats, drawn: props.trafficCount() }) });
-Object.assign(window, { __iso: { scene, tiles, iso, props, traffic, dog: () => dog, aircraft: () => aircraft?.stats(), palette, night: () => night,
+Object.assign(window, { __iso: { scene, tiles, iso, props, traffic, dogs, aircraft: () => aircraft?.stats(), palette, night: () => night,
   stats: () => ({ ...(manager?.summary() ?? {}), frames: frameSummary(), quality: { mobile: mobileQuality, pixelRatio: renderer.getPixelRatio(), shadowMap: sun.shadow.mapSize.x }, renderer: { memory: { ...renderer.info.memory }, render: { ...renderer.info.render } } }), manager: () => manager, postfx, ...debug } });
