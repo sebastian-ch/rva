@@ -54,6 +54,7 @@ python3 -m venv .venv && .venv/bin/pip install -r pipeline/requirements.txt
 .venv/bin/python pipeline/dem_noaa.py [--zip data/raw/J1448888.zip]              # NOAA 2025 1 ft DEM tiles -> dem_<slug>.tif (1 m); run before fetch_lidar/build_tiles
 .venv/bin/python pipeline/fetch_lidar.py [--source noaa2025|usgs2014] [--dry-run]  # LiDAR EPT (2025 City of Richmond by default) -> ndsm.tif + point npz
 .venv/bin/python pipeline/build_tiles.py [--clean] [--no-merge] [--no-cache] [--clear-cache]   # incremental: cached steps + dirty tiles only
+.venv/bin/python pipeline/roof_furniture_review.py --out <dir>                # roof-furniture candidates + contact sheets; --accept --reject ids writes the supplement
 .venv/bin/python -m pytest                                                  # pipeline unit tests
 cd web && npm install && npm run dev                                        # viewer at http://localhost:5173 (serves ../data/tiles at /tiles)
 cd web && npm test && npm run typecheck                                     # vitest + tsc

@@ -27,6 +27,9 @@ MAX_AREA_M2 = 100.0
 MIN_HEIGHT_M = 1.0
 MAX_HEIGHT_M = 6.0
 MAX_COUNT = 8
+# Measured roof plane vs modeled wall top. Within this the model has the right roof and a slightly wrong
+# height, so objects sit on the modeled roof; beyond it the plane is probably an unmodeled tier.
+ALIGN_TOL_M = 1.5
 
 
 def dense_surface(npz_path: Path, buildings: gpd.GeoDataFrame, cell: float = CELL_M,
@@ -131,11 +134,11 @@ def detect(building: Any, points: np.ndarray, base_elevation: float = 0,
         # A procedural extrusion cannot support a floating object on an unmodeled upper tier. Roofer meshes
         # may contain those tiers, but an object below their wall top would be buried by the accepted shell.
         if getattr(building, "roof_source", None) == "lod2":
-            if not -0.75 <= base_offset <= 10:
+            if not -ALIGN_TOL_M <= base_offset <= 10:
                 continue
-        elif abs(base_offset) > 0.75:
+        elif abs(base_offset) > ALIGN_TOL_M:
             continue
-        if abs(base_offset) <= 0.75:
+        if abs(base_offset) <= ALIGN_TOL_M:
             base_offset = 0.0
         props.append((area, {
             "x": round(center.x, 2), "y": round(center.y, 2),

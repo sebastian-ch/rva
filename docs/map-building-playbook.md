@@ -639,6 +639,18 @@ and procedural HVAC silently returns. Implementation: `pipeline/roof_furniture.p
 for Richmond's 0.35 m 2025 classified cloud and mostly flat roofs; remeasure them for other resolutions,
 roof types or cities.
 
+Rerunning roof-furniture detection after heights change can silently lose reviewed buildings: the
+plane-to-wall-top alignment gate rejects every object when a height moves by about 1 m. A difference within
+`ALIGN_TOL_M` (1.5 m) means the right roof with a slightly wrong height, so seat objects on the modeled roof. A larger
+difference is a height or massing problem, not furniture. Parking decks tagged only `building=yes` pass every
+shape gate because their top-level cars look like HVAC. Skip roofs at least half covered by a `parking`
+landuse polygon. NAIP predates the 2025 LiDAR, so a roof over a construction site in the imagery
+cannot be verified and should be rejected. On Roofer shells, drop objects the mesh already models and seat the rest on
+the mesh surface, otherwise boxes z-fight with or bury in the measured tiers. Driver:
+`pipeline/roof_furniture_review.py`. Regressions: `test_small_height_error_seats_objects_on_modeled_roof_and_large_error_rejects`,
+`test_review_seats_on_roofer_mesh_and_drops_objects_it_already_models`,
+`test_review_skips_roofs_under_parking_polygons`.
+
 When a city footprint layer gap-fills OSM, an `intersects` join alone is too aggressive: attached
 buildings often share a boundary with an OSM footprint and have zero overlap area. Treat a candidate as
 a duplicate only when their intersection covers a meaningful fraction of the smaller polygon. Preserve

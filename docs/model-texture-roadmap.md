@@ -1,6 +1,6 @@
 # Better models and textures: what to do next, in order
 
-Written and last reconciled 2026-09-14, after roof colour from orthoimagery landed. Companion to
+Written 2026-09-14, after roof colour from orthoimagery landed; last reconciled 2026-09-25. Companion to
 [docs/IMPROVEMENTS.md](IMPROVEMENTS.md), which surveys what other projects do; this file is the
 ordered build plan for *this* repo's model and surface quality.
 
@@ -20,7 +20,7 @@ Rank accordingly — do not spend effort re-deriving heights.
 | 2 | LoD2 roofs from the 2025 LiDAR (`roofer`) | **done 2026-09-14** — 19,927 citywide roofs imported with measured and geometric quality gates |
 | 2a | Large-building setback / massing audit | **done 2026-09-14** — 1,175 candidates reviewed; seven stable multi-height cases modeled |
 | 2b | Sports-field surface geometry | **done 2026-09-14** — tennis, baseball, football and soccer surfaces and tile-stable markings |
-| 3 | Roof furniture from dense LiDAR | **pilot done 2026-09-14** — 20 measured objects on five of 30 reviewed buildings; citywide expansion next |
+| 3 | Roof furniture from dense LiDAR | **done 2026-09-25** — 223 measured objects on 114 buildings; citywide candidates from `pipeline/roof_furniture_review.py`, 150 reviewed, 35 rejected |
 | 4 | Ground cover from VGIN RGB + NAIP NIR + nDSM | **done 2026-09-14; refined 2026-09-15** — 4,000 cleaned lawn, paving and bare-ground polygons |
 | 5 | Split-grammar facade geometry, lower two floors | **done 2026-09-21** — `web/src/facadeGrammar.ts`; street frontages from the tile's road centrelines, five rule sets, LOD 0 only, per-tile triangle budget |
 | 6 | Wall colour and surveyed props from Mapillary | not started |
@@ -45,17 +45,13 @@ Item 6 depends on a licensing decision, not on code.
 
 ## Immediate next step
 
-Expand the reviewed roof-furniture pass beyond the pilot. The pilot screened 30 large named flat roofs,
-accepted 20 compact objects on five buildings, and left the other 25 unchanged. `pipeline/roof_furniture.py`
-now detects candidates from the existing dense classified cloud, while the build reads only exact-ID records
-from `assets/supplements/richmond-roof-furniture.json`. `roofDetails.ts` renders those measurements and
-suppresses procedural HVAC on reviewed buildings.
+Items 1–5 are done. Item 6 is blocked on deciding whether CC BY-SA share-alike is acceptable for derived
+wall colours and props, so settle that first. Without that decision, item 8 (CC0 vehicles and street furniture) is the
+cheapest code-only step. Item 7 is art time.
 
-Next:
-
-1. Run the detector over the remaining eligible flat roofs with the existing per-building cap, review the
-   proposed objects against the dense surface, and profile near-tile worker time after acceptance.
-2. Prototype lower-floor facade geometry on one downtown block before considering a citywide grammar.
+A by-product of item 3 worth following up: flat roofs whose LiDAR roof plane sits more than
+`ALIGN_TOL_M` (1.5 m) from the modeled wall top, such as The Edge at ATC (+2.4 m), are probably wrong heights or unmodeled
+tiers. They are candidates for `overrides.json` or `richmond-massing.geojson` rather than roof furniture.
 
 ---
 
@@ -267,6 +263,22 @@ candidate was rejected because an existing higher building part covers it.
 The renderer accepts both compact serialized records and decoded GeoJSON arrays, emits each object only in
 the tile fragment containing its center, and disables procedural HVAC for every fragment of an accepted
 building. Tests: `pipeline/tests/test_roof_furniture.py` and `web/src/roofDetails.test.ts`.
+
+**Citywide result, 2026-09-25:** `pipeline/roof_furniture_review.py` ran the detector over all 2,265
+visible flat roofs ≥ 300 m² (after skipping 87 under mapped parking polygons) in about 30 s. It dropped 238 objects
+the accepted Roofer shell already models, and wrote contact sheets (LiDAR residual beside the NAIP crop)
+for the 150 buildings left with candidates. Review rejected 35: construction sites in NAIP that the 2025
+LiDAR already shows built, a treatment basin, a storage tank, parking decks the parking gate missed, boxes that are
+fragments of a large raised block, strips along parapets and roof edges, roofs mis-typed as flat, and the
+hand-modeled massing plinths and tiers. `attach` dropped two more because a taller `building:part` covers them.
+The supplement now holds 223 objects on 114 buildings. Full-detail tile builds for the 85 affected tiles take
+882 ms in total, against 877 ms with procedural HVAC; the worst tile costs 1 ms more. LOD1 omits roof details,
+so the baked LOD1 geometry does not change.
+
+Two gate changes came out of the rerun. Heights have moved since the pilot, so three of its five buildings failed
+the 0.75 m alignment gate between the LiDAR roof plane and the modeled wall top. The tolerance is now
+`ALIGN_TOL_M` = 1.5 m, and objects still sit on the modeled roof. On an accepted Roofer shell, the review
+driver seats each object on the mesh surface under its centre instead of using the plane offset.
 
 ## 4. Ground cover from imagery and LiDAR
 
