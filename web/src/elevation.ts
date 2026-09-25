@@ -29,6 +29,7 @@ export function exaggerateLayers(l: TileLayers, k = Z_SCALE): TileLayers {
     }
   }
   if (l.water) for (const f of l.water.features) if (typeof f.properties.water_z === 'number') f.properties.water_z *= k;
+  if (l.wires) for (const f of l.wires.features) { f.properties.z0 *= k; f.properties.z1 *= k; }
   if (l.landuse) for (const f of l.landuse.features) {
     if (typeof f.properties.base_z === 'number') f.properties.base_z *= k;
     if (typeof f.properties.top_z === 'number') f.properties.top_z *= k;

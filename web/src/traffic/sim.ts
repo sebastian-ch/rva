@@ -1,9 +1,9 @@
 /**
  * Traffic simulation: Intelligent Driver Model car-following on the road graph, with routing through junctions,
- * priority yielding, turn slowing and density-driven spawning. Pure TypeScript, fixed time step.
+ * priority yielding, signals, stop signs, turn slowing and density-driven spawning. Pure TypeScript, fixed time step.
  */
 import { RoadGraph, type Edge } from './graph';
-import { MAX_VEHICLES, POSE_STRIDE, VEHICLE_COLOR_WEIGHTS, VEHICLE_KIND_NAMES, type RailKindName, type VehicleKindName } from './protocol';
+import { MAX_VEHICLES, POSE_STRIDE, VEHICLE_COLOR_WEIGHTS, VEHICLE_KIND_NAMES, type JunctionControl, type RailKindName, type VehicleKindName } from './protocol';
 
 /** Road vehicles only: the rail kinds in the pose buffer belong to the train sim. */
 export type RoadKindName = Exclude<VehicleKindName, RailKindName>;
@@ -29,6 +29,29 @@ const CONFLICT_ZONE = 25;  // m: vehicles this close to the node on other arms a
 const DEADLOCK_S = 4;      // s stopped at a node before ignoring the yield rule
 const SPAWN_GAP = 16;      // m free on both sides for a spawn
 const SPAWN_INTERVAL = 1.0; // s between spawn attempts per edge
+// Junction control. OSM tags most signals at each approach's stop line, so any signal this close to a junction
+// signalizes it; a stop sign belongs to the incoming edge whose end direction matches its approach.
+const SIGNAL_RADIUS = 20;  // m
+const STOP_SIGN_RADIUS = 18; // m
+const STOP_SIGN_ALIGN = 0.8; // cos of the largest angle between a sign's approach and the edge's end direction
+const CONTROL_ZONE = 60;   // m before a node where a signal or stop sign is obeyed
+const SIGNAL_CYCLE = 60;   // s: two phases, each GREEN + YELLOW + all-red
+const SIGNAL_GREEN = 25;
+const SIGNAL_YELLOW = 3;
+const SIGNAL_STOP_BACK = 3; // m short of the node: the stop line sits behind the crosswalk
+const STOP_BACK = 2;       // m short of the node for a stop sign
+const STOP_DWELL = 1;      // s at a standstill that completes a stop
+const CONTROL_CELL = 50;   // m, spatial hash for control lookup
+
+export type EdgeControl = { kind: 'none' } | { kind: 'stop' } | { kind: 'signal'; group: 0 | 1; offset: number };
+const NO_CONTROL: EdgeControl = { kind: 'none' };
+export type Light = 'green' | 'yellow' | 'red';
+
+/** Signal aspect for a phase group at sim time t (s); group 1 runs half a cycle behind group 0. */
+export function signalLight(group: 0 | 1, offset: number, t: number): Light {
+  const phase = (((t + offset + group * (SIGNAL_CYCLE / 2)) % SIGNAL_CYCLE) + SIGNAL_CYCLE) % SIGNAL_CYCLE;
+  return phase < SIGNAL_GREEN ? 'green' : phase < SIGNAL_GREEN + SIGNAL_YELLOW ? 'yellow' : 'red';
+}
 
 /** target vehicles per km of edge by highway class */
 export function density(highway: string): number {
@@ -63,6 +86,10 @@ export interface Vehicle {
   waitS: number;
   /** node key this vehicle has been released through (yield rule ignored until it passes) */
   released: string | null;
+  /** node key whose stop sign this vehicle has stopped at, and when the stop completed */
+  stoppedAt: string | null;
+  stopDoneAt: number;
+  stopWait: number;
 }
 
 /** Mulberry32, same as geomutil.rng but dependency-free for the worker. */
@@ -115,6 +142,9 @@ export class TrafficSim {
   /** One-time interior population. Continuous replacement is restricted to loaded-area entrances. */
   private seedRemaining = new Map<number, number>();
   private time = 0;
+  private controls = new Map<string, JunctionControl[]>();
+  private controlGrid: Map<string, JunctionControl[]> | null = null;
+  private edgeControls = new Map<number, EdgeControl>();
 
   constructor(seed = 1) {
     this.rand = rng(seed);
@@ -124,6 +154,8 @@ export class TrafficSim {
   reseed(seed: number) { this.rand = rng(seed); }
 
   removeTile(tileId: string) {
+    this.controls.delete(tileId);
+    this.controlsChanged();
     const ids = this.graph.removeTile(tileId);
     const gone = new Set(ids);
     for (const v of [...this.vehicles.values()]) {
@@ -136,7 +168,9 @@ export class TrafficSim {
     }
   }
 
-  addTile(tileId: string, paths: Float32Array[], meta: Parameters<RoadGraph['addTile']>[2]) {
+  addTile(tileId: string, paths: Float32Array[], meta: Parameters<RoadGraph['addTile']>[2], controls: JunctionControl[] = []) {
+    this.controls.set(tileId, controls);
+    this.controlsChanged();
     const ids = this.graph.addTile(tileId, paths, meta);
     // vehicles on edges that got split by the new tile's nodes keep going: their edge ids are unchanged,
     // only the new edges are new. Routes stay valid because edges are never mutated in place.
@@ -147,6 +181,58 @@ export class TrafficSim {
       const whole = Math.floor(target);
       this.seedRemaining.set(id, whole + (this.rand() < target - whole ? 1 : 0));
     }
+  }
+
+  /** Loaded tiles changed: junction arms and the controls near them may both differ. */
+  private controlsChanged() {
+    this.controlGrid = null;
+    this.edgeControls.clear();
+  }
+
+  private controlsNear(x: number, z: number): JunctionControl[] {
+    if (!this.controlGrid) {
+      this.controlGrid = new Map();
+      for (const list of this.controls.values()) for (const c of list) {
+        const k = `${Math.floor(c.x / CONTROL_CELL)}|${Math.floor(c.z / CONTROL_CELL)}`;
+        const cell = this.controlGrid.get(k);
+        if (cell) cell.push(c); else this.controlGrid.set(k, [c]);
+      }
+    }
+    const out: JunctionControl[] = [];
+    const cx = Math.floor(x / CONTROL_CELL), cz = Math.floor(z / CONTROL_CELL);
+    for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) out.push(...(this.controlGrid.get(`${cx + i}|${cz + j}`) ?? []));
+    return out;
+  }
+
+  /** What controls the end of edge `e`: a signal phase group, a stop sign, or nothing (the yield rule). */
+  edgeControl(e: Edge): EdgeControl {
+    const cached = this.edgeControls.get(e.id);
+    if (cached) return cached;
+    let result: EdgeControl = NO_CONTROL;
+    const n = this.graph.nodes.get(e.to);
+    if (n && this.graph.arms(e.to) >= 3) {
+      const [ex, ez] = this.graph.dirAt(e, true);
+      let signal = false, stop = false;
+      for (const c of this.controlsNear(n.x, n.z)) {
+        const d = Math.hypot(c.x - n.x, c.z - n.z);
+        if (c.kind === 'signal' && d <= SIGNAL_RADIUS) signal = true;
+        else if (c.kind === 'stop' && d <= STOP_SIGN_RADIUS && (c.dx ?? 0) * ex + (c.dz ?? 0) * ez >= STOP_SIGN_ALIGN) stop = true;
+      }
+      if (signal) {
+        // phase groups by axis: approaches within 45 degrees of the leading approach's line share its phase
+        let axis: Edge = e;
+        for (const id of n.in) {
+          const o = this.graph.edges.get(id);
+          if (o && (o.priority > axis.priority || (o.priority === axis.priority && o.id < axis.id))) axis = o;
+        }
+        const [ax, az] = this.graph.dirAt(axis, true);
+        let hash = 0;
+        for (let i = 0; i < n.key.length; i++) hash = (hash * 31 + n.key.charCodeAt(i)) >>> 0;
+        result = { kind: 'signal', group: Math.abs(ex * ax + ez * az) >= Math.SQRT1_2 ? 0 : 1, offset: hash % SIGNAL_CYCLE };
+      } else if (stop) result = { kind: 'stop' };
+    }
+    this.edgeControls.set(e.id, result);
+    return result;
   }
 
   private despawn(v: Vehicle) {
@@ -165,6 +251,7 @@ export class TrafficSim {
     const v: Vehicle = {
       slot, kind, color: pickWeighted(COLOR_ITEMS, this.rand()), edge: e.id, s, v: Math.min(e.v0 * spec.v0, 8) * (0.5 + this.rand() * 0.5),
       desire: spec.v0 * j(), a: spec.a * j(), b: spec.b * j(), T: T_HEADWAY * j(), length: spec.length, route: [], waitS: 0, released: null,
+      stoppedAt: null, stopDoneAt: 0, stopWait: 0,
     };
     this.vehicles.set(slot, v);
     insertSorted(e.vehicles, slot, (id) => this.vehicles.get(id)!.s);
@@ -224,19 +311,29 @@ export class TrafficSim {
 
   /**
    * Yield rule at a junction node: true when another vehicle within CONFLICT_ZONE of the node on a different
-   * incoming arm has priority (higher class, or same class and closer), so `v` should stop short of the node.
+   * incoming arm has priority, so `v` should stop short of the node. Through traffic never yields to stop-sign
+   * arms; a vehicle that has stopped at a sign yields to through traffic and to vehicles on other stop arms
+   * that finished their stop first (an all-way stop runs first-come, first-served).
    */
-  private mustYield(e: Edge, dNode: number): boolean {
+  private mustYield(e: Edge, dNode: number, v: Vehicle): boolean {
     const n = this.graph.nodes.get(e.to);
     if (!n) return false;
+    const mine = this.edgeControl(e).kind === 'stop';
     for (const id of n.in) {
       if (id === e.id) continue;
       const o = this.graph.edges.get(id);
       if (!o || o.pair === e.pair) continue;
+      const theirs = this.edgeControl(o).kind === 'stop';
+      if (theirs && !mine) continue;
       for (const slot of o.vehicles) {
         const u = this.vehicles.get(slot)!;
         const d = o.length - u.s;
         if (d > CONFLICT_ZONE) continue;
+        if (mine && theirs) {
+          if (u.stoppedAt === o.to && u.stopDoneAt < v.stopDoneAt && d < STOP_BACK + 4) return true;
+          continue;
+        }
+        if (mine) return true;
         if (o.priority > e.priority) return true;
         if (o.priority === e.priority && d < dNode - 1) return true;
       }
@@ -265,9 +362,33 @@ export class TrafficSim {
       let gap = Infinity, dv = 0;
       const lead = this.leader(v, e);
       if (lead) { gap = lead.gap; dv = v.v - lead.vLead; }
+      // signals and stop signs
+      const ctl = next && dNode < CONTROL_ZONE ? this.edgeControl(e) : NO_CONTROL;
+      let yieldRule = true;
+      if (ctl.kind === 'signal') {
+        yieldRule = false;
+        const light = signalLight(ctl.group, ctl.offset, this.time);
+        const toLine = dNode - SIGNAL_STOP_BACK;
+        // a vehicle already over the line keeps going; on yellow, only one that can stop comfortably stops
+        if (toLine > -0.5 && (light === 'red' || (light === 'yellow' && toLine > (v.v * v.v) / (2 * v.b)))) {
+          // IDM halts S0 short of an obstacle, so the virtual one sits S0 past the line
+          if (toLine + S0 < gap) { gap = Math.max(0.1, toLine + S0); dv = v.v; }
+        }
+      } else if (ctl.kind === 'stop' && v.stoppedAt !== e.to) {
+        yieldRule = false; // the stop line holds it; the yield rule takes over once the stop is complete
+        const toLine = dNode - STOP_BACK;
+        if (toLine < -1) { v.stoppedAt = e.to; v.stopDoneAt = this.time; }
+        else {
+          if (toLine + S0 < gap) { gap = Math.max(0.1, toLine + S0); dv = v.v; }
+          if (toLine < 1.5 && v.v < 0.3) {
+            v.stopWait += dt;
+            if (v.stopWait >= STOP_DWELL) { v.stoppedAt = e.to; v.stopDoneAt = this.time; v.stopWait = 0; }
+          }
+        }
+      }
       // junction yielding
-      if (dNode < JUNCTION_ZONE && g.arms(e.to) >= 3 && v.released !== e.to) {
-        if (this.mustYield(e, dNode)) {
+      if (yieldRule && dNode < JUNCTION_ZONE && g.arms(e.to) >= 3 && v.released !== e.to) {
+        if (this.mustYield(e, dNode, v)) {
           v.waitS += v.v < 0.3 ? dt : 0;
           if (v.waitS < DEADLOCK_S) {
             const stopGap = dNode - 1;
@@ -299,6 +420,8 @@ export class TrafficSim {
         v.edge = nx.id;
         v.released = null;
         v.waitS = 0;
+        v.stoppedAt = null;
+        v.stopWait = 0;
         insertSorted(nx.vehicles, v.slot, (id) => this.vehicles.get(id)!.s);
       }
     }

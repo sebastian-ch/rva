@@ -132,10 +132,18 @@ pushed down to `water_z - 0.5` under those polygons so the surface is always vis
 POIs use a compact binary table rather than GeoJSON: `POI1` header, fixed 32-byte records, then a
 deduplicated UTF-8 string table. `x`/`y` are unsigned 16-bit centimetres from the tile's southwest
 corner; this is lossless relative to the former 2-decimal GeoJSON output. The records preserve `id`,
-`name`, `kind` (`"tree"|"streetlight"|"bench"|"bus_stop"|"traffic_signals"|"fountain"|"monument"|"shop"|"restaurant"|"museum"|"lamp_post"|"utility_pole"`),
-and optional tree `species`, `source`, `tree_height`, and `crown_radius`. The first float slot is `tree_height`
-for trees and `pole_height` (metres above ground) for other kinds. See `pipeline/poi_table.py`
+`name`, `kind` (`"tree"|"streetlight"|"bench"|"bus_stop"|"traffic_signals"|"fountain"|"monument"|"shop"|"restaurant"|"museum"|"lamp_post"|"utility_pole"|"stop_sign"`),
+and optional tree `species`, `source`, `tree_height`, and `crown_radius`. For trees the two float slots are
+`tree_height` and `crown_radius`; for every other kind they are `pole_height` (metres above ground) and `heading`
+(projected radians, counter-clockwise from east). See `pipeline/poi_table.py`
 and `web/src/poiTable.ts` for the versioned format.
+
+### wires (LineString)
+Overhead utility spans between surveyed wooden poles (Richmond only): two-point lines with `id`, `h0`/`h1` (pole
+heights, m) and `z0`/`z1` (ground elevation at each end, m above `base_elevation`, exaggerated on load like
+`ground_z`). A span is written whole into the tile holding its midpoint, like a building's centroid, so it can
+sag between poles in two tiles. Poles on a wire carry `heading` along their line, and the viewer turns the
+crossarm across it.
 
 ### terrain.json
 ```json
@@ -167,6 +175,12 @@ Honolulu coastal structures use landuse kinds `groyne`, `breakwater`, `seawall`,
   footways excluded) move to 0.6 m past its edge; those more than 4 m in are dropped. Roads get `lamps_surveyed: true` when at least 80% of their length lies within 60 m of a surveyed
   luminaire; the viewer places procedural roadside lamps only on other roads, and not within 20 m of a lamp POI.
   The survey does not cover most of Southside.
+- `stop_sign` POIs are inferred (`source: "inferred"`, `pipeline/traffic_control.py`). No open source maps stop
+  signs here. At an unsignalized junction of two or more ways (service ways ignored, no `traffic_signals` POI within
+  20 m, no motorway or trunk arm), approaches off the through road stop, and equal-class crossroads of four or more
+  arms stop on every approach. Links never stop. Each sign stands at the right-hand curb 4–12 m before the junction,
+  with `heading` set to the approach's travel direction. The traffic worker obeys it, and signals (OSM
+  `traffic_signals` within 20 m of a junction) run two fixed 60 s phases grouped by approach axis.
 - `index.json` tile entries may contain `surveyed_trees: true`: complete regional LiDAR canopy processing
   was available, so the renderer suppresses procedural park/street tree scatter. Existing OSM trees remain
   where they do not duplicate inventory/canopy points.

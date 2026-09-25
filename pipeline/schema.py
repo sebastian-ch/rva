@@ -28,7 +28,7 @@ ROOF_COLOR_SOURCES: set[str] = {"osm", "ortho", "heuristic", "override", "landma
 
 POI_KINDS: set[str] = {
     "tree", "streetlight", "bench", "bus_stop", "traffic_signals",
-    "fountain", "monument", "shop", "restaurant", "museum", "lamp_post", "utility_pole",
+    "fountain", "monument", "shop", "restaurant", "museum", "lamp_post", "utility_pole", "stop_sign",
 }
 
 LANDUSE_KINDS: set[str] = {"park", "grass", "pitch", "parking", "cemetery", "plaza", "industrial", "forest", "beach", "deck", "groyne", "breakwater", "seawall", "pier", "canal_bank", "groundcover_lawn", "groundcover_paved", "groundcover_bare"}
@@ -65,6 +65,7 @@ LAYER_KEYS: dict[str, set[str]] = {
     "water": {"id", "name", "kind"},
     "crossings": {"id", "crossing", "crossing_markings", "road_id", "road_width", "road_dx", "road_dy", "road_x", "road_y", "foot_dx", "foot_dy", "crossing_island"},
     "pois": {"id", "name", "kind"},
+    "wires": {"id", "h0", "h1", "z0", "z1"},
 }
 
 

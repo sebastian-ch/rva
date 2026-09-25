@@ -95,6 +95,10 @@ Tile schema contract: `DATA_FORMAT.md`. Landmark registry: `assets/landmarks/lan
 - Streetlights: `pipeline/streetlights.py` turns the city luminaire/pole surveys into `streetlight`, `lamp_post` and
   `utility_pole` POIs and flags covered roads `lamps_surveyed`; `scatter.ts` skips procedural lamps there. Coverage is
   partial (not most of Southside), so never suppress procedural lamps region-wide.
+- Wooden poles are joined into `wires` spans (tile layer, owned by midpoint like buildings by centroid; `wires.ts`
+  hangs them). `pipeline/traffic_control.py` infers `stop_sign` POIs (minor approaches, all-way at equal-class
+  crossroads; service ways ignored). Tiles pass signal and stop POIs to the traffic worker as `controls`, and
+  `TrafficSim.edgeControl` turns them into two-phase signals and stop-then-yield rules.
 - `track` and `path` ways are trails: MINOR (no cars, no sidewalks), drawn in the `sand` palette colour; `track` width 2.5 m in `config.ROAD_WIDTH`.
 - Road junctions in `roads.ts` register interior vertices too, so a side street ending on a through road's interior node is trimmed/extended like an endpoint junction; corner fills need ≥ 3 walkable arms.
 - Asset URLs are base-relative (`import.meta.env.BASE_URL`); `vite.config.ts` reads `BASE_PATH` for GitHub Pages.

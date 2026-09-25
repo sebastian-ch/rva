@@ -664,6 +664,20 @@ dense surveyed kinds must be growable. Implementation: `pipeline/streetlights.py
 Regressions: `test_streetlights.py` (including `test_points_on_the_carriageway_move_to_the_curb_and_centreline_ones_drop`),
 `scatter.test.ts` (surveyed roads, utility poles).
 
+Inferred traffic control must not invent junctions. Alleys and driveways (`service`) make every block
+a four-way crossroads, so ignore them when classifying a junction, or every residential intersection becomes an all-way
+stop. Merges into motorways and trunks are not stops, and neither are links. OSM signals sit at the stop lines,
+so match them to junctions by radius (20 m) instead of by node. In the sim, a virtual stop obstacle must sit S0
+beyond the line: IDM halts S0 short of any obstacle, and a car that never reaches the line never completes its stop.
+Implementation: `pipeline/traffic_control.py`, `web/src/traffic/sim.ts`. Regressions: `test_traffic_control.py`,
+`sim.test.ts` (junction control).
+
+Wire spans between surveyed poles need both ends in one feature. Clipping a span at a tile edge loses the
+sag's shape. Write each span whole into its midpoint tile (`CENTROID_OWNED` in `build_tiles.py`) and store both
+ends' ground elevations for the end that lies in the neighbour tile. Pair poles by mutual choice (nearest plus
+nearest roughly opposite), and drop spans that cross a building footprint. Implementation: `streetlights.utility_spans`,
+`web/src/wires.ts`. Regressions: `test_wires_chain_wooden_poles_and_skip_spans_over_buildings`, `wires.test.ts`.
+
 When a city footprint layer gap-fills OSM, an `intersects` join alone is too aggressive: attached
 buildings often share a boundary with an OSM footprint and have zero overlap area. Treat a candidate as
 a duplicate only when their intersection covers a meaningful fraction of the smaller polygon. Preserve

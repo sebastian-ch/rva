@@ -12,6 +12,7 @@ export type PropKind =
   | 'streetlight'
   | 'lamp_post'
   | 'utility_pole'
+  | 'stop_sign'
   | 'car'
   | 'suv'
   | 'pickup'
@@ -36,6 +37,7 @@ export const PROP_KINDS: PropKind[] = [
   'streetlight',
   'lamp_post',
   'utility_pole',
+  'stop_sign',
   'car',
   'suv',
   'pickup',
@@ -284,6 +286,17 @@ function buildUtilityPole(): THREE.BufferGeometry {
     parts.push({ geom: new THREE.CylinderGeometry(0.05, 0.06, 0.2, 6), color: hex('concrete'), position: [x, h - 0.4, 0] });
   }
   return mergeColored(parts);
+}
+
+/** Stop sign: an octagonal plate facing along +X (the approach's travel direction) on a 2.1 m post. */
+function buildStopSign(): THREE.BufferGeometry {
+  const plate = new THREE.CylinderGeometry(0.38, 0.38, 0.04, 8);
+  plate.rotateY(Math.PI / 8);
+  plate.rotateZ(Math.PI / 2);
+  return mergeColored([
+    { geom: new THREE.BoxGeometry(0.06, 2.1, 0.06), color: hex('steel'), position: [0, 1.05, 0] },
+    { geom: plate, color: hex('car_red'), position: [-0.04, 2.35, 0] },
+  ]);
 }
 
 // Note: bodyWhite defaults to true (via `?? true` at the call site in
@@ -738,6 +751,9 @@ export function buildPropGeometry(
       break;
     case 'utility_pole':
       geom = buildUtilityPole();
+      break;
+    case 'stop_sign':
+      geom = buildStopSign();
       break;
     case 'car':
       // Vehicle kinds default bodyWhite to true (unless explicitly overridden)

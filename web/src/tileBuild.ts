@@ -3,7 +3,7 @@
  * Produces plain typed arrays so the result can be transferred without copying.
  */
 import * as THREE from 'three';
-import type { AreaProps, BuildingProps, CrossingProps, FC, Feature, LineGeom, PoiProps, PointGeom, PolyGeom, RailProps, RoadProps, TerrainGrid, TileMeta } from './types';
+import type { AreaProps, BuildingProps, CrossingProps, FC, Feature, LineGeom, PoiProps, PointGeom, PolyGeom, RailProps, RoadProps, TerrainGrid, TileMeta, WireProps } from './types';
 import { HeightField, FLAT_FIELD, buildTerrainMesh } from './terrain';
 import { buildBuildingsMesh, type BuildingRange } from './buildings';
 import { buildRoads } from './roads';
@@ -14,6 +14,8 @@ import { exaggerateLayers } from './elevation';
 import { scatterTile, type Placement } from './scatter';
 import type { V2 } from './geomutil';
 import { decodePoiTable } from './poiTable';
+import { buildWires } from './wires';
+import type { JunctionControl } from './traffic/protocol';
 
 export type Lod = 0 | 1; // 0 = full, 1 = reduced (trees only, no roof details/facades, no markings)
 
@@ -36,6 +38,10 @@ export interface TilePayload {
   /** Track centrelines for the train sim, same flattening as carPaths. */
   railPaths: Float32Array[];
   railMeta: RailPathMeta[];
+  /** Signals and stop signs for the traffic worker, local frame. */
+  controls?: JunctionControl[];
+  /** Overhead wire line segments (xyz pairs, local frame); LOD 0 only. */
+  wires?: Float32Array;
   buildingFeatures: Feature<PolyGeom, BuildingProps>[];
   buildMs: number;
   /** Worker fetch + decode time and bytes received, for debug performance budgets. */
@@ -52,6 +58,7 @@ export interface TileLayers {
   landuse: FC<PolyGeom, AreaProps> | null;
   water: FC<PolyGeom, AreaProps> | null;
   pois: FC<PointGeom, PoiProps> | null;
+  wires?: FC<LineGeom, WireProps> | null;
   metrics?: { loadMs: number; sourceBytes: number };
 }
 
@@ -78,7 +85,7 @@ export async function fetchTileLayers(meta: TileMeta, baseUrl: string, lod: Lod)
   const t0 = performance.now(), metrics = { sourceBytes: 0 };
   const has = (l: string) => meta.layers.includes(l);
   const u = (l: string) => `${baseUrl}/${meta.id}/${l}`;
-  const [terrain, buildings, roads, crossings, rail, landuse, water, pois] = await Promise.all([
+  const [terrain, buildings, roads, crossings, rail, landuse, water, pois, wires] = await Promise.all([
     has('terrain') ? getJSON<TerrainGrid>(u('terrain.json'), metrics) : null,
     has('buildings') ? getJSON<FC<PolyGeom, BuildingProps>>(u('buildings.geojson'), metrics) : null,
     has('roads') ? getJSON<FC<LineGeom, RoadProps>>(u('roads.geojson'), metrics) : null,
@@ -87,8 +94,9 @@ export async function fetchTileLayers(meta: TileMeta, baseUrl: string, lod: Lod)
     has('landuse') ? getJSON<FC<PolyGeom, AreaProps>>(u('landuse.geojson'), metrics) : null,
     has('water') ? getJSON<FC<PolyGeom, AreaProps>>(u('water.geojson'), metrics) : null,
     has('pois') ? getPoiTable(u('pois.bin'), meta.bbox, metrics) : null,
+    has('wires') && lod === 0 ? getJSON<FC<LineGeom, WireProps>>(u('wires.geojson'), metrics) : null,
   ]);
-  return exaggerateLayers({ terrain, buildings, roads, crossings, rail, landuse, water, pois,
+  return exaggerateLayers({ terrain, buildings, roads, crossings, rail, landuse, water, pois, wires,
     metrics: { loadMs: performance.now() - t0, sourceBytes: metrics.sourceBytes } });
 }
 
@@ -159,10 +167,27 @@ export function buildTilePayload(meta: TileMeta, layers: TileLayers, origin: [nu
     geoms.land = arrays(a.land);
     geoms.water = arrays(a.water);
   }
+  const wires = lod === 0 && layers.wires?.features.length ? buildWires(layers.wires.features, meta.bbox, toLocal, groundAt) : undefined;
+  const controls = lod === 0 ? junctionControls(layers.pois?.features ?? [], toLocal) : [];
   const placements = scatterTile(meta.id, layers.pois?.features ?? [], layers.landuse?.features ?? [], layers.roads?.features ?? [], layers.buildings?.features ?? [], meta.bbox, toLocal, groundAt,
       { treesOnly: lod === 1, surveyedTrees: meta.surveyed_trees, water: layers.water?.features ?? [] });
-  return { meta, lod, terrain: layers.terrain, geoms, ranges, placements, carPaths, carMeta, walkPaths, railPaths, railMeta, buildingFeatures: layers.buildings?.features ?? [], buildMs: performance.now() - t0,
+  return { meta, lod, terrain: layers.terrain, geoms, ranges, placements, carPaths, carMeta, walkPaths, railPaths, railMeta, controls, wires, buildingFeatures: layers.buildings?.features ?? [], buildMs: performance.now() - t0,
     loadMs: layers.metrics?.loadMs, sourceBytes: layers.metrics?.sourceBytes };
+}
+
+/** Signal and stop-sign POIs in the traffic worker's local frame; a stop carries its approach's travel direction. */
+export function junctionControls(pois: Feature<PointGeom, PoiProps>[], toLocal: (x: number, y: number) => V2): JunctionControl[] {
+  const out: JunctionControl[] = [];
+  for (const f of pois) {
+    const [x, y] = f.geometry.coordinates;
+    const [lx, lz] = toLocal(x, y);
+    if (f.properties.kind === 'traffic_signals') out.push({ kind: 'signal', x: lx, z: lz });
+    else if (f.properties.kind === 'stop_sign' && Number.isFinite(f.properties.heading)) {
+      const h = f.properties.heading!;
+      out.push({ kind: 'stop', x: lx, z: lz, dx: Math.cos(h), dz: -Math.sin(h) });
+    }
+  }
+  return out;
 }
 
 /** Every ArrayBuffer inside the payload, for postMessage transfer. */
@@ -175,5 +200,6 @@ export function payloadTransferables(p: TilePayload): ArrayBuffer[] {
   for (const a of p.carPaths) out.push(a.buffer as ArrayBuffer);
   for (const a of p.walkPaths) out.push(a.buffer as ArrayBuffer);
   for (const a of p.railPaths) out.push(a.buffer as ArrayBuffer);
+  if (p.wires) out.push(p.wires.buffer as ArrayBuffer);
   return [...new Set(out)];
 }

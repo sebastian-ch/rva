@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { TrafficSim, idmAccel, turnSpeed, DT } from './sim';
+import { TrafficSim, idmAccel, signalLight, turnSpeed, DT } from './sim';
 import { nodeKey, type CarPathMeta } from './graph';
 import { MAX_VEHICLES, POSE_STRIDE } from './protocol';
 
@@ -17,6 +17,81 @@ describe('idmAccel', () => {
   it('turnSpeed keeps straight-on free and slows right angles', () => {
     expect(turnSpeed(5, 15)).toBe(15);
     expect(turnSpeed(90, 15)).toBeCloseTo(4.1, 5);
+  });
+});
+
+describe('signalLight', () => {
+  it('alternates the two phase groups with yellow and an all-red clearance', () => {
+    expect(signalLight(0, 0, 0)).toBe('green');
+    expect(signalLight(1, 0, 0)).toBe('red');
+    expect(signalLight(0, 0, 26)).toBe('yellow');
+    expect(signalLight(0, 0, 29)).toBe('red');
+    expect(signalLight(1, 0, 29)).toBe('red');
+    expect(signalLight(1, 0, 31)).toBe('green');
+    expect(signalLight(0, 10, 50)).toBe('green');
+  });
+});
+
+describe('junction control', () => {
+  type Handle = { s: number; v: number; edge: number };
+  const tee = (sideHighway = 'residential') => {
+    const sim = new TrafficSim(13);
+    sim.densityScale = 0;
+    return { sim, paths: [line([0, 0], [100, 0], [200, 0]), line([100, -60], [100, 0])],
+      meta: [meta({ wayId: 'main', highway: 'residential' }), meta({ wayId: 'side', highway: sideHighway })] };
+  };
+  const edgeOf = (sim: TrafficSim, way: string) => [...sim.graph.edges.values()].find((x) => x.wayId === way && x.to === nodeKey(100, 0))!;
+
+  it('holds a car at a red signal and puts the crossing approach in the other phase', () => {
+    const sim = new TrafficSim(21);
+    sim.densityScale = 0;
+    sim.addTile('a', [line([0, 0], [100, 0], [200, 0]), line([100, -60], [100, 0], [100, 60])],
+      [meta({ wayId: 'main' }), meta({ wayId: 'cross' })], [{ kind: 'signal', x: 90, z: 3 }]);
+    const mainIn = edgeOf(sim, 'main'), crossIn = edgeOf(sim, 'cross');
+    const ctl = sim.edgeControl(mainIn), other = sim.edgeControl(crossIn);
+    expect(ctl.kind).toBe('signal');
+    if (ctl.kind !== 'signal' || other.kind !== 'signal') return;
+    expect(other.group).not.toBe(ctl.group);
+    // @ts-expect-error private: start the main approach 2 s into its red
+    sim.time = (((32 - ctl.offset - ctl.group * 30) % 60) + 60) % 60;
+    // @ts-expect-error private
+    const car = sim.spawn(mainIn, 40) as Handle;
+    car.v = 10;
+    run(sim, 10);
+    expect(car.edge).toBe(mainIn.id);
+    expect(mainIn.length - car.s).toBeLessThan(6);
+    expect(car.v).toBeLessThan(0.5);
+  });
+
+  it('makes a car stop at a stop sign before turning onto the through road', () => {
+    const { sim, paths, meta: m } = tee();
+    sim.addTile('a', paths, m, [{ kind: 'stop', x: 104, z: -8, dx: 0, dz: 1 }]);
+    const sideIn = edgeOf(sim, 'side');
+    expect(sim.edgeControl(sideIn).kind).toBe('stop');
+    expect(sim.edgeControl(edgeOf(sim, 'main')).kind).toBe('none');
+    // @ts-expect-error private
+    const car = sim.spawn(sideIn, 20) as Handle;
+    car.v = 8;
+    let slowest = Infinity;
+    for (let i = 0; i < 12 / DT; i++) {
+      sim.step(DT);
+      if (car.edge === sideIn.id && sideIn.length - car.s < 4) slowest = Math.min(slowest, car.v);
+    }
+    expect(slowest).toBeLessThan(0.3);
+    expect(car.edge).not.toBe(sideIn.id);
+  });
+
+  it('lets through traffic pass a car waiting at a stop sign', () => {
+    const { sim, paths, meta: m } = tee();
+    sim.addTile('a', paths, m, [{ kind: 'stop', x: 104, z: -8, dx: 0, dz: 1 }]);
+    const sideIn = edgeOf(sim, 'side'), mainIn = edgeOf(sim, 'main');
+    // @ts-expect-error private
+    const waiting = sim.spawn(sideIn, sideIn.length - 2) as Handle;
+    // @ts-expect-error private
+    const through = sim.spawn(mainIn, mainIn.length - 20) as Handle;
+    through.v = 8;
+    for (let i = 0; i < 4 / DT; i++) { waiting.v = 0; waiting.s = sideIn.length - 2; sim.step(DT); }
+    expect(through.edge).not.toBe(mainIn.id);
   });
 });
 

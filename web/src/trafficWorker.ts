@@ -38,7 +38,7 @@ self.onmessage = (ev: MessageEvent<ToWorker>) => {
   const m = ev.data;
   switch (m.type) {
     case 'addTile':
-      sim.addTile(m.tileId, m.paths, m.meta);
+      sim.addTile(m.tileId, m.paths, m.meta, m.controls ?? []);
       if (m.railPaths?.length) trains.addTile(m.tileId, m.railPaths, m.railMeta ?? []);
       ensureRunning();
       break;

@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 import shapely
 from scipy.spatial import cKDTree
+from shapely.geometry import LineString
 
 from config import CRS_PROJ
 
@@ -30,6 +31,12 @@ SAMPLE_M = 10.0
 # median pole on a boulevard mapped as one way, or a bad fix, and is dropped.
 CURB_CLEARANCE_M = 0.6
 MAX_SHIFT_M = 4.0
+# Wires: each wooden pole links to its nearest neighbour and to the nearest one roughly opposite it (a line runs
+# through the pole); a span is kept when both ends chose it and it clears every building footprint.
+MIN_SPAN_M = 8.0
+MAX_SPAN_M = 50.0
+OPPOSITE_COS = -0.5            # the second neighbour at least 120 degrees round from the first
+DEFAULT_POLE_M = 10.0          # web/src/props.ts UTILITY_POLE_HEIGHT: the unscaled pole the viewer draws
 NOT_CARRIAGEWAY = {"footway", "path", "track", "cycleway", "steps", "pedestrian", "corridor", "bridleway"}
 FT = 0.3048
 # Decorative post-top fixtures (Richmond's Hanover and Granville lanterns, the Fan gaslights, the Canal
@@ -107,6 +114,71 @@ def clear_carriageways(survey: gpd.GeoDataFrame, roads: gpd.GeoDataFrame) -> gpd
     keep[np.flatnonzero(inside)[shift > MAX_SHIFT_M]] = False
     print(f"  streetlights: moved {int((shift <= MAX_SHIFT_M).sum())} off carriageways, dropped {int((~keep).sum())}")
     return out[keep]
+
+
+def utility_spans(survey: gpd.GeoDataFrame, buildings: gpd.GeoDataFrame, terrain=None
+                  ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+    """Wire spans between wooden poles, and each pole's `heading` (its line's direction, projected radians).
+
+    Returns (survey with `heading`, wires). Wires are two-point LineStrings with pole heights `h0`/`h1` and
+    ground elevations `z0`/`z1` (m above base) at the ends, so a span can be drawn from either tile.
+    """
+    out = survey.copy()
+    out["heading"] = math.nan
+    poles = out[out["kind"] == "utility_pole"]
+    visible = buildings[~buildings["hidden"].fillna(False).astype(bool)] if "hidden" in buildings else buildings
+    if len(poles) and len(visible):
+        inside = gpd.sjoin(poles[["geometry"]], visible[["geometry"]], predicate="within").index.unique()
+        poles = poles.drop(index=inside)
+    empty = gpd.GeoDataFrame({"id": [], "h0": [], "h1": [], "z0": [], "z1": []}, geometry=[], crs=CRS_PROJ)
+    if len(poles) < 2:
+        return out, empty
+    xy = np.c_[poles.geometry.x, poles.geometry.y]
+    tree = cKDTree(xy)
+    dist, nbr = tree.query(xy, k=min(8, len(xy)), distance_upper_bound=MAX_SPAN_M)
+    choice: list[set[int]] = []
+    for i in range(len(xy)):
+        picked: list[int] = []
+        for d, j in zip(dist[i][1:], nbr[i][1:]):
+            if not math.isfinite(d) or d < MIN_SPAN_M:
+                continue
+            if not picked:
+                picked.append(j)
+                continue
+            u, w = xy[picked[0]] - xy[i], xy[j] - xy[i]
+            if np.dot(u, w) / (np.linalg.norm(u) * np.linalg.norm(w)) <= OPPOSITE_COS:
+                picked.append(j)
+                break
+        choice.append(set(picked))
+    pairs = sorted({(min(i, j), max(i, j)) for i in range(len(xy)) for j in choice[i] if i in choice[j]})
+    lines = [LineString([xy[i], xy[j]]) for i, j in pairs]
+    if pairs and len(visible):
+        spans = gpd.GeoDataFrame(geometry=lines, crs=CRS_PROJ)
+        crossing = set(gpd.sjoin(spans, visible[["geometry"]], predicate="intersects").index)
+        pairs = [pr for k, pr in enumerate(pairs) if k not in crossing]
+        lines = [ln for k, ln in enumerate(lines) if k not in crossing]
+    if not pairs:
+        return out, empty
+
+    heights = poles["pole_height"].to_numpy(dtype=float)
+    heights = np.where(np.isfinite(heights), heights, DEFAULT_POLE_M)
+    sums = np.zeros((len(xy), 2))
+    for i, j in pairs:
+        u = (xy[j] - xy[i]) / np.linalg.norm(xy[j] - xy[i])
+        for k in (i, j):
+            # a line through a pole arrives and leaves in opposite directions; fold both onto one sense
+            sums[k] += u if np.dot(sums[k], u) >= 0 else -u
+    has = np.linalg.norm(sums, axis=1) > 0
+    out.loc[poles.index[has], "heading"] = np.round(np.arctan2(sums[has, 1], sums[has, 0]), 4)
+    a, b = np.array([i for i, _ in pairs]), np.array([j for _, j in pairs])
+    ground = (terrain.sample(xy[:, 0], xy[:, 1]) if terrain is not None else np.zeros(len(xy))).astype(float)
+    ids = poles["id"].to_numpy()
+    wires = gpd.GeoDataFrame({
+        "id": [f"wire:{ids[i].split(':', 1)[1]}-{ids[j].split(':', 1)[1]}" for i, j in pairs],
+        "h0": np.round(heights[a], 2), "h1": np.round(heights[b], 2),
+        "z0": np.round(ground[a], 2), "z1": np.round(ground[b], 2),
+    }, geometry=lines, crs=CRS_PROJ)
+    return out, wires
 
 
 def merge_survey(pois: gpd.GeoDataFrame, survey: gpd.GeoDataFrame) -> gpd.GeoDataFrame:

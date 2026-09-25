@@ -116,9 +116,9 @@ def test_registry_covers_every_augmentation_and_keys_resolve(env):
         assert names[:6] == ["buildings", "roads", "rail", "landuse", "water", "pois"]
         if region == "richmond":
             assert names[6:] == ["lod2_roofs", "roof_furniture", "groundcover", "city_decks", "hydro_shoreline", "canal_banks", "trees",
-                                 "streetlights"]
+                                 "streetlights", "traffic_control"]
         else:
-            assert names[6:] == ["coast"] and steps[-1].cache is False
+            assert names[6:] == ["traffic_control", "coast"] and steps[-1].cache is False
         produced = set()
         ctx = _ctx(env)
         ctx.region = region

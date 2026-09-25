@@ -98,3 +98,24 @@ def test_points_on_the_carriageway_move_to_the_curb_and_centreline_ones_drop():
     assert out.loc["curb"].geometry.y == -7 and out.loc["footpath"].geometry.y == 30
     assert out.loc["asphalt"].geometry.x == 50
     assert math.isclose(out.loc["asphalt"].geometry.y, -(5 + CURB_CLEARANCE_M), abs_tol=0.05)
+
+
+def test_wires_chain_wooden_poles_and_skip_spans_over_buildings():
+    from shapely.geometry import box
+
+    from streetlights import DEFAULT_POLE_M, utility_spans
+
+    survey = gpd.GeoDataFrame({
+        "id": [f"cor_pole:{i}" for i in range(5)], "kind": ["utility_pole"] * 5,
+        "pole_height": [9.0, np.nan, 11.0, 10.0, 10.0],
+    }, geometry=[Point(0, 0), Point(30, 0), Point(60, 1), Point(200, 0), Point(230, 0)], crs=CRS)
+    buildings = gpd.GeoDataFrame({"hidden": [False]}, geometry=[box(210, -5, 220, 5)], crs=CRS)
+
+    out, wires = utility_spans(survey, buildings)
+
+    assert sorted(wires["id"]) == ["wire:0-1", "wire:1-2"]
+    first = wires.set_index("id").loc["wire:0-1"]
+    assert (first["h0"], first["h1"]) == (9.0, DEFAULT_POLE_M)
+    headings = out.set_index("id")["heading"]
+    assert abs(math.sin(headings["cor_pole:1"])) < 0.05                  # line runs east-west
+    assert math.isnan(headings["cor_pole:3"]) and math.isnan(headings["cor_pole:4"])

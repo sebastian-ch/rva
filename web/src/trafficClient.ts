@@ -5,7 +5,7 @@
 import type * as THREE from 'three';
 import type { CarPathMeta } from './traffic/graph';
 import type { RailPathMeta } from './traffic/trains';
-import { MAX_VEHICLES, POSE_STRIDE, type FromWorker, type StatsMessage, type ToWorker } from './traffic/protocol';
+import { MAX_VEHICLES, POSE_STRIDE, type FromWorker, type JunctionControl, type StatsMessage, type ToWorker } from './traffic/protocol';
 
 export interface TrafficWorkerLike {
   postMessage(msg: ToWorker, transfer?: Transferable[]): void;
@@ -41,9 +41,10 @@ export class TrafficClient {
   }
 
   /** Car paths arrive as Vector3 polylines (the tile keeps them in that form); track is already flat. */
-  addTile(tileId: string, paths: THREE.Vector3[][], meta: CarPathMeta[], railPaths: Float32Array[] = [], railMeta: RailPathMeta[] = []) {
+  addTile(tileId: string, paths: THREE.Vector3[][], meta: CarPathMeta[], railPaths: Float32Array[] = [], railMeta: RailPathMeta[] = [],
+    controls: JunctionControl[] = []) {
     const flat = paths.map((p) => { const a = new Float32Array(p.length * 3); p.forEach((v, i) => { a[i * 3] = v.x; a[i * 3 + 1] = v.y; a[i * 3 + 2] = v.z; }); return a; });
-    this.worker.postMessage({ type: 'addTile', tileId, paths: flat, meta, railPaths, railMeta },
+    this.worker.postMessage({ type: 'addTile', tileId, paths: flat, meta, railPaths, railMeta, controls },
       [...flat, ...railPaths].map((a) => a.buffer as ArrayBuffer));
   }
 

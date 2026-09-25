@@ -26,11 +26,15 @@ export const MAX_RAIL_CARS = 200;
 export const RAIL_SLOT_BASE = MAX_VEHICLES;
 export const TOTAL_POSE_SLOTS = MAX_VEHICLES + MAX_RAIL_CARS;
 
+/** A traffic signal (anywhere near a junction) or a stop sign (with its approach's travel direction), local frame. */
+export interface JunctionControl { kind: 'signal' | 'stop'; x: number; z: number; dx?: number; dz?: number }
+
 export interface TileMessage {
   type: 'addTile';
   tileId: string;
   paths: Float32Array[];
   meta: CarPathMeta[];
+  controls?: JunctionControl[];
   railPaths?: Float32Array[];
   railMeta?: RailPathMeta[];
 }

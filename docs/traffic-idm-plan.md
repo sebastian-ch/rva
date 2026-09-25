@@ -3,8 +3,8 @@
 > **Status (2026-09-09): implemented** in `web/src/traffic/{graph,sim,protocol}.ts`, `trafficWorker.ts`,
 > `trafficClient.ts`, `propPool.applyPoses`. Deviations from the plan below: ways are also split at any vertex two
 > ways share (OSM crossroads), not only at endpoints; merge gap acceptance is folded into the priority yield rule;
-> buses run in the worker from day one; the junction virtual leader stops 1 m short of the node. Phase 4 items
-> (MOBIL lane changes, signals, stop signs) are still open.
+> buses run in the worker from day one; the junction virtual leader stops 1 m short of the node. Phase 4 items:
+> signals and stop signs landed 2026-09-25 (see the end of this file); MOBIL lane changes are still open.
 
 > **Density correction (2026-09-14):** initial population is seeded once on newly loaded edges. Ongoing arrivals
 > occur only on edges entering from a degree-one loaded-area boundary, at the class density multiplied by free-flow
@@ -225,3 +225,26 @@ buffer, above the road vehicles (`RAIL_SLOT_BASE`). What differs from the road s
 
 Open: level crossings do not stop road traffic, and a train running off a mid-scene graph boundary is visible
 as the consist leaving the end of the track.
+
+## Signals and stop signs (2026-09-25)
+
+Tiles hand the worker `controls` (`JunctionControl`, local frame) built from their POIs: every
+`traffic_signals` point, and every `stop_sign` with its approach's travel direction. `TrafficSim.edgeControl`
+resolves an incoming edge lazily and caches it until tiles change. A node with ≥ 3 arms is signalized when
+any signal lies within 20 m. OSM puts most at the stop lines, not on the junction node. An edge stops when a
+sign within 18 m of its end node points along the edge's end direction (cos ≥ 0.8).
+
+- **Signals:** two phase groups by approach axis (within 45° of the highest-priority approach), 60 s cycle
+  (25 s green, 3 s yellow, 2 s all-red per phase), offset by a hash of the node key. Red, or yellow when the car
+  can stop at `b`, puts a virtual obstacle S0 past the stop line 3 m before the node. IDM halts S0 short of an
+  obstacle, so without that shift cars stop 2.5 m early. The yield rule is skipped at signals.
+- **Stop signs:** hold at 2 m before the node until the car has stood still for 1 s. After that the yield rule
+  applies: yield to any vehicle on a non-stop arm within the conflict zone, and to vehicles on other stop arms
+  that finished their stop earlier (all-way stops are first-come, first-served). Through traffic never yields
+  to stop arms. The deadlock guard still releases after 4 s.
+- **Checked** headless on real tiles over 10 simulated minutes. On city streets (motorways excluded) the Fan
+  holds a steady ~10% of cars stopped with controls (259 stop approaches, 48 signalized). Downtown (308
+  signalized approaches) settles around 30–37% stopped, mostly at red lights, as the vehicle count levels off.
+  Queues at interior dead ends (a two-arm node with no onward edge, seen on I-195 and a downtown tertiary)
+  predate this and appear without controls too.
+

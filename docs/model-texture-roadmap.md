@@ -389,8 +389,8 @@ If yes, two uses, in order of value:
 in the bbox) and poles (15,742, with material, height and owner). `pipeline/streetlights.py` snaps each luminaire
 to its pole and emits 8,417 arm-mounted `streetlight`s, 3,934 decorative `lamp_post`s and 10,191 wooden
 `utility_pole`s. Points on the rendered asphalt move to the curb, and the 147 more than 4 m in are dropped. It drops 285 OSM lamps the survey duplicates. The survey skips most of Southside, so procedural
-lamps are suppressed per road (`lamps_surveyed`, 69% of major-road length) rather than region-wide. Signs,
-hydrants and benches remain Mapillary-only. Checked for facade sources on the same pass: VBMP imagery at
+lamps are suppressed per road (`lamps_surveyed`, 69% of major-road length) rather than region-wide. Wooden poles are also joined into 5,993 overhead wire spans (8,462 poles on a wire). Stop signs
+are inferred from the road network (`traffic_control.py`); hydrants, benches and other signs remain Mapillary-only. Checked for facade sources on the same pass: VBMP imagery at
 0.15 m is corrected nearly straight down, so an 81 m tower shows only a sliver of wall and rowhouses show none.
 Aerial imagery does not replace street-level photos for wall colour.
 

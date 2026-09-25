@@ -2,8 +2,8 @@
 
 Coordinates are centimetres relative to the tile's southwest corner.  Properties
 remain lossless through a deduplicated UTF-8 string table; float fields use NaN
-for null.  The first float is ``tree_height`` for trees and ``pole_height`` for
-surveyed lamps and poles.  The browser decoder lives in ``web/src/poiTable.ts``.
+for null.  For trees the two floats are ``tree_height`` and ``crown_radius``; for
+every other kind they are ``pole_height`` and ``heading`` (projected radians).  The browser decoder lives in ``web/src/poiTable.ts``.
 """
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ HEADER = struct.Struct("<4sIII")  # magic, records, strings (including null), st
 RECORD = struct.Struct("<HHB3xIIIIff")
 OFFSETS = struct.Struct("<I")
 KIND_CODES = ("tree", "streetlight", "bench", "bus_stop", "traffic_signals", "fountain", "monument", "shop", "restaurant", "museum",
-              "lamp_post", "utility_pole")
+              "lamp_post", "utility_pole", "stop_sign")
 KIND_CODE = {kind: i + 1 for i, kind in enumerate(KIND_CODES)}
 
 
@@ -60,7 +60,7 @@ def encode_pois(pois: gpd.GeoDataFrame, bounds: tuple[float, float, float, float
         records.append(RECORD.pack(xq, yq, KIND_CODE[kind], intern(row.get("id")), intern(row.get("name")),
                                    intern(row.get("species")), intern(row.get("source")),
                                    _number(row.get("tree_height" if kind == "tree" else "pole_height")),
-                                   _number(row.get("crown_radius"))))
+                                   _number(row.get("crown_radius" if kind == "tree" else "heading"))))
 
     encoded = [s.encode("utf-8") for s in strings]
     offsets = [0]

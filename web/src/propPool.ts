@@ -14,6 +14,7 @@ const CAPACITY: Record<PropKind, number> = {
   streetlight: 5000,
   lamp_post: 2500,
   utility_pole: 5000,
+  stop_sign: 1500,
   car: 6000,
   suv: 2500,
   pickup: 1200,
@@ -32,7 +33,7 @@ const CAPACITY: Record<PropKind, number> = {
 /** Kinds with a `window_lit` lens that glows at night. */
 const LAMP_KINDS: PropKind[] = ['streetlight', 'lamp_post'];
 /** Surveyed street furniture is as dense as the survey, so its buffers grow like the trees' do. */
-const GROWABLE_KINDS: PropKind[] = ['streetlight', 'lamp_post', 'utility_pole'];
+const GROWABLE_KINDS: PropKind[] = ['streetlight', 'lamp_post', 'utility_pole', 'stop_sign'];
 /** Kinds whose body is built white and tinted per instance, and the palette each one indexes. */
 const TINTED_KINDS: PropKind[] = [...VEHICLE_KINDS, ...RAIL_TINTED_KINDS];
 const colorTable = (kind: PropKind) => (RAIL_KINDS.includes(kind) ? RAIL_COLORS : VEHICLE_COLORS);

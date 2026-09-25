@@ -7,6 +7,11 @@ import type { BuildingRange } from './buildings';
 import type { Placement } from './scatter';
 import type { GeomArrays, Lod, TilePayload } from './tileBuild';
 import type { V2 } from './geomutil';
+import type { JunctionControl } from './traffic/protocol';
+import { hex } from './props';
+
+/** Shared by every tile's overhead wires: thin dark lines read as cable at any zoom. */
+const WIRE_MATERIAL = new THREE.LineBasicMaterial({ color: hex('roof_dark') });
 
 export interface LoadedTile {
   meta: TileMeta;
@@ -20,6 +25,7 @@ export interface LoadedTile {
   /** track centrelines, kept flat: only the train worker reads them */
   railPaths: Float32Array[];
   railMeta: RailPathMeta[];
+  controls: JunctionControl[];
   placements: Placement[];
   field: HeightField;
   buildingFeatures: Map<string, Feature<PolyGeom, BuildingProps>>;
@@ -64,11 +70,20 @@ export function wrapTilePayload(p: TilePayload, materials: Materials): LoadedTil
   add('roads', p.geoms.roads, materials.roads, 'receive');
   add('land', p.geoms.land, materials.land, 'receive');
   add('water', p.geoms.water, materials.water, 'receive');
+  if (p.wires?.length) {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(p.wires, 3));
+    const lines = new THREE.LineSegments(g, WIRE_MATERIAL);
+    lines.name = 'wires';
+    lines.matrixAutoUpdate = false;
+    group.add(lines);
+    bytes += p.wires.byteLength;
+  }
   const toVec3Paths = (arrs: Float32Array[]) => arrs.map((a) => { const out: THREE.Vector3[] = []; for (let i = 0; i < a.length; i += 3) out.push(new THREE.Vector3(a[i], a[i + 1], a[i + 2])); return out; });
   const carPaths = toVec3Paths(p.carPaths);
   const walkPaths = toVec3Paths(p.walkPaths);
   return {
-    meta: p.meta, lod: p.lod, group, buildings, ranges: p.ranges, carPaths, carMeta: p.carMeta ?? [], walkPaths, railPaths: p.railPaths ?? [], railMeta: p.railMeta ?? [], placements: p.placements,
+    meta: p.meta, lod: p.lod, group, buildings, ranges: p.ranges, carPaths, carMeta: p.carMeta ?? [], walkPaths, railPaths: p.railPaths ?? [], railMeta: p.railMeta ?? [], controls: p.controls ?? [], placements: p.placements,
     field: p.terrain ? new HeightField(p.terrain) : FLAT_FIELD(0),
     buildingFeatures: new Map(p.buildingFeatures.map((f) => [f.properties.id, f])),
     triangles, bytes,
@@ -76,7 +91,7 @@ export function wrapTilePayload(p: TilePayload, materials: Materials): LoadedTil
 }
 
 export function disposeTile(t: LoadedTile) {
-  t.group.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh) m.geometry.dispose(); });
+  t.group.traverse((o) => { const m = o as THREE.Mesh | THREE.LineSegments; if ((m as THREE.Mesh).isMesh || (m as THREE.LineSegments).isLineSegments) m.geometry.dispose(); });
   t.group.parent?.remove(t.group);
 }
 

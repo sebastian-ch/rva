@@ -33,6 +33,9 @@ from layer_steps import StepContext, run_steps
 from poi_table import write_pois
 
 POINT_LAYERS = {"pois", "crossings"}
+# Written whole into the one tile holding their centroid: a footprint split at a tile edge would dirty and draw
+# twice, and a wire span needs both ends to hang its sag.
+CENTROID_OWNED = {"buildings", "wires"}
 
 
 def _tile_layer(gdf: gpd.GeoDataFrame, spatial_index, name: str, tile_box):
@@ -46,7 +49,7 @@ def _clip_candidates(cand: gpd.GeoDataFrame, name: str, tile_box):
         return cand
     if name in POINT_LAYERS:
         return cand
-    if name == "buildings":
+    if name in CENTROID_OWNED:
         minx, miny, maxx, maxy = tile_box.bounds
         c = cand.geometry.centroid
         return cand[(c.x >= minx) & (c.x < maxx) & (c.y >= miny) & (c.y < maxy)]
@@ -139,9 +142,12 @@ def write_tiles(layers, terrain, hydro, beach_profile, bbox, surveyed_trees, pre
     t0 = time.time()
     sidx = {k: v.sindex for k, v in layers.items() if len(v)}
     digests = {k: layer_cache.row_digests(v) for k, v in layers.items() if len(v)}
-    # buildings are owned by centroid, so a footprint straddling a tile edge must only dirty its owner tile
-    bc = layers["buildings"].geometry.centroid if len(layers.get("buildings", [])) else None
-    bcx, bcy = (bc.x.to_numpy(), bc.y.to_numpy()) if bc is not None else (None, None)
+    # centroid-owned layers must only dirty their owner tile when a feature straddles a tile edge
+    owner_xy = {}
+    for name in CENTROID_OWNED:
+        if len(layers.get(name, [])):
+            c = layers[name].geometry.centroid
+            owner_xy[name] = (c.x.to_numpy(), c.y.to_numpy())
     water = layers.get("water")
     still = water[water["water_z"].notna()] if water is not None and "water_z" in water else None
     if still is not None and len(still) == 0:
@@ -167,8 +173,9 @@ def write_tiles(layers, terrain, hydro, beach_profile, bbox, surveyed_trees, pre
             for name, gdf in layers.items():
                 dst = _layer_path(tdir, name)
                 idx = sidx[name].query(tile_box, predicate="intersects") if name in sidx else []
-                if name == "buildings" and len(idx):
-                    idx = idx[(bcx[idx] >= tminx) & (bcx[idx] < tminx + TILE_SIZE) & (bcy[idx] >= tminy) & (bcy[idx] < tminy + TILE_SIZE)]
+                if name in owner_xy and len(idx):
+                    cx, cy = owner_xy[name]
+                    idx = idx[(cx[idx] >= tminx) & (cx[idx] < tminx + TILE_SIZE) & (cy[idx] >= tminy) & (cy[idx] < tminy + TILE_SIZE)]
                 if len(idx) == 0:
                     if dst.exists():
                         dst.unlink()

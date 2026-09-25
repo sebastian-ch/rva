@@ -121,7 +121,7 @@ def test_unknown_layer():
 
 def test_layer_keys_cover_data_format_columns():
     # Sanity check on the fixture itself: every layer in DATA_FORMAT.md has a non-empty key set.
-    assert set(LAYER_KEYS) == {"buildings", "roads", "rail", "landuse", "water", "crossings", "pois"}
+    assert set(LAYER_KEYS) == {"buildings", "roads", "rail", "landuse", "water", "crossings", "pois", "wires"}
     assert all(LAYER_KEYS[layer] for layer in LAYER_KEYS)
 
 

@@ -127,10 +127,11 @@ export function scatterTile(
     } else if (k === 'streetlight') place('streetlight', x, y, nearestRoadOrientation(x, y)?.facing);
     else if (k === 'lamp_post') place('lamp_post', x, y);
     else if (k === 'utility_pole') {
-      const height = p.properties.pole_height;
-      place('utility_pole', x, y, nearestRoadOrientation(x, y)?.heading, 1,
+      // the crossarm (+X) runs across the pole's wires, else across the nearest street
+      const { pole_height: height, heading } = p.properties;
+      place('utility_pole', x, y, Number.isFinite(heading) ? heading! + Math.PI / 2 : nearestRoadOrientation(x, y)?.heading, 1,
         height && height > 3 ? height / UTILITY_POLE_HEIGHT : undefined);
-    }
+    } else if (k === 'stop_sign') place('stop_sign', x, y, p.properties.heading ?? nearestRoadOrientation(x, y)?.facing);
     else if (k === 'bench') place('bench', x, y);
     else if (k === 'bus_stop') place('person', x, y);
     else if (k === 'traffic_signals') place('traffic_light', x, y, nearestRoadOrientation(x, y)?.heading);

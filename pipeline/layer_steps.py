@@ -23,7 +23,7 @@ import deps
 import layer_cache
 from config import ASSETS, CRS_PROJ, DATA_RAW, REGION, ROOT
 
-LAYER_ORDER = ["buildings", "roads", "crossings", "rail", "landuse", "water", "pois"]
+LAYER_ORDER = ["buildings", "roads", "crossings", "rail", "landuse", "water", "pois", "wires"]
 
 
 @dataclass
@@ -215,12 +215,18 @@ def _streetlights(ctx: StepContext, layers: dict):
     lum_path, pole_path = ctx.richmond("luminaires.parquet"), ctx.richmond("poles.parquet")
     if not (lum_path.exists() and pole_path.exists()):
         return {}
-    from streetlights import clear_carriageways, mark_surveyed_roads, merge_survey, survey_pois
+    from streetlights import clear_carriageways, mark_surveyed_roads, merge_survey, survey_pois, utility_spans
     survey = clear_carriageways(survey_pois(gpd.read_parquet(lum_path), gpd.read_parquet(pole_path)), layers["roads"])
+    survey, wires = utility_spans(survey, layers["buildings"], ctx.terrain)
     roads = mark_surveyed_roads(layers["roads"], survey)
     counts = survey["kind"].value_counts().to_dict()
-    print(f"  streetlights: {counts}; {int(roads['lamps_surveyed'].sum())}/{len(roads)} roads surveyed")
-    return {"pois": merge_survey(layers["pois"], survey), "roads": roads}
+    print(f"  streetlights: {counts}; {int(roads['lamps_surveyed'].sum())}/{len(roads)} roads surveyed; {len(wires)} wire spans")
+    return {"pois": merge_survey(layers["pois"], survey), "roads": roads, "wires": wires}
+
+
+def _traffic_control(ctx: StepContext, layers: dict):
+    from traffic_control import add_stop_signs
+    return {"pois": add_stop_signs(layers["roads"], layers["pois"])}
 
 
 # ---------------------------------------------------------------- Honolulu augmentation
@@ -286,8 +292,11 @@ def steps_for(region: str) -> list[Step]:
              modules=("terrain",), reads=("pois", "buildings", "water"),
              sources=lambda c: [c.richmond("trees.parquet"), DATA_RAW / f"lidar_{c.slug}.npz", c.dem_path],
              regions=("richmond",)),
-        Step("streetlights", ("pois", "roads"), _streetlights, modules=("streetlights",), reads=("pois", "roads"),
-             sources=lambda c: [c.richmond("luminaires.parquet"), c.richmond("poles.parquet")], regions=("richmond",)),
+        Step("streetlights", ("pois", "roads", "wires"), _streetlights, modules=("streetlights", "terrain"),
+             reads=("pois", "roads", "buildings"),
+             sources=lambda c: [c.richmond("luminaires.parquet"), c.richmond("poles.parquet"), c.dem_path],
+             regions=("richmond",)),
+        Step("traffic_control", ("pois",), _traffic_control, modules=("traffic_control",), reads=("pois", "roads")),
     ]
     if region == "honolulu":
         import honolulu
