@@ -28,7 +28,7 @@ ROOF_COLOR_SOURCES: set[str] = {"osm", "ortho", "heuristic", "override", "landma
 
 POI_KINDS: set[str] = {
     "tree", "streetlight", "bench", "bus_stop", "traffic_signals",
-    "fountain", "monument", "shop", "restaurant", "museum",
+    "fountain", "monument", "shop", "restaurant", "museum", "lamp_post", "utility_pole",
 }
 
 LANDUSE_KINDS: set[str] = {"park", "grass", "pitch", "parking", "cemetery", "plaza", "industrial", "forest", "beach", "deck", "groyne", "breakwater", "seawall", "pier", "canal_bank", "groundcover_lawn", "groundcover_paved", "groundcover_bare"}

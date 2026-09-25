@@ -2,8 +2,8 @@
 
     python pipeline/fetch_richmond.py [--bbox W S E N] [--force]
 
-Layers (see ATTRIBUTION.md): addresses, zoning, trees, Structures buildings/decks, and optional road polygons
-and carriageway centerlines. Written as GeoParquet in EPSG:4326 to data/raw/richmond_<slug>/<layer>.parquet.
+Layers (see ATTRIBUTION.md): addresses, zoning, trees, Structures buildings/decks, the streetlight luminaire and
+pole surveys, and optional road polygons and carriageway centerlines. Written as GeoParquet in EPSG:4326 to data/raw/richmond_<slug>/<layer>.parquet.
 The Esri basemap itself is not used.
 """
 from __future__ import annotations
@@ -30,10 +30,17 @@ LAYERS = {
     "structures": f"{ORG}/Structures/FeatureServer/0",
     "road_polygons": f"{ORG}/Roads/FeatureServer/0",
     "road_centerlines": f"{ORG}/CarriagewayCenterlines/FeatureServer/0",
+    "luminaires": f"{ORG}/Luminaire_Survey_Point_TableToExcel/FeatureServer/0",
+    "poles": f"{ORG}/Pole_Survey_Point_TableToExcel/FeatureServer/0",
 }
-DEFAULT_LAYERS = ("addresses", "zoning", "trees", "structures")
+DEFAULT_LAYERS = ("addresses", "zoning", "trees", "structures", "luminaires", "poles")
 LAYER_WHERE = {"structures": "Subtype IN (1,3)"}
-LAYER_FIELDS = {"structures": "OBJECTID,Subtype,FIPS,PermitID,CreatedDate,EditDate"}
+# The surveys also carry surveyor accounts and GNSS receiver logs; keep only what the renderer can use.
+LAYER_FIELDS = {
+    "structures": "OBJECTID,Subtype,FIPS,PermitID,CreatedDate,EditDate",
+    "luminaires": "OBJECTID,LuminaireType,FixtureType,LightSource,Wattage,LuminaireStatus,System",
+    "poles": "OBJECTID,PoleType,PoleHeight,PoleLength,Material,Owner,PoleStatus,PoleAttachments",
+}
 PAGE = 2000
 
 

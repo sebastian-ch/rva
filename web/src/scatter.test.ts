@@ -76,6 +76,31 @@ describe('scatterTile', () => {
     expect(lamp?.rot).toBeCloseTo(-Math.PI / 2);
   });
 
+  it('skips procedural lamps on surveyed roads and beside mapped lamps', () => {
+    const road = (id: string, y: number, lamps_surveyed?: boolean): Feature<LineGeom, RoadProps> => ({ type: 'Feature',
+      geometry: { type: 'LineString', coordinates: [[0, y], [100, y]] },
+      properties: { id, width: 8, highway: 'residential', lamps_surveyed } as RoadProps });
+    const count = (roads: Feature<LineGeom, RoadProps>[], pois: Feature<PointGeom, PoiProps>[] = []) =>
+      scatterTile('lamps', pois, [], roads, [], bbox, identity, flatGround).filter((p) => p.kind === 'streetlight').length;
+
+    expect(count([road('open', 50)])).toBeGreaterThan(0);
+    expect(count([road('surveyed', 50, true)])).toBe(0);
+    const mapped = [0, 20, 40, 60, 80, 100].flatMap((x) => [poi('lamp_post', x, 45), poi('lamp_post', x, 55)]);
+    expect(count([road('open', 50)], mapped)).toBe(0);
+  });
+
+  it('stands a surveyed utility pole at its height with the crossarm across the street', () => {
+    const road: Feature<LineGeom, RoadProps> = { type: 'Feature',
+      geometry: { type: 'LineString', coordinates: [[0, 50], [100, 50]] },
+      properties: { width: 4, highway: 'service', lamps_surveyed: true } as RoadProps };
+    const pole = poi('utility_pole', 30, 53);
+    pole.properties.pole_height = 12.5;
+    const out = scatterTile('pole', [pole], [], [road], [], bbox, identity, flatGround);
+    const placed = out.find((p) => p.kind === 'utility_pole');
+    expect(placed?.scaleY).toBeCloseTo(1.25);
+    expect(Math.abs(Math.cos(placed!.rot))).toBeLessThan(1e-9); // +X arm points north-south, across an east-west street
+  });
+
   it('rejects a POI that falls inside a building footprint', () => {
     const pois = [poi('fountain', 50, 50)];
     const buildings = [squareBuilding(50, 50, 10)];

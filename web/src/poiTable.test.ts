@@ -22,6 +22,15 @@ describe('decodePoiTable', () => {
     }]);
   });
 
+  it('reads the height slot as a pole height for surveyed poles', () => {
+    const pole = table();
+    new DataView(pole).setUint8(20, 12);
+    const props = decodePoiTable(pole, [100, 200, 350, 450]).features[0].properties;
+    expect(props.kind).toBe('utility_pole');
+    expect(props.pole_height).toBe(9.5);
+    expect(props.tree_height).toBeUndefined();
+  });
+
   it('rejects malformed payloads', () => {
     expect(() => decodePoiTable(new ArrayBuffer(16), [0, 0, 250, 250])).toThrow('Invalid POI table');
     const badIndex = table();

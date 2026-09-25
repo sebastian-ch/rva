@@ -23,7 +23,7 @@ Rank accordingly — do not spend effort re-deriving heights.
 | 3 | Roof furniture from dense LiDAR | **done 2026-09-25** — 223 measured objects on 114 buildings; citywide candidates from `pipeline/roof_furniture_review.py`, 150 reviewed, 35 rejected |
 | 4 | Ground cover from VGIN RGB + NAIP NIR + nDSM | **done 2026-09-14; refined 2026-09-15** — 4,000 cleaned lawn, paving and bare-ground polygons |
 | 5 | Split-grammar facade geometry, lower two floors | **done 2026-09-21** — `web/src/facadeGrammar.ts`; street frontages from the tile's road centrelines, five rule sets, LOD 0 only, per-tile triangle budget |
-| 6 | Wall colour and surveyed props from Mapillary | not started |
+| 6 | Wall colour and surveyed props from Mapillary | **props: streetlights and poles done 2026-09-25 from the city survey** (no Mapillary); wall colour not started |
 | 7 | Landmarks from HABS drawings and own photogrammetry | not started |
 | 8 | CC0 prop libraries for vehicles and street furniture | not started |
 
@@ -45,9 +45,11 @@ Item 6 depends on a licensing decision, not on code.
 
 ## Immediate next step
 
-Items 1–5 are done. Item 6 is blocked on deciding whether CC BY-SA share-alike is acceptable for derived
-wall colours and props, so settle that first. Without that decision, item 8 (CC0 vehicles and street furniture) is the
-cheapest code-only step. Item 7 is art time.
+Items 1–5 are done. Streetlights and utility poles in item 6 came from the City of Richmond luminaire and pole
+surveys instead of Mapillary (see §6). Wall colour still depends on the CC BY-SA decision. Cheaper steps first: an
+assessor-based era and type prior (the city's assessor layer has year built and building type for about 69,000 parcels), then
+per-address materials from the National Register district inventories. Item 8 (CC0 vehicles and street furniture) is the cheapest
+code-only step. Item 7 is art time.
 
 A by-product of item 3 worth following up: flat roofs whose LiDAR roof plane sits more than
 `ALIGN_TOL_M` (1.5 m) from the modeled wall top, such as The Edge at ATC (+2.4 m), are probably wrong heights or unmodeled
@@ -382,6 +384,15 @@ If yes, two uses, in order of value:
    robust median. Much harder than the roof equivalent — occlusion by parked cars, trees, and other
    buildings; wildly varying exposure; oblique geometry. Expect worse coverage than the ortho roof
    work, and keep the same discipline: return nothing rather than a confident wrong colour.
+
+**Done without Mapillary, 2026-09-25:** the City of Richmond publishes GNSS surveys of streetlight fixtures (12,653
+in the bbox) and poles (15,742, with material, height and owner). `pipeline/streetlights.py` snaps each luminaire
+to its pole and emits 8,417 arm-mounted `streetlight`s, 3,934 decorative `lamp_post`s and 10,191 wooden
+`utility_pole`s. Points on the rendered asphalt move to the curb, and the 147 more than 4 m in are dropped. It drops 285 OSM lamps the survey duplicates. The survey skips most of Southside, so procedural
+lamps are suppressed per road (`lamps_surveyed`, 69% of major-road length) rather than region-wide. Signs,
+hydrants and benches remain Mapillary-only. Checked for facade sources on the same pass: VBMP imagery at
+0.15 m is corrected nearly straight down, so an 81 m tower shows only a sliver of wall and rowhouses show none.
+Aerial imagery does not replace street-level photos for wall colour.
 
 ## 7. Landmarks from HABS drawings and own photogrammetry
 

@@ -81,10 +81,12 @@ export interface RoadProps {
   deck?: string | number[] | null;
   /** per deck end: 1 = continues onto another elevated way, 0 = lands at grade (see DATA_FORMAT.md) */
   deck_lift?: string | number[] | null;
+  /** the city streetlight survey covers this road; no procedural lamps (see DATA_FORMAT.md) */
+  lamps_surveyed?: boolean;
 }
 export interface RailProps { id: string; name: string | null; railway: string; service?: string | null; usage?: string | null; bridge: boolean; ramp?: boolean; layer: number; deck?: string | number[] | null }
 export interface AreaProps { id: string; name: string | null; kind: string; sport?: string | null; surface?: string | null; pitch_layout?: string | null; source?: string; source_updated?: string | null; water_z?: number | null; coastal?: boolean; base_z?: number | null; top_z?: number | null }
-export interface PoiProps { id: string; name: string | null; kind: string; species?: string | null; source?: string; tree_height?: number; crown_radius?: number }
+export interface PoiProps { id: string; name: string | null; kind: string; species?: string | null; source?: string; tree_height?: number; crown_radius?: number; pole_height?: number }
 export interface CrossingProps {
   id: string; crossing: string; crossing_markings?: string | null;
   road_id?: string | null; road_width?: number | null; road_dx?: number | null; road_dy?: number | null;

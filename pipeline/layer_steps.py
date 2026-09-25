@@ -211,6 +211,18 @@ def _trees(ctx: StepContext, layers: dict):
     return {"pois": pois}, {"surveyed_trees": len(crowns) > 0}
 
 
+def _streetlights(ctx: StepContext, layers: dict):
+    lum_path, pole_path = ctx.richmond("luminaires.parquet"), ctx.richmond("poles.parquet")
+    if not (lum_path.exists() and pole_path.exists()):
+        return {}
+    from streetlights import clear_carriageways, mark_surveyed_roads, merge_survey, survey_pois
+    survey = clear_carriageways(survey_pois(gpd.read_parquet(lum_path), gpd.read_parquet(pole_path)), layers["roads"])
+    roads = mark_surveyed_roads(layers["roads"], survey)
+    counts = survey["kind"].value_counts().to_dict()
+    print(f"  streetlights: {counts}; {int(roads['lamps_surveyed'].sum())}/{len(roads)} roads surveyed")
+    return {"pois": merge_survey(layers["pois"], survey), "roads": roads}
+
+
 # ---------------------------------------------------------------- Honolulu augmentation
 
 def _coast(ctx: StepContext, layers: dict):
@@ -274,6 +286,8 @@ def steps_for(region: str) -> list[Step]:
              modules=("terrain",), reads=("pois", "buildings", "water"),
              sources=lambda c: [c.richmond("trees.parquet"), DATA_RAW / f"lidar_{c.slug}.npz", c.dem_path],
              regions=("richmond",)),
+        Step("streetlights", ("pois", "roads"), _streetlights, modules=("streetlights",), reads=("pois", "roads"),
+             sources=lambda c: [c.richmond("luminaires.parquet"), c.richmond("poles.parquet")], regions=("richmond",)),
     ]
     if region == "honolulu":
         import honolulu

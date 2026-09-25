@@ -10,6 +10,8 @@ export type PropKind =
   | 'tree_spreading'
   | 'tree_small'
   | 'streetlight'
+  | 'lamp_post'
+  | 'utility_pole'
   | 'car'
   | 'suv'
   | 'pickup'
@@ -32,6 +34,8 @@ export const PROP_KINDS: PropKind[] = [
   'tree_spreading',
   'tree_small',
   'streetlight',
+  'lamp_post',
+  'utility_pole',
   'car',
   'suv',
   'pickup',
@@ -251,6 +255,35 @@ function buildStreetlight(): THREE.BufferGeometry {
     { geom: housing, color: hex('roof_dark'), position: [1.04, 4.65, 0] },
     { geom: lens, color: hex('window_lit'), position: [1.08, 4.55, 0] },
   ]);
+}
+
+/** Decorative post-top lantern (Richmond's Hanover/Granville posts, the Fan gaslights). The lens is
+ * `window_lit` so the lamp material's night glow finds it. */
+function buildLampPost(): THREE.BufferGeometry {
+  return mergeColored([
+    { geom: new THREE.CylinderGeometry(0.16, 0.2, 0.5, 8), color: hex('roof_dark'), position: [0, 0.25, 0] },
+    { geom: new THREE.CylinderGeometry(0.05, 0.08, 3.1, 8), color: hex('roof_dark'), position: [0, 2.05, 0] },
+    { geom: new THREE.CylinderGeometry(0.12, 0.08, 0.12, 8), color: hex('roof_dark'), position: [0, 3.66, 0] },
+    { geom: new THREE.CylinderGeometry(0.17, 0.12, 0.5, 8), color: hex('window_lit'), position: [0, 3.97, 0] },
+    { geom: new THREE.ConeGeometry(0.22, 0.28, 8), color: hex('roof_dark'), position: [0, 4.36, 0] },
+  ]);
+}
+
+/** Model height of the utility pole; surveyed heights scale it vertically. */
+export const UTILITY_POLE_HEIGHT = 10;
+
+/** Wooden distribution pole with a crossarm along +X (placed across the street, like the wires' arms). */
+function buildUtilityPole(): THREE.BufferGeometry {
+  const h = UTILITY_POLE_HEIGHT;
+  const wood = hex('trunk').multiplyScalar(0.85);
+  const parts: ColoredPart[] = [
+    { geom: new THREE.CylinderGeometry(0.11, 0.15, h, 7), color: wood, position: [0, h / 2, 0] },
+    { geom: new THREE.BoxGeometry(2.2, 0.1, 0.1), color: wood, position: [0, h - 0.55, 0] },
+  ];
+  for (const x of [-0.95, 0.95]) {
+    parts.push({ geom: new THREE.CylinderGeometry(0.05, 0.06, 0.2, 6), color: hex('concrete'), position: [x, h - 0.4, 0] });
+  }
+  return mergeColored(parts);
 }
 
 // Note: bodyWhite defaults to true (via `?? true` at the call site in
@@ -699,6 +732,12 @@ export function buildPropGeometry(
       break;
     case 'streetlight':
       geom = buildStreetlight();
+      break;
+    case 'lamp_post':
+      geom = buildLampPost();
+      break;
+    case 'utility_pole':
+      geom = buildUtilityPole();
       break;
     case 'car':
       // Vehicle kinds default bodyWhite to true (unless explicitly overridden)

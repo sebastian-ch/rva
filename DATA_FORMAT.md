@@ -132,8 +132,9 @@ pushed down to `water_z - 0.5` under those polygons so the surface is always vis
 POIs use a compact binary table rather than GeoJSON: `POI1` header, fixed 32-byte records, then a
 deduplicated UTF-8 string table. `x`/`y` are unsigned 16-bit centimetres from the tile's southwest
 corner; this is lossless relative to the former 2-decimal GeoJSON output. The records preserve `id`,
-`name`, `kind` (`"tree"|"streetlight"|"bench"|"bus_stop"|"traffic_signals"|"fountain"|"monument"|"shop"|"restaurant"|"museum"`),
-and optional tree `species`, `source`, `tree_height`, and `crown_radius`. See `pipeline/poi_table.py`
+`name`, `kind` (`"tree"|"streetlight"|"bench"|"bus_stop"|"traffic_signals"|"fountain"|"monument"|"shop"|"restaurant"|"museum"|"lamp_post"|"utility_pole"`),
+and optional tree `species`, `source`, `tree_height`, and `crown_radius`. The first float slot is `tree_height`
+for trees and `pole_height` (metres above ground) for other kinds. See `pipeline/poi_table.py`
 and `web/src/poiTable.ts` for the versioned format.
 
 ### terrain.json
@@ -157,6 +158,15 @@ Region profiles select the projected CRS and output path. Honolulu IDs use `cch:
 Honolulu coastal structures use landuse kinds `groyne`, `breakwater`, `seawall`, and `pier`. Optional `base_z` and `top_z` are elevations relative to the regional DEM base; both scale with terrain exaggeration. Their polygons render as solid extrusions. `source` identifies OSM or imagery tracing; `dimensions_source` marks estimated dimensions.
 # Richmond vegetation, hydro, and navigation additions
 
+- Richmond streetlights come from the city luminaire and pole surveys (`pipeline/streetlights.py`,
+  `source: "city_survey"`, ids `cor_luminaire:<objectid>` / `cor_pole:<objectid>`). A luminaire snaps to its pole
+  within 3 m; `streetlight` is an arm-mounted cobrahead, shoebox or flood, `lamp_post` a pedestrian or decorative
+  post-top (Hanover, Granville, gaslight, …). Every wooden pole is a `utility_pole` with optional `pole_height`
+  (surveyed height, else pole length less the setting depth). OSM street lamps within 12 m of a surveyed luminaire
+  are dropped. Survey points inside a rendered carriageway (centreline buffered by half the OSM `width`, tunnels and
+  footways excluded) move to 0.6 m past its edge; those more than 4 m in are dropped. Roads get `lamps_surveyed: true` when at least 80% of their length lies within 60 m of a surveyed
+  luminaire; the viewer places procedural roadside lamps only on other roads, and not within 20 m of a lamp POI.
+  The survey does not cover most of Southside.
 - `index.json` tile entries may contain `surveyed_trees: true`: complete regional LiDAR canopy processing
   was available, so the renderer suppresses procedural park/street tree scatter. Existing OSM trees remain
   where they do not duplicate inventory/canopy points.

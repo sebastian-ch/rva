@@ -651,6 +651,19 @@ the mesh surface, otherwise boxes z-fight with or bury in the measured tiers. Dr
 `test_review_seats_on_roofer_mesh_and_drops_objects_it_already_models`,
 `test_review_skips_roofs_under_parking_polygons`.
 
+A point survey that replaces procedural props must say where it is complete. Richmond's streetlight survey
+covers north of the river and Manchester but not most of Southside. A region-wide "surveyed" flag, like the
+trees one, would leave those streets dark, and a per-tile check against tile-clipped POIs doubles lamps at
+tile seams. Flag each road from the unclipped survey (`lamps_surveyed`: 80% of samples within 60 m of a
+luminaire), and still keep procedural lamps 20 m clear of any lamp POI on partly covered roads. Luminaire and pole fixes
+are separate GNSS records a median 0.7 m apart. Snap within 3 m and emit one lamp per pole, otherwise two-lamp poles
+render as doubled fixtures. Surveyed curb positions still land on rendered asphalt: 6,200 of 22,700 Richmond points sat inside the carriageway
+drawn from the centreline and OSM `width`, half of them in alleys. Move points inside the buffered
+carriageway union to just past its edge (`clear_carriageways`) and drop those needing more than 4 m. `PropPool` drops instances past a kind's capacity unless the kind is growable, so
+dense surveyed kinds must be growable. Implementation: `pipeline/streetlights.py`, `web/src/scatter.ts`.
+Regressions: `test_streetlights.py` (including `test_points_on_the_carriageway_move_to_the_curb_and_centreline_ones_drop`),
+`scatter.test.ts` (surveyed roads, utility poles).
+
 When a city footprint layer gap-fills OSM, an `intersects` join alone is too aggressive: attached
 buildings often share a boundary with an OSM footprint and have zero overlap area. Treat a candidate as
 a duplicate only when their intersection covers a meaningful fraction of the smaller polygon. Preserve

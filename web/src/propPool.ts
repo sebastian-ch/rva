@@ -12,6 +12,8 @@ const CAPACITY: Record<PropKind, number> = {
   tree_spreading: 8000,
   tree_small: 8000,
   streetlight: 5000,
+  lamp_post: 2500,
+  utility_pole: 5000,
   car: 6000,
   suv: 2500,
   pickup: 1200,
@@ -27,6 +29,10 @@ const CAPACITY: Record<PropKind, number> = {
   tank_car: 100,
   coach: 48,
 };
+/** Kinds with a `window_lit` lens that glows at night. */
+const LAMP_KINDS: PropKind[] = ['streetlight', 'lamp_post'];
+/** Surveyed street furniture is as dense as the survey, so its buffers grow like the trees' do. */
+const GROWABLE_KINDS: PropKind[] = ['streetlight', 'lamp_post', 'utility_pole'];
 /** Kinds whose body is built white and tinted per instance, and the palette each one indexes. */
 const TINTED_KINDS: PropKind[] = [...VEHICLE_KINDS, ...RAIL_TINTED_KINDS];
 const colorTable = (kind: PropKind) => (RAIL_KINDS.includes(kind) ? RAIL_COLORS : VEHICLE_COLORS);
@@ -98,7 +104,7 @@ export class PropPool implements PoseSink {
     lampMaterial.customProgramCacheKey = () => 'iso-neon-lamp';
     for (const k of PROP_KINDS) {
       const geom = TINTED_KINDS.includes(k) ? buildPropGeometry(k, undefined, true) : buildPropGeometry(k, undefined, false);
-      const im = new THREE.InstancedMesh(geom, k === 'streetlight' ? lampMaterial : material, CAPACITY[k]);
+      const im = new THREE.InstancedMesh(geom, LAMP_KINDS.includes(k) ? lampMaterial : material, CAPACITY[k]);
       im.count = 0;
       im.frustumCulled = false;
       im.name = `props:${k}`;
@@ -120,7 +126,7 @@ export class PropPool implements PoseSink {
       let im = this.meshes.get(p.kind)!;
       const i = this.counts.get(p.kind)!;
       if (i >= im.instanceMatrix.count) {
-        if (!p.kind.startsWith('tree')) continue;
+        if (!GROWABLE_KINDS.includes(p.kind) && !p.kind.startsWith('tree')) continue;
         const larger = new THREE.InstancedMesh(im.geometry, im.material, im.instanceMatrix.count * 2);
         larger.instanceMatrix.array.set(im.instanceMatrix.array);
         larger.count = im.count;

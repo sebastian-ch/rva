@@ -62,7 +62,8 @@ See [the expansion notes](docs/richmond-fan.md) for extent, acquisition counts a
 
 ## City of Richmond GIS Open Data Portal
 
-- **What we use it for:** Building footprints, parcels, zoning, address points, street tree inventory.
+- **What we use it for:** Building footprints, parcels, zoning, address points, street tree inventory,
+  streetlight luminaire and pole surveys.
 - **License:** Open data; check current terms
 - **Required attribution:** City of Richmond
 - **URL:** https://richmond-geo-hub-cor.hub.arcgis.com
@@ -74,6 +75,12 @@ low deck/patio surfaces. The Structures layer began with 1999 orthophotography, 
 completeness capture, and is maintained from site plans and other sources. The service reported a
 2026-09-08 edit when accessed 2026-09-10. Its public item provides City disclaimers rather than a named
 standard license; preserve City of Richmond credit. The Esri Community basemap tiles are not used.
+
+`Luminaire_Survey_Point_TableToExcel` and `Pole_Survey_Point_TableToExcel` (same service root) are GNSS
+surveys of streetlight fixtures and utility/light poles, last edited in 2025 when accessed 2026-09-25. Their
+public items carry no licence text, the same footing as the layers above; preserve City of Richmond credit.
+Only fixture, pole material/height/owner and status fields are fetched. The surveyor accounts and GNSS
+receiver logs are left out.
 
 Five large-building outline corrections in `assets/supplements/richmond-esri-outlines.geojson` come
 from the city's public 2020 `Building_multipatch.lpkx`. They are used only where classified 2025 LiDAR

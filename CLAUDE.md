@@ -47,7 +47,7 @@ web/             three.js app
 python3 -m venv .venv && .venv/bin/pip install -r pipeline/requirements.txt
 .venv/bin/python pipeline/fetch.py [--bbox W S E N] [--force] [--skip-dem]   # OSM via Overpass + USGS 3DEP DEM -> data/raw/
 .venv/bin/python pipeline/fetch_overture.py                                 # Overture buildings (2nd height source) -> data/raw/
-.venv/bin/python pipeline/fetch_richmond.py                                 # City of Richmond addresses + zoning -> data/raw/
+.venv/bin/python pipeline/fetch_richmond.py                                 # City of Richmond addresses, zoning, trees, structures, streetlight/pole surveys -> data/raw/
 .venv/bin/python pipeline/build_planning.py                                 # ArcGIS Urban -> canonical parcel constraints companion
 .venv/bin/python pipeline/fetch_vgin_footprints.py --shp <path.shp>         # VGIN building footprints (gap-fill) -> data/raw/
 .venv/bin/python pipeline/fetch_naip.py [--resolution 0.6] [--dry-run]      # NAIP orthoimagery (roof colour) -> ortho_<slug>.tif
@@ -92,6 +92,9 @@ Tile schema contract: `DATA_FORMAT.md`. Landmark registry: `assets/landmarks/lan
 - Local frame: x = east, z = -north, y = up. Prop geometry is modelled along +X; heading = `atan2(-dz, dx)`.
 - Vertical exaggeration: `web/src/elevation.ts` scales every pipeline elevation (terrain grid, `ground_z`, bridge `deck` z, `water_z`) by `Z_SCALE` (1.6) when tile layers are fetched; building heights are not scaled. Anything shown in metres goes through `realElev`; contour spacing is `5 * Z_SCALE` world units.
 - Water: canals/ponds use `water_z` and terrain beneath is lowered slightly. Richmond NOAA rivers use shared shoreline elevations and the aligned `water_elev` grid; retain island holes and vertical-unit conversion. See the playbook before substituting hydro sources.
+- Streetlights: `pipeline/streetlights.py` turns the city luminaire/pole surveys into `streetlight`, `lamp_post` and
+  `utility_pole` POIs and flags covered roads `lamps_surveyed`; `scatter.ts` skips procedural lamps there. Coverage is
+  partial (not most of Southside), so never suppress procedural lamps region-wide.
 - `track` and `path` ways are trails: MINOR (no cars, no sidewalks), drawn in the `sand` palette colour; `track` width 2.5 m in `config.ROAD_WIDTH`.
 - Road junctions in `roads.ts` register interior vertices too, so a side street ending on a through road's interior node is trimmed/extended like an endpoint junction; corner fills need ≥ 3 walkable arms.
 - Asset URLs are base-relative (`import.meta.env.BASE_URL`); `vite.config.ts` reads `BASE_PATH` for GitHub Pages.

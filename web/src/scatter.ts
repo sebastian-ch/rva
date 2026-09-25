@@ -1,6 +1,6 @@
 import { cleanRing, hashStr, pointInRing, polygons, ringBounds, rng, signedArea, type V2 } from './geomutil';
 import type { AreaProps, Feature, LineGeom, PoiProps, PointGeom, PolyGeom, RoadProps, BuildingProps } from './types';
-import type { PropKind } from './props';
+import { UTILITY_POLE_HEIGHT, type PropKind } from './props';
 import { minAreaOBB } from './geomutil';
 
 function vehicleKind(rand: () => number): PropKind {
@@ -11,6 +11,8 @@ function vehicleKind(rand: () => number): PropKind {
 export interface Placement { kind: PropKind; x: number; y: number; z: number; rot: number; scale: number; scaleY?: number }
 
 const STREETLIGHT_SPACING = 38;
+/** A procedural roadside lamp this close to a surveyed or mapped lamp would double it. */
+const LAMP_CLEARANCE = 20;
 const PARK_SPACING = 7.5;  // parallel parking pitch along the curb
 const STALL = 2.7, AISLE = 6.0, ROW = 5.0 + AISLE; // parking-lot stall pitch and row pitch (matches areas.ts stripes)
 const TREE_DENSITY_M2 = 380; // one tree per N m^2 of park
@@ -123,11 +125,21 @@ export function scatterTile(
         place(kind, x, y, undefined, Math.max(0.5, tree.crown_radius) / 1.6, Math.max(2, tree.tree_height) / 4.4);
       } else place(rand() < 0.5 ? 'tree' : 'tree_round', x, y, undefined, 0.85 + rand() * 0.5);
     } else if (k === 'streetlight') place('streetlight', x, y, nearestRoadOrientation(x, y)?.facing);
+    else if (k === 'lamp_post') place('lamp_post', x, y);
+    else if (k === 'utility_pole') {
+      const height = p.properties.pole_height;
+      place('utility_pole', x, y, nearestRoadOrientation(x, y)?.heading, 1,
+        height && height > 3 ? height / UTILITY_POLE_HEIGHT : undefined);
+    }
     else if (k === 'bench') place('bench', x, y);
     else if (k === 'bus_stop') place('person', x, y);
     else if (k === 'traffic_signals') place('traffic_light', x, y, nearestRoadOrientation(x, y)?.heading);
     else if (k === 'fountain') place('fountain', x, y);
   }
+
+  const lampPois: V2[] = pois.filter((p) => p.properties.kind === 'streetlight' || p.properties.kind === 'lamp_post')
+    .map((p) => [p.geometry.coordinates[0], p.geometry.coordinates[1]]);
+  const nearLamp = (x: number, y: number) => lampPois.some(([lx, ly]) => Math.hypot(lx - x, ly - y) < LAMP_CLEARANCE);
 
   // 2. trees in parks/cemeteries/forests
   for (const f of landuse) {
@@ -209,10 +221,11 @@ export function scatterTile(
           const step = Math.min(len - t, 5);
           t += step; acc += step; accCar += step; accP += step; accTree += step;
           const x = x0 + dx * t, y = y0 + dy * t;
-          if (major && acc >= STREETLIGHT_SPACING) {
+          if (major && !p.lamps_surveyed && acc >= STREETLIGHT_SPACING) {
             acc = 0;
             const side = rand() < 0.5 ? 1 : -1;
-            place('streetlight', x + nx * side * (p.width / 2 + 0.8), y + ny * side * (p.width / 2 + 0.8), heading + (side > 0 ? -Math.PI / 2 : Math.PI / 2));
+            const lx = x + nx * side * (p.width / 2 + 0.8), ly = y + ny * side * (p.width / 2 + 0.8);
+            if (!nearLamp(lx, ly)) place('streetlight', lx, ly, heading + (side > 0 ? -Math.PI / 2 : Math.PI / 2));
           }
           // parked cars: only at the curb of roads wide enough for a parking lane (traffic uses the inner lanes)
           if (major && p.width >= 9 && accCar >= PARK_SPACING && rand() < 0.4) {
