@@ -101,6 +101,20 @@ describe('scatterTile', () => {
     expect(Math.abs(Math.cos(placed!.rot))).toBeLessThan(1e-9); // +X arm points north-south, across an east-west street
   });
 
+  it('puts a light pool under each lamp, out along a streetlight arm', () => {
+    const road: Feature<LineGeom, RoadProps> = { type: 'Feature',
+      geometry: { type: 'LineString', coordinates: [[0, 50], [100, 50]] },
+      properties: { width: 8, highway: 'residential', lamps_surveyed: true } as RoadProps };
+    const local = (x: number, y: number): V2 => [x, -y]; // the viewer's frame: z = -north
+    const out = scatterTile('pools', [poi('streetlight', 50, 58), poi('lamp_post', 20, 40)], [], [road], [], bbox, local, flatGround);
+    const pools = out.filter((p) => p.kind === 'light_pool');
+    expect(pools).toHaveLength(2);
+    const cobra = pools.find((p) => p.scale === 7)!;
+    expect(cobra.x).toBeCloseTo(50);
+    expect(cobra.z).toBeCloseTo(-(58 - 1.6)); // out along the arm, toward the road to the south
+    expect(pools.find((p) => p.scale === 4.5)).toMatchObject({ x: 20, z: -40 });
+  });
+
   it('rejects a POI that falls inside a building footprint', () => {
     const pois = [poi('fountain', 50, 50)];
     const buildings = [squareBuilding(50, 50, 10)];

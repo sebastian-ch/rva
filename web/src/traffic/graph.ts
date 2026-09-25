@@ -147,7 +147,11 @@ export class RoadGraph {
         if (!pa || !pb || (pathLength(pa.pts) >= 1 && pathLength(pb.pts) >= 1)) continue;
         const aEndsHere = nodeKey(pa.pts[pa.pts.length - 3], pa.pts[pa.pts.length - 1]) === key;
         const bStartsHere = nodeKey(pb.pts[0], pb.pts[2]) === key;
-        const merged = concatPaths(aEndsHere ? pa.pts : reversed(pa.pts), bStartsHere ? pb.pts : reversed(pb.pts));
+        // Keep travel direction: when `a` leaves this node and `b` arrives at it, the path runs b then a.
+        // Reversing both instead would flip a one-way road at every folded stub.
+        const merged = !aEndsHere && !bStartsHere
+          ? concatPaths(pb.pts, pa.pts)
+          : concatPaths(aEndsHere ? pa.pts : reversed(pa.pts), bStartsHere ? pb.pts : reversed(pb.pts));
         const keepMeta = pathLength(pa.pts) >= pathLength(pb.pts) ? pa.meta : pb.meta;
         pieces.delete(a);
         pieces.delete(b);
@@ -163,8 +167,11 @@ export class RoadGraph {
     }
 
     const ids: number[] = [];
+    const joined = (k: string) => (byNode.get(k)?.length ?? 0) > 1 || this.nodes.has(k);
     for (const { pts, meta: m } of pieces.values()) {
-      if (pathLength(pts) < 1) continue; // still an isolated short way — genuinely degenerate, not a split stub
+      // A short piece that still touches another way (a junction node 0.2 m from the tile border, where the
+      // clip leaves a sliver across it) carries the connection; only one touching nothing is degenerate.
+      if (pathLength(pts) < 1 && !joined(nodeKey(pts[0], pts[2])) && !joined(nodeKey(pts[pts.length - 3], pts[pts.length - 1]))) continue;
       ids.push(this.addEdge(tileId, pts, m).id);
       if (!m.oneway) ids.push(this.addEdge(tileId, reversed(pts), m, this.nextPair - 1).id);
     }

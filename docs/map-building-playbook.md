@@ -672,11 +672,25 @@ beyond the line: IDM halts S0 short of any obstacle, and a car that never reache
 Implementation: `pipeline/traffic_control.py`, `web/src/traffic/sim.ts`. Regressions: `test_traffic_control.py`,
 `sim.test.ts` (junction control).
 
+Tile clipping creates slivers where a way crosses the border just past an OSM node. The traffic graph must keep
+direction when it folds a sliver into its neighbour, and must keep a sliver that still touches another way. Otherwise one-way roads
+flip or break at tile edges and traffic queues forever at a node with no onward edge. Scan the full graph for
+nodes where one-way edges only arrive after changing `RoadGraph.addTile`. Implementation: `web/src/traffic/graph.ts`;
+regressions in `graph.test.ts`.
+
 Wire spans between surveyed poles need both ends in one feature. Clipping a span at a tile edge loses the
 sag's shape. Write each span whole into its midpoint tile (`CENTROID_OWNED` in `build_tiles.py`) and store both
 ends' ground elevations for the end that lies in the neighbour tile. Pair poles by mutual choice (nearest plus
 nearest roughly opposite), and drop spans that cross a building footprint. Implementation: `streetlights.utility_spans`,
 `web/src/wires.ts`. Regressions: `test_wires_chain_wooden_poles_and_skip_spans_over_buildings`, `wires.test.ts`.
+
+A colour prior must only replace guesses. Record where every wall colour came from (`wall_color_source`) as the
+buildings are made, so a later prior (the assessor era palette in `wall_colors.py`) can skip mapped
+`building:colour`/`building:material`, overrides and landmarks. The city assessor has no wall material, but year built and
+commercial type separate brick pre-war stock, concrete post-war commercial and recent siding and glass. Join by the
+footprint's representative point in the parcel polygon, because assessor points are parcel centroids that often fall in yards.
+City layers do not all page on `OBJECTID` (`Year_of_Construction` uses `FID`; `LAYER_OID` in `fetch_richmond.py`).
+Regressions: `test_wall_colors.py`.
 
 When a city footprint layer gap-fills OSM, an `intersects` join alone is too aggressive: attached
 buildings often share a boundary with an OSM footprint and have zero overlap area. Treat a candidate as

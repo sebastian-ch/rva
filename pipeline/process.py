@@ -18,7 +18,7 @@ from shapely.geometry import Point
 from pyproj import Transformer
 
 from config import ASSETS, CRS_PROJ, DATA_RAW, LANDMARKS_PATH, LANE_WIDTH, LEVEL_HEIGHT, ROAD_WIDTH, REGION
-from heights import ROOF_KEYS, cap_small_footprint, looks_demolished, parse_levels, resolve_colors, resolve_height, resolve_min_height, resolve_roof, snap_color
+from heights import ROOF_KEYS, cap_small_footprint, looks_demolished, parse_levels, resolve_colors, resolve_height, resolve_min_height, resolve_roof, snap_color, tagged_wall
 from lidar import classify_roofs, sample_ndsm_stats
 from ortho import apply_roof_colors
 from overture import load_overture, match_overture
@@ -404,7 +404,7 @@ def apply_overrides(b: gpd.GeoDataFrame, terrain=None, path: Path = OVERRIDES_PA
             row = {c: None for c in b.columns}
             row.update({"id": f"override:{e.get('name', len(b))}", "height": 10.0, "min_height": 0.0, "height_source": "override",
                         "roof_shape": "flat", "roof_height": 0.0, "roof_source": "override", "roof_color": "roof_flat",
-                        "roof_color_source": "override", "wall_color": "concrete",
+                        "roof_color_source": "override", "wall_color": "concrete", "wall_color_source": "heuristic",
                         "type": "yes", "footprint_source": "override", "is_part": False, "hidden": False, "ground_z": round(gz, 2), "geometry": geom})
             new_idx = int(b.index.max()) + 1
             b = gpd.GeoDataFrame(pd.concat([b, gpd.GeoDataFrame([row], index=[new_idx], crs=b.crs)]), geometry="geometry", crs=b.crs)
@@ -431,6 +431,8 @@ def apply_overrides(b: gpd.GeoDataFrame, terrain=None, path: Path = OVERRIDES_PA
             b.at[target, "height_source"] = "override"
         if e.get("roof_color") is not None:
             b.at[target, "roof_color_source"] = "override"
+        if e.get("wall_color") is not None:
+            b.at[target, "wall_color_source"] = "override"
         if "roof_shape" in e:
             b.at[target, "roof_source"] = "override"
             if e["roof_shape"] == "flat":
@@ -596,6 +598,8 @@ def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True
             "lod2_roof": None,
             "roof_props": None,
             "wall_color": wall,
+            # "heuristic" walls are the seeded guess; wall_colors.py may replace them with an assessor era prior
+            "wall_color_source": "osm" if tagged_wall(tags) else "heuristic",
             "type": building_type(tags),
             "landmark": None,
             "footprint_source": str(row.get("footprint_source") or "osm"),
@@ -637,6 +641,7 @@ def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True
             b.at[i, "height"] = float(hint)
             b.at[i, "height_source"] = "landmark_hint"
         b.at[i, "wall_color"] = "cream"
+        b.at[i, "wall_color_source"] = "landmark"
         if b.at[i, "roof_shape"] == "flat":
             b.at[i, "roof_color"] = "roof_flat"
             b.at[i, "roof_color_source"] = "landmark"

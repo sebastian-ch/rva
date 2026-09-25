@@ -111,7 +111,8 @@ const props = new PropPool(propMaterial);
 const traffic = new TrafficClient();
 const trails = new TrafficTrails();
 scene.add(trails.lines);
-props.group.traverse((o) => { if ((o as THREE.Mesh).isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+// light pools are light on the ground, not objects: no shadows either way
+props.group.traverse((o) => { if ((o as THREE.Mesh).isMesh && o.name !== 'props:light_pool') { o.castShadow = true; o.receiveShadow = true; } });
 scene.add(props.group);
 let landmarkModels: LandmarkModels | null = null;
 let buildingEffects: BuildingEffects | null = null;

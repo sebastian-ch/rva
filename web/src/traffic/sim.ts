@@ -396,12 +396,9 @@ export class TrafficSim {
           } else v.released = e.to;
         } else v.waitS = 0;
       } else if (v.released && v.released !== e.to) v.released = null;
-      // Stop at a disconnected interior end. A loaded-area boundary is an exit, so vehicles drive through it
-      // and are removed by the integration pass below.
-      if (!next && g.arms(e.to) > 1) {
-        const stopGap = dNode - 0.5;
-        if (stopGap < gap) { gap = stopGap; dv = v.v; }
-      }
+      // With no onward edge the node is an exit: a loaded-area boundary, or a sink where one-way ways only
+      // arrive (a merge whose continuation lies outside the data). Vehicles drive through and the integration
+      // pass removes them; holding them there queued traffic behind a car that could never move.
       acc.set(v.slot, idmAccel(v.v, vAllowed, gap, dv, v.a, v.b, v.T));
     }
     // 2. integrate and move between edges

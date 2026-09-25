@@ -91,8 +91,9 @@ def survey_pois(luminaires: gpd.GeoDataFrame, poles: gpd.GeoDataFrame) -> gpd.Ge
                             geometry=gpd.points_from_xy(out["x"], out["y"]), crs=CRS_PROJ)
 
 
-def clear_carriageways(survey: gpd.GeoDataFrame, roads: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-    """Move survey points off rendered carriageways to CURB_CLEARANCE_M past the edge; drop far misses."""
+def clear_carriageways(survey: gpd.GeoDataFrame, roads: gpd.GeoDataFrame, max_shift: float = MAX_SHIFT_M) -> gpd.GeoDataFrame:
+    """Move points off rendered carriageways to CURB_CLEARANCE_M past the edge; drop those more than
+    `max_shift` in."""
     tunnel = roads["tunnel"].fillna(False).astype(bool) if "tunnel" in roads else False
     car = roads[~roads["highway"].isin(NOT_CARRIAGEWAY) & ~tunnel & roads["width"].notna()]
     if len(car) == 0 or len(survey) == 0:
@@ -111,8 +112,8 @@ def clear_carriageways(survey: gpd.GeoDataFrame, roads: gpd.GeoDataFrame) -> gpd
     geoms[np.flatnonzero(inside)] = ends
     out = out.set_geometry(geoms)
     keep = np.ones(len(out), bool)
-    keep[np.flatnonzero(inside)[shift > MAX_SHIFT_M]] = False
-    print(f"  streetlights: moved {int((shift <= MAX_SHIFT_M).sum())} off carriageways, dropped {int((~keep).sum())}")
+    keep[np.flatnonzero(inside)[shift > max_shift]] = False
+    print(f"  moved {int((shift <= max_shift).sum())} points off carriageways, dropped {int((~keep).sum())}")
     return out[keep]
 
 

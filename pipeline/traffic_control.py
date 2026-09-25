@@ -27,6 +27,7 @@ SIGNAL_RADIUS_M = 20.0
 ARM_PROBE_M = 8.0          # direction of an arm: from the node to this far along it
 THROUGH_MIN_DEG = 120.0    # two top-class arms at least this far apart form the through road
 SIGN_CURB_M = 0.6
+SIGN_MAX_SHIFT_M = 8.0
 # Not part of the junction topology: paths, and service ways (alleys, driveways, parking aisles), whose
 # mouths are yield-and-go in practice. Motorway and trunk junctions are grade-separated or merges.
 IGNORED = {"footway", "path", "track", "cycleway", "steps", "pedestrian", "corridor", "bridleway", "service",
@@ -143,6 +144,9 @@ def infer_stop_signs(roads: gpd.GeoDataFrame, pois: gpd.GeoDataFrame) -> gpd.Geo
 
 
 def add_stop_signs(roads: gpd.GeoDataFrame, pois: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-    signs = infer_stop_signs(roads, pois)
+    from streetlights import clear_carriageways
+    # at a skewed junction the curb offset can land a sign on the crossing road; move it to that road's curb.
+    # Signs get a longer reach than poles: dropping one would also remove the stop from the traffic sim.
+    signs = clear_carriageways(infer_stop_signs(roads, pois), roads, max_shift=SIGN_MAX_SHIFT_M)
     print(f"  traffic control: {len(signs)} inferred stop signs")
     return gpd.GeoDataFrame(pd.concat([pois, signs], ignore_index=True), crs=CRS_PROJ) if len(signs) else pois

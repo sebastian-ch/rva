@@ -13,6 +13,10 @@ export interface Placement { kind: PropKind; x: number; y: number; z: number; ro
 const STREETLIGHT_SPACING = 38;
 /** A procedural roadside lamp this close to a surveyed or mapped lamp would double it. */
 const LAMP_CLEARANCE = 20;
+/** Night light pools: radius (m) and how far out along the arm the head sits; the pool floats just above the road
+ * surface (roads.ts ROAD_Y 0.28 + markings) so it lights asphalt and sidewalk alike. */
+const POOL = { streetlight: { radius: 7, reach: 1.6 }, lamp_post: { radius: 4.5, reach: 0 } } as const;
+const POOL_LIFT = 0.34;
 const PARK_SPACING = 7.5;  // parallel parking pitch along the curb
 const STALL = 2.7, AISLE = 6.0, ROW = 5.0 + AISLE; // parking-lot stall pitch and row pitch (matches areas.ts stripes)
 const TREE_DENSITY_M2 = 380; // one tree per N m^2 of park
@@ -250,6 +254,14 @@ export function scatterTile(
         }
       }
     }
+  }
+
+  // 4. a night light pool under every lamp placed above (the pool mesh is only drawn while night is on)
+  for (const p of out.slice()) {
+    if (p.kind !== 'streetlight' && p.kind !== 'lamp_post') continue;
+    const { radius, reach } = POOL[p.kind];
+    // rotation about Y by rot maps +X (the arm) to (cos rot, -sin rot) in local x/z
+    out.push({ kind: 'light_pool', x: p.x + Math.cos(p.rot) * reach, y: p.y + POOL_LIFT, z: p.z - Math.sin(p.rot) * reach, rot: 0, scale: radius });
   }
   return out;
 }

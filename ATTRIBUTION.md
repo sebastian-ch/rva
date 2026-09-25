@@ -63,7 +63,7 @@ See [the expansion notes](docs/richmond-fan.md) for extent, acquisition counts a
 ## City of Richmond GIS Open Data Portal
 
 - **What we use it for:** Building footprints, parcels, zoning, address points, street tree inventory,
-  streetlight luminaire and pole surveys.
+  streetlight luminaire and pole surveys, assessor year built and building use.
 - **License:** Open data; check current terms
 - **Required attribution:** City of Richmond
 - **URL:** https://richmond-geo-hub-cor.hub.arcgis.com
@@ -81,6 +81,12 @@ surveys of streetlight fixtures and utility/light poles, last edited in 2025 whe
 public items carry no licence text, the same footing as the layers above; preserve City of Richmond credit.
 Only fixture, pole material/height/owner and status fields are fetched. The surveyor accounts and GNSS
 receiver logs are left out.
+
+`Year_of_Construction` (parcel polygons with `PIN` and `Year_Built`, last edited 2022) and
+`AssessorProVaGPINlImpDataPublish` (assessor improvement points, last edited 2024-10-21, accessed 2026-09-25)
+supply each parcel's year built and commercial building type for the wall-colour prior. Owner names, addresses
+and assessed values in the assessor layer are not fetched. Neither item carries licence text; preserve City of
+Richmond credit.
 
 Five large-building outline corrections in `assets/supplements/richmond-esri-outlines.geojson` come
 from the city's public 2020 `Building_multipatch.lpkx`. They are used only where classified 2025 LiDAR

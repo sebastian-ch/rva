@@ -26,6 +26,10 @@ ROOF_SOURCES: set[str] = {"osm", "overture", "lidar", "lidar_massing", "lod2", "
 # seeded guess in heights.resolve_colors that it replaces when the imagery is readable.
 ROOF_COLOR_SOURCES: set[str] = {"osm", "ortho", "heuristic", "override", "landmark"}
 
+# Where wall_color came from: mapped building:colour/material, a hand override, the landmark treatment, the assessor
+# era/use prior in wall_colors.py, or the seeded guess in heights.resolve_colors. Optional: gap-fill rows omit it.
+WALL_COLOR_SOURCES: set[str] = {"osm", "override", "landmark", "assessor", "heuristic"}
+
 POI_KINDS: set[str] = {
     "tree", "streetlight", "bench", "bus_stop", "traffic_signals",
     "fountain", "monument", "shop", "restaurant", "museum", "lamp_post", "utility_pole", "stop_sign",
@@ -124,6 +128,9 @@ def validate_feature(layer: str, props: dict[str, Any]) -> list[str]:
         rcsrc = props.get("roof_color_source")
         if rcsrc is not None and rcsrc not in ROOF_COLOR_SOURCES:
             problems.append(f"{fid}: unknown roof_color_source {rcsrc!r}")
+        wcsrc = props.get("wall_color_source")
+        if wcsrc is not None and wcsrc not in WALL_COLOR_SOURCES:
+            problems.append(f"{fid}: unknown wall_color_source {wcsrc!r}")
 
     if layer in ("roads", "rail"):
         _check_deck(props, problems, fid)

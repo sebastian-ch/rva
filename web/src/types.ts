@@ -56,6 +56,7 @@ export interface BuildingProps {
   roof_source?: string;
   roof_color: string;
   roof_color_source?: string;
+  wall_color_source?: string;
   /** Roofer mesh JSON: projected xyz vertices (z above eave) and indexed surface rings. */
   lod2_roof?: string | null;
   /** Reviewed LiDAR roof objects in projected coordinates: x/y center, width/depth/height, angle and base offset. */

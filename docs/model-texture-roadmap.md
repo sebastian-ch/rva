@@ -23,7 +23,7 @@ Rank accordingly — do not spend effort re-deriving heights.
 | 3 | Roof furniture from dense LiDAR | **done 2026-09-25** — 223 measured objects on 114 buildings; citywide candidates from `pipeline/roof_furniture_review.py`, 150 reviewed, 35 rejected |
 | 4 | Ground cover from VGIN RGB + NAIP NIR + nDSM | **done 2026-09-14; refined 2026-09-15** — 4,000 cleaned lawn, paving and bare-ground polygons |
 | 5 | Split-grammar facade geometry, lower two floors | **done 2026-09-21** — `web/src/facadeGrammar.ts`; street frontages from the tile's road centrelines, five rule sets, LOD 0 only, per-tile triangle budget |
-| 6 | Wall colour and surveyed props from Mapillary | **props: streetlights and poles done 2026-09-25 from the city survey** (no Mapillary); wall colour not started |
+| 6 | Wall colour and surveyed props from Mapillary | **props: streetlights and poles done 2026-09-25 from the city survey** (no Mapillary); wall colour: **assessor era/use prior done 2026-09-25** (`wall_colors.py`), NRHP materials and Mapillary not started |
 | 7 | Landmarks from HABS drawings and own photogrammetry | not started |
 | 8 | CC0 prop libraries for vehicles and street furniture | not started |
 
@@ -46,9 +46,9 @@ Item 6 depends on a licensing decision, not on code.
 ## Immediate next step
 
 Items 1–5 are done. Streetlights and utility poles in item 6 came from the City of Richmond luminaire and pole
-surveys instead of Mapillary (see §6). Wall colour still depends on the CC BY-SA decision. Cheaper steps first: an
-assessor-based era and type prior (the city's assessor layer has year built and building type for about 69,000 parcels), then
-per-address materials from the National Register district inventories. Item 8 (CC0 vehicles and street furniture) is the cheapest
+surveys instead of Mapillary (see §6). Wall colour now uses an assessor era-and-use prior (`pipeline/wall_colors.py`, 23,759 of 25,237 seeded guesses replaced; brick rises
+from 23% to 56% of buildings). Real per-building materials are next: the National Register district inventories, then Mapillary
+if CC BY-SA is acceptable. Item 8 (CC0 vehicles and street furniture) is the cheapest
 code-only step. Item 7 is art time.
 
 A by-product of item 3 worth following up: flat roofs whose LiDAR roof plane sits more than

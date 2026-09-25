@@ -15,6 +15,7 @@ const CAPACITY: Record<PropKind, number> = {
   lamp_post: 2500,
   utility_pole: 5000,
   stop_sign: 1500,
+  light_pool: 6000,
   car: 6000,
   suv: 2500,
   pickup: 1200,
@@ -30,10 +31,12 @@ const CAPACITY: Record<PropKind, number> = {
   tank_car: 100,
   coach: 48,
 };
+/** Sodium-orange light on the ground, scaled down so overlapping pools on a lit street do not blow out. */
+const POOL_WARM = new THREE.Color(0.42, 0.26, 0.1);
 /** Kinds with a `window_lit` lens that glows at night. */
 const LAMP_KINDS: PropKind[] = ['streetlight', 'lamp_post'];
 /** Surveyed street furniture is as dense as the survey, so its buffers grow like the trees' do. */
-const GROWABLE_KINDS: PropKind[] = ['streetlight', 'lamp_post', 'utility_pole', 'stop_sign'];
+const GROWABLE_KINDS: PropKind[] = ['streetlight', 'lamp_post', 'utility_pole', 'stop_sign', 'light_pool'];
 /** Kinds whose body is built white and tinted per instance, and the palette each one indexes. */
 const TINTED_KINDS: PropKind[] = [...VEHICLE_KINDS, ...RAIL_TINTED_KINDS];
 const colorTable = (kind: PropKind) => (RAIL_KINDS.includes(kind) ? RAIL_COLORS : VEHICLE_COLORS);
@@ -103,9 +106,25 @@ export class PropPool implements PoseSink {
           #endif`);
     };
     lampMaterial.customProgramCacheKey = () => 'iso-neon-lamp';
+    // Light pools: additive, no depth write (the AO/outline pass reads depth), radial falloff from the disc
+    // centre, warm sodium light that turns neon cyan in the midnight style like the lamp heads.
+    const poolMaterial = new THREE.MeshBasicMaterial({ color: POOL_WARM, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+    poolMaterial.onBeforeCompile = (shader) => {
+      shader.uniforms.uMidnightPool = this.midnight;
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying float vPoolR;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvPoolR = length(position.xz);');
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nvarying float vPoolR;\nuniform float uMidnightPool;')
+        .replace('#include <color_fragment>', `#include <color_fragment>
+          float fall = 1.0 - smoothstep(0.0, 1.0, vPoolR);
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.02, 0.35, 0.5), uMidnightPool) * fall * fall;`);
+    };
+    poolMaterial.customProgramCacheKey = () => 'iso-light-pool';
     for (const k of PROP_KINDS) {
       const geom = TINTED_KINDS.includes(k) ? buildPropGeometry(k, undefined, true) : buildPropGeometry(k, undefined, false);
-      const im = new THREE.InstancedMesh(geom, LAMP_KINDS.includes(k) ? lampMaterial : material, CAPACITY[k]);
+      const im = new THREE.InstancedMesh(geom, k === 'light_pool' ? poolMaterial : LAMP_KINDS.includes(k) ? lampMaterial : material, CAPACITY[k]);
+      if (k === 'light_pool') { im.visible = false; im.renderOrder = 1; }
       im.count = 0;
       im.frustumCulled = false;
       im.name = `props:${k}`;
@@ -116,7 +135,11 @@ export class PropPool implements PoseSink {
     }
   }
 
-  setNight(on: boolean) { this.night.value = on ? 1 : 0; }
+  setNight(on: boolean) {
+    this.night.value = on ? 1 : 0;
+    const pools = this.meshes.get('light_pool');
+    if (pools) pools.visible = on;
+  }
   setMidnight(on: boolean) { this.midnight.value = on ? 1 : 0; }
 
   /** Tag everything added until the next call with this tile id (for removeTile). */

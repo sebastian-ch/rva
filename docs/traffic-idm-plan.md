@@ -246,5 +246,18 @@ sign within 18 m of its end node points along the edge's end direction (cos ≥ 
   holds a steady ~10% of cars stopped with controls (259 stop approaches, 48 signalized). Downtown (308
   signalized approaches) settles around 30–37% stopped, mostly at red lights, as the vehicle count levels off.
   Queues at interior dead ends (a two-arm node with no onward edge, seen on I-195 and a downtown tertiary)
-  predate this and appear without controls too.
+  predated this. They are fixed: see "Dead ends" below.
+
+## Dead ends (2026-09-25)
+
+A full-map scan found 6 nodes where one-way edges only arrive. Five were graph-building bugs at tile edges:
+- Folding a sub-1 m stub into its neighbour reversed both pieces when the stub was listed second, flipping
+  a one-way motorway at the border. `addTile` now orders the merge b-then-a when `a` leaves the node.
+- A 0.2–0.3 m sliver between a junction node and the tile border was dropped as degenerate, cutting the road.
+  Short pieces are now dropped only when neither end touches another piece or an existing node.
+
+The sixth is a real data edge (a motorway and its ramp merge at the west bbox edge; the continuation is outside the
+data). A node with no outbound edge is now an exit, so vehicles leave instead of queueing behind a car that
+can never move. After the fix the Fan holds 7–10% of cars stopped on all roads over 10 minutes (it had drifted to 50%),
+and downtown about 25%. Regressions: `graph.test.ts` (stub orientation, joined sliver) and `sim.test.ts` (sink exit).
 

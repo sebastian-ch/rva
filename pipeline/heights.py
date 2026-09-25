@@ -229,13 +229,19 @@ WALL_KEYS = ("cream", "brick", "brick_dark", "terracotta", "sand", "slate", "gla
 ROOF_KEYS = ("roof_flat", "roof_dark", "roof_red", "roof_green", "brick_dark", "slate", "concrete")
 
 
-def resolve_colors(tags: dict[str, Any], height: float, roof_shape: str, seed: int = 0) -> tuple[str, str]:
-    """Return (wall_color, roof_color) palette keys, deterministic per seed."""
+def tagged_wall(tags: dict[str, Any]) -> str | None:
+    """Wall palette key from mapped evidence (`building:colour`, else `building:material`), or None."""
     wall = snap_color(tags.get("building:colour"), WALL_KEYS)
     if wall is None:
         mat = tags.get("building:material")
         if not _is_nan(mat):
             wall = _MATERIAL_WALL.get(str(mat).lower())
+    return wall
+
+
+def resolve_colors(tags: dict[str, Any], height: float, roof_shape: str, seed: int = 0) -> tuple[str, str]:
+    """Return (wall_color, roof_color) palette keys, deterministic per seed."""
+    wall = tagged_wall(tags)
     btype = str(tags.get("building") or "yes").lower()
     if wall is None:
         if height > 60:

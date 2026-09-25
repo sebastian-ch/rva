@@ -3,7 +3,7 @@ import math
 import geopandas as gpd
 from shapely.geometry import LineString, Point
 
-from traffic_control import infer_stop_signs
+from traffic_control import add_stop_signs, infer_stop_signs
 
 CRS = "EPSG:32618"
 
@@ -51,3 +51,15 @@ def test_signals_services_and_one_way_exits_get_no_sign():
     assert len(infer_stop_signs(tee, NO_POIS)) == 0
     assert len(infer_stop_signs(alley, NO_POIS)) == 0
     assert len(infer_stop_signs(stem, signal)) == 0
+
+
+def test_signs_are_kept_off_the_rendered_carriageway():
+    # a stem meeting a wide road at a shallow angle puts its curb-side sign onto the through road's asphalt
+    roads = _roads([("main", "secondary", [(0, 0), (100, 0), (200, 0)]),
+                    ("side", "residential", [(40, -30), (100, 0)])])
+    roads.loc[roads["id"] == "main", "width"] = 20.0
+
+    signs = add_stop_signs(roads, NO_POIS)
+    sign = signs[signs["kind"] == "stop_sign"].iloc[0].geometry
+
+    assert abs(sign.y) >= 10.0

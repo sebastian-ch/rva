@@ -57,6 +57,7 @@ procedural roof.
 | `ground_z` | number | terrain height under the footprint centroid, m above `base_elevation` |
 | `roof_color` | string | palette key |
 | `roof_color_source` | `"osm"\|"ortho"\|"heuristic"\|"override"\|"landmark"` | resolution order: OSM `roof:colour`, NAIP orthoimagery classification (`pipeline/ortho.py`), seeded type/height guess; `landmark` = the stylized flat-roof treatment, `override` = supplements file |
+| `wall_color_source` | `"osm"\|"assessor"\|"heuristic"\|"override"\|"landmark"` (optional) | OSM `building:colour` / `building:material`, else the Richmond assessor era-and-use prior (`pipeline/wall_colors.py`: year built and commercial type from the assessor, parcel matched by the footprint's representative point), else the seeded type/height guess. `assessor` is still a draw from an era palette, not a surveyed facade |
 | `lod2_roof` | string\|null | compact Roofer mesh JSON: `v` holds projected `[x,y,z]` vertices with `z` above the eave; `f` holds indexed surface rings. The viewer keeps the existing footprint walls and palette and uses this measured roof shell when `roof_source=lod2` |
 | `roof_props` | string\|null | reviewed LiDAR roof objects as compact JSON `{x,y,w,d,h,a,b}` records: projected center, dimensions, radians from east, and base offset above the wall top |
 | `wall_color` | string | palette key |
@@ -179,7 +180,8 @@ Honolulu coastal structures use landuse kinds `groyne`, `breakwater`, `seawall`,
   signs here. At an unsignalized junction of two or more ways (service ways ignored, no `traffic_signals` POI within
   20 m, no motorway or trunk arm), approaches off the through road stop, and equal-class crossroads of four or more
   arms stop on every approach. Links never stop. Each sign stands at the right-hand curb 4–12 m before the junction,
-  with `heading` set to the approach's travel direction. The traffic worker obeys it, and signals (OSM
+  with `heading` set to the approach's travel direction. Signs that land on a rendered carriageway (skewed
+  junctions) move to its curb, and the few more than 8 m in are dropped. The traffic worker obeys it, and signals (OSM
   `traffic_signals` within 20 m of a junction) run two fixed 60 s phases grouped by approach axis.
 - `index.json` tile entries may contain `surveyed_trees: true`: complete regional LiDAR canopy processing
   was available, so the renderer suppresses procedural park/street tree scatter. Existing OSM trees remain

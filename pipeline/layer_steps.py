@@ -224,6 +224,14 @@ def _streetlights(ctx: StepContext, layers: dict):
     return {"pois": merge_survey(layers["pois"], survey), "roads": roads, "wires": wires}
 
 
+def _wall_colors(ctx: StepContext, layers: dict):
+    parcels, assessor = ctx.richmond("parcel_years.parquet"), ctx.richmond("assessor.parquet")
+    if not (parcels.exists() and assessor.exists()):
+        return {}
+    from wall_colors import assessor_walls
+    return {"buildings": assessor_walls(layers["buildings"], gpd.read_parquet(parcels), gpd.read_parquet(assessor))}
+
+
 def _traffic_control(ctx: StepContext, layers: dict):
     from traffic_control import add_stop_signs
     return {"pois": add_stop_signs(layers["roads"], layers["pois"])}
@@ -277,6 +285,8 @@ def steps_for(region: str) -> list[Step]:
              sources=_lod2_sources, regions=("richmond",)),
         Step("roof_furniture", ("buildings",), _roof_furniture, modules=("roof_furniture",), reads=("buildings",),
              sources=lambda c: [ASSETS / "supplements" / "richmond-roof-furniture.json"], regions=("richmond",)),
+        Step("wall_colors", ("buildings",), _wall_colors, modules=("wall_colors",), reads=("buildings",),
+             sources=lambda c: [c.richmond("parcel_years.parquet"), c.richmond("assessor.parquet")], regions=("richmond",)),
         Step("groundcover", ("landuse",), _groundcover, modules=("groundcover",),
              reads=("buildings", "roads", "landuse", "water"), sources=lambda c: [
                  DATA_RAW / f"vbmp_{c.slug}.tif", DATA_RAW / f"ortho_{c.slug}.tif", DATA_RAW / "ndsm.tif"],

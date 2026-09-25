@@ -3,7 +3,8 @@
     python pipeline/fetch_richmond.py [--bbox W S E N] [--force]
 
 Layers (see ATTRIBUTION.md): addresses, zoning, trees, Structures buildings/decks, the streetlight luminaire and
-pole surveys, and optional road polygons and carriageway centerlines. Written as GeoParquet in EPSG:4326 to data/raw/richmond_<slug>/<layer>.parquet.
+pole surveys, parcel year-of-construction polygons and assessor improvement points (year built and use only), and
+optional road polygons and carriageway centerlines. Written as GeoParquet in EPSG:4326 to data/raw/richmond_<slug>/<layer>.parquet.
 The Esri basemap itself is not used.
 """
 from __future__ import annotations
@@ -32,14 +33,21 @@ LAYERS = {
     "road_centerlines": f"{ORG}/CarriagewayCenterlines/FeatureServer/0",
     "luminaires": f"{ORG}/Luminaire_Survey_Point_TableToExcel/FeatureServer/0",
     "poles": f"{ORG}/Pole_Survey_Point_TableToExcel/FeatureServer/0",
+    "parcel_years": f"{ORG}/Year_of_Construction/FeatureServer/0",
+    "assessor": f"{ORG}/AssessorProVaGPINlImpDataPublish/FeatureServer/0",
 }
-DEFAULT_LAYERS = ("addresses", "zoning", "trees", "structures", "luminaires", "poles")
+DEFAULT_LAYERS = ("addresses", "zoning", "trees", "structures", "luminaires", "poles", "parcel_years", "assessor")
 LAYER_WHERE = {"structures": "Subtype IN (1,3)"}
+# stable paging needs the layer's object-id field; most city layers call it OBJECTID
+LAYER_OID = {"parcel_years": "FID"}
 # The surveys also carry surveyor accounts and GNSS receiver logs; keep only what the renderer can use.
 LAYER_FIELDS = {
     "structures": "OBJECTID,Subtype,FIPS,PermitID,CreatedDate,EditDate",
     "luminaires": "OBJECTID,LuminaireType,FixtureType,LightSource,Wattage,LuminaireStatus,System",
     "poles": "OBJECTID,PoleType,PoleHeight,PoleLength,Material,Owner,PoleStatus,PoleAttachments",
+    # the assessor layer also names owners and assessed values; only the building era and use are needed
+    "parcel_years": "PIN,Year_Built",
+    "assessor": "parcel_id,year_built,comm_bldg_type,property_class",
 }
 PAGE = 2000
 
@@ -70,7 +78,7 @@ def _write_metadata(s: requests.Session, url: str, dst: Path) -> None:
 
 
 def fetch_layer(url: str, bbox, dst: Path, force: bool = False,
-                where: str = "1=1", out_fields: str = "*") -> Path:
+                where: str = "1=1", out_fields: str = "*", oid: str = "OBJECTID") -> Path:
     metadata_dst = dst.parent / f"{dst.stem}.metadata.json"
     if dst.exists() and not force:
         if not metadata_dst.exists():
@@ -87,7 +95,7 @@ def fetch_layer(url: str, bbox, dst: Path, force: bool = False,
             "where": where, "geometry": f"{west},{south},{east},{north}", "geometryType": "esriGeometryEnvelope",
             "inSR": "4326", "spatialRel": "esriSpatialRelIntersects", "outFields": out_fields, "outSR": "4326",
             "f": "geojson", "resultOffset": offset, "resultRecordCount": PAGE,
-            "orderByFields": "OBJECTID",
+            "orderByFields": oid,
         }
         r = s.get(f"{url}/query", params=params, timeout=120)
         r.raise_for_status()
@@ -113,7 +121,7 @@ def fetch_richmond(bbox, force: bool = False, layers: list[str] | None = None) -
     out_dir = DATA_RAW / f"richmond_{bbox_slug(bbox)}"
     selected = layers or list(DEFAULT_LAYERS)
     return {name: fetch_layer(LAYERS[name], bbox, out_dir / f"{name}.parquet", force,
-                              LAYER_WHERE.get(name, "1=1"), LAYER_FIELDS.get(name, "*"))
+                              LAYER_WHERE.get(name, "1=1"), LAYER_FIELDS.get(name, "*"), LAYER_OID.get(name, "OBJECTID"))
             for name in selected}
 
 

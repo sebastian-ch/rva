@@ -51,6 +51,27 @@ describe('RoadGraph', () => {
     expect(g.arms(nodeKey(200, 0))).toBe(1);
   });
 
+  it('keeps a one-way road pointing forward when its stub is listed before it', () => {
+    const g = new RoadGraph();
+    // tile clip leaves a 0.5 m sliver of the previous way ahead of the next one-way way
+    g.addTile('a', [line([0.5, 0], [100, 0]), line([0, 0], [0.5, 0])], [meta({ wayId: 'next', oneway: true }), meta({ wayId: 'prev', oneway: true })]);
+    const edges = [...g.edges.values()];
+    expect(edges).toHaveLength(1);
+    expect(edges[0].from).toBe(nodeKey(0, 0));
+    expect(edges[0].to).toBe(nodeKey(100, 0));
+  });
+
+  it('keeps a sub-1m sliver that connects a junction to the tile border', () => {
+    const g = new RoadGraph();
+    // a side street meets the through road 0.3 m before the tile edge at z = 100
+    g.addTile('a', [line([0, 0], [0, 99.7], [0, 100]), line([-50, 99.7], [0, 99.7])],
+      [meta({ wayId: 'through', oneway: true }), meta({ wayId: 'side', oneway: true })]);
+    g.addTile('b', [line([0, 100], [0, 200])], [meta({ wayId: 'through', oneway: true })]);
+    const side = [...g.edges.values()].find((e) => e.wayId === 'side')!;
+    expect(g.outgoing(side).map((e) => e.to)).toEqual([nodeKey(0, 100)]);
+    expect(g.arms(nodeKey(0, 100))).toBe(2);
+  });
+
   it('never offers the reverse edge as a turn unless it is a dead end', () => {
     const g = new RoadGraph();
     g.addTile('a', [line([0, 0], [100, 0]), line([100, 0], [200, 0])], [meta({ wayId: 'a' }), meta({ wayId: 'b' })]);

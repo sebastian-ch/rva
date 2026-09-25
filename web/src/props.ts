@@ -13,6 +13,7 @@ export type PropKind =
   | 'lamp_post'
   | 'utility_pole'
   | 'stop_sign'
+  | 'light_pool'
   | 'car'
   | 'suv'
   | 'pickup'
@@ -38,6 +39,7 @@ export const PROP_KINDS: PropKind[] = [
   'lamp_post',
   'utility_pole',
   'stop_sign',
+  'light_pool',
   'car',
   'suv',
   'pickup',
@@ -297,6 +299,14 @@ function buildStopSign(): THREE.BufferGeometry {
     { geom: new THREE.BoxGeometry(0.06, 2.1, 0.06), color: hex('steel'), position: [0, 1.05, 0] },
     { geom: plate, color: hex('car_red'), position: [-0.04, 2.35, 0] },
   ]);
+}
+
+/** Unit disc lying flat at y = 0: the ground a lamp lights at night. PropPool draws it additively with a
+ * radial falloff and only while night is on; the placement scale is the pool's radius in metres. */
+function buildLightPool(): THREE.BufferGeometry {
+  const disc = new THREE.CircleGeometry(1, 24);
+  disc.rotateX(-Math.PI / 2);
+  return mergeColored([{ geom: disc, color: WHITE }]);
 }
 
 // Note: bodyWhite defaults to true (via `?? true` at the call site in
@@ -754,6 +764,9 @@ export function buildPropGeometry(
       break;
     case 'stop_sign':
       geom = buildStopSign();
+      break;
+    case 'light_pool':
+      geom = buildLightPool();
       break;
     case 'car':
       // Vehicle kinds default bodyWhite to true (unless explicitly overridden)

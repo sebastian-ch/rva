@@ -145,6 +145,18 @@ describe('TrafficSim', () => {
     expect(sim.vehicles.size).toBe(0);
   });
 
+  it('lets a vehicle leave where one-way roads only arrive instead of queueing traffic there', () => {
+    const sim = new TrafficSim(23);
+    sim.densityScale = 0;
+    sim.addTile('a', [line([0, 0], [100, 0]), line([200, 0], [100, 0])], [meta({ wayId: 'a' }), meta({ wayId: 'b' })]);
+    const e = [...sim.graph.edges.values()].find((x) => x.wayId === 'a')!;
+    // @ts-expect-error private
+    const v = sim.spawn(e, 80)!;
+    v.v = 8;
+    run(sim, 5);
+    expect(sim.vehicles.size).toBe(0);
+  });
+
   it('a platoon behind a stopped leader never produces a negative gap', () => {
     const sim = new TrafficSim(3);
     sim.addTile('a', [line([0, 0], [400, 0]), line([400, 0], [400, 1])], [meta({ wayId: 'a' }), meta({ wayId: 'b', highway: 'residential' })]);
