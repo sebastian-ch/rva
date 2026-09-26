@@ -579,12 +579,21 @@ result once. Regressions: `test_multipart_records_in_one_batch_are_combined` and
 Normalizing every Roofer shell to its lowest roof vertex can lift the main ridge by several metres when
 a porch or rear addition supplies that lowest point. The symptom is a rowhouse roof stretched into a tall
 triangular wedge even though its RMSE is low. Preserve Roofer's lowest-roof height above its ground datum;
-when that eave is below the procedural wall top, lower the whole shell by the difference and clamp the
-buried portion at the wall top. Never raise a shell above the wall, because that opens a visible gap.
-Reject corrections beyond 5 m: they collapse most vertices into triangular fragments and indicate incompatible
-wall and roof datums. The 2218 and 2220 Monument Avenue shells exposed this limit. Regressions:
-`test_low_addition_does_not_lift_the_main_roof` and `test_large_wall_alignment_keeps_procedural_roof` in
-`pipeline/tests/test_lod2.py`.
+when that eave is below the procedural wall top, lower the whole shell by the difference and cut every
+face at the wall-top plane. Never raise a shell above the wall, because that opens a visible gap.
+Do not clamp buried vertices to the wall top: each partly buried plane bends into a non-planar sliver and
+earcut draws it as a fan of odd triangles. The Church Hill rear-el rowhouses (`osm:way/367736565`, a 7.2 m
+main block with a 3.4 m addition) showed this; 13k of 18k accepted Richmond shells had at least one bent
+face. After the cut, the 50% coverage rule decides; about 4k mostly buried shells fall back to their (mostly
+flat) procedural roofs. Reject corrections beyond 5 m as incompatible wall and roof datums. The 2218 and 2220
+Monument Avenue shells exposed this limit. Regressions: `test_low_addition_does_not_lift_the_main_roof`,
+`test_buried_roof_is_cut_at_wall_top_not_flattened` and `test_large_wall_alignment_keeps_procedural_roof`
+in `pipeline/tests/test_lod2.py`.
+
+Points from a taller neighbour's party wall can fit as a small roof plane standing far above the rest of
+the shell: a fin 5-7 m above a 3 m rear building (`osm:way/367736567`). Reject a shell when a face under
+4 m² peaks more than 1 m above every other roof face (about 190 Richmond shells). Regression:
+`test_small_face_standing_above_roof_is_ignored`.
 
 RMSE also does not prevent over-segmentation. In the Richmond residential output, repeated odd triangles
 came from examples such as `osm:way/369321554`, where Roofer fit 15 planes and 6 ridgelines to a 139 m²

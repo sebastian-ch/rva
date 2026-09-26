@@ -159,9 +159,28 @@ def test_low_addition_does_not_lift_the_main_roof(tmp_path):
         "geometry": box(100, 200, 110, 210),
     }], crs="EPSG:32618")
     out = attach_roofs(buildings, source, "EPSG:32618")
+    # The whole 5-7 m shell lies below the 7 m wall top: nothing is lifted and
+    # nothing survives the cut, so the procedural roof stays.
+    assert out.iloc[0].lod2_roof is None
+    assert out.iloc[0].roof_source == "lidar"
+
+
+def test_buried_roof_is_cut_at_wall_top_not_flattened(tmp_path):
+    source = tmp_path / "lod2"
+    source.mkdir()
+    _write_cityjsonseq(source / "roof.city.jsonl")
+    buildings = gpd.GeoDataFrame([{
+        "id": "osm:way/1", "hidden": False, "height": 5.5,
+        "roof_source": "lidar", "roof_height": 1.0,
+        "geometry": box(100, 200, 110, 210),
+    }], crs="EPSG:32618")
+    out = attach_roofs(buildings, source, "EPSG:32618")
     mesh = json.loads(out.iloc[0].lod2_roof)
-    assert min(vertex[2] for vertex in mesh["v"]) == 0.0
-    assert max(vertex[2] for vertex in mesh["v"]) == 0.0
+    # The 0.2 slope plane is lowered 0.5 m; the buried strip is cut away along
+    # y = 202.5 and every remaining vertex stays on the measured plane.
+    assert max(vertex[2] for vertex in mesh["v"]) == 1.5
+    assert min(vertex[1] for vertex in mesh["v"]) == 202.5
+    assert all(abs(z - (y - 202.5) * 0.2) < 0.02 for _, y, z in mesh["v"])
 
 
 def test_short_wall_does_not_leave_a_gap_below_roof(tmp_path):
@@ -204,6 +223,21 @@ def test_near_vertical_roof_plane_is_ignored(tmp_path):
     feature["vertices"][3][1] = 100
     feature["vertices"][2][2] = 900
     feature["vertices"][3][2] = 900
+    path.write_text(lines[0] + "\n" + json.dumps(feature) + "\n")
+    assert read_roofs([path], "EPSG:32618") == {}
+
+
+def test_small_face_standing_above_roof_is_ignored(tmp_path):
+    # A 1 m x 1.5 m plane at 10-10.5 m beside a 5-7 m roof: a neighbour's
+    # party wall fitted as roof (osm:way/367736567), not a roof part.
+    path = tmp_path / "fin.city.jsonl"
+    _write_cityjsonseq(path)
+    lines = path.read_text().splitlines()
+    feature = json.loads(lines[1])
+    feature["vertices"] += [[900, 0, 1000], [1000, 0, 1000], [1000, 150, 1050], [900, 150, 1050]]
+    solid = feature["CityObjects"]["osm:way/1-0"]["geometry"][0]
+    solid["boundaries"][0].append([[8, 9, 10, 11]])
+    solid["semantics"]["values"][0].append(0)
     path.write_text(lines[0] + "\n" + json.dumps(feature) + "\n")
     assert read_roofs([path], "EPSG:32618") == {}
 

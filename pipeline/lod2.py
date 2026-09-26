@@ -31,6 +31,8 @@ MAX_MEDIUM_BUILDING_RIDGES = 6
 MAX_MEDIUM_BUILDING_PLANES = 19
 MAX_COMPLEX_SMALL_ROOF_RELIEF_M = 5.0
 MAX_ROOF_LOWERING_M = 5.0
+SPIKE_FACE_AREA_M2 = 4.0
+MAX_SPIKE_RISE_M = 1.0
 ROOF_TYPES = {"slanted", "horizontal", "multiple horizontal"}
 
 
@@ -125,6 +127,7 @@ def _roof_mesh(feature: dict, scale: list[float], translate: list[float], transf
     # A tiny near-vertical fitted plane can create a conspicuous triangular spike
     # even when the aggregate RMSE is low. Roofer labels genuine step closures as
     # walls, so reject roof-labelled surfaces beyond a conservative 70-degree pitch.
+    peaks: list[tuple[float, float]] = []
     for face in faces:
         points = [world(i) for i in face[0]]
         normal = [0.0, 0.0, 0.0]
@@ -138,6 +141,13 @@ def _roof_mesh(feature: dict, scale: list[float], translate: list[float], transf
         horizontal = abs(area2) * 0.5
         slope = math.degrees(math.atan2(math.hypot(normal[0], normal[1]), abs(normal[2])))
         if horizontal >= 0.5 and slope > MAX_ROOF_SLOPE_DEG:
+            return None
+        peaks.append((horizontal, max(p[2] for p in points)))
+    # Points from a taller neighbour's party wall fit as a small plane standing
+    # well above the rest of the roof: a fin or sliver rather than a roof part.
+    for k, (horizontal, peak) in enumerate(peaks):
+        rest = max((z for j, (_, z) in enumerate(peaks) if j != k), default=peak)
+        if horizontal < SPIKE_FACE_AREA_M2 and peak > rest + MAX_SPIKE_RISE_M:
             return None
     # Internal vertical faces close dormers and roof steps. Exclude interior or
     # party walls that descend below the roof because the styled extrusion owns them.
@@ -184,16 +194,71 @@ def _merge_meshes(first: dict, second: dict) -> dict:
     }
 
 
+def _clip_ring(points: list[tuple[float, float, float]]) -> list[tuple[float, float, float]]:
+    """Keep the part of a planar ring at or above z = 0 (Sutherland-Hodgman on one plane)."""
+    out = []
+    for i, a in enumerate(points):
+        b = points[(i + 1) % len(points)]
+        a_in, b_in = a[2] >= -1e-6, b[2] >= -1e-6
+        if a_in:
+            out.append(a)
+        if a_in != b_in:
+            t = a[2] / (a[2] - b[2])
+            out.append((a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1]), 0.0))
+    return out
+
+
+def _ring_area(points) -> float:
+    """Area of a planar 3D ring (Newell normal), so vertical closures count too."""
+    nx = ny = nz = 0.0
+    for i, a in enumerate(points):
+        b = points[(i + 1) % len(points)]
+        nx += (a[1] - b[1]) * (a[2] + b[2])
+        ny += (a[2] - b[2]) * (a[0] + b[0])
+        nz += (a[0] - b[0]) * (a[1] + b[1])
+    return 0.5 * math.sqrt(nx * nx + ny * ny + nz * nz)
+
+
 def _align_to_wall(encoded: str, wall_height: float) -> str | None:
     """Lower a multi-level shell to its measured position without opening a wall gap."""
     mesh = json.loads(encoded)
     shift = min(0.0, float(mesh.pop("e")) - float(wall_height))
-    # A large correction collapses most reconstructed vertices onto the wall top,
-    # leaving a patchwork of triangular remnants. That indicates incompatible
-    # wall/roof datums, so retain the procedural roof instead.
+    # A large correction means incompatible wall/roof datums; only the top of
+    # the shell would survive, so retain the procedural roof instead.
     if shift < -MAX_ROOF_LOWERING_M:
         return None
-    mesh["v"] = [[x, y, round(max(0.0, z + shift), 2)] for x, y, z in mesh["v"]]
+    # Cut the buried part at the wall top rather than clamping vertices onto it.
+    # Clamping bends every partly buried plane into a non-planar sliver, which
+    # earcut renders as a fan of odd triangles (Church Hill rear-el rowhouses).
+    vertices = [(x, y, z + shift) for x, y, z in mesh["v"]]
+    out_vertices: list[list[float]] = []
+    index: dict[tuple[float, float, float], int] = {}
+    faces = []
+    for face in mesh["f"]:
+        rings = []
+        for ring in face:
+            clipped = []
+            for x, y, z in _clip_ring([vertices[i] for i in ring]):
+                key = (round(x, 2), round(y, 2), round(max(0.0, z), 2))
+                if key not in index:
+                    index[key] = len(out_vertices)
+                    out_vertices.append(list(key))
+                if not clipped or clipped[-1] != index[key]:
+                    clipped.append(index[key])
+            if len(clipped) > 1 and clipped[0] == clipped[-1]:
+                clipped.pop()
+            if len(clipped) >= 3 and _ring_area([out_vertices[i] for i in clipped]) > 0.01:
+                rings.append(clipped)
+            elif not rings:
+                break  # the outer ring is fully buried
+        if rings:
+            faces.append(rings)
+    if not faces:
+        return None
+    used = sorted({i for face in faces for ring in face for i in ring})
+    remap = {old: new for new, old in enumerate(used)}
+    mesh["v"] = [out_vertices[i] for i in used]
+    mesh["f"] = [[[remap[i] for i in ring] for ring in face] for face in faces]
     return json.dumps(mesh, separators=(",", ":"))
 
 
