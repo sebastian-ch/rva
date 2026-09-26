@@ -1,0 +1,25 @@
+{
+"type": "FeatureCollection",
+"name": "wires",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "wire:34458-34459", "h0": 10.0, "h1": 10.0, "z0": 54.48, "z1": 53.69 }, "geometry": { "type": "LineString", "coordinates": [ [ 283573.03, 4160250.98 ], [ 283616.17, 4160249.85 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:34456-34458", "h0": 10.0, "h1": 10.0, "z0": 55.1, "z1": 54.48 }, "geometry": { "type": "LineString", "coordinates": [ [ 283545.38, 4160250.85 ], [ 283573.03, 4160250.98 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:34455-34456", "h0": 10.0, "h1": 10.0, "z0": 55.62, "z1": 55.1 }, "geometry": { "type": "LineString", "coordinates": [ [ 283510.36, 4160252.61 ], [ 283545.38, 4160250.85 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:33991-33993", "h0": 10.0, "h1": 10.0, "z0": 51.74, "z1": 52.04 }, "geometry": { "type": "LineString", "coordinates": [ [ 283738.64, 4160343.24 ], [ 283758.26, 4160371.53 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:34441-34442", "h0": 10.18, "h1": 10.18, "z0": 56.12, "z1": 55.75 }, "geometry": { "type": "LineString", "coordinates": [ [ 283597.58, 4160416.39 ], [ 283625.21, 4160415.67 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:34440-34441", "h0": 10.36, "h1": 10.18, "z0": 56.34, "z1": 56.12 }, "geometry": { "type": "LineString", "coordinates": [ [ 283569.96, 4160417.54 ], [ 283597.58, 4160416.39 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:33899-34444", "h0": 10.0, "h1": 10.0, "z0": 52.92, "z1": 53.34 }, "geometry": { "type": "LineString", "coordinates": [ [ 283724.95, 4160413.07 ], [ 283710.1, 4160412.61 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:34442-34443", "h0": 10.18, "h1": 10.36, "z0": 55.75, "z1": 55.17 }, "geometry": { "type": "LineString", "coordinates": [ [ 283625.21, 4160415.67 ], [ 283652.15, 4160414.12 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:33895-33899", "h0": 10.0, "h1": 10.0, "z0": 52.44, "z1": 52.92 }, "geometry": { "type": "LineString", "coordinates": [ [ 283752.05, 4160417.87 ], [ 283724.95, 4160413.07 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:34430-34432", "h0": 10.0, "h1": 10.0, "z0": 54.16, "z1": 55.23 }, "geometry": { "type": "LineString", "coordinates": [ [ 283679.76, 4160412.55 ], [ 283679.2, 4160423.62 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:33893-33896", "h0": 10.0, "h1": 8.84, "z0": 53.19, "z1": 53.06 }, "geometry": { "type": "LineString", "coordinates": [ [ 283746.57, 4160466.3 ], [ 283726.36, 4160440.99 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:34433-34435", "h0": 10.0, "h1": 10.0, "z0": 55.65, "z1": 56.05 }, "geometry": { "type": "LineString", "coordinates": [ [ 283674.88, 4160458.43 ], [ 283659.35, 4160457.98 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:34435-34436", "h0": 10.0, "h1": 10.0, "z0": 56.05, "z1": 56.22 }, "geometry": { "type": "LineString", "coordinates": [ [ 283659.35, 4160457.98 ], [ 283627.68, 4160459.18 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:33894-34417", "h0": 10.0, "h1": 10.0, "z0": 53.73, "z1": 54.01 }, "geometry": { "type": "LineString", "coordinates": [ [ 283720.89, 4160489.85 ], [ 283705.86, 4160508.45 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:34440-34450", "h0": 10.36, "h1": 10.18, "z0": 56.34, "z1": 56.46 }, "geometry": { "type": "LineString", "coordinates": [ [ 283569.96, 4160417.54 ], [ 283542.33, 4160418.26 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:34448-34450", "h0": 10.18, "h1": 10.18, "z0": 56.58, "z1": 56.46 }, "geometry": { "type": "LineString", "coordinates": [ [ 283515.37, 4160418.96 ], [ 283542.33, 4160418.26 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:34436-34438", "h0": 10.0, "h1": 10.0, "z0": 56.22, "z1": 56.56 }, "geometry": { "type": "LineString", "coordinates": [ [ 283627.68, 4160459.18 ], [ 283589.96, 4160460.61 ] ] } }
+]
+}

@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "water",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/236147604", "name": null, "kind": "pond", "water_z": 57.01, "source": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283532.12, 4158359.86 ], [ 283538.23, 4158358.96 ], [ 283540.86, 4158353.54 ], [ 283539.45, 4158349.68 ], [ 283533.94, 4158347.22 ], [ 283529.89, 4158348.93 ], [ 283527.85, 4158352.8 ], [ 283528.72, 4158357.08 ], [ 283532.12, 4158359.86 ] ] ] } }
+]
+}

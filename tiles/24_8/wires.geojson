@@ -1,0 +1,25 @@
+{
+"type": "FeatureCollection",
+"name": "wires",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "wire:14302-14303", "h0": 10.0, "h1": 10.36, "z0": 46.14, "z1": 46.27 }, "geometry": { "type": "LineString", "coordinates": [ [ 286285.25, 4156758.86 ], [ 286295.15, 4156750.56 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:14292-14300", "h0": 11.73, "h1": 8.84, "z0": 46.01, "z1": 46.04 }, "geometry": { "type": "LineString", "coordinates": [ [ 286258.99, 4156760.81 ], [ 286272.74, 4156771.05 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:17784-17785", "h0": 10.0, "h1": 10.0, "z0": 44.82, "z1": 44.89 }, "geometry": { "type": "LineString", "coordinates": [ [ 286317.04, 4156788.12 ], [ 286323.61, 4156781.6 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:17784-17788", "h0": 10.0, "h1": 10.0, "z0": 44.82, "z1": 44.55 }, "geometry": { "type": "LineString", "coordinates": [ [ 286317.04, 4156788.12 ], [ 286318.11, 4156803.77 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:17788-17789", "h0": 10.0, "h1": 8.84, "z0": 44.55, "z1": 43.71 }, "geometry": { "type": "LineString", "coordinates": [ [ 286318.11, 4156803.77 ], [ 286345.33, 4156839.07 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:17906-17909", "h0": 7.62, "h1": 8.84, "z0": 42.86, "z1": 44.72 }, "geometry": { "type": "LineString", "coordinates": [ [ 286273.66, 4156836.59 ], [ 286264.24, 4156824.46 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:17904-17906", "h0": 10.0, "h1": 7.62, "z0": 41.81, "z1": 42.86 }, "geometry": { "type": "LineString", "coordinates": [ [ 286297.06, 4156861.03 ], [ 286273.66, 4156836.59 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:17789-17791", "h0": 8.84, "h1": 10.36, "z0": 43.71, "z1": 43.49 }, "geometry": { "type": "LineString", "coordinates": [ [ 286345.33, 4156839.07 ], [ 286345.33, 4156865.33 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:17904-17905", "h0": 10.0, "h1": 10.0, "z0": 41.81, "z1": 41.92 }, "geometry": { "type": "LineString", "coordinates": [ [ 286297.06, 4156861.03 ], [ 286302.7, 4156877.5 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:17792-17905", "h0": 11.73, "h1": 10.0, "z0": 41.68, "z1": 41.92 }, "geometry": { "type": "LineString", "coordinates": [ [ 286307.64, 4156895.11 ], [ 286302.7, 4156877.5 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:17786-17787", "h0": 13.11, "h1": 11.73, "z0": 41.61, "z1": 40.84 }, "geometry": { "type": "LineString", "coordinates": [ [ 286251.36, 4156883.85 ], [ 286267.4, 4156904.19 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:17790-17794", "h0": 10.36, "h1": 8.84, "z0": 40.73, "z1": 40.54 }, "geometry": { "type": "LineString", "coordinates": [ [ 286282.54, 4156915.66 ], [ 286273.51, 4156931.99 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:17794-17955", "h0": 8.84, "h1": 8.84, "z0": 40.54, "z1": 39.82 }, "geometry": { "type": "LineString", "coordinates": [ [ 286273.51, 4156931.99 ], [ 286282.9, 4156955.9 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:17953-17957", "h0": 10.0, "h1": 10.0, "z0": 39.0, "z1": 39.31 }, "geometry": { "type": "LineString", "coordinates": [ [ 286251.14, 4156954.17 ], [ 286255.59, 4156969.73 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:17955-17956", "h0": 8.84, "h1": 10.36, "z0": 39.82, "z1": 40.31 }, "geometry": { "type": "LineString", "coordinates": [ [ 286282.9, 4156955.9 ], [ 286298.15, 4156972.02 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:17796-17798", "h0": 10.0, "h1": 10.0, "z0": 40.59, "z1": 40.55 }, "geometry": { "type": "LineString", "coordinates": [ [ 286331.27, 4156974.14 ], [ 286329.52, 4156958.51 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:17796-17802", "h0": 10.0, "h1": 8.84, "z0": 40.59, "z1": 40.7 }, "geometry": { "type": "LineString", "coordinates": [ [ 286331.27, 4156974.14 ], [ 286337.77, 4156990.91 ] ] } }
+]
+}

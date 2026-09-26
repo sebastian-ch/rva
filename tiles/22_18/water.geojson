@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "water",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/1308604341", "name": "Shockoe Creek", "kind": "canal", "water_z": 17.87, "source": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 285944.22, 4159250.0 ], [ 285939.23, 4159250.0 ], [ 285949.81, 4159264.17 ], [ 286000.0, 4159320.71 ], [ 286000.0, 4159314.69 ], [ 285952.98, 4159261.73 ], [ 285944.22, 4159250.0 ] ] ] } }
+]
+}

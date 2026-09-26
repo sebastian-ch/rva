@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "water",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/303523717", "name": "Kanawha Canal", "kind": "canal", "water_z": 25.26, "source": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 283235.34, 4157016.38 ], [ 283239.55, 4157014.26 ], [ 283240.29, 4157010.05 ], [ 283237.04, 4157006.64 ], [ 283207.71, 4157000.0 ], [ 283182.38, 4157000.0 ], [ 283202.72, 4157009.12 ], [ 283235.34, 4157016.38 ] ] ] } }
+]
+}

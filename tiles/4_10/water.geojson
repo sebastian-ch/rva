@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "water",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/676649325", "name": null, "kind": "canal", "water_z": 37.63, "source": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 281281.51, 4157279.67 ], [ 281250.0, 4157274.52 ], [ 281250.0, 4157278.58 ], [ 281281.13, 4157283.66 ], [ 281310.78, 4157285.12 ], [ 281347.18, 4157293.22 ], [ 281401.64, 4157292.1 ], [ 281403.55, 4157290.22 ], [ 281401.67, 4157288.1 ], [ 281347.56, 4157289.22 ], [ 281311.47, 4157281.17 ], [ 281281.51, 4157279.67 ] ] ] } }
+]
+}

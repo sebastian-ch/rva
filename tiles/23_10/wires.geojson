@@ -1,0 +1,32 @@
+{
+"type": "FeatureCollection",
+"name": "wires",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "wire:17973-17981", "h0": 10.0, "h1": 11.73, "z0": 45.25, "z1": 44.98 }, "geometry": { "type": "LineString", "coordinates": [ [ 286243.68, 4157293.24 ], [ 286235.64, 4157269.3 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:13692-13693", "h0": 10.0, "h1": 10.0, "z0": 32.59, "z1": 34.54 }, "geometry": { "type": "LineString", "coordinates": [ [ 286045.2, 4157340.29 ], [ 286074.88, 4157339.94 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:13691-13692", "h0": 10.0, "h1": 10.0, "z0": 30.05, "z1": 32.59 }, "geometry": { "type": "LineString", "coordinates": [ [ 286006.78, 4157341.28 ], [ 286045.2, 4157340.29 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:13697-13698", "h0": 10.0, "h1": 10.0, "z0": 40.32, "z1": 40.92 }, "geometry": { "type": "LineString", "coordinates": [ [ 286122.33, 4157296.36 ], [ 286113.6, 4157271.6 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:17979-17980", "h0": 8.84, "h1": 10.0, "z0": 40.88, "z1": 40.67 }, "geometry": { "type": "LineString", "coordinates": [ [ 286172.09, 4157290.0 ], [ 286149.14, 4157291.68 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:17977-17979", "h0": 10.0, "h1": 8.84, "z0": 41.11, "z1": 40.88 }, "geometry": { "type": "LineString", "coordinates": [ [ 286179.04, 4157296.05 ], [ 286172.09, 4157290.0 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:13696-13697", "h0": 10.0, "h1": 10.0, "z0": 39.71, "z1": 40.32 }, "geometry": { "type": "LineString", "coordinates": [ [ 286124.16, 4157314.95 ], [ 286122.33, 4157296.36 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:13695-13696", "h0": 10.0, "h1": 10.0, "z0": 39.35, "z1": 39.71 }, "geometry": { "type": "LineString", "coordinates": [ [ 286134.67, 4157330.36 ], [ 286124.16, 4157314.95 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:13693-13694", "h0": 10.0, "h1": 10.0, "z0": 34.54, "z1": 36.65 }, "geometry": { "type": "LineString", "coordinates": [ [ 286074.88, 4157339.94 ], [ 286105.87, 4157338.3 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:18193-18195", "h0": 11.73, "h1": 11.73, "z0": 42.23, "z1": 40.71 }, "geometry": { "type": "LineString", "coordinates": [ [ 286213.14, 4157338.76 ], [ 286178.09, 4157339.83 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:18195-18197", "h0": 11.73, "h1": 10.0, "z0": 40.71, "z1": 40.23 }, "geometry": { "type": "LineString", "coordinates": [ [ 286178.09, 4157339.83 ], [ 286165.6, 4157352.43 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:8829-18197", "h0": 10.0, "h1": 10.0, "z0": 39.58, "z1": 40.23 }, "geometry": { "type": "LineString", "coordinates": [ [ 286144.18, 4157358.92 ], [ 286165.6, 4157352.43 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:18134-18135", "h0": 10.0, "h1": 10.0, "z0": 44.48, "z1": 45.2 }, "geometry": { "type": "LineString", "coordinates": [ [ 286237.28, 4157384.45 ], [ 286248.85, 4157389.94 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:17973-18119", "h0": 10.0, "h1": 8.84, "z0": 45.25, "z1": 44.82 }, "geometry": { "type": "LineString", "coordinates": [ [ 286243.68, 4157293.24 ], [ 286251.59, 4157312.1 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:18134-18169", "h0": 10.0, "h1": 8.84, "z0": 44.48, "z1": 44.23 }, "geometry": { "type": "LineString", "coordinates": [ [ 286237.28, 4157384.45 ], [ 286223.24, 4157390.41 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:8814-18171", "h0": 10.0, "h1": 10.0, "z0": 41.15, "z1": 42.46 }, "geometry": { "type": "LineString", "coordinates": [ [ 286171.17, 4157385.24 ], [ 286199.63, 4157390.13 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:8814-8828", "h0": 10.0, "h1": 10.0, "z0": 41.15, "z1": 41.02 }, "geometry": { "type": "LineString", "coordinates": [ [ 286171.17, 4157385.24 ], [ 286155.14, 4157391.67 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:18165-18169", "h0": 8.84, "h1": 8.84, "z0": 44.86, "z1": 44.23 }, "geometry": { "type": "LineString", "coordinates": [ [ 286219.11, 4157413.32 ], [ 286223.24, 4157390.41 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:8815-8827", "h0": 10.0, "h1": 10.0, "z0": 42.38, "z1": 41.77 }, "geometry": { "type": "LineString", "coordinates": [ [ 286177.0, 4157428.39 ], [ 286158.45, 4157415.31 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:18164-18165", "h0": 10.0, "h1": 8.84, "z0": 43.71, "z1": 44.86 }, "geometry": { "type": "LineString", "coordinates": [ [ 286224.6, 4157442.83 ], [ 286219.11, 4157413.32 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:18157-18164", "h0": 10.0, "h1": 10.0, "z0": 42.73, "z1": 43.71 }, "geometry": { "type": "LineString", "coordinates": [ [ 286213.64, 4157462.6 ], [ 286224.6, 4157442.83 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:8816-18157", "h0": 10.0, "h1": 10.0, "z0": 42.82, "z1": 42.73 }, "geometry": { "type": "LineString", "coordinates": [ [ 286181.99, 4157465.11 ], [ 286213.64, 4157462.6 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:8816-8826", "h0": 10.0, "h1": 10.0, "z0": 42.82, "z1": 42.89 }, "geometry": { "type": "LineString", "coordinates": [ [ 286181.99, 4157465.11 ], [ 286165.81, 4157465.53 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:18155-18161", "h0": 8.84, "h1": 8.84, "z0": 42.38, "z1": 42.54 }, "geometry": { "type": "LineString", "coordinates": [ [ 286234.98, 4157479.42 ], [ 286251.39, 4157462.0 ] ] } }
+]
+}

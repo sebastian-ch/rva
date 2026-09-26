@@ -1,0 +1,13 @@
+{
+"type": "FeatureCollection",
+"name": "wires",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "wire:34113-34117", "h0": 11.73, "h1": 10.0, "z0": 50.55, "z1": 50.26 }, "geometry": { "type": "LineString", "coordinates": [ [ 283736.11, 4159780.34 ], [ 283759.05, 4159780.59 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:34110-34113", "h0": 10.0, "h1": 11.73, "z0": 50.83, "z1": 50.55 }, "geometry": { "type": "LineString", "coordinates": [ [ 283709.15, 4159781.04 ], [ 283736.11, 4159780.34 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:34101-34177", "h0": 10.36, "h1": 10.0, "z0": 51.59, "z1": 49.47 }, "geometry": { "type": "LineString", "coordinates": [ [ 283599.85, 4159779.65 ], [ 283592.34, 4159750.2 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:34092-34096", "h0": 8.84, "h1": 10.0, "z0": 52.51, "z1": 52.73 }, "geometry": { "type": "LineString", "coordinates": [ [ 283512.36, 4159774.52 ], [ 283530.41, 4159782.04 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:34080-34096", "h0": 10.0, "h1": 10.0, "z0": 52.44, "z1": 52.73 }, "geometry": { "type": "LineString", "coordinates": [ [ 283566.56, 4159796.19 ], [ 283530.41, 4159782.04 ] ] } }
+]
+}
