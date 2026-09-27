@@ -23,7 +23,7 @@ Rank accordingly — do not spend effort re-deriving heights.
 | 3 | Roof furniture from dense LiDAR | **done 2026-09-25** — 223 measured objects on 114 buildings; citywide candidates from `pipeline/roof_furniture_review.py`, 150 reviewed, 35 rejected |
 | 4 | Ground cover from VGIN RGB + NAIP NIR + nDSM | **done 2026-09-14; refined 2026-09-15** — 4,000 cleaned lawn, paving and bare-ground polygons |
 | 5 | Split-grammar facade geometry, lower two floors | **done 2026-09-21** — `web/src/facadeGrammar.ts`; street frontages from the tile's road centrelines, five rule sets, LOD 0 only, per-tile triangle budget |
-| 6 | Wall colour and surveyed props from Mapillary | **props: streetlights and poles done 2026-09-25 from the city survey** (no Mapillary); wall colour: **assessor era/use prior done 2026-09-25** (`wall_colors.py`), NRHP materials and Mapillary not started |
+| 6 | Wall colour and surveyed props from Mapillary | **props: streetlights and poles done 2026-09-25 from the city survey** (no Mapillary); wall colour: **assessor era/use prior done 2026-09-25** (`wall_colors.py`); **Mapillary map features (hydrants, signs, benches) built 2026-09-27** (`mapillary.py`, CC BY-SA accepted); NRHP materials and Mapillary facade colour not started |
 | 7 | Landmarks from HABS drawings and own photogrammetry | not started |
 | 8 | CC0 prop libraries for vehicles and street furniture | not started |
 
@@ -47,8 +47,8 @@ Item 6 depends on a licensing decision, not on code.
 
 Items 1–5 are done. Streetlights and utility poles in item 6 came from the City of Richmond luminaire and pole
 surveys instead of Mapillary (see §6). Wall colour now uses an assessor era-and-use prior (`pipeline/wall_colors.py`, 23,759 of 25,237 seeded guesses replaced; brick rises
-from 23% to 56% of buildings). Real per-building materials are next: the National Register district inventories, then Mapillary
-if CC BY-SA is acceptable. Item 8 (CC0 vehicles and street furniture) is the cheapest
+from 23% to 56% of buildings). Mapillary map features (hydrants, signs, benches) are built under CC BY-SA (§6). Real per-building materials are
+next: the National Register district inventories, then Mapillary facade colour. Item 8 (CC0 vehicles and street furniture) is the cheapest
 code-only step. Item 7 is art time.
 
 A by-product of item 3 worth following up: flat roofs whose LiDAR roof plane sits more than
@@ -393,6 +393,13 @@ lamps are suppressed per road (`lamps_surveyed`, 69% of major-road length) rathe
 are inferred from the road network (`traffic_control.py`); hydrants, benches and other signs remain Mapillary-only. Checked for facade sources on the same pass: VBMP imagery at
 0.15 m is corrected nearly straight down, so an 81 m tower shows only a sliver of wall and rowhouses show none.
 Aerial imagery does not replace street-level photos for wall colour.
+
+**Licence settled and map features built, 2026-09-27:** CC BY-SA was accepted for this project. `pipeline/fetch_mapillary.py`
+walks the bbox with the Graph API `map_features` endpoint (grid of 0.01° cells, split while a cell comes back full) and
+keeps every feature; `pipeline/mapillary.py` turns hydrants, regulatory/information/warning signs and benches into POIs
+tagged `source: mapillary`. Inferred stop signs keep priority because they drive the traffic sim; a detected stop is
+drawn only where none was inferred within 25 m, without a heading. The raw file also holds Mapillary's streetlights
+and utility poles, the obvious gap-fill for Southside where the city survey is missing. Facade colour remains.
 
 ## 7. Landmarks from HABS drawings and own photogrammetry
 

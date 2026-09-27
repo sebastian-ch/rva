@@ -15,6 +15,9 @@ const CAPACITY: Record<PropKind, number> = {
   lamp_post: 2500,
   utility_pole: 5000,
   stop_sign: 1500,
+  hydrant: 1500,
+  street_sign: 3000,
+  warning_sign: 800,
   light_pool: 6000,
   car: 6000,
   suv: 2500,
@@ -36,7 +39,8 @@ const POOL_WARM = new THREE.Color(0.42, 0.26, 0.1);
 /** Kinds with a `window_lit` lens that glows at night. */
 const LAMP_KINDS: PropKind[] = ['streetlight', 'lamp_post'];
 /** Surveyed street furniture is as dense as the survey, so its buffers grow like the trees' do. */
-const GROWABLE_KINDS: PropKind[] = ['streetlight', 'lamp_post', 'utility_pole', 'stop_sign', 'light_pool'];
+const GROWABLE_KINDS: PropKind[] = ['streetlight', 'lamp_post', 'utility_pole', 'stop_sign', 'hydrant', 'street_sign',
+  'warning_sign', 'bench', 'light_pool'];
 /** Kinds whose body is built white and tinted per instance, and the palette each one indexes. */
 const TINTED_KINDS: PropKind[] = [...VEHICLE_KINDS, ...RAIL_TINTED_KINDS];
 const colorTable = (kind: PropKind) => (RAIL_KINDS.includes(kind) ? RAIL_COLORS : VEHICLE_COLORS);

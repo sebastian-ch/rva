@@ -237,6 +237,14 @@ def _traffic_control(ctx: StepContext, layers: dict):
     return {"pois": add_stop_signs(layers["roads"], layers["pois"])}
 
 
+def _mapillary(ctx: StepContext, layers: dict):
+    path = DATA_RAW / f"mapillary_{ctx.slug}.parquet"
+    if not path.exists():
+        return {}
+    from mapillary import merge_detections
+    return {"pois": merge_detections(layers["pois"], gpd.read_parquet(path), layers["roads"], layers["buildings"])}
+
+
 # ---------------------------------------------------------------- Honolulu augmentation
 
 def _coast(ctx: StepContext, layers: dict):
@@ -307,6 +315,10 @@ def steps_for(region: str) -> list[Step]:
              sources=lambda c: [c.richmond("luminaires.parquet"), c.richmond("poles.parquet"), c.dem_path],
              regions=("richmond",)),
         Step("traffic_control", ("pois",), _traffic_control, modules=("traffic_control",), reads=("pois", "roads")),
+        # after traffic_control: a detected stop sign is only kept where no inferred one covers it
+        Step("mapillary", ("pois",), _mapillary, modules=("mapillary", "streetlights"),
+             reads=("pois", "roads", "buildings"), sources=lambda c: [DATA_RAW / f"mapillary_{c.slug}.parquet"],
+             regions=("richmond",)),
     ]
     if region == "honolulu":
         import honolulu

@@ -50,6 +50,7 @@ python3 -m venv .venv && .venv/bin/pip install -r pipeline/requirements.txt
 .venv/bin/python pipeline/fetch_richmond.py                                 # City of Richmond addresses, zoning, trees, structures, streetlight/pole surveys -> data/raw/
 .venv/bin/python pipeline/build_planning.py                                 # ArcGIS Urban -> canonical parcel constraints companion
 .venv/bin/python pipeline/fetch_vgin_footprints.py --shp <path.shp>         # VGIN building footprints (gap-fill) -> data/raw/
+MAPILLARY_TOKEN='MLY|…' .venv/bin/python pipeline/fetch_mapillary.py         # Mapillary map features (hydrants, signs, benches) -> mapillary_<slug>.parquet; token also read from ~/.config/mapillary/token
 .venv/bin/python pipeline/fetch_naip.py [--resolution 0.6] [--dry-run]      # NAIP orthoimagery (roof colour) -> ortho_<slug>.tif
 .venv/bin/python pipeline/dem_noaa.py [--zip data/raw/J1448888.zip]              # NOAA 2025 1 ft DEM tiles -> dem_<slug>.tif (1 m); run before fetch_lidar/build_tiles
 .venv/bin/python pipeline/fetch_lidar.py [--source noaa2025|usgs2014] [--dry-run]  # LiDAR EPT (2025 City of Richmond by default) -> ndsm.tif + point npz
@@ -99,6 +100,9 @@ Tile schema contract: `DATA_FORMAT.md`. Landmark registry: `assets/landmarks/lan
   hangs them). `pipeline/traffic_control.py` infers `stop_sign` POIs (minor approaches, all-way at equal-class
   crossroads; service ways ignored). Tiles pass signal and stop POIs to the traffic worker as `controls`, and
   `TrafficSim.edgeControl` turns them into two-phase signals and stop-then-yield rules.
+- Mapillary detections (`pipeline/mapillary.py`, step after `traffic_control`) add `hydrant`, `street_sign`,
+  `warning_sign` and gap-fill `bench` POIs, tagged `source: mapillary` (CC BY-SA). Inferred stop signs win; a
+  detected one is drawn only where none was inferred, without a heading, so the traffic sim never sees it.
 - `track` and `path` ways are trails: MINOR (no cars, no sidewalks), drawn in the `sand` palette colour; `track` width 2.5 m in `config.ROAD_WIDTH`.
 - Road junctions in `roads.ts` register interior vertices too, so a side street ending on a through road's interior node is trimmed/extended like an endpoint junction; corner fills need ≥ 3 walkable arms.
 - Asset URLs are base-relative (`import.meta.env.BASE_URL`); `vite.config.ts` reads `BASE_PATH` for GitHub Pages.

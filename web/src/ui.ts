@@ -364,7 +364,8 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
   root.appendChild(attribution);
   if (regionId === 'richmond') {
     for (const [title, url] of [['City of Richmond trees', 'https://www.rva.gov/public-works/urban-forestry'],
-      ['NOAA 2025 LiDAR & hydro', 'https://www.fisheries.noaa.gov/inport/item/80312']]) {
+      ['NOAA 2025 LiDAR & hydro', 'https://www.fisheries.noaa.gov/inport/item/80312'],
+      ['Street furniture: Mapillary contributors · CC BY-SA', 'https://www.mapillary.com']]) {
       attribution.append(document.createTextNode(' · ')); const link = document.createElement('a');
       link.textContent = title; link.href = url; link.target = '_blank'; link.rel = 'noopener noreferrer'; attribution.append(link);
     }

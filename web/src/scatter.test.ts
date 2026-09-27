@@ -101,6 +101,18 @@ describe('scatterTile', () => {
     expect(Math.abs(Math.cos(placed!.rot))).toBeLessThan(1e-9); // +X arm points north-south, across an east-west street
   });
 
+  it('turns detected signs to face the street and hydrant nozzles across it', () => {
+    const road: Feature<LineGeom, RoadProps> = { type: 'Feature',
+      geometry: { type: 'LineString', coordinates: [[0, 50], [100, 50]] },
+      properties: { width: 8, highway: 'residential', lamps_surveyed: true } as RoadProps };
+    const out = scatterTile('mly', [poi('street_sign', 30, 56), poi('warning_sign', 60, 44), poi('hydrant', 80, 56)],
+      [], [road], [], bbox, identity, flatGround);
+    const rot = (kind: string) => out.find((p) => p.kind === kind)!.rot;
+    expect(rot('street_sign')).toBeCloseTo(-Math.PI / 2); // south, toward the road
+    expect(rot('warning_sign')).toBeCloseTo(Math.PI / 2);
+    expect(Math.abs(Math.sin(rot('hydrant')))).toBeLessThan(1e-9); // +X along the street, nozzles (±Z) across it
+  });
+
   it('puts a light pool under each lamp, out along a streetlight arm', () => {
     const road: Feature<LineGeom, RoadProps> = { type: 'Feature',
       geometry: { type: 'LineString', coordinates: [[0, 50], [100, 50]] },

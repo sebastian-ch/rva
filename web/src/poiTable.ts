@@ -2,7 +2,7 @@ import type { FC, PoiProps, PointGeom } from './types';
 
 const MAGIC = 'POI1';
 const HEADER_BYTES = 16, RECORD_BYTES = 32;
-const KINDS = ['', 'tree', 'streetlight', 'bench', 'bus_stop', 'traffic_signals', 'fountain', 'monument', 'shop', 'restaurant', 'museum', 'lamp_post', 'utility_pole', 'stop_sign'];
+const KINDS = ['', 'tree', 'streetlight', 'bench', 'bus_stop', 'traffic_signals', 'fountain', 'monument', 'shop', 'restaurant', 'museum', 'lamp_post', 'utility_pole', 'stop_sign', 'hydrant', 'street_sign', 'warning_sign'];
 
 /** Decode pipeline/poi_table.py's compact per-tile POI table. */
 export function decodePoiTable(data: ArrayBuffer, bbox: [number, number, number, number]): FC<PointGeom, PoiProps> {

@@ -135,8 +135,12 @@ export function scatterTile(
       const { pole_height: height, heading } = p.properties;
       place('utility_pole', x, y, Number.isFinite(heading) ? heading! + Math.PI / 2 : nearestRoadOrientation(x, y)?.heading, 1,
         height && height > 3 ? height / UTILITY_POLE_HEIGHT : undefined);
-    } else if (k === 'stop_sign') place('stop_sign', x, y, p.properties.heading ?? nearestRoadOrientation(x, y)?.facing);
-    else if (k === 'bench') place('bench', x, y);
+    } else if (k === 'stop_sign' || k === 'street_sign' || k === 'warning_sign') place(k, x, y, p.properties.heading ?? nearestRoadOrientation(x, y)?.facing);
+    else if (k === 'hydrant') {
+      // `heading` points across the street; turn +X along it so the side nozzles (±Z) face the kerb and the building
+      const across = nearestRoadOrientation(x, y)?.heading;
+      place('hydrant', x, y, across === undefined ? undefined : across + Math.PI / 2);
+    } else if (k === 'bench') place('bench', x, y);
     else if (k === 'bus_stop') place('person', x, y);
     else if (k === 'traffic_signals') place('traffic_light', x, y, nearestRoadOrientation(x, y)?.heading);
     else if (k === 'fountain') place('fountain', x, y);

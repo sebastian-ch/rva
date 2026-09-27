@@ -13,6 +13,9 @@ export type PropKind =
   | 'lamp_post'
   | 'utility_pole'
   | 'stop_sign'
+  | 'hydrant'
+  | 'street_sign'
+  | 'warning_sign'
   | 'light_pool'
   | 'car'
   | 'suv'
@@ -39,6 +42,9 @@ export const PROP_KINDS: PropKind[] = [
   'lamp_post',
   'utility_pole',
   'stop_sign',
+  'hydrant',
+  'street_sign',
+  'warning_sign',
   'light_pool',
   'car',
   'suv',
@@ -298,6 +304,28 @@ function buildStopSign(): THREE.BufferGeometry {
   return mergeColored([
     { geom: new THREE.BoxGeometry(0.06, 2.1, 0.06), color: hex('steel'), position: [0, 1.05, 0] },
     { geom: plate, color: hex('car_red'), position: [-0.04, 2.35, 0] },
+  ]);
+}
+
+/** Hydrant: barrel, bonnet and two side nozzles along ±Z, so the placement heading turns them to the street. */
+function buildHydrant(): THREE.BufferGeometry {
+  const nozzle = new THREE.CylinderGeometry(0.07, 0.07, 0.5, 6);
+  nozzle.rotateX(Math.PI / 2);
+  return mergeColored([
+    { geom: new THREE.CylinderGeometry(0.2, 0.2, 0.08, 8), color: hex('car_red'), position: [0, 0.04, 0] },
+    { geom: new THREE.CylinderGeometry(0.14, 0.15, 0.6, 8), color: hex('car_red'), position: [0, 0.38, 0] },
+    { geom: new THREE.SphereGeometry(0.15, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2), color: hex('steel'), position: [0, 0.68, 0] },
+    { geom: nozzle, color: hex('steel'), position: [0, 0.45, 0] },
+  ]);
+}
+
+/** Post-mounted sign; the plate's face points along +X like the stop sign's. Warning signs are yellow diamonds. */
+function buildPostSign(warning: boolean): THREE.BufferGeometry {
+  const plate = warning ? new THREE.BoxGeometry(0.03, 0.55, 0.55) : new THREE.BoxGeometry(0.03, 0.6, 0.45);
+  if (warning) plate.rotateX(Math.PI / 4);
+  return mergeColored([
+    { geom: new THREE.BoxGeometry(0.06, 2.1, 0.06), color: hex('steel'), position: [0, 1.05, 0] },
+    { geom: plate, color: hex(warning ? 'mcd_gold' : 'car_white'), position: [-0.04, 2.3, 0] },
   ]);
 }
 
@@ -764,6 +792,13 @@ export function buildPropGeometry(
       break;
     case 'stop_sign':
       geom = buildStopSign();
+      break;
+    case 'hydrant':
+      geom = buildHydrant();
+      break;
+    case 'street_sign':
+    case 'warning_sign':
+      geom = buildPostSign(kind === 'warning_sign');
       break;
     case 'light_pool':
       geom = buildLightPool();

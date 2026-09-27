@@ -133,7 +133,7 @@ pushed down to `water_z - 0.5` under those polygons so the surface is always vis
 POIs use a compact binary table rather than GeoJSON: `POI1` header, fixed 32-byte records, then a
 deduplicated UTF-8 string table. `x`/`y` are unsigned 16-bit centimetres from the tile's southwest
 corner; this is lossless relative to the former 2-decimal GeoJSON output. The records preserve `id`,
-`name`, `kind` (`"tree"|"streetlight"|"bench"|"bus_stop"|"traffic_signals"|"fountain"|"monument"|"shop"|"restaurant"|"museum"|"lamp_post"|"utility_pole"|"stop_sign"`),
+`name`, `kind` (`"tree"|"streetlight"|"bench"|"bus_stop"|"traffic_signals"|"fountain"|"monument"|"shop"|"restaurant"|"museum"|"lamp_post"|"utility_pole"|"stop_sign"|"hydrant"|"street_sign"|"warning_sign"`),
 and optional tree `species`, `source`, `tree_height`, and `crown_radius`. For trees the two float slots are
 `tree_height` and `crown_radius`; for every other kind they are `pole_height` (metres above ground) and `heading`
 (projected radians, counter-clockwise from east). See `pipeline/poi_table.py`
@@ -183,6 +183,13 @@ Honolulu coastal structures use landuse kinds `groyne`, `breakwater`, `seawall`,
   with `heading` set to the approach's travel direction. Signs that land on a rendered carriageway (skewed
   junctions) move to its curb, and the few more than 8 m in are dropped. The traffic worker obeys it, and signals (OSM
   `traffic_signals` within 20 m of a junction) run two fixed 60 s phases grouped by approach axis.
+- Mapillary map-feature detections (`pipeline/mapillary.py`, Richmond only, `source: "mapillary"`, ids
+  `mly:<feature id>`, CC BY-SA 4.0) add `hydrant`, `street_sign` (regulatory and information signs), `warning_sign`,
+  and `bench` where OSM has none within 5 m. A detected `stop_sign` is kept only where no inferred stop sign stands
+  within 25 m; it has no `heading`, so the traffic worker ignores it. Features last seen before 2016 are dropped, and
+  detections of one kind within 2 m collapse to the newest. Positions are triangulated from street imagery and good
+  to a few metres; the carriageway rule above applies (4 m), and points inside a building are dropped. Signs face
+  the nearest road in the viewer.
 - `index.json` tile entries may contain `surveyed_trees: true`: complete regional LiDAR canopy processing
   was available, so the renderer suppresses procedural park/street tree scatter. Existing OSM trees remain
   where they do not duplicate inventory/canopy points.

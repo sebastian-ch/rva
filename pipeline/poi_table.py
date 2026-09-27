@@ -18,7 +18,7 @@ HEADER = struct.Struct("<4sIII")  # magic, records, strings (including null), st
 RECORD = struct.Struct("<HHB3xIIIIff")
 OFFSETS = struct.Struct("<I")
 KIND_CODES = ("tree", "streetlight", "bench", "bus_stop", "traffic_signals", "fountain", "monument", "shop", "restaurant", "museum",
-              "lamp_post", "utility_pole", "stop_sign")
+              "lamp_post", "utility_pole", "stop_sign", "hydrant", "street_sign", "warning_sign")
 KIND_CODE = {kind: i + 1 for i, kind in enumerate(KIND_CODES)}
 
 

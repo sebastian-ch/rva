@@ -141,9 +141,13 @@ These NOAA sources carry CC0. Credit: City of Richmond, Sanborn Map Company, NOA
 
 ## Mapillary
 
-- **What we use it for:** Nothing automated yet — visual reference only. Facade colour and surveyed
-  street-furniture positions are planned (see [docs/model-texture-roadmap.md](docs/model-texture-roadmap.md));
-  note that CC BY-SA 4.0 is share-alike, so a derived dataset carries the licence with it.
+- **What we use it for:** Richmond map-feature detections from the Graph API (`pipeline/fetch_mapillary.py` →
+  `pipeline/mapillary.py`): fire hydrants, traffic signs, benches OSM lacks, and stop signs where none was inferred.
+  Every derived POI carries `source: "mapillary"` and a `mly:<feature id>` id. Facade colour from the imagery is
+  not done (see [docs/model-texture-roadmap.md](docs/model-texture-roadmap.md)).
+- **Share-alike:** CC BY-SA 4.0 is share-alike. The Mapillary-derived POIs in the published tiles are offered under
+  CC BY-SA 4.0; the `source` tag keeps them separable from the ODbL OpenStreetMap data in the same tiles.
+- **Credit shown in viewer:** Mapillary contributors · CC BY-SA (Richmond).
 - **License:** CC BY-SA 4.0
 - **Required attribution:** Mapillary contributors
 - **URL:** https://www.mapillary.com

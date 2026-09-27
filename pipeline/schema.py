@@ -33,6 +33,7 @@ WALL_COLOR_SOURCES: set[str] = {"osm", "override", "landmark", "assessor", "heur
 POI_KINDS: set[str] = {
     "tree", "streetlight", "bench", "bus_stop", "traffic_signals",
     "fountain", "monument", "shop", "restaurant", "museum", "lamp_post", "utility_pole", "stop_sign",
+    "hydrant", "street_sign", "warning_sign",
 }
 
 LANDUSE_KINDS: set[str] = {"park", "grass", "pitch", "parking", "cemetery", "plaza", "industrial", "forest", "beach", "deck", "groyne", "breakwater", "seawall", "pier", "canal_bank", "groundcover_lawn", "groundcover_paved", "groundcover_bare"}
