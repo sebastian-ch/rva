@@ -51,9 +51,14 @@ from 23% to 56% of buildings). Mapillary map features (hydrants, signs, benches)
 next: the National Register district inventories, then Mapillary facade colour. Item 8 (CC0 vehicles and street furniture) is the cheapest
 code-only step. Item 7 is art time.
 
-A by-product of item 3 worth following up: flat roofs whose LiDAR roof plane sits more than
-`ALIGN_TOL_M` (1.5 m) from the modeled wall top, such as The Edge at ATC (+2.4 m), are probably wrong heights or unmodeled
-tiers. They are candidates for `overrides.json` or `richmond-massing.geojson` rather than roof furniture.
+A by-product of item 3, followed up 2026-09-27: 1,018 of 5,499 flat roofs ≥ 150 m² sat more than `ALIGN_TOL_M` (1.5 m)
+from the LiDAR roof plane. The cause was the height rules, not individual buildings: `building:levels` × 3.2 m ran a
+median 1.9 m low, OSM `height` a median 3.2 m high, and LiDAR-covered sheds fell through to zoning maximums. Flat roofs now
+snap to the dominant LiDAR level when it covers the roof and no tier stands above it (`heights.snap_flat_height`, 296
+buildings), and covered sheds take the LiDAR p90 (404). Landmarks never snap, and registry height hints now apply only to
+single-body footprints; the James Monroe landmark had been matched to the Federal Courthouse through a wrong point and is
+now pinned to its outline. 812 flagged roofs remain, mostly podium-and-tower footprints (583 LiDAR-sourced with a low-support
+dominant plane): they need reviewed tiers in `richmond-massing.geojson`, not a height change.
 
 ---
 

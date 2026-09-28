@@ -4,6 +4,8 @@ classify_roof(points, footprint, ground) -> RoofFit | None
     points: (N, 3) float array in the footprint's CRS (meters)
     footprint: shapely Polygon
     ground: ground elevation (m) under the footprint
+roof_level(points, footprint, ground) -> RoofLevel | None
+    the dominant horizontal roof level, with how much of the roof lies on it and above it
 """
 from __future__ import annotations
 
@@ -37,6 +39,47 @@ class RoofFit:
     @property
     def roof_height(self) -> float:
         return max(0.0, self.ridge_z - self.eave_z)
+
+
+@dataclass
+class RoofLevel:
+    z: float              # absolute elevation of the dominant horizontal roof level
+    support: float        # share of roof points within LEVEL_BAND_M of it
+    above: float          # share of roof points more than TIER_STEP_M above it (a tier, tower or penthouse)
+
+
+LEVEL_BIN_M = 0.2
+LEVEL_BAND_M = 0.35
+TIER_STEP_M = 1.5
+LEVEL_MIN_POINTS = 40
+
+
+def dominant_level(z: np.ndarray) -> tuple[float, float] | None:
+    """The most common horizontal elevation (median of the modal 0.2 m bin's band) and its support fraction."""
+    if len(z) < LEVEL_MIN_POINTS:
+        return None
+    bins = np.round(z / LEVEL_BIN_M).astype(np.int64)
+    values, counts = np.unique(bins, return_counts=True)
+    mode = values[np.argmax(counts)] * LEVEL_BIN_M
+    near = z[np.abs(z - mode) <= LEVEL_BAND_M]
+    if len(near) < 20:
+        return None
+    return float(np.median(near)), len(near) / len(z)
+
+
+def roof_level(points: np.ndarray, footprint: Polygon, ground: float) -> RoofLevel | None:
+    """Dominant roof level over the inset footprint, ignoring points near the ground (courtyards, cars)."""
+    if points is None or len(points) < LEVEL_MIN_POINTS or footprint.is_empty:
+        return None
+    inner = footprint.buffer(-0.8)
+    if inner.is_empty:
+        inner = footprint
+    z = points[shapely.contains_xy(inner, points[:, 0], points[:, 1]), 2]
+    z = z[z > ground + EAVE_CLEARANCE]
+    level = dominant_level(z)
+    if level is None:
+        return None
+    return RoofLevel(level[0], level[1], float(np.mean(z > level[0] + TIER_STEP_M)))
 
 
 def _fit_plane(p: np.ndarray) -> tuple[np.ndarray, float]:

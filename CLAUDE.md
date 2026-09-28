@@ -31,7 +31,7 @@ web/             three.js app
 
 ## Conventions
 
-- Height resolution order: OSM `height` → `building:levels` × 3.2 m → LiDAR nDSM median (eave for pitched roofs) when ≥ 10 nDSM cells → Overture `height` → Overture `num_floors` × 3.2 m → LiDAR (sparse) → City zoning default → type default. Footprints whose LiDAR surface is at ground (p90 < 1.2 m, ≥ 8 cells) with no OSM height are dropped as stale. LiDAR heights on footprints < 80 m² are capped at 4·√area unless the type is church/tower-like.
+- Height resolution order: OSM `height` → `building:levels` × 3.2 m → LiDAR nDSM median (eave for pitched roofs) when ≥ 10 nDSM cells → Overture `height` → Overture `num_floors` × 3.2 m → LiDAR (sparse) → LiDAR p90 when covered but the median is < 2 m → City zoning default → type default. Flat roofs then snap to the dominant LiDAR roof level when it is > 1.5 m off, covers ≥ 35% of the roof and < 20% stands above it (`heights.snap_flat_height`); a tower over a podium is left for `richmond-massing.geojson`. Footprints whose LiDAR surface is at ground (p90 < 1.2 m, ≥ 8 cells) with no OSM height are dropped as stale. LiDAR heights on footprints < 80 m² are capped at 4·√area unless the type is church/tower-like.
 - Hand corrections live in `assets/supplements/overrides.json` (applied last; see its README). Use it for buildings newer than the sources.
 - `building:part` polygons are separate buildings (`is_part`, `parent`, `hidden` on the outline); see DATA_FORMAT.md.
 - Roof resolution order: Roofer LoD2 mesh from `data/raw/lod2_<slug>/*.city.jsonl` → OSM `roof:shape` → Overture `roof_shape` → LiDAR two-plane fit (`pipeline/roofs.py`) → type heuristic. Roofer replaces only the roof surface; current footprints, walls, style and metadata remain.

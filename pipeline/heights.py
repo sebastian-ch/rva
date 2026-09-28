@@ -156,6 +156,26 @@ def looks_demolished(height_source: str, ndsm_samples: int, ndsm_p90: float | No
     return ndsm_p90 is not None and ndsm_samples >= PHANTOM_MIN_SAMPLES and ndsm_p90 < PHANTOM_MAX_P90_M
 
 
+# Flat roofs: the 2025 LiDAR's dominant roof level replaces a tagged or estimated height that misses it by more
+# than LEVEL_TOL_M. levels x 3.2 runs about a storey short on Richmond's commercial floors, and OSM `height` often
+# measures to a penthouse. Only when the level carries a real share of the roof and little stands above it: a
+# podium under a tower is not a flat roof at podium height (those are massing tiers, see richmond-massing.geojson).
+LEVEL_TOL_M = 1.5
+LEVEL_MIN_SUPPORT = 0.35
+LEVEL_MAX_ABOVE = 0.2
+LEVEL_SNAP_SOURCES = ("osm_levels", "osm_height", "lidar", "zoning", "overture_height", "overture_levels", "default")
+
+
+def snap_flat_height(height: float, source: str, level_height: float | None, support: float, above: float
+                     ) -> tuple[float, str]:
+    """Return (height, source), replaced by the measured flat-roof level when the rule above applies."""
+    if level_height is None or source not in LEVEL_SNAP_SOURCES or level_height < 2.5:
+        return height, source
+    if support < LEVEL_MIN_SUPPORT or above > LEVEL_MAX_ABOVE or abs(level_height - height) <= LEVEL_TOL_M:
+        return height, source
+    return round(level_height, 2), "lidar"
+
+
 def resolve_min_height(tags: dict[str, Any]) -> float:
     mh = parse_length_m(tags.get("min_height"))
     if mh is not None:

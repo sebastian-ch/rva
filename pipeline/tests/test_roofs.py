@@ -135,3 +135,23 @@ def test_surface_points_keeps_highest_per_cell():
     assert len(s) == 2
     assert sorted(s[:, 2].tolist()) == [3.0, 5.0]
     assert len(surface_points(p[:0])) == 0
+
+
+def test_roof_level_finds_the_main_roof_under_a_penthouse_and_ignores_the_courtyard():
+    from roofs import roof_level
+    fp = box(0, 0, 30, 20)
+    xs, ys, rng = _xy(fp, N_POINTS)
+    z = np.full(N_POINTS, 14.0) + rng.normal(0, NOISE, N_POINTS)
+    z[(xs > 20) & (ys > 12)] = 18.0                 # penthouse on ~11% of the roof
+    z[(xs < 6) & (ys < 5)] = 0.3                    # courtyard at ground: not roof
+    level = roof_level(np.column_stack([xs, ys, z]), fp, 0.0)
+    assert level.z == pytest.approx(14.0, abs=0.05)
+    assert 0.8 < level.support < 0.95
+    assert 0.05 < level.above < 0.2
+
+
+def test_roof_level_needs_enough_roof_points():
+    from roofs import roof_level
+    fp = box(0, 0, 12, 8)
+    pts = np.column_stack([np.linspace(1, 11, 30), np.full(30, 4.0), np.full(30, 9.0)])
+    assert roof_level(pts, fp, 0.0) is None

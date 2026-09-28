@@ -18,8 +18,8 @@ from shapely.geometry import Point
 from pyproj import Transformer
 
 from config import ASSETS, CRS_PROJ, DATA_RAW, LANDMARKS_PATH, LANE_WIDTH, LEVEL_HEIGHT, ROAD_WIDTH, REGION
-from heights import ROOF_KEYS, cap_small_footprint, looks_demolished, parse_levels, resolve_colors, resolve_height, resolve_min_height, resolve_roof, snap_color, tagged_wall
-from lidar import classify_roofs, sample_ndsm_stats
+from heights import ROOF_KEYS, cap_small_footprint, looks_demolished, parse_levels, resolve_colors, resolve_height, resolve_min_height, resolve_roof, snap_color, snap_flat_height, tagged_wall
+from lidar import measure_roofs, sample_ndsm_stats
 from ortho import apply_roof_colors
 from overture import load_overture, match_overture
 from richmond import _read as _read_rva, join_addresses, join_zoning, zoning_height
@@ -510,7 +510,7 @@ def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True
     rva_addr = join_addresses(raw, _read_rva(richmond_dir / "addresses.parquet") if richmond_dir else None)
     rva_zone = join_zoning(raw, _read_rva(richmond_dir / "zoning.parquet") if richmond_dir else None)
     ndsm_med, ndsm_p90, ndsm_n = sample_ndsm_stats(raw)
-    fits = classify_roofs(raw, ground_abs, lidar_npz)
+    fits, levels_measured = measure_roofs(raw, ground_abs, lidar_npz)
 
     rows = []
     phantoms = 0
@@ -542,6 +542,10 @@ def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True
             # eave height when a pitched roof was fitted, else the median roof surface
             h, src = (fit.eave_z - ground_abs[k]) if fit and fit.shape != "flat" else lid, "lidar"
             h = max(2.5, h)
+        if src == "default" and lid is not None and ndsm_n[k] >= LIDAR_TRUST_SAMPLES and p90 is not None:
+            # LiDAR covers the footprint and its median is under 2 m: a shed or low structure, not the zoning
+            # district's maximum height
+            h, src = max(2.5, p90), "lidar"
         if src == "default":
             zh = zoning_height(rva_zone.at[idx])
             if zh is not None:
@@ -584,6 +588,9 @@ def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True
             addr = rva_addr.at[idx]
         rows.append({
             "id": _osm_id(row),
+            # measured flat-roof level, applied after landmark matching (landmarks never snap) and then dropped
+            "_level": None if levels_measured[k] is None else (levels_measured[k].z - ground_abs[k],
+                                                               levels_measured[k].support, levels_measured[k].above),
             "name": tags.get("name"),
             "height": round(h, 2),
             "min_height": round(resolve_min_height(tags), 2),
@@ -634,10 +641,14 @@ def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True
                 b.at[i, "type"] = by_id.at[pid, "type"]
     # Landmarks: stylized treatment. Height hint from the registry wins over levels/defaults (OSM height still wins),
     # and walls go cream so they read as "designed" until the hand-modeled glTF replaces them.
+    # The hint is the landmark's overall height, so it only replaces a single-body footprint: parts inherit the
+    # slug and carry their own massing, and an outline with parts would otherwise extrude the tower everywhere.
     hints = {lm["slug"]: lm.get("height_hint_m") for lm in landmarks}
+    parents = set(b.loc[b["is_part"], "parent"].dropna())
     for i in b.index[b["landmark"].notna()]:
         hint = hints.get(b.at[i, "landmark"])
-        if hint and b.at[i, "height_source"] != "osm_height":
+        single = not b.at[i, "is_part"] and b.at[i, "id"] not in parents
+        if hint and single and b.at[i, "height_source"] != "osm_height":
             b.at[i, "height"] = float(hint)
             b.at[i, "height_source"] = "landmark_hint"
         b.at[i, "wall_color"] = "cream"
@@ -645,6 +656,14 @@ def process_buildings(raw_path: Path, terrain=None, merge_rowhouses: bool = True
         if b.at[i, "roof_shape"] == "flat":
             b.at[i, "roof_color"] = "roof_flat"
             b.at[i, "roof_color_source"] = "landmark"
+    snapped = 0
+    for i in b.index[b["_level"].notna() & b["landmark"].isna() & (b["roof_shape"] == "flat")]:
+        h, src = snap_flat_height(b.at[i, "height"], b.at[i, "height_source"], *b.at[i, "_level"])
+        if src != b.at[i, "height_source"] or h != b.at[i, "height"]:
+            b.at[i, "height"], b.at[i, "height_source"] = h, src
+            snapped += 1
+    b = b.drop(columns="_level")
+    print(f"  flat roofs snapped to the LiDAR roof level: {snapped}")
     if phantoms:
         print(f"  dropped {phantoms} stale footprints (LiDAR surface at ground, no OSM height)")
     b = apply_overrides(b, terrain)

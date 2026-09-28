@@ -19,6 +19,7 @@ from shapely import contains_xy
 from shapely.geometry import MultiPoint, Point
 
 from lidar import NON_ROOF_CLASSES, _cell_mask, cloud_origin, surface_points
+from roofs import dominant_level as _dominant_plane
 
 CELL_M = 0.35
 EDGE_INSET_M = 2.5
@@ -58,19 +59,6 @@ def dense_surface(npz_path: Path, buildings: gpd.GeoDataFrame, cell: float = CEL
     if not kept:
         return np.zeros((0, 3), np.float64)
     return surface_points(np.concatenate(kept), cell)
-
-
-def _dominant_plane(z: np.ndarray) -> tuple[float, float] | None:
-    """Return the dominant horizontal elevation and its support fraction."""
-    if len(z) < 40:
-        return None
-    bins = np.round(z / 0.2).astype(np.int64)
-    values, counts = np.unique(bins, return_counts=True)
-    mode = values[np.argmax(counts)] * 0.2
-    near = z[np.abs(z - mode) <= 0.35]
-    if len(near) < 20:
-        return None
-    return float(np.median(near)), len(near) / len(z)
 
 
 def detect(building: Any, points: np.ndarray, base_elevation: float = 0,

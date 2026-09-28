@@ -248,3 +248,20 @@ def test_roof_height_capped_to_half_building_height():
     assert shape == "gable" and rh == 1.5
     shape, rh = resolve_roof({"building": "house"}, 8.0, 200.0)
     assert abs(rh - 200 ** 0.5 * 0.25) < 1e-9  # below the cap
+
+
+def test_snap_flat_height_replaces_levels_estimate_with_the_measured_roof():
+    from heights import snap_flat_height
+    assert snap_flat_height(9.6, "osm_levels", 12.4, 0.7, 0.05) == (12.4, "lidar")
+    assert snap_flat_height(20.4, "osm_height", 16.9, 0.6, 0.0) == (16.9, "lidar")
+
+
+def test_snap_flat_height_keeps_close_heights_tiers_and_hand_sources():
+    from heights import snap_flat_height
+    assert snap_flat_height(12.0, "osm_levels", 13.2, 0.7, 0.0) == (12.0, "osm_levels")      # within 1.5 m
+    assert snap_flat_height(40.0, "osm_levels", 12.0, 0.5, 0.45) == (40.0, "osm_levels")     # tower over a podium
+    assert snap_flat_height(40.0, "osm_levels", 12.0, 0.2, 0.1) == (40.0, "osm_levels")      # no dominant level
+    assert snap_flat_height(30.0, "override", 12.0, 0.9, 0.0) == (30.0, "override")
+    assert snap_flat_height(30.0, "landmark_hint", 12.0, 0.9, 0.0) == (30.0, "landmark_hint")
+    assert snap_flat_height(9.0, "zoning", 1.0, 0.9, 0.0) == (9.0, "zoning")                  # level at ground
+    assert snap_flat_height(9.0, "zoning", None, 0.0, 0.0) == (9.0, "zoning")

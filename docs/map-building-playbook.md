@@ -106,6 +106,20 @@ footprint-safe. Review hip/pyramidal fallbacks and domes when importing unfamili
 Also distinguish a bad roof *mesh* from a bad roof *estimate*: check roof source, eave/ridge heights,
 azimuth, classification quality, and footprint alignment before changing the classifier.
 
+### Tagged heights are estimates; measure flat roofs against the LiDAR level
+
+**Symptom:** roof furniture floats or sinks, and about 1,000 of 5,500 flat Richmond roofs sat more than 1.5 m
+from the LiDAR roof plane. The error followed the height source: `building:levels` × 3.2 m ran a median
+1.9 m low (Richmond measures ~4 m per storey up to three storeys), OSM `height` a median 3.2 m high (measured
+to penthouses, or stale), and sheds whose LiDAR median was under 2 m fell through to the zoning district's
+*maximum* height.
+**Rule:** a tag count is not a measurement. On flat roofs, snap to the dominant LiDAR level when it is
+more than 1.5 m off, covers ≥ 35% of the roof, and ≤ 20% of the roof stands above it. Leave podium-and-tower
+footprints alone: snapping them flattens the tower, so they need reviewed massing tiers. Never fall back to
+a planning maximum where LiDAR covers the footprint.
+**Implementation / regression:** `heights.snap_flat_height`, `roofs.roof_level`, `process.process_buildings`;
+`tests/test_heights.py`, `tests/test_roofs.py`.
+
 ### Procedural parapets require convex outlines
 
 **Symptom:** a flat, concave building part gets an implausible diagonal or folded roof edge.

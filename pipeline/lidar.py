@@ -18,7 +18,7 @@ import geopandas as gpd
 import numpy as np
 
 from config import DATA_RAW
-from roofs import RoofFit, classify_roof
+from roofs import RoofFit, RoofLevel, classify_roof, roof_level
 
 NDSM_PATH = DATA_RAW / "ndsm.tif"
 SHRINK_M = 1.0  # pull footprint edges in so walls/neighbours do not leak into the stats
@@ -249,14 +249,22 @@ class PointCloud:
         return self.xyz[starts + np.arange(total)]
 
 
-def classify_roofs(buildings: gpd.GeoDataFrame, ground: np.ndarray, npz_path: Path | None) -> list[RoofFit | None]:
+def measure_roofs(buildings: gpd.GeoDataFrame, ground: np.ndarray, npz_path: Path | None
+                  ) -> tuple[list[RoofFit | None], list[RoofLevel | None]]:
+    """Per footprint: the roof-shape fit and the dominant horizontal roof level, from one point-cloud query."""
     if npz_path is None or not npz_path.exists() or len(buildings) == 0:
-        return [None] * len(buildings)
+        return [None] * len(buildings), [None] * len(buildings)
     pc = PointCloud(npz_path, buildings)
-    out: list[RoofFit | None] = []
+    fits: list[RoofFit | None] = []
+    levels: list[RoofLevel | None] = []
     for g, gz in zip(buildings.geometry, ground):
+        pts = pc.within(g)
         try:
-            out.append(classify_roof(pc.within(g), g, float(gz)))
+            fits.append(classify_roof(pts, g, float(gz)))
         except Exception:
-            out.append(None)
-    return out
+            fits.append(None)
+        try:
+            levels.append(roof_level(pts, g, float(gz)))
+        except Exception:
+            levels.append(None)
+    return fits, levels

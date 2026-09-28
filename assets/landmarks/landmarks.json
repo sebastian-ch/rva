@@ -131,8 +131,9 @@
     "osm_name_hints": [
       "James Monroe Building"
     ],
-    "lat": 37.5406,
-    "lon": -77.4374,
+    "lat": 37.5363,
+    "lon": -77.4301,
+    "match_id": "osm:way/113038399",
     "kind": "building",
     "wikidata": null,
     "website": null,
