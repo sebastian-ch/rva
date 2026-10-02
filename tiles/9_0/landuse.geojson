@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/44660433", "name": "Carter Jones Park", "kind": "park", "sport": null, "surface": null, "pitch_layout": null, "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282500.0, 4154820.46 ], [ 282500.0, 4155000.0 ], [ 282642.71, 4155000.0 ], [ 282686.68, 4154904.18 ], [ 282500.0, 4154820.46 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1066468266", "name": "Fonticello Food Forest", "kind": "park", "sport": null, "surface": null, "pitch_layout": null, "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 282680.29, 4154949.87 ], [ 282657.85, 4155000.0 ], [ 282734.15, 4155000.0 ], [ 282744.24, 4154978.23 ], [ 282680.29, 4154949.87 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "imagery:groundcover_lawn:3468", "name": null, "kind": "groundcover_lawn", "sport": null, "surface": null, "pitch_layout": null, "source": "vgin_vbmp+naip+lidar2025", "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 282664.67, 4154973.63 ], [ 282654.81, 4154973.63 ], [ 282642.71, 4155000.0 ], [ 282657.85, 4155000.0 ], [ 282667.91, 4154977.52 ], [ 282667.61, 4154976.04 ], [ 282664.67, 4154973.63 ] ] ], [ [ [ 282750.0, 4154973.63 ], [ 282733.87, 4154973.63 ], [ 282744.24, 4154978.23 ], [ 282734.15, 4155000.0 ], [ 282741.54, 4155000.0 ], [ 282741.64, 4154999.59 ], [ 282741.99, 4154998.95 ], [ 282743.44, 4154997.38 ], [ 282744.05, 4154996.99 ], [ 282748.98, 4154995.34 ], [ 282749.78, 4154995.31 ], [ 282750.0, 4154995.36 ], [ 282750.0, 4154973.63 ] ] ] ] } }
+]
+}

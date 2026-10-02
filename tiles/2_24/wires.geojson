@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "wires",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "wire:23788-23790", "h0": 8.84, "h1": 10.0, "z0": 62.97, "z1": 62.82 }, "geometry": { "type": "LineString", "coordinates": [ [ 280777.72, 4160741.22 ], [ 280801.33, 4160767.28 ] ] } }
+]
+}

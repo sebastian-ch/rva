@@ -1,0 +1,12 @@
+{
+"type": "FeatureCollection",
+"name": "water",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/1526523095", "name": null, "kind": "canal", "water_z": 25.35, "source": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280708.82, 4157021.51 ], [ 280710.1, 4157018.99 ], [ 280701.79, 4157000.0 ], [ 280697.44, 4157000.0 ], [ 280706.45, 4157020.59 ], [ 280708.82, 4157021.51 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/545105528", "name": "Bear Pond", "kind": "pond", "water_z": 26.97, "source": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280742.4, 4157019.98 ], [ 280745.09, 4157028.86 ], [ 280750.0, 4157030.93 ], [ 280750.0, 4157006.63 ], [ 280745.49, 4157013.11 ], [ 280742.4, 4157019.98 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/1526523092", "name": null, "kind": "canal", "water_z": 29.31, "source": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280750.0, 4157072.9 ], [ 280750.0, 4157066.66 ], [ 280709.73, 4157018.33 ], [ 280706.92, 4157018.08 ], [ 280706.66, 4157020.89 ], [ 280750.0, 4157072.9 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "osm:way/303523717", "name": "Kanawha Canal", "kind": "canal", "water_z": 25.26, "source": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 280700.26, 4157000.0 ], [ 280681.83, 4157000.0 ], [ 280500.0, 4157117.45 ], [ 280500.0, 4157129.74 ], [ 280502.22, 4157127.93 ], [ 280700.26, 4157000.0 ] ] ] } }
+]
+}

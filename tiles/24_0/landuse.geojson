@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/679324138", "name": "Ancarrow's Landing", "kind": "park", "sport": null, "surface": null, "pitch_layout": null, "source": null, "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286250.0, 4154850.6 ], [ 286250.0, 4155000.0 ], [ 286297.88, 4155000.0 ], [ 286300.25, 4154853.95 ], [ 286250.0, 4154850.6 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "imagery:groundcover_lawn:3429", "name": null, "kind": "groundcover_lawn", "sport": null, "surface": null, "pitch_layout": null, "source": "vgin_vbmp+naip+lidar2025", "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286301.22, 4154983.52 ], [ 286301.06, 4154983.07 ], [ 286301.89, 4154981.24 ], [ 286301.87, 4154980.21 ], [ 286301.71, 4154977.62 ], [ 286301.81, 4154976.49 ], [ 286301.78, 4154974.96 ], [ 286298.29, 4154974.52 ], [ 286297.88, 4155000.0 ], [ 286302.2, 4155000.0 ], [ 286301.93, 4154983.78 ], [ 286301.22, 4154983.52 ] ] ] } }
+]
+}

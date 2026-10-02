@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "water",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/78940904", "name": "Reedy Creek", "kind": "canal", "water_z": 26.96, "source": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 281526.32, 4155000.0 ], [ 281530.39, 4155000.0 ], [ 281504.25, 4154865.6 ], [ 281501.69, 4154841.43 ], [ 281500.0, 4154836.68 ], [ 281500.0, 4154863.37 ], [ 281500.31, 4154866.3 ], [ 281526.32, 4155000.0 ] ] ] } }
+]
+}

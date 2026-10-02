@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "wires",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "wire:34092-34682", "h0": 8.84, "h1": 10.0, "z0": 52.51, "z1": 52.46 }, "geometry": { "type": "LineString", "coordinates": [ [ 283512.36, 4159774.52 ], [ 283483.87, 4159740.88 ] ] } },
+{ "type": "Feature", "properties": { "id": "wire:34684-34687", "h0": 10.0, "h1": 11.73, "z0": 57.51, "z1": 56.38 }, "geometry": { "type": "LineString", "coordinates": [ [ 283290.75, 4159978.34 ], [ 283259.72, 4160003.72 ] ] } }
+]
+}

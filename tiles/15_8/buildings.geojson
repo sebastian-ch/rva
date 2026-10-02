@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "buildings",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "osm:way/1110949237", "name": null, "height": 3.07, "min_height": 0.0, "levels": null, "height_source": "lidar", "roof_shape": "gable", "roof_height": 1.98, "roof_azimuth": 111.0, "roof_source": "lod2", "roof_color": "roof_flat", "roof_color_source": "ortho", "lod2_roof": { "v": [ [ 284021.93, 4156972.93, 0.0 ], [ 284020.15, 4156977.09, 1.98 ], [ 284019.89, 4156977.2, 1.98 ], [ 284016.02, 4156975.32, 0.0 ], [ 284018.49, 4156980.71, 0.27 ], [ 284022.55, 4156978.14, 0.8 ], [ 284023.43, 4156978.77, 0.22 ], [ 284018.12, 4156980.85, 0.0 ], [ 284024.05, 4156978.53, 0.0 ], [ 284023.43, 4156978.77, 0.42 ] ], "f": [ [ [ 0, 1, 2, 3 ] ], [ [ 4, 2, 1, 5, 6 ] ], [ [ 4, 7, 3, 2 ] ], [ [ 8, 9, 5, 1, 0 ] ], [ [ 9, 6, 5 ] ] ] }, "roof_props": null, "wall_color": "sand", "wall_color_source": "assessor", "type": "yes", "landmark": null, "footprint_source": "osm", "source_updated": null, "is_part": false, "parent": null, "hidden": false, "addr": null, "wikidata": null, "website": null, "zoning": "DCC", "lidar_p90": 4.61, "ground_z": 13.21 }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 284024.38, 4156978.4 ], [ 284022.04, 4156972.09 ], [ 284015.5, 4156974.6 ], [ 284018.0, 4156980.9 ], [ 284024.38, 4156978.4 ] ] ] } }
+]
+}

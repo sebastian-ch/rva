@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "landuse",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32618" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "id": "imagery:groundcover_lawn:68", "name": null, "kind": "groundcover_lawn", "sport": null, "surface": null, "pitch_layout": null, "source": "vgin_vbmp+naip+lidar2025", "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286017.55, 4160751.34 ], [ 286017.73, 4160751.25 ], [ 286020.48, 4160750.98 ], [ 286021.27, 4160751.18 ], [ 286023.34, 4160750.61 ], [ 286023.42, 4160750.78 ], [ 286024.99, 4160750.13 ], [ 286025.63, 4160750.13 ], [ 286025.76, 4160750.0 ], [ 286000.0, 4160750.0 ], [ 286000.0, 4160751.63 ], [ 286016.27, 4160751.63 ], [ 286017.55, 4160751.34 ] ] ] } },
+{ "type": "Feature", "properties": { "id": "imagery:groundcover_lawn:62", "name": null, "kind": "groundcover_lawn", "sport": null, "surface": null, "pitch_layout": null, "source": "vgin_vbmp+naip+lidar2025", "source_updated": null, "base_z": null, "top_z": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 286100.89, 4160751.63 ], [ 286103.01, 4160750.75 ], [ 286103.76, 4160750.0 ], [ 286090.61, 4160750.0 ], [ 286092.59, 4160751.63 ], [ 286100.89, 4160751.63 ] ] ] } }
+]
+}
