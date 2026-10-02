@@ -4,6 +4,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
 import { MAP_STYLES, STYLE_IDS, type MapStyle } from './styles';
 
 /**
@@ -56,6 +57,7 @@ const IsoGradeShader = {
     void main() {
       vec4 color = texture2D(tDiffuse, vUv);
       vec2 px = 1.0 / uResolution;
+      vec2 screenPx = px * uPixelRatio;
       float d = depthM(vUv);
       float metersPerPixel = uMetersPerPixel * (uPerspective > 0.5 ? d : 1.0);
       // ---- ambient occlusion: how many nearby pixels are in front of us by more than a bias
@@ -65,7 +67,7 @@ const IsoGradeShader = {
       for (int i = 0; i < N; i++) {
         float a = 6.2831853 * (float(i) + 0.5) / float(N);
         float r = radiusPx * (0.35 + 0.65 * fract(float(i) * 0.618034));
-        vec2 o = vec2(cos(a), sin(a)) * r * px;
+        vec2 o = vec2(cos(a), sin(a)) * r * screenPx;
         float dd = d - depthM(vUv + o);            // positive: neighbour is closer to the camera
         // contact occlusion only: neighbours 0.3–6 m in front (wall bases, under eaves), not whole towers
         occ += smoothstep(0.3, 1.2, dd) * (1.0 - smoothstep(4.0, 8.0, dd));
@@ -74,10 +76,10 @@ const IsoGradeShader = {
       float ao = 1.0 - uAo * occ;
       // ---- outline: depth discontinuity to any 4-neighbour
       float e = 0.0;
-      e = max(e, abs(d - depthM(vUv + vec2(px.x, 0.0))));
-      e = max(e, abs(d - depthM(vUv - vec2(px.x, 0.0))));
-      e = max(e, abs(d - depthM(vUv + vec2(0.0, px.y))));
-      e = max(e, abs(d - depthM(vUv - vec2(0.0, px.y))));
+      e = max(e, abs(d - depthM(vUv + vec2(screenPx.x, 0.0))));
+      e = max(e, abs(d - depthM(vUv - vec2(screenPx.x, 0.0))));
+      e = max(e, abs(d - depthM(vUv + vec2(0.0, screenPx.y))));
+      e = max(e, abs(d - depthM(vUv - vec2(0.0, screenPx.y))));
       float edge = smoothstep(2.5, 8.0, e / max(metersPerPixel, 0.02) * 0.5);
 
       ${STYLE_IDS.map((id, index) => MAP_STYLES[id].fragment ? `if (abs(uStyle - ${index.toFixed(1)}) < 0.1) { ${MAP_STYLES[id].fragment} }` : '').join('\n')}
@@ -125,6 +127,9 @@ export function createPostFX(renderer: THREE.WebGLRenderer, scene: THREE.Scene, 
   const bloom = new UnrealBloomPass(size, 0.24, 0.35, 0.48);
   bloom.enabled = false;
   composer.addPass(bloom);
+  // Smooth the final scene edges in linear colour; name labels render separately after this pipeline.
+  const antialias = new SMAAPass();
+  composer.addPass(antialias);
   composer.addPass(new OutputPass());
   const fx: PostFX = {
     composer,
@@ -150,6 +155,7 @@ export function createPostFX(renderer: THREE.WebGLRenderer, scene: THREE.Scene, 
     setNight(on) { grade.uniforms.uNight.value = on ? 1 : 0; },
     setStyle(style) {
       grade.uniforms.uStyle.value = STYLE_IDS.indexOf(style);
+      antialias.enabled = MAP_STYLES[style].antialias;
       const settings = MAP_STYLES[style].bloom;
       bloom.enabled = settings !== null;
       if (settings) { bloom.strength = settings.strength; bloom.radius = settings.radius; bloom.threshold = settings.threshold; }

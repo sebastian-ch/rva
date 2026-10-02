@@ -1040,3 +1040,25 @@ so the next map starts with the fixes, not just the final screenshots.
 
 Future architecture work: see [shared asset definitions](IMPROVEMENTS.md#deferred-shared-asset-definitions-requested-2026-09-09)
 for the requested registry linking appearance, placement, detail levels and data requirements.
+
+## Mobile sharpness and resolution changes
+
+**Symptom:** high-density phones show coarse roofs, diagonal roads and lettering despite the
+renderer requesting antialiasing. **Root cause:** mobile rendering was capped at one physical
+pixel per CSS pixel, and the postprocessing scene target had zero MSAA samples. Canvas
+antialiasing does not smooth the offscreen scene. Increasing resolution also exposed shared
+AO/outline offsets measured in physical pixels while their radii were measured in CSS pixels.
+
+**Reusable rule:** start phones at up to 1.5x and adapt within 1x–2x/native density using sustained
+frame times. Ignore loading, hidden tabs and long pauses, and wait between reallocations.
+Apply SMAA after grade/bloom and before output colour conversion; render name labels afterward.
+Keep AO/outline sampling at a consistent CSS-pixel scale across resolution changes. Intentional
+pixel styles opt out of SMAA through the style registry rather than renderer-specific names.
+
+**References:** [renderQuality.ts](../web/src/renderQuality.ts),
+[renderQuality.test.ts](../web/src/renderQuality.test.ts), [main.ts](../web/src/main.ts),
+[postfx.ts](../web/src/postfx.ts), and [map-styles.md](map-styles.md).
+**Limits:** frame times include CPU work and display refresh pacing; they do not isolate GPU
+cost. A narrow desktop preview does not exercise the coarse-pointer phone policy. Verify
+real-device responsiveness and battery/thermal behaviour separately. This change does not
+raise shadow resolution or add distant-detail culling.

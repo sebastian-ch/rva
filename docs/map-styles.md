@@ -48,7 +48,9 @@ The fragment runs inside a block in the shared grade shader. Available values ar
 
 Write `gl_FragColor` in **linear** color space, then `return`. Convert an sRGB print palette
 to linear before output, as Cross-stitch and Risograph do. The composer applies output
-conversion once. Prefix optional global `helpers` functions with a style-specific name
+conversion once, after SMAA edge smoothing. Set `antialias: false` in the style definition
+for intentionally pixelated output; Cross-stitch uses this to preserve its stitch grid.
+Prefix optional global `helpers` functions with a style-specific name
 to prevent collisions. Fragment-local variables are isolated by their block.
 
 Cross-stitch samples the scene at the center of each five-CSS-pixel cell, so geometry edges

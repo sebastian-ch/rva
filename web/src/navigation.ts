@@ -1,4 +1,5 @@
 import { parseStyle, type MapStyle } from './styles';
+import { setMobilePanel } from './mobilePanels';
 export type { MapStyle } from './styles';
 export interface SearchPlace { id: string; name: string | null; addr: string | null; x: number; y: number; ground_z: number; landmark?: string | null }
 export interface ViewState {
@@ -60,6 +61,7 @@ export function searchPlaces(places: SearchPlace[], query: string): SearchPlace[
 
 export function createNavigation(root: HTMLElement, onSelect: (place: SearchPlace) => void, getView: () => ViewState) {
   const panel = document.createElement('div'); panel.className = 'panel navigation';
+  panel.id = 'place-search';
   const input = document.createElement('input'); input.type = 'search'; input.placeholder = 'Search places or addresses';
   input.setAttribute('aria-label', 'Search places or addresses'); input.setAttribute('role', 'combobox');
   input.setAttribute('aria-autocomplete', 'list'); input.setAttribute('aria-expanded', 'false');
@@ -67,10 +69,27 @@ export function createNavigation(root: HTMLElement, onSelect: (place: SearchPlac
   const share = document.createElement('button'); share.type = 'button'; share.textContent = 'Share view';
   const results = document.createElement('div'); results.id = 'place-results'; results.setAttribute('role', 'listbox'); results.hidden = true;
   const status = document.createElement('div'); status.className = 'navigation-status'; status.setAttribute('role', 'status');
-  panel.append(input, share, results, status); (root.querySelector('.top-left') ?? root).append(panel);
+  const searchDone = document.createElement('button'); searchDone.type = 'button'; searchDone.className = 'mobile-search-done'; searchDone.textContent = 'Done';
+  const mobileActions = root.querySelector('.mobile-header-actions') ?? document.createElement('div');
+  mobileActions.className = 'mobile-header-actions';
+  const searchButton = document.createElement('button'); searchButton.type = 'button'; searchButton.textContent = '⌕';
+  searchButton.setAttribute('aria-label', 'Search places'); searchButton.setAttribute('aria-controls', panel.id); searchButton.setAttribute('aria-expanded', 'false');
+  const mobileShare = document.createElement('button'); mobileShare.type = 'button'; mobileShare.textContent = '↗'; mobileShare.setAttribute('aria-label', 'Share view');
+  mobileActions.append(searchButton, mobileShare);
+  (root.querySelector('.title-badge') ?? root).append(mobileActions);
+  panel.append(input, share, searchDone, results, status); (root.querySelector('.top-left') ?? root).append(panel);
+  root.addEventListener('mobile-panel-change', () => {
+    searchButton.setAttribute('aria-expanded', String(root.dataset.mobilePanel === 'search'));
+  });
+  searchButton.addEventListener('click', () => {
+    const open = root.dataset.mobilePanel !== 'search';
+    setMobilePanel(root, open ? 'search' : '');
+    if (open) input.focus();
+  });
+  searchDone.addEventListener('click', () => { close(); status.textContent = ''; setMobilePanel(root, ''); searchButton.focus(); });
   let places: SearchPlace[] = [], matches: SearchPlace[] = [], active = -1;
   const close = () => { results.hidden = true; input.setAttribute('aria-expanded', 'false'); input.removeAttribute('aria-activedescendant'); active = -1; };
-  const choose = (p: SearchPlace) => { input.value = p.name ?? p.addr ?? ''; close(); input.blur(); onSelect(p); };
+  const choose = (p: SearchPlace) => { input.value = p.name ?? p.addr ?? ''; close(); input.blur(); setMobilePanel(root, ''); onSelect(p); };
   const highlight = () => {
     [...results.children].forEach((el, i) => el.setAttribute('aria-selected', String(i === active)));
     if (active >= 0) input.setAttribute('aria-activedescendant', `place-option-${active}`);
@@ -89,21 +108,23 @@ export function createNavigation(root: HTMLElement, onSelect: (place: SearchPlac
     results.hidden = !matches.length; input.setAttribute('aria-expanded', String(matches.length > 0));
   });
   input.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { close(); input.blur(); }
+    if (e.key === 'Escape') { e.stopPropagation(); close(); input.blur(); setMobilePanel(root, ''); searchButton.focus(); }
     else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && matches.length) {
       e.preventDefault(); active = (active + (e.key === 'ArrowDown' ? 1 : -1) + matches.length) % matches.length; highlight();
     } else if (e.key === 'Enter' && matches.length && !results.hidden) { e.preventDefault(); choose(matches[Math.max(0, active)]); }
   });
   input.addEventListener('blur', close);
   let shareTimer: ReturnType<typeof setTimeout> | undefined;
-  share.addEventListener('click', async () => {
+  const shareView = async () => {
     const url = new URL(location.href); url.hash = encodeView(getView()); history.replaceState(null, '', url);
     clearTimeout(shareTimer);
     try { await navigator.clipboard.writeText(url.href); status.textContent = 'View link copied'; }
-    catch { status.textContent = 'Copy this view link:'; const link = document.createElement('input'); link.value = url.href;
+    catch { setMobilePanel(root, 'search'); status.textContent = 'Copy this view link:'; const link = document.createElement('input'); link.value = url.href;
       link.setAttribute('aria-label', 'Shareable view link'); link.readOnly = true; status.append(link); link.focus(); link.select(); }
     shareTimer = setTimeout(() => { status.textContent = ''; }, 8000);
-  });
+  };
+  share.addEventListener('click', shareView);
+  mobileShare.addEventListener('click', shareView);
   return {
     setPlaces(data: SearchPlace[]) { places = data; input.disabled = false; },
     unavailable() { input.placeholder = 'Search unavailable'; status.textContent = 'Place index could not be loaded'; },

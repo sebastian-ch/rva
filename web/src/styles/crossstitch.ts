@@ -2,6 +2,7 @@ import { defineStyle } from './definition';
 
 export default defineStyle({
   label: 'Cross-stitch',
+  antialias: false,
   theme: { bg: '#e6dcc4', alt: '#f6efdf', border: '#b6aa8c', text: '#403c32', muted: '#736b58', scheme: 'light' },
   fragment: /* glsl */ `
     // Quantize every scene lookup before palette selection: silhouettes share the stitch grid.

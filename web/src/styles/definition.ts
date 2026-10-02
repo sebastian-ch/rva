@@ -12,11 +12,13 @@ export interface StyleDefinition {
   trafficTrails: boolean;
   roadRoughness: number;
   bloom: { strength: number; radius: number; threshold: number } | null;
+  /** Disable for intentionally pixelated styles. */
+  antialias: boolean;
   theme: { bg: string; alt: string; border: string; text: string; muted: string; scheme: 'light' | 'dark' } | null;
 }
 
 /** Copy a style module, customize its shader and settings, then register it in index.ts. */
 export function defineStyle(style: Pick<StyleDefinition, 'label'> & Partial<StyleDefinition>): StyleDefinition {
   return { note: null, xray: false, moss: false, helpers: '', fragment: '', nightLighting: false, neonLighting: false,
-    trafficTrails: false, roadRoughness: 0.95, bloom: null, theme: null, ...style };
+    trafficTrails: false, roadRoughness: 0.95, bloom: null, antialias: true, theme: null, ...style };
 }

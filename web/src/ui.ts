@@ -1,5 +1,6 @@
 import { region, regionId } from './region';
 import { MAP_STYLES, STYLE_IDS, parseStyle, type MapStyle } from './styles';
+import { setMobilePanel } from './mobilePanels';
 
 export interface BuildingInfo {
   id: string;
@@ -112,6 +113,8 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
   // ---- Toolbar ----
   const toolbar = document.createElement("div");
   toolbar.className = "panel toolbar";
+  toolbar.id = 'view-options';
+  toolbar.setAttribute('aria-label', 'View options');
 
   function makeButton(icon: string, label: string): HTMLButtonElement {
     const btn = document.createElement("button");
@@ -119,6 +122,7 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
 
     const iconSpan = document.createElement("span");
     iconSpan.className = "icon";
+    iconSpan.setAttribute('aria-hidden', 'true');
     iconSpan.textContent = icon;
     btn.appendChild(iconSpan);
 
@@ -129,6 +133,33 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
 
     return btn;
   }
+
+  const viewButton = makeButton('☷', 'View');
+  viewButton.className = 'mobile-view-button';
+  viewButton.setAttribute('aria-controls', toolbar.id);
+  viewButton.setAttribute('aria-expanded', 'false');
+  viewButton.addEventListener('click', () => {
+    const open = root.dataset.mobilePanel !== 'view';
+    setMobilePanel(root, open ? 'view' : '');
+    if (open) { toolbar.scrollTop = 0; viewClose.focus(); }
+  });
+  const viewHeading = document.createElement('div');
+  viewHeading.className = 'mobile-sheet-heading';
+  const viewTitle = document.createElement('strong');
+  viewTitle.textContent = 'View options';
+  const viewClose = makeButton('×', 'Close');
+  viewClose.setAttribute('aria-label', 'Close view options');
+  const closeView = () => { setMobilePanel(root, ''); viewButton.focus(); };
+  viewClose.addEventListener('click', closeView);
+  viewHeading.append(viewTitle, viewClose);
+  toolbar.append(viewHeading);
+  const mobileActions = document.createElement('div');
+  mobileActions.className = 'mobile-header-actions';
+  mobileActions.append(viewButton);
+  titleBadge.append(mobileActions);
+  root.addEventListener('mobile-panel-change', () => {
+    viewButton.setAttribute('aria-expanded', String(root.dataset.mobilePanel === 'view'));
+  });
 
   const nightBtn = makeButton("\u{1F319}", "Night");
   const pauseBtn = makeButton("⏸", "Pause");
@@ -211,6 +242,12 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
   toolbar.appendChild(heightsBtn);
   if (regionId === 'richmond') toolbar.appendChild(aircraftBtn);
   toolbar.appendChild(stylePicker);
+  const viewDone = document.createElement('button');
+  viewDone.type = 'button';
+  viewDone.className = 'mobile-sheet-done';
+  viewDone.textContent = 'Done';
+  viewDone.addEventListener('click', closeView);
+  toolbar.append(viewDone);
 
   root.appendChild(toolbar);
 
@@ -231,6 +268,22 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
 
   const infoName = document.createElement("h2");
   infoCard.appendChild(infoName);
+
+  const infoDetails = document.createElement('div');
+  infoDetails.className = 'info-details';
+  infoDetails.id = 'building-details';
+  const infoExpand = document.createElement('button');
+  infoExpand.type = 'button';
+  infoExpand.className = 'info-expand';
+  infoExpand.setAttribute('aria-controls', infoDetails.id);
+  const setInfoExpanded = (expanded: boolean) => {
+    infoCard.classList.toggle('expanded', expanded);
+    infoExpand.setAttribute('aria-expanded', String(expanded));
+    infoExpand.textContent = expanded ? 'Less detail' : 'More details';
+  };
+  setInfoExpanded(false);
+  infoExpand.addEventListener('click', () => setInfoExpanded(!infoCard.classList.contains('expanded')));
+  let selectedInfoId: string | null = null;
 
   const infoThumb = document.createElement("img");
   infoThumb.className = "info-thumb";
@@ -264,6 +317,9 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
   infoWikiAttr.textContent = "Text: Wikipedia, CC BY-SA 4.0";
   infoWikiAttr.hidden = true;
   infoCard.appendChild(infoWikiAttr);
+
+  infoDetails.append(infoThumb, infoStats, infoDescription, infoSummary, infoLinks, infoWikiAttr);
+  infoCard.append(infoDetails, infoExpand);
 
   root.appendChild(infoCard);
 
@@ -362,6 +418,20 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
   }
 
   root.appendChild(attribution);
+  attribution.id = 'map-credits';
+  const creditsButton = document.createElement('button');
+  creditsButton.type = 'button';
+  creditsButton.className = 'mobile-credits-button';
+  creditsButton.textContent = 'Map credits';
+  creditsButton.setAttribute('aria-controls', attribution.id);
+  creditsButton.setAttribute('aria-expanded', 'false');
+  creditsButton.addEventListener('click', () => {
+    setMobilePanel(root, root.dataset.mobilePanel === 'credits' ? '' : 'credits');
+  });
+  root.addEventListener('mobile-panel-change', () => {
+    creditsButton.setAttribute('aria-expanded', String(root.dataset.mobilePanel === 'credits'));
+  });
+  root.append(creditsButton);
   if (regionId === 'richmond') {
     for (const [title, url] of [['City of Richmond trees', 'https://www.rva.gov/public-works/urban-forestry'],
       ['NOAA 2025 LiDAR & hydro', 'https://www.fisheries.noaa.gov/inport/item/80312'],
@@ -383,9 +453,18 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
 
   function hideInfo(): void {
     infoCard.classList.add("hidden");
+    selectedInfoId = null;
+    setInfoExpanded(false);
+    if (root.dataset.mobilePanel === 'info') setMobilePanel(root, '');
   }
 
   function showInfo(info: BuildingInfo): void {
+    if (info.id !== selectedInfoId) {
+      selectedInfoId = info.id;
+      setInfoExpanded(false);
+      infoCard.scrollTop = 0;
+      setMobilePanel(root, 'info');
+    }
     infoName.textContent = info.name && info.name.length > 0 ? info.name : fallbackName(info.type);
 
     if (info.thumbnail) {
@@ -525,6 +604,10 @@ export function createUI(root: HTMLElement, cb: UICallbacks): UI {
 
     switch (event.key) {
       case "Escape":
+        if (root.dataset.mobilePanel === 'view' || root.dataset.mobilePanel === 'credits') {
+          setMobilePanel(root, '');
+          break;
+        }
         hideInfo();
         cb.onCloseInfo();
         break;

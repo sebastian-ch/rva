@@ -17,6 +17,7 @@ import { hex } from './props';
 import { LandmarkModels } from './landmarkModels';
 import { createDebug } from './debug';
 import { createPostFX } from './postfx';
+import { AdaptiveResolution } from './renderQuality';
 import { applyGroundDetail } from './groundDetail';
 import { createFacadeMaterial } from './facade';
 import { createWaterMaterial } from './water';
@@ -36,9 +37,10 @@ document.title = region.title;
 const landmarkBySlug = new Map(landmarks.map((l) => [l.slug, l]));
 
 const canvas = document.getElementById('scene') as HTMLCanvasElement;
-const mobileQuality = window.matchMedia('(max-width: 700px) and (pointer: coarse)').matches;
+const mobileQuality = window.matchMedia('(max-width: 700px) and (pointer: coarse), (max-height: 500px) and (pointer: coarse)').matches;
+const adaptiveResolution = mobileQuality ? new AdaptiveResolution(window.devicePixelRatio, performance.now()) : null;
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, mobileQuality ? 1 : 2));
+renderer.setPixelRatio(adaptiveResolution?.pixelRatio ?? Math.min(window.devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.NoToneMapping;
 
@@ -526,7 +528,8 @@ function frameSummary() {
 }
 function frame(now?: number) {
   timer.update(now);
-  const dt = Math.min(0.1, timer.getDelta());
+  const elapsed = timer.getDelta();
+  const dt = Math.min(0.1, elapsed);
   frameMs.push(dt * 1000); if (frameMs.length > 600) frameMs.shift();
   iso.update(dt);
   if (tropicalSky) tropicalSky.position.copy(iso.camera.position);
@@ -541,6 +544,9 @@ function frame(now?: number) {
     const autoClear = renderer.autoClear;
     renderer.autoClear = false; renderer.clearDepth(); renderer.render(labelScene, iso.camera); renderer.autoClear = autoClear;
   }
+  const nextRatio = adaptiveResolution?.sample(elapsed * 1000, now ?? performance.now(),
+    document.visibilityState === 'visible' && !!manager && !manager.busy);
+  if (nextRatio != null) { renderer.setPixelRatio(nextRatio); resize(); }
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
@@ -549,4 +555,4 @@ boot().catch((e) => { console.error(e); ui.setLoading(true, 'Failed to load tile
 // expose for debugging
 const debug = createDebug({ iso, tiles, manager: () => manager, landmarkTargets, propCounts: () => props.counts_(), traffic: () => ({ ...traffic.stats, drawn: props.trafficCount() }) });
 Object.assign(window, { __iso: { scene, tiles, iso, props, traffic, dogs, aircraft: () => aircraft?.stats(), palette, night: () => night,
-  stats: () => ({ ...(manager?.summary() ?? {}), frames: frameSummary(), quality: { mobile: mobileQuality, pixelRatio: renderer.getPixelRatio(), shadowMap: sun.shadow.mapSize.x }, renderer: { memory: { ...renderer.info.memory }, render: { ...renderer.info.render } } }), manager: () => manager, postfx, ...debug } });
+  stats: () => ({ ...(manager?.summary() ?? {}), frames: frameSummary(), quality: { mobile: mobileQuality, adaptive: !!adaptiveResolution, pixelRatio: renderer.getPixelRatio(), antialias: postfx.enabled && MAP_STYLES[mapStyle].antialias ? 'smaa' : 'none', shadowMap: sun.shadow.mapSize.x }, renderer: { memory: { ...renderer.info.memory }, render: { ...renderer.info.render } } }), manager: () => manager, postfx, ...debug } });
